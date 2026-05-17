@@ -90,6 +90,25 @@ const initDb = () => {
   `);
   db.exec('CREATE INDEX IF NOT EXISTS idx_reviews_movie_link ON movie_reviews(movie_link)');
 
+  // Create User Movie History Table
+  // Stores ratings/notes per user+movie_link permanently — survives movie deletion
+  // Used for: community ratings, data restoration when movie is re-added
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_movie_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      movie_link TEXT NOT NULL,
+      user_rating REAL DEFAULT NULL,
+      notes TEXT DEFAULT NULL,
+      notes_public INTEGER DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, movie_link),
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  `);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_history_movie_link ON user_movie_history(movie_link)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_history_user_link ON user_movie_history(user_id, movie_link)');
+
   // Migration for user_id in movies
   try {
     db.exec("ALTER TABLE movies ADD COLUMN user_id INTEGER");

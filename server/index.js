@@ -311,9 +311,17 @@ app.get('/api/movies', authenticateToken, (req, res) => {
     try {
         const stmt = db.prepare(`
             SELECT m.*, 
-                   (SELECT ROUND(AVG(m2.user_rating), 1) 
-                    FROM movies m2 
-                    WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id) AS community_rating
+                   (
+                     -- Community rating: average from movies table (active/deleted) + history table, excluding current user
+                     SELECT ROUND(AVG(r), 1) FROM (
+                       SELECT m2.user_rating AS r FROM movies m2
+                         WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                       UNION ALL
+                       SELECT h.user_rating AS r FROM user_movie_history h
+                         WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                         AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                     )
+                   ) AS community_rating
             FROM movies m 
             WHERE m.user_id = ? AND m.deleted_at IS NULL 
             ORDER BY m.created_at DESC
@@ -367,24 +375,40 @@ app.post('/api/movies', authenticateToken, (req, res) => {
     try {
         const { title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type } = req.body;
 
-        // Check if exists for this user (restore if deleted)
+        // Check if exists for this user (restore if soft-deleted)
         const checkStmt = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
         const existing = checkStmt.get(link, req.user.id);
         if (existing) {
             if (existing.deleted_at) {
-                db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ? AND user_id = ?').run(existing.id, req.user.id);
+                // Restore the soft-deleted row and sync back any saved history
+                const history = db.prepare('SELECT user_rating, notes, notes_public FROM user_movie_history WHERE user_id = ? AND movie_link = ?').get(req.user.id, link);
+                if (history) {
+                    db.prepare('UPDATE movies SET deleted_at = NULL, user_rating = ?, notes = ?, notes_public = ? WHERE id = ? AND user_id = ?')
+                        .run(history.user_rating, history.notes, history.notes_public, existing.id, req.user.id);
+                } else {
+                    db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ? AND user_id = ?').run(existing.id, req.user.id);
+                }
                 return res.json({ id: existing.id, restored: true });
             }
             return res.status(409).json({ error: 'Movie already exists in your list' });
         }
 
+        // Check if user has history for this movie link (previously rated/noted before permanent delete)
+        const history = db.prepare('SELECT user_rating, notes, notes_public FROM user_movie_history WHERE user_id = ? AND movie_link = ?').get(req.user.id, link);
+
         const stmt = db.prepare(`
-          INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, user_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, user_id, user_rating, notes, notes_public)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
-        const info = stmt.run(title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type || 'movie', req.user.id);
-        res.json({ id: info.lastInsertRowid });
+        const info = stmt.run(
+            title, original_title, year, link, rating, description, poster_url,
+            genres, actors, director, writers, type || 'movie', req.user.id,
+            history?.user_rating ?? null,
+            history?.notes ?? null,
+            history?.notes_public ?? 0
+        );
+        res.json({ id: info.lastInsertRowid, restored_history: !!history });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: error.message });
@@ -428,6 +452,23 @@ app.patch('/api/movies/:id', authenticateToken, (req, res) => {
         const result = stmt.run(...values);
         
         if (result.changes === 0) return res.status(404).json({ error: 'Movie not found or unauthorized' });
+
+        // --- Persist rating/notes to history table (survives movie deletion) ---
+        if (user_rating !== undefined || notes !== undefined || notes_public !== undefined) {
+            const movie = db.prepare('SELECT link, user_rating, notes, notes_public FROM movies WHERE id = ? AND user_id = ?').get(id, req.user.id);
+            if (movie && movie.link) {
+                db.prepare(`
+                    INSERT INTO user_movie_history (user_id, movie_link, user_rating, notes, notes_public, updated_at)
+                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id, movie_link) DO UPDATE SET
+                        user_rating = COALESCE(excluded.user_rating, user_movie_history.user_rating),
+                        notes = COALESCE(excluded.notes, user_movie_history.notes),
+                        notes_public = excluded.notes_public,
+                        updated_at = CURRENT_TIMESTAMP
+                `).run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public);
+            }
+        }
+
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -533,12 +574,24 @@ app.post('/api/movies/bulk-restore', authenticateToken, (req, res) => {
     }
 });
 
-// PERMANENT DELETE (Trash)
+// PERMANENT DELETE (Trash) — backfills history first so ratings/notes are never lost
 app.delete('/api/trash/:id', authenticateToken, (req, res) => {
     try {
         const { id } = req.params;
-        const stmt = db.prepare('DELETE FROM movies WHERE id = ? AND user_id = ?');
-        const result = stmt.run(id, req.user.id);
+        // Save rating/notes to history before permanent deletion
+        const movie = db.prepare('SELECT link, user_rating, notes, notes_public FROM movies WHERE id = ? AND user_id = ?').get(id, req.user.id);
+        if (movie && movie.link && (movie.user_rating !== null || movie.notes)) {
+            db.prepare(`
+                INSERT INTO user_movie_history (user_id, movie_link, user_rating, notes, notes_public, updated_at)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(user_id, movie_link) DO UPDATE SET
+                    user_rating = COALESCE(excluded.user_rating, user_movie_history.user_rating),
+                    notes = COALESCE(excluded.notes, user_movie_history.notes),
+                    notes_public = excluded.notes_public,
+                    updated_at = CURRENT_TIMESTAMP
+            `).run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public);
+        }
+        const result = db.prepare('DELETE FROM movies WHERE id = ? AND user_id = ?').run(id, req.user.id);
         if (result.changes === 0) return res.status(404).json({ error: 'Movie not found or unauthorized' });
         res.json({ success: true });
     } catch (error) {
@@ -546,19 +599,42 @@ app.delete('/api/trash/:id', authenticateToken, (req, res) => {
     }
 });
 
-// EMPTY TRASH / Bulk Permanent Delete
+// EMPTY TRASH / Bulk Permanent Delete — backfills history first
 app.delete('/api/trash', authenticateToken, (req, res) => {
     try {
         const ids = req.body?.ids;
+        const backfillStmt = db.prepare(`
+            INSERT INTO user_movie_history (user_id, movie_link, user_rating, notes, notes_public, updated_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(user_id, movie_link) DO UPDATE SET
+                user_rating = COALESCE(excluded.user_rating, user_movie_history.user_rating),
+                notes = COALESCE(excluded.notes, user_movie_history.notes),
+                notes_public = excluded.notes_public,
+                updated_at = CURRENT_TIMESTAMP
+        `);
         if (ids && Array.isArray(ids)) {
-            const stmt = db.prepare('DELETE FROM movies WHERE id = ? AND user_id = ?');
             const transaction = db.transaction((ids) => {
-                for (const id of ids) stmt.run(id, req.user.id);
+                for (const id of ids) {
+                    const movie = db.prepare('SELECT link, user_rating, notes, notes_public FROM movies WHERE id = ? AND user_id = ?').get(id, req.user.id);
+                    if (movie && movie.link && (movie.user_rating !== null || movie.notes)) {
+                        backfillStmt.run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public);
+                    }
+                    db.prepare('DELETE FROM movies WHERE id = ? AND user_id = ?').run(id, req.user.id);
+                }
             });
             transaction(ids);
         } else {
-            const stmt = db.prepare('DELETE FROM movies WHERE deleted_at IS NOT NULL AND user_id = ?');
-            stmt.run(req.user.id);
+            // Empty all trash — backfill all
+            const trashedMovies = db.prepare('SELECT link, user_rating, notes, notes_public FROM movies WHERE deleted_at IS NOT NULL AND user_id = ?').all(req.user.id);
+            const transaction = db.transaction(() => {
+                for (const movie of trashedMovies) {
+                    if (movie.link && (movie.user_rating !== null || movie.notes)) {
+                        backfillStmt.run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public);
+                    }
+                }
+                db.prepare('DELETE FROM movies WHERE deleted_at IS NOT NULL AND user_id = ?').run(req.user.id);
+            });
+            transaction();
         }
         res.json({ success: true });
     } catch (error) {
@@ -683,9 +759,16 @@ app.get('/api/collections/:id', (req, res) => {
 
         const moviesStmt = db.prepare(`
             SELECT m.*,
-                   (SELECT ROUND(AVG(m2.user_rating), 1) 
-                    FROM movies m2 
-                    WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id) AS community_rating
+                   (
+                     SELECT ROUND(AVG(r), 1) FROM (
+                       SELECT m2.user_rating AS r FROM movies m2
+                         WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                       UNION ALL
+                       SELECT h.user_rating AS r FROM user_movie_history h
+                         WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                         AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                     )
+                   ) AS community_rating
             FROM movies m
             JOIN collection_movies cm ON m.id = cm.movie_id
             WHERE cm.collection_id = ? AND m.deleted_at IS NULL
