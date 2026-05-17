@@ -38,6 +38,14 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
         }
     }, []);
 
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
+
     // Autosaved toast fade timer
     useEffect(() => {
         if (savedToastVisible) {
@@ -113,7 +121,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
         setNotesFeedback({ type: '', message: '' });
         try {
             const updates = { 
-                notes, 
+                notes: notes.trim() === '' ? null : notes, 
                 notes_public: isPublic
             };
             if (movie.status !== 'watched') {

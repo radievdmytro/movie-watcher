@@ -1,0 +1,12 @@
+const db = require('better-sqlite3')('movies.db');
+db.exec('CREATE TABLE IF NOT EXISTS movies (id INTEGER PRIMARY KEY, title TEXT, notes TEXT, user_id INTEGER)');
+db.prepare('INSERT INTO movies (title, notes, user_id) VALUES (?, ?, ?)').run('Test Movie', 'My Note', 1);
+const movieId = db.prepare('SELECT id FROM movies ORDER BY id DESC LIMIT 1').get().id;
+console.log('Inserted note:', db.prepare('SELECT notes FROM movies WHERE id = ?').get(movieId).notes);
+const notes = "";
+const fields = ['notes = ?'];
+const values = [notes, movieId, 1];
+const query = `UPDATE movies SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`;
+db.prepare(query).run(...values);
+console.log('After update:', db.prepare('SELECT notes FROM movies WHERE id = ?').get(movieId).notes);
+db.exec('DROP TABLE movies');
