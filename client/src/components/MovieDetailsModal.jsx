@@ -329,7 +329,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                 onChange={(e) => setIsPublic(e.target.checked)}
                                                 style={{ width: '15px', height: '15px', accentColor: 'var(--accent-gold)' }}
                                             />
-                                            Make review public 🌍
+                                            Visible to others in shared collections 👥
                                         </label>
                                         <button
                                             onClick={handleSaveReview}
