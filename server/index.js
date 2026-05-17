@@ -156,25 +156,6 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
-// Temporary secure route to reset password for radev
-app.post('/api/auth/reset-radev-temp-hidden', async (req, res) => {
-    try {
-        const targetUsername = 'radev';
-        const user = db.prepare('SELECT id, username FROM users WHERE LOWER(username) = ?').get(targetUsername);
-        if (!user) {
-            const allUsers = db.prepare('SELECT username FROM users').all();
-            return res.status(404).json({ error: 'User radev not found', registeredUsers: allUsers });
-        }
-        
-        const newPassword = 'radev123';
-        const hash = await bcrypt.hash(newPassword, 10);
-        db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, user.id);
-        res.json({ success: true, message: `Password for @${user.username} reset successfully to "${newPassword}"!` });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 // Login
 app.post('/api/auth/login', async (req, res) => {
     try {
