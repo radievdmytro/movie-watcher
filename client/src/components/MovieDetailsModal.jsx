@@ -371,7 +371,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                     <button
                                                         key={starValue}
                                                         type="button"
-                                                        onClick={() => handleRatingChange(starValue)}
+                                                        onClick={() => handleRatingChange(starValue === userRating ? 0 : starValue)}
                                                         onMouseEnter={() => setHoverRating(starValue)}
                                                         onMouseLeave={() => setHoverRating(0)}
                                                         style={{
@@ -393,6 +393,26 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             }}>
                                                 {userRating ? `${userRating} / 10` : 'Unrated'}
                                             </span>
+
+                                            {userRating > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRatingChange(0)}
+                                                    title="Clear rating"
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.07)',
+                                                        border: '1px solid rgba(255,255,255,0.12)',
+                                                        borderRadius: '50%',
+                                                        width: '22px', height: '22px',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        cursor: 'pointer', color: '#888', fontSize: '0.7rem',
+                                                        padding: 0, transition: 'all 0.15s',
+                                                        flexShrink: 0
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(207,102,121,0.25)'; e.currentTarget.style.color = 'var(--danger)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#888'; }}
+                                                >✕</button>
+                                            )}
                                             
                                             <span style={{
                                                 marginLeft: '12px', fontSize: '0.75rem', color: '#03dac6',
