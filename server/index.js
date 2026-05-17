@@ -613,6 +613,121 @@ app.delete('/api/collections/:id/movies/:movieId', authenticateToken, (req, res)
     }
 });
 
+// POST share collection with another user by username
+app.post('/api/collections/:id/share', authenticateToken, (req, res) => {
+    try {
+        const { id } = req.params;
+        const { username } = req.body;
+
+        if (!username) return res.status(400).json({ error: 'Username is required' });
+
+        const recipientUser = username.trim().toLowerCase();
+        const recipient = db.prepare('SELECT id FROM users WHERE username = ?').get(recipientUser);
+        if (!recipient) return res.status(404).json({ error: `User "${username}" not found` });
+
+        if (recipient.id === req.user.id) {
+            return res.status(400).json({ error: 'You cannot share a collection with yourself' });
+        }
+
+        // Verify sender owns the collection
+        const collection = db.prepare('SELECT id FROM collections WHERE id = ? AND user_id = ?').get(id, req.user.id);
+        if (!collection) return res.status(403).json({ error: 'Collection not found or access denied' });
+
+        // Check if already shared
+        const existingShare = db.prepare('SELECT 1 FROM shared_collections WHERE collection_id = ? AND recipient_id = ?').get(id, recipient.id);
+        if (existingShare) {
+            return res.status(409).json({ error: `Collection is already shared with ${username}` });
+        }
+
+        db.prepare('INSERT INTO shared_collections (collection_id, sender_id, recipient_id) VALUES (?, ?, ?)').run(id, req.user.id, recipient.id);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET collections shared with me
+app.get('/api/collections-shared-with-me', authenticateToken, (req, res) => {
+    try {
+        const stmt = db.prepare(`
+            SELECT c.*, u.username as sender_username, COUNT(cm.movie_id) as movie_count 
+            FROM collections c 
+            JOIN shared_collections sc ON c.id = sc.collection_id 
+            JOIN users u ON sc.sender_id = u.id 
+            LEFT JOIN collection_movies cm ON c.id = cm.collection_id 
+            WHERE sc.recipient_id = ?
+            GROUP BY c.id
+            ORDER BY sc.created_at DESC
+        `);
+        const collections = stmt.all(req.user.id);
+        res.json(collections);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST clone collection (save a copy to own collections)
+app.post('/api/collections/:id/clone', authenticateToken, (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Get collection
+        const originalCollection = db.prepare('SELECT * FROM collections WHERE id = ?').get(id);
+        if (!originalCollection) return res.status(404).json({ error: 'Collection not found' });
+
+        // Get all active movies from that collection
+        const originalMovies = db.prepare(`
+            SELECT m.* FROM movies m
+            JOIN collection_movies cm ON m.id = cm.movie_id
+            WHERE cm.collection_id = ? AND m.deleted_at IS NULL
+        `).all(id);
+
+        const insertColl = db.prepare('INSERT INTO collections (title, description, user_id) VALUES (?, ?, ?)');
+        const insertMovie = db.prepare(`
+            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, user_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        const checkMovie = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
+        const restoreMovie = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?');
+        const insertCollMovie = db.prepare('INSERT OR IGNORE INTO collection_movies (collection_id, movie_id) VALUES (?, ?)');
+
+        const runCloneTransaction = db.transaction(() => {
+            // Create collection copy
+            const title = `Copy of ${originalCollection.title}`;
+            const collInfo = insertColl.run(title, originalCollection.description || '', req.user.id);
+            const newCollectionId = collInfo.lastInsertRowid;
+
+            for (const m of originalMovies) {
+                let targetMovieId;
+                // Check if recipient already has this movie by link
+                const existing = checkMovie.get(m.link, req.user.id);
+                if (existing) {
+                    if (existing.deleted_at) {
+                        restoreMovie.run(existing.id);
+                    }
+                    targetMovieId = existing.id;
+                } else {
+                    // Create movie copy for recipient
+                    const movieInfo = insertMovie.run(
+                        m.title, m.original_title, m.year, m.link, m.rating,
+                        m.description, m.poster_url, m.genres, m.actors, m.director, m.writers,
+                        m.type || 'movie', req.user.id
+                    );
+                    targetMovieId = movieInfo.lastInsertRowid;
+                }
+                // Add to new collection
+                insertCollMovie.run(newCollectionId, targetMovieId);
+            }
+            return newCollectionId;
+        });
+
+        const newCollectionId = runCloneTransaction();
+        res.json({ id: newCollectionId, success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ==========================================
 // LIFECYCLE & SERVER START
 // ==========================================

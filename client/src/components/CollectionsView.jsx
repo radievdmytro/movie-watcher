@@ -2,12 +2,22 @@ import { useState, useEffect } from 'react';
 import MovieDetailsModal from './MovieDetailsModal';
 
 function CollectionsView({ onBack }) {
+    const [activeTab, setActiveTab] = useState('mine'); // 'mine' | 'shared'
     const [collections, setCollections] = useState([]);
+    const [sharedCollections, setSharedCollections] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [sharedLoading, setSharedLoading] = useState(false);
     const [expandedCollectionId, setExpandedCollectionId] = useState(null);
     const [expandedCollection, setExpandedCollection] = useState(null);
     const [selectedMovie, setSelectedMovie] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
+
+    // Share Modal State
+    const [sharingCollection, setSharingCollection] = useState(null);
+    const [shareRecipient, setShareRecipient] = useState('');
+    const [shareError, setShareError] = useState('');
+    const [shareSuccess, setShareSuccess] = useState('');
+    const [sharingLoading, setSharingLoading] = useState(false);
 
     const fetchCollections = async () => {
         setLoading(true);
@@ -22,8 +32,22 @@ function CollectionsView({ onBack }) {
         }
     };
 
+    const fetchSharedCollections = async () => {
+        setSharedLoading(true);
+        try {
+            const res = await fetch('/api/collections-shared-with-me');
+            const data = await res.json();
+            setSharedCollections(data);
+        } catch (err) {
+            console.error('Failed to fetch shared collections:', err);
+        } finally {
+            setSharedLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchCollections();
+        fetchSharedCollections();
     }, []);
 
     const fetchCollectionDetails = async (id) => {
@@ -63,7 +87,6 @@ function CollectionsView({ onBack }) {
             await fetch(`/api/collections/${collectionId}/movies/${movieId}`, {
                 method: 'DELETE'
             });
-            // Refresh details and collection count
             fetchCollectionDetails(collectionId);
             fetchCollections();
         } catch (err) {
@@ -73,7 +96,6 @@ function CollectionsView({ onBack }) {
 
     const handleShare = (id, e) => {
         e.stopPropagation();
-        // Construct the shareable link pointing to current host with ?collection=id query param
         const shareUrl = `${window.location.origin}/?collection=${id}`;
 
         const copyText = (text) => {
@@ -106,6 +128,54 @@ function CollectionsView({ onBack }) {
             });
     };
 
+    const handleSendShare = async (e) => {
+        e.preventDefault();
+        setShareError('');
+        setShareSuccess('');
+        setSharingLoading(true);
+
+        try {
+            const res = await fetch(`/api/collections/${sharingCollection.id}/share`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: shareRecipient })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to share collection');
+
+            setShareSuccess(`Collection successfully sent to @${shareRecipient}!`);
+            fetchCollections();
+            setTimeout(() => {
+                setSharingCollection(null);
+                setShareRecipient('');
+                setShareSuccess('');
+            }, 1800);
+        } catch (err) {
+            setShareError(err.message);
+        } finally {
+            setSharingLoading(false);
+        }
+    };
+
+    const handleCloneCollection = async (id, e) => {
+        e.stopPropagation();
+        if (!confirm('Would you like to save an editable copy of this collection to your library?')) return;
+        try {
+            const res = await fetch(`/api/collections/${id}/clone`, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to clone collection');
+
+            alert('✔ Collection successfully copied to your library!');
+            fetchCollections();
+            setActiveTab('mine');
+        } catch (err) {
+            alert(`Error: ${err.message}`);
+        }
+    };
+
+    const currentCollections = activeTab === 'mine' ? collections : sharedCollections;
+    const currentLoading = activeTab === 'mine' ? loading : sharedLoading;
+
     return (
         <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             {selectedMovie && (
@@ -113,41 +183,141 @@ function CollectionsView({ onBack }) {
                     movie={selectedMovie}
                     onClose={() => setSelectedMovie(null)}
                     onUpdate={() => {
-                        // Refresh details if movie status updated inside collection view
                         if (expandedCollectionId) fetchCollectionDetails(expandedCollectionId);
                     }}
-                    onDelete={() => {}} // Read-only deletion within collection
+                    onDelete={() => {}} 
                     isTrashMode={false}
+                    readOnly={activeTab === 'shared'} // Read-only view for shared lists received from other users
                 />
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <button
-                        onClick={onBack}
-                        className="btn btn-ghost"
-                        style={{ border: '1px solid rgba(255,255,255,0.1)', padding: '8px 15px', borderRadius: '8px' }}
-                    >
-                        ← Back to Library
-                    </button>
-                    <h2 style={{ margin: 0, fontSize: '2rem', color: '#fff' }}>
-                        📁 My Collections
-                    </h2>
+            {/* Direct Share Modal */}
+            {sharingCollection && (
+                <div className="modal-overlay" style={{ zIndex: 1000 }}>
+                    <div className="modal-content glass-panel animate-fade-in" style={{ maxWidth: '420px', padding: '30px' }}>
+                        <h3 style={{ marginTop: 0, color: 'var(--accent-gold)', fontSize: '1.4rem' }}>📨 Send Collection</h3>
+                        <p style={{ color: '#aaa', fontSize: '0.9rem', marginBottom: '20px' }}>
+                            Send <strong>"{sharingCollection.title}"</strong> directly to another user inside MovieWatcher. It will instantly appear in their "Shared with me" tab!
+                        </p>
+
+                        <form onSubmit={handleSendShare} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            {shareError && <div style={{ color: '#f87171', fontSize: '0.85rem', background: 'rgba(239,68,68,0.1)', padding: '10px', borderRadius: '6px' }}>⚠️ {shareError}</div>}
+                            {shareSuccess && <div style={{ color: '#4ade80', fontSize: '0.85rem', background: 'rgba(74,222,128,0.1)', padding: '10px', borderRadius: '6px' }}>✔ {shareSuccess}</div>}
+
+                            <div className="input-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label htmlFor="recipient" style={{ fontSize: '0.8rem', color: '#aaa', fontWeight: 500 }}>Recipient Username</label>
+                                <input
+                                    type="text"
+                                    id="recipient"
+                                    value={shareRecipient}
+                                    onChange={(e) => setShareRecipient(e.target.value)}
+                                    placeholder="Enter username"
+                                    required
+                                    disabled={sharingLoading || shareSuccess}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '8px',
+                                        padding: '12px 14px',
+                                        color: '#fff',
+                                        outline: 'none',
+                                        fontSize: '0.95rem'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => { setSharingCollection(null); setShareRecipient(''); setShareError(''); setShareSuccess(''); }}
+                                    className="btn btn-ghost"
+                                    style={{ flex: 1 }}
+                                >
+                                    Cancel
+                                </button>
+                                {!shareSuccess && (
+                                    <button
+                                        type="submit"
+                                        className="btn btn-gold"
+                                        style={{ flex: 1 }}
+                                        disabled={sharingLoading}
+                                    >
+                                        {sharingLoading ? 'Sending...' : 'Send'}
+                                    </button>
+                                )}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Header section with tabs */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '30px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <button
+                            onClick={onBack}
+                            className="btn btn-ghost"
+                            style={{ border: '1px solid rgba(255,255,255,0.1)', padding: '8px 15px', borderRadius: '8px' }}
+                        >
+                            ← Back to Library
+                        </button>
+                        <h2 style={{ margin: 0, fontSize: '2rem', color: '#fff' }}>
+                            📁 Collections
+                        </h2>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="glass-panel" style={{ display: 'inline-flex', padding: '4px', borderRadius: '10px', gap: '4px' }}>
+                        <button
+                            onClick={() => { setActiveTab('mine'); setExpandedCollectionId(null); }}
+                            className="btn"
+                            style={{
+                                background: activeTab === 'mine' ? 'var(--accent-gold)' : 'transparent',
+                                color: activeTab === 'mine' ? '#000' : '#888',
+                                borderRadius: '8px',
+                                padding: '8px 16px',
+                                fontWeight: 600,
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            My Collections
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('shared'); setExpandedCollectionId(null); }}
+                            className="btn"
+                            style={{
+                                background: activeTab === 'shared' ? 'var(--accent-gold)' : 'transparent',
+                                color: activeTab === 'shared' ? '#000' : '#888',
+                                borderRadius: '8px',
+                                padding: '8px 16px',
+                                fontWeight: 600,
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            Shared with me ({sharedCollections.length})
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {loading ? (
+            {currentLoading ? (
                 <div style={{ textAlign: 'center', padding: '50px', color: '#888' }}>Loading collections...</div>
-            ) : collections.length === 0 ? (
+            ) : currentCollections.length === 0 ? (
                 <div className="glass-panel" style={{ textAlign: 'center', padding: '50px', color: '#888' }}>
-                    <p style={{ fontSize: '1.2rem', margin: '0 0 10px 0' }}>No collections yet.</p>
+                    <p style={{ fontSize: '1.2rem', margin: '0 0 10px 0' }}>
+                        {activeTab === 'mine' ? 'No collections yet.' : 'No collections shared with you yet.'}
+                    </p>
                     <p style={{ fontSize: '0.9rem', color: '#555' }}>
-                        Select movies in the Library view and click "Add to Collection" to create one.
+                        {activeTab === 'mine' 
+                            ? 'Select movies in the Library view and click "Add to Collection" to create one.'
+                            : 'When other users share a collection with your username, it will appear here!'
+                        }
                     </p>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-                    {collections.map(c => {
+                    {currentCollections.map(c => {
                         const isExpanded = expandedCollectionId === c.id;
                         return (
                             <div
@@ -177,12 +347,19 @@ function CollectionsView({ onBack }) {
                                         <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
                                             {c.description || 'No description provided.'}
                                         </p>
-                                        <span style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px', display: 'inline-block' }}>
-                                            Created: {new Date(c.created_at).toLocaleDateString()}
-                                        </span>
+                                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginTop: '6px' }}>
+                                            <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                                                Created: {new Date(c.created_at).toLocaleDateString()}
+                                            </span>
+                                            {activeTab === 'shared' && (
+                                                <span style={{ fontSize: '0.8rem', color: 'var(--accent-gold)', fontWeight: 500 }}>
+                                                    👤 Sent by @{c.sender_username}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }} onClick={e => e.stopPropagation()}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} onClick={e => e.stopPropagation()}>
                                         <span style={{
                                             background: 'rgba(212, 175, 55, 0.1)', color: 'var(--accent-gold)',
                                             padding: '4px 10px', borderRadius: '15px', fontSize: '0.8rem', fontWeight: 'bold'
@@ -190,27 +367,51 @@ function CollectionsView({ onBack }) {
                                             {c.movie_count} Movie(s)
                                         </span>
 
-                                        <button
-                                            onClick={(e) => handleShare(c.id, e)}
-                                            className="btn"
-                                            style={{
-                                                background: copiedId === c.id ? '#03dac6' : 'rgba(255,255,255,0.05)',
-                                                color: copiedId === c.id ? '#000' : '#fff',
-                                                border: '1px solid rgba(255,255,255,0.1)',
-                                                padding: '6px 12px', fontSize: '0.8rem', display: 'flex', gap: '5px', alignItems: 'center'
-                                            }}
-                                        >
-                                            {copiedId === c.id ? '✔ Copied!' : '🔗 Share Link'}
-                                        </button>
+                                        {activeTab === 'mine' ? (
+                                            <>
+                                                <button
+                                                    onClick={(e) => handleShare(c.id, e)}
+                                                    className="btn"
+                                                    style={{
+                                                        background: copiedId === c.id ? '#03dac6' : 'rgba(255,255,255,0.05)',
+                                                        color: copiedId === c.id ? '#000' : '#fff',
+                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                        padding: '6px 12px', fontSize: '0.8rem', display: 'flex', gap: '5px', alignItems: 'center'
+                                                    }}
+                                                >
+                                                    {copiedId === c.id ? '✔ Copied!' : '🔗 Copy Link'}
+                                                </button>
 
-                                        <button
-                                            onClick={(e) => handleDeleteCollection(c.id, e)}
-                                            className="btn btn-ghost"
-                                            style={{ color: 'var(--danger)', padding: '6px', fontSize: '1rem' }}
-                                            title="Delete Collection"
-                                        >
-                                            🗑
-                                        </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setSharingCollection(c); }}
+                                                    className="btn btn-gold"
+                                                    style={{
+                                                        padding: '6px 12px', fontSize: '0.8rem', display: 'flex', gap: '5px', alignItems: 'center'
+                                                    }}
+                                                >
+                                                    📨 Send to User
+                                                </button>
+
+                                                <button
+                                                    onClick={(e) => handleDeleteCollection(c.id, e)}
+                                                    className="btn btn-ghost"
+                                                    style={{ color: 'var(--danger)', padding: '6px', fontSize: '1rem' }}
+                                                    title="Delete Collection"
+                                                >
+                                                    🗑
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                onClick={(e) => handleCloneCollection(c.id, e)}
+                                                className="btn btn-gold"
+                                                style={{
+                                                    padding: '6px 12px', fontSize: '0.8rem', display: 'flex', gap: '5px', alignItems: 'center'
+                                                }}
+                                            >
+                                                📥 Save to My Library
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
 
@@ -224,7 +425,7 @@ function CollectionsView({ onBack }) {
                                             <div style={{ textAlign: 'center', color: '#555' }}>Loading movies...</div>
                                         ) : expandedCollection.movies.length === 0 ? (
                                             <div style={{ textAlign: 'center', color: '#555', fontStyle: 'italic' }}>
-                                                This collection has no movies. Go to Library, select movies, and add them!
+                                                This collection has no movies.
                                             </div>
                                         ) : (
                                             <div style={{
@@ -248,20 +449,24 @@ function CollectionsView({ onBack }) {
                                                             alt={movie.title}
                                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                         />
-                                                        {/* Delete Movie from Collection button */}
-                                                        <button
-                                                            onClick={(e) => handleRemoveMovie(c.id, movie.id, e)}
-                                                            style={{
-                                                                position: 'absolute', top: '8px', right: '8px',
-                                                                background: 'rgba(0, 0, 0, 0.7)', color: 'var(--danger)',
-                                                                border: 'none', borderRadius: '50%', width: '26px', height: '26px',
-                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                cursor: 'pointer', zIndex: 10, fontSize: '0.8rem'
-                                                            }}
-                                                            title="Remove from Collection"
-                                                        >
-                                                            &times;
-                                                        </button>
+                                                        
+                                                        {/* Delete Movie from Collection button (Only if it's my collection!) */}
+                                                        {activeTab === 'mine' && (
+                                                            <button
+                                                                onClick={(e) => handleRemoveMovie(c.id, movie.id, e)}
+                                                                style={{
+                                                                    position: 'absolute', top: '8px', right: '8px',
+                                                                    background: 'rgba(0, 0, 0, 0.7)', color: 'var(--danger)',
+                                                                    border: 'none', borderRadius: '50%', width: '26px', height: '26px',
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                    cursor: 'pointer', zIndex: 10, fontSize: '0.8rem'
+                                                                }}
+                                                                title="Remove from Collection"
+                                                            >
+                                                                &times;
+                                                            </button>
+                                                        )}
+
                                                         {/* Bottom title info */}
                                                         <div style={{
                                                             position: 'absolute', bottom: 0, left: 0, width: '100%',

@@ -61,6 +61,20 @@ const initDb = () => {
   `;
   db.exec(createCollectionMoviesTableQuery);
 
+  // Create Shared Collections Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS shared_collections (
+      collection_id INTEGER,
+      sender_id INTEGER,
+      recipient_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (collection_id, recipient_id),
+      FOREIGN KEY (collection_id) REFERENCES collections (id) ON DELETE CASCADE,
+      FOREIGN KEY (sender_id) REFERENCES users (id) ON DELETE CASCADE,
+      FOREIGN KEY (recipient_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  `);
+
   // Migration for user_id in movies
   try {
     db.exec("ALTER TABLE movies ADD COLUMN user_id INTEGER");
