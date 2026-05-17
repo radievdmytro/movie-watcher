@@ -729,6 +729,68 @@ app.post('/api/collections/:id/clone', authenticateToken, (req, res) => {
 });
 
 // ==========================================
+// ADMIN DASHBOARD ENDPOINTS
+// ==========================================
+
+function requireAdmin(req, res, next) {
+    if (req.user && req.user.username.toLowerCase() === 'radev') {
+        next();
+    } else {
+        res.status(403).json({ error: 'Access denied: Admin privileges required' });
+    }
+}
+
+// GET Admin Stats
+app.get('/api/admin/stats', authenticateToken, requireAdmin, (req, res) => {
+    try {
+        const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+        const totalMovies = db.prepare('SELECT COUNT(*) as count FROM movies WHERE deleted_at IS NULL').get().count;
+        const totalCollections = db.prepare('SELECT COUNT(*) as count FROM collections').get().count;
+        res.json({ totalUsers, totalMovies, totalCollections });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET Admin Users list
+app.get('/api/admin/users', authenticateToken, requireAdmin, (req, res) => {
+    try {
+        const users = db.prepare(`
+            SELECT 
+                u.id, 
+                u.username, 
+                u.created_at,
+                (SELECT COUNT(*) FROM movies m WHERE m.user_id = u.id AND m.deleted_at IS NULL) as movie_count,
+                (SELECT COUNT(*) FROM collections c WHERE c.user_id = u.id) as collection_count
+            FROM users u
+            ORDER BY u.created_at DESC
+        `).all();
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET detailed user data for Admin
+app.get('/api/admin/users/:userId/data', authenticateToken, requireAdmin, (req, res) => {
+    try {
+        const { userId } = req.params;
+        const movies = db.prepare('SELECT * FROM movies WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC').all(userId);
+        const collections = db.prepare(`
+            SELECT c.*, COUNT(cm.movie_id) as movie_count 
+            FROM collections c 
+            LEFT JOIN collection_movies cm ON c.id = cm.collection_id 
+            WHERE c.user_id = ?
+            GROUP BY c.id
+            ORDER BY c.created_at DESC
+        `).all(userId);
+        res.json({ movies, collections });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ==========================================
 // LIFECYCLE & SERVER START
 // ==========================================
 

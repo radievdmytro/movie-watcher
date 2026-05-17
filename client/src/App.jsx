@@ -8,13 +8,14 @@ import AddToCollectionModal from './components/AddToCollectionModal';
 import CollectionsView from './components/CollectionsView';
 import SharedCollectionView from './components/SharedCollectionView';
 import AuthScreen from './components/AuthScreen';
+import AdminDashboard from './components/AdminDashboard';
 
 function App() {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
     const [checkingAuth, setCheckingAuth] = useState(true);
-    const [currentView, setCurrentView] = useState('library'); // 'library' | 'trash' | 'collections' | 'shared_collection'
+    const [currentView, setCurrentView] = useState('library'); // 'library' | 'trash' | 'collections' | 'shared_collection' | 'admin'
     const [selectedIds, setSelectedIds] = useState([]);
     const [selectionAnchor, setSelectionAnchor] = useState(null);
     const [deletingIds, setDeletingIds] = useState([]); // Track items being deleted for animation
@@ -262,6 +263,21 @@ function App() {
                                 >
                                     📁 Collections
                                 </button>
+                                {user.username.toLowerCase() === 'radev' && (
+                                    <button
+                                        onClick={() => setCurrentView('admin')}
+                                        className="btn"
+                                        style={{
+                                            background: currentView === 'admin' ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                            color: currentView === 'admin' ? '#fff' : 'var(--accent-gold)',
+                                            border: '1px solid rgba(212, 175, 55, 0.3)',
+                                            borderRadius: '8px',
+                                            fontWeight: 'bold'
+                                        }}
+                                    >
+                                        👑 Admin Panel
+                                    </button>
+                                )}
                                 {(currentView === 'library' || currentView === 'trash') && (
                                     <div style={{ fontSize: '0.9rem', color: '#888', marginLeft: '5px' }}>
                                         {movies.length} {currentView === 'library' ? 'Movies' : 'Deleted Items'}
@@ -311,6 +327,10 @@ function App() {
                     />
                 ) : !user ? (
                     <AuthScreen onAuthSuccess={setUser} />
+                ) : currentView === 'admin' ? (
+                    <AdminDashboard
+                        onBack={() => setCurrentView('library')}
+                    />
                 ) : currentView === 'collections' ? (
                     <CollectionsView
                         onBack={() => setCurrentView('library')}
