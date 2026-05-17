@@ -786,7 +786,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                         if (movie.status !== 'watched') {
                                                             await onUpdate(movie.id, { status: 'watched' });
                                                             setOpenWithWatchedPrompt(true);
-                                                            setSelectedMovie(movie);
+                                                            setSelectedMovie({ ...movie, status: 'watched' });
                                                         } else {
                                                             await onUpdate(movie.id, { status: 'want_to_watch' });
                                                         }
@@ -932,7 +932,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                     if (movie.status !== 'watched') {
                                                         await onUpdate(movie.id, { status: 'watched' });
                                                         setOpenWithWatchedPrompt(true);
-                                                        setSelectedMovie(movie);
+                                                        setSelectedMovie({ ...movie, status: 'watched' });
                                                     } else {
                                                         await onUpdate(movie.id, { status: 'want_to_watch' });
                                                     }
