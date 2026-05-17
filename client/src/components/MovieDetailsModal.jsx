@@ -54,7 +54,27 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
         if (e.target === e.currentTarget) onClose();
     };
 
-    const handleSaveNotes = async () => {
+    const handleRatingChange = async (ratingVal) => {
+        setUserRating(ratingVal);
+        try {
+            const res = await fetch(`/api/movies/${movie.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    user_rating: ratingVal || null
+                })
+            });
+            if (res.ok) {
+                if (onUpdate) onUpdate(movie.id, { 
+                    user_rating: ratingVal || null
+                });
+            }
+        } catch (e) {
+            console.error('Failed to autosave rating:', e);
+        }
+    };
+
+    const handleSaveReview = async () => {
         setSavingNotes(true);
         try {
             const res = await fetch(`/api/movies/${movie.id}`, {
@@ -62,24 +82,22 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     notes, 
-                    notes_public: isPublic,
-                    user_rating: userRating || null
+                    notes_public: isPublic
                 })
             });
             if (res.ok) {
                 if (onUpdate) onUpdate(movie.id, { 
                     notes, 
-                    notes_public: isPublic,
-                    user_rating: userRating || null
+                    notes_public: isPublic
                 });
-                alert('Saved successfully!');
+                alert('Review saved successfully!');
                 setShowWatchedPrompt(false);
             } else {
-                alert('Failed to save.');
+                alert('Failed to save review.');
             }
         } catch (e) {
             console.error(e);
-            alert('Error saving.');
+            alert('Error saving review.');
         } finally {
             setSavingNotes(false);
         }
@@ -340,7 +358,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                     <button
                                                         key={starValue}
                                                         type="button"
-                                                        onClick={() => setUserRating(starValue)}
+                                                        onClick={() => handleRatingChange(starValue)}
                                                         onMouseEnter={() => setHoverRating(starValue)}
                                                         onMouseLeave={() => setHoverRating(0)}
                                                         style={{
@@ -361,12 +379,24 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             }}>
                                                 {userRating ? `${userRating} / 10` : 'Unrated'}
                                             </span>
+                                            {userRating > 0 && (
+                                                <span style={{
+                                                    marginLeft: '12px', fontSize: '0.75rem', color: '#03dac6',
+                                                    opacity: 0.9, fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '4px'
+                                                }}>
+                                                    ✔ Saved automatically!
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <h4 style={{ color: '#fff', marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                            📝 Personal Review & Notes (Private by default)
+                                    <div style={{
+                                         borderTop: '1px solid rgba(255,255,255,0.08)',
+                                         paddingTop: '20px',
+                                         marginTop: '25px'
+                                     }}>
+                                         <h4 style={{ color: '#fff', marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                             📝 Personal Review & Notes (Private by default)
                                         </h4>
                                         <textarea
                                             value={notes}
@@ -388,11 +418,11 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                     onChange={(e) => setIsPublic(e.target.checked)}
                                                     style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }}
                                                 />
-                                                Make this note & rating public in shared collections 🌍
+                                                Make my review public in shared collections 🌍
                                             </label>
 
                                             <button
-                                                onClick={handleSaveNotes}
+                                                onClick={handleSaveReview}
                                                 disabled={savingNotes}
                                                 className="btn"
                                                 style={{
