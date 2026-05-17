@@ -99,6 +99,60 @@ const initDb = () => {
   try {
     db.exec("ALTER TABLE movies ADD COLUMN type TEXT DEFAULT 'movie'");
   } catch (e) { }
+
+  // --- ENTERPRISE DATABASE INTEGRITY AUTO-CLEANUP ---
+  console.log('🔄 Running database relation integrity checks...');
+  try {
+    // 1. Temporarily disable foreign keys to avoid cascade errors during cleanup
+    db.exec('PRAGMA foreign_keys = OFF;');
+
+    // 2. Clean up orphaned movies referencing non-existent users
+    const orphanedMovies = db.prepare(`
+      DELETE FROM movies 
+      WHERE user_id IS NOT NULL 
+        AND user_id NOT IN (SELECT id FROM users)
+    `).run();
+    if (orphanedMovies.changes > 0) {
+      console.log(`🧹 Cleaned up ${orphanedMovies.changes} orphaned movies referencing missing users.`);
+    }
+
+    // 3. Clean up orphaned collections referencing non-existent users
+    const orphanedColls = db.prepare(`
+      DELETE FROM collections 
+      WHERE user_id IS NOT NULL 
+        AND user_id NOT IN (SELECT id FROM users)
+    `).run();
+    if (orphanedColls.changes > 0) {
+      console.log(`🧹 Cleaned up ${orphanedColls.changes} orphaned collections referencing missing users.`);
+    }
+
+    // 4. Clean up orphaned collection-to-movie mapping relationships
+    const orphanedCollMovies = db.prepare(`
+      DELETE FROM collection_movies 
+      WHERE collection_id NOT IN (SELECT id FROM collections)
+         OR movie_id NOT IN (SELECT id FROM movies)
+    `).run();
+    if (orphanedCollMovies.changes > 0) {
+      console.log(`🧹 Cleaned up ${orphanedCollMovies.changes} orphaned movie-collection associations.`);
+    }
+
+    // 5. Clean up orphaned shared collections
+    const orphanedShared = db.prepare(`
+      DELETE FROM shared_collections 
+      WHERE collection_id NOT IN (SELECT id FROM collections)
+         OR sender_id NOT IN (SELECT id FROM users)
+         OR recipient_id NOT IN (SELECT id FROM users)
+    `).run();
+    if (orphanedShared.changes > 0) {
+      console.log(`🧹 Cleaned up ${orphanedShared.changes} orphaned shared collection entries.`);
+    }
+
+    // 6. Permanently enable foreign keys for perfect future cascading and reference integrity
+    db.exec('PRAGMA foreign_keys = ON;');
+    console.log('🟢 SQLite relation integrity verified & FOREIGN KEY constraints enabled.');
+  } catch (err) {
+    console.error('❌ Database integrity cleanup failed:', err);
+  }
 };
 
 module.exports = { db, initDb };
