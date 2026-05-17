@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const { initDb, db } = require('./db');
+const fs = require('fs');
+const path = require('path');
 const { searchMovies, getMovieDetails, getCategoryMovies } = require('./scraper');
 
 const app = express();
@@ -9,17 +10,96 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
-initDb();
+// Cloud Sync Configuration (Supabase)
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const dbPath = path.join(__dirname, 'movies.db');
 
-// Auto-cleanup trash older than 30 days
-try {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const res = db.prepare('DELETE FROM movies WHERE deleted_at IS NOT NULL AND deleted_at < ?').run(thirtyDaysAgo.toISOString());
-    if (res.changes > 0) console.log(`Cleaned up ${res.changes} old items from trash.`);
-} catch (err) {
-    console.error('Cleanup error:', err);
+let db = null;
+let initDb = null;
+
+// Throttled / Debounced Backup Uploader
+let uploadTimeout = null;
+let isUploading = false;
+
+async function uploadBackup() {
+    if (!supabaseUrl || !supabaseKey) return;
+    if (uploadTimeout) clearTimeout(uploadTimeout);
+    uploadTimeout = setTimeout(async () => {
+        if (isUploading) {
+            uploadBackup(); // Retry if currently busy
+            return;
+        }
+        isUploading = true;
+        console.log('☁️ Uploading database backup to Supabase...');
+        try {
+            const fileBuffer = fs.readFileSync(dbPath);
+            const res = await fetch(`${supabaseUrl}/storage/v1/object/backups/movies.db`, {
+                method: 'POST',
+                body: fileBuffer,
+                headers: {
+                    'Authorization': `Bearer ${supabaseKey}`,
+                    'Content-Type': 'application/x-sqlite3',
+                    'x-upsert': 'true'
+                }
+            });
+            if (res.ok) {
+                console.log('☁️ Database backup successfully uploaded!');
+            } else {
+                console.error(`☁️ Supabase upload failed with status ${res.status}:`, await res.text());
+            }
+        } catch (err) {
+            console.error('☁️ Error uploading database backup:', err);
+        } finally {
+            isUploading = false;
+        }
+    }, 5000); // 5 seconds debounce
 }
+
+// Auto-sync middleware for successful database mutation requests
+app.use((req, res, next) => {
+    const isWrite = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method);
+    if (isWrite) {
+        res.on('finish', () => {
+            if (res.statusCode >= 200 && res.statusCode < 400) {
+                uploadBackup();
+            }
+        });
+    }
+    next();
+});
+
+// Graceful shutdown sync
+async function shutdownGracefully() {
+    console.log('☁️ Shutting down gracefully... Doing final database sync.');
+    if (uploadTimeout) clearTimeout(uploadTimeout);
+    
+    if (supabaseUrl && supabaseKey && fs.existsSync(dbPath)) {
+        try {
+            const fileBuffer = fs.readFileSync(dbPath);
+            const res = await fetch(`${supabaseUrl}/storage/v1/object/backups/movies.db`, {
+                method: 'POST',
+                body: fileBuffer,
+                headers: {
+                    'Authorization': `Bearer ${supabaseKey}`,
+                    'Content-Type': 'application/x-sqlite3',
+                    'x-upsert': 'true'
+                }
+            });
+            if (res.ok) {
+                console.log('☁️ Final database sync successful!');
+            } else {
+                console.error(`☁️ Final database sync failed: ${res.status}`);
+            }
+        } catch (err) {
+            console.error('☁️ Error during final database sync:', err);
+        }
+    }
+    process.exit(0);
+}
+
+process.on('SIGTERM', shutdownGracefully);
+process.on('SIGINT', shutdownGracefully);
 
 const isHdrezkaUrl = (str) => {
     return str.toLowerCase().includes('hdrezka') && (str.startsWith('http://') || str.startsWith('https://'));
@@ -439,7 +519,51 @@ app.delete('/api/collections/:id/movies/:movieId', (req, res) => {
 });
 
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+async function startApp() {
+    // 1. Download database backup on startup if Supabase URL and Key are provided
+    if (supabaseUrl && supabaseKey) {
+        console.log('☁️ Checking for database backup on Supabase...');
+        try {
+            const res = await fetch(`${supabaseUrl}/storage/v1/object/authenticated/backups/movies.db`, {
+                headers: { 'Authorization': `Bearer ${supabaseKey}` }
+            });
+            if (res.status === 200) {
+                const buffer = await res.arrayBuffer();
+                fs.writeFileSync(dbPath, Buffer.from(buffer));
+                console.log('☁️ Database backup successfully downloaded and restored!');
+            } else if (res.status === 404) {
+                console.log('☁️ No backup found in Supabase. A new database will be created.');
+            } else {
+                console.error(`☁️ Supabase download failed with status ${res.status}:`, await res.text());
+            }
+        } catch (err) {
+            console.error('☁️ Error downloading database backup:', err);
+        }
+    } else {
+        console.log('☁️ Supabase credentials not found. Running with local database only.');
+    }
+
+    // 2. Load database module dynamically after backup is ready
+    const dbModule = require('./db');
+    db = dbModule.db;
+    initDb = dbModule.initDb;
+    initDb();
+
+    // 3. Auto-cleanup trash older than 30 days
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const cleanupRes = db.prepare('DELETE FROM movies WHERE deleted_at IS NOT NULL AND deleted_at < ?').run(thirtyDaysAgo.toISOString());
+        if (cleanupRes.changes > 0) console.log(`Cleaned up ${cleanupRes.changes} old items from trash.`);
+    } catch (err) {
+        console.error('Cleanup error:', err);
+    }
+
+    // 4. Start the server
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
+}
+
+startApp();
 
