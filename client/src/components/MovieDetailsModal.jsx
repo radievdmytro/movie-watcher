@@ -520,10 +520,10 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                 })}
                                                 <span style={{
                                                     marginLeft: '15px', fontSize: '1.05rem', fontWeight: 'bold',
-                                                    color: userRating ? 'var(--accent-gold)' : '#666',
+                                                    color: hoverRating ? '#fff' : (userRating ? 'var(--accent-gold)' : '#666'),
                                                     whiteSpace: 'nowrap'
                                                 }}>
-                                                    {userRating ? `${userRating} / 10` : 'Unrated'}
+                                                    {hoverRating ? `${hoverRating} / 10` : (userRating ? `${userRating} / 10` : 'Unrated')}
                                                 </span>
 
                                                 {userRating > 0 && (
