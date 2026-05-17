@@ -258,7 +258,7 @@ function App() {
                                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
                             />
                             <h1 className="gold logo" style={{ margin: 0, fontSize: '1.55rem', letterSpacing: '0.5px' }}>
-                                Radev <span className="gold">Movie Selector</span>
+                                Radev's <span className="gold">Movie Selector</span>
                             </h1>
                         </div>
                         {user && currentView !== 'shared_collection' ? (

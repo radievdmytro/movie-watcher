@@ -56,7 +56,7 @@ function AuthScreen({ onAuthSuccess }) {
                         onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
                     />
                     <h1 className="logo" style={{ margin: 0, fontSize: '2rem' }}>
-                        Radev <span className="gold">Movie Selector</span>
+                        Radev's <span className="gold">Movie Selector</span>
                     </h1>
                     <p className="auth-subtitle" style={{ marginTop: '5px' }}>
                         {isLogin ? 'Log in to manage your private watchlists' : 'Register your free personal account'}
