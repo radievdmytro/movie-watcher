@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 
-function AddToCollectionModal({ movieIds, onClose, onSuccess }) {
+function AddToCollectionModal({ movieIds, movies = [], onClose, onSuccess }) {
     const [collections, setCollections] = useState([]);
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');
@@ -23,6 +23,74 @@ function AddToCollectionModal({ movieIds, onClose, onSuccess }) {
             onClose();
         }
     };
+
+    const predictCollectionMetadata = () => {
+        if (!movies || movies.length === 0) return;
+
+        const years = movies.map(m => parseInt(m.year)).filter(y => !isNaN(y));
+        const minYear = years.length > 0 ? Math.min(...years) : null;
+        const maxYear = years.length > 0 ? Math.max(...years) : null;
+        const yearStr = (minYear && maxYear) ? (minYear === maxYear ? ` (${minYear})` : ` (${minYear}-${maxYear})`) : '';
+
+        const genreCounts = {};
+        movies.forEach(m => {
+            if (m.genres) {
+                const firstGenre = m.genres.split(',')[0].trim();
+                if (firstGenre) {
+                    genreCounts[firstGenre] = (genreCounts[firstGenre] || 0) + 1;
+                }
+            }
+        });
+
+        let topGenre = null;
+        let topGenreCount = 0;
+        for (const [genre, count] of Object.entries(genreCounts)) {
+            if (count > topGenreCount) {
+                topGenreCount = count;
+                topGenre = genre;
+            }
+        }
+
+        let commonActor = null;
+        let commonDirector = null;
+
+        if (movies.length > 1) {
+            let actorIntersections = movies[0].actors ? movies[0].actors.split(',').map(a=>a.trim()) : [];
+            let dirIntersections = movies[0].director ? movies[0].director.split(',').map(a=>a.trim()) : [];
+            
+            for (let i = 1; i < movies.length; i++) {
+                const m = movies[i];
+                const mActors = m.actors ? m.actors.split(',').map(a=>a.trim()) : [];
+                const mDirs = m.director ? m.director.split(',').map(a=>a.trim()) : [];
+                actorIntersections = actorIntersections.filter(a => mActors.includes(a));
+                dirIntersections = dirIntersections.filter(d => mDirs.includes(d));
+            }
+
+            if (actorIntersections.length > 0) commonActor = actorIntersections[0];
+            if (dirIntersections.length > 0) commonDirector = dirIntersections[0];
+        }
+
+        let predictedTitle = '';
+        
+        if (commonDirector) {
+            predictedTitle = `Фильмы от: ${commonDirector}${yearStr}`;
+        } else if (commonActor) {
+            predictedTitle = `Фильмы с: ${commonActor}${yearStr}`;
+        } else if (topGenre && topGenreCount >= Math.max(1, Math.floor(movies.length / 2))) {
+            predictedTitle = `${topGenre}${yearStr}`;
+            predictedTitle = predictedTitle.charAt(0).toUpperCase() + predictedTitle.slice(1);
+        }
+
+        if (predictedTitle && !newTitle) {
+            setNewTitle(predictedTitle);
+        }
+    };
+
+    useEffect(() => {
+        if (showCreateForm) {
+            predictCollectionMetadata();
+        }
+    }, [showCreateForm]);
 
     const handleCreateAndAdd = async (e) => {
         e.preventDefault();

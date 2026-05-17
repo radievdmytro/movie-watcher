@@ -438,6 +438,7 @@ function App() {
             {showAddToCollection && (
                 <AddToCollectionModal
                     movieIds={selectedIds}
+                    movies={movies.filter(m => selectedIds.includes(m.id))}
                     onClose={() => setShowAddToCollection(false)}
                     onSuccess={() => {
                         setSelectedIds([]);
