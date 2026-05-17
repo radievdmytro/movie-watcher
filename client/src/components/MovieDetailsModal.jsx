@@ -278,6 +278,52 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                     <div style={{ color: '#fff', lineHeight: '1.4' }}>{movie.actors}</div>
                                 </div>
                             )}
+
+                            {!readOnly && !isTrashMode && (
+                                <div style={{
+                                    borderTop: '1px solid rgba(255,255,255,0.08)',
+                                    paddingTop: '15px',
+                                    marginTop: '20px'
+                                }}>
+                                    <h4 style={{ color: '#fff', marginBottom: '8px', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        📝 Personal Notes (Private)
+                                    </h4>
+                                    <textarea
+                                        value={notes}
+                                        onChange={(e) => setNotes(e.target.value)}
+                                        placeholder="Write your private review, thoughts, or notes here..."
+                                        style={{
+                                            width: '100%', minHeight: '90px', background: 'rgba(0,0,0,0.4)',
+                                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px',
+                                            padding: '8px', color: '#fff', fontSize: '0.85rem', resize: 'vertical',
+                                            outline: 'none', fontFamily: 'inherit', lineHeight: '1.4', marginBottom: '10px'
+                                        }}
+                                    />
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#aaa', fontSize: '0.78rem' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={isPublic}
+                                                onChange={(e) => setIsPublic(e.target.checked)}
+                                                style={{ width: '15px', height: '15px', accentColor: 'var(--accent-gold)' }}
+                                            />
+                                            Make review public 🌍
+                                        </label>
+                                        <button
+                                            onClick={handleSaveReview}
+                                            disabled={savingNotes}
+                                            className="btn"
+                                            style={{
+                                                background: 'var(--accent-gold)', color: '#000',
+                                                padding: '6px 12px', fontSize: '0.78rem', fontWeight: 'bold',
+                                                width: '100%', borderRadius: '6px'
+                                            }}
+                                        >
+                                            {savingNotes ? '⏳ Saving...' : '💾 Save Notes'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -336,7 +382,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                         transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px'
                                     }}
                                 >
-                                    📝 My Review
+                                    📝 Rating & Review
                                 </button>
                             )}
 
@@ -349,7 +395,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                     transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px'
                                 }}
                             >
-                                💬 Reviews ({reviews.length})
+                                💬 Community Feed ({reviews.length})
                             </button>
                         </div>
 
@@ -486,85 +532,38 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                         </div>
                                     </div>
 
-                                    <div style={{
-                                         borderTop: '1px solid rgba(255,255,255,0.08)',
-                                         paddingTop: '20px',
-                                         marginTop: '25px'
-                                     }}>
+                                    <form onSubmit={handleAddReview} style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px', marginTop: '10px' }}>
                                          <h4 style={{ color: '#fff', marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                             📝 Personal Review & Notes (Private by default)
-                                        </h4>
-                                        <textarea
-                                            value={notes}
-                                            onChange={(e) => setNotes(e.target.value)}
-                                            placeholder="Write your private review, thoughts, or movie night memories here..."
-                                            style={{
-                                                width: '100%', minHeight: '100px', background: 'rgba(0,0,0,0.4)',
-                                                border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
-                                                padding: '15px', color: '#fff', fontSize: '0.95rem', resize: 'vertical',
-                                                outline: 'none', fontFamily: 'inherit', lineHeight: '1.5', marginBottom: '15px'
-                                            }}
-                                        />
-
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px' }}>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', color: '#ccc', fontSize: '0.95rem' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isPublic}
-                                                    onChange={(e) => setIsPublic(e.target.checked)}
-                                                    style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }}
-                                                />
-                                                Make my review public in shared collections 🌍
-                                            </label>
-
-                                            <button
-                                                onClick={handleSaveReview}
-                                                disabled={savingNotes}
-                                                className="btn"
-                                                style={{
-                                                    background: 'var(--accent-gold)', color: '#000',
-                                                    padding: '10px 25px', fontSize: '0.9rem', fontWeight: 'bold'
-                                                }}
-                                            >
-                                                {savingNotes ? '⏳ Saving...' : '💾 Save Review'}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                             📢 Write a Public Community Review
+                                         </h4>
+                                         <textarea
+                                             value={newReview}
+                                             onChange={(e) => setNewReview(e.target.value)}
+                                             placeholder="Write a public review for this movie. Everyone in the community can read this!"
+                                             style={{
+                                                 width: '100%', minHeight: '80px', background: 'rgba(0,0,0,0.4)',
+                                                 border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
+                                                 padding: '12px', color: '#fff', fontSize: '0.95rem', resize: 'vertical',
+                                                 marginBottom: '12px', outline: 'none', fontFamily: 'inherit', lineHeight: '1.5'
+                                             }}
+                                         />
+                                         <button
+                                             type="submit"
+                                             disabled={submittingReview || !newReview.trim()}
+                                             className="btn"
+                                             style={{
+                                                 background: 'var(--accent-gold)', color: '#000',
+                                                 padding: '8px 20px', fontSize: '0.85rem', fontWeight: 'bold'
+                                             }}
+                                         >
+                                             {submittingReview ? '⏳ Publishing...' : '📢 Publish Review'}
+                                         </button>
+                                     </form>
                             )}
 
                             {activeTab === 'reviews' && (
                                 <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
-                                    {/* Submit review (Only if authenticated/not guest) */}
-                                    {!readOnly && (
-                                        <form onSubmit={handleAddReview} style={{ marginBottom: '30px' }}>
-                                            <h4 style={{ color: '#fff', marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                📢 Write a Public Community Review
-                                            </h4>
-                                            <textarea
-                                                value={newReview}
-                                                onChange={(e) => setNewReview(e.target.value)}
-                                                placeholder="Write a public review for this movie. Everyone in the community can read this!"
-                                                style={{
-                                                    width: '100%', minHeight: '80px', background: 'rgba(0,0,0,0.4)',
-                                                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
-                                                    padding: '12px', color: '#fff', fontSize: '0.95rem', resize: 'vertical',
-                                                    marginBottom: '12px', outline: 'none', fontFamily: 'inherit', lineHeight: '1.5'
-                                                }}
-                                            />
-                                            <button
-                                                type="submit"
-                                                disabled={submittingReview || !newReview.trim()}
-                                                className="btn"
-                                                style={{
-                                                    background: 'var(--accent-gold)', color: '#000',
-                                                    padding: '8px 20px', fontSize: '0.85rem', fontWeight: 'bold'
-                                                }}
-                                            >
-                                                {submittingReview ? '⏳ Publishing...' : '📢 Publish Review'}
-                                            </button>
-                                        </form>
-                                    )}
+
 
                                     {/* Reviews list */}
                                     <h4 style={{ color: '#fff', marginBottom: '15px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
