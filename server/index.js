@@ -65,6 +65,60 @@ async function uploadBackup() {
             } else {
                 const errBody = await res.text();
                 console.error(`☁️ Supabase upload failed with status ${res.status}:`, errBody);
+                
+                if (errBody.includes('Bucket not found')) {
+                    console.log('☁️ "backups" bucket not found. Attempting to create it automatically...');
+                    try {
+                        const createBucketRes = await fetch(`${supabaseUrl}/storage/v1/bucket`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${supabaseKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                id: 'backups',
+                                name: 'backups',
+                                public: false
+                            })
+                        });
+                        
+                        if (createBucketRes.ok) {
+                            console.log('☁️ "backups" bucket successfully created! Retrying upload...');
+                            const retryRes = await fetch(`${supabaseUrl}/storage/v1/object/backups/movies.db`, {
+                                method: 'POST',
+                                body: fileBuffer,
+                                headers: {
+                                    'Authorization': `Bearer ${supabaseKey}`,
+                                    'Content-Type': 'application/x-sqlite3',
+                                    'x-upsert': 'true'
+                                }
+                            });
+                            
+                            if (retryRes.ok) {
+                                console.log('☁️ Database backup successfully uploaded after auto-creating bucket!');
+                                lastSyncStatus = 'Success';
+                                lastSyncTime = new Date().toISOString();
+                                lastSyncError = null;
+                                isUploading = false;
+                                return;
+                            } else {
+                                const retryErr = await retryRes.text();
+                                throw new Error(`Retry upload failed: ${retryErr}`);
+                            }
+                        } else {
+                            const createErr = await createBucketRes.text();
+                            throw new Error(`Failed to auto-create bucket: ${createErr}`);
+                        }
+                    } catch (createErr) {
+                        console.error('☁️ Auto-creating bucket failed:', createErr);
+                        lastSyncStatus = 'Failed';
+                        lastSyncTime = new Date().toISOString();
+                        lastSyncError = `Bucket creation & upload retry failed: ${createErr.message}`;
+                        isUploading = false;
+                        return;
+                    }
+                }
+
                 lastSyncStatus = 'Failed';
                 lastSyncTime = new Date().toISOString();
                 lastSyncError = `Upload failed with status ${res.status}: ${errBody}`;
