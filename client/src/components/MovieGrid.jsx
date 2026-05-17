@@ -958,7 +958,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                     whiteSpace: 'nowrap',
                                                     cursor: 'pointer',
                                                     fontWeight: 'bold',
-                                                    transition: 'all 0.2s ease'
+                                                    transition: 'all 0.2s ease',
+                                                    width: '140px',
+                                                    textAlign: 'center'
                                                 }}
                                                 onMouseEnter={(e) => {
                                                     e.currentTarget.style.transform = 'scale(1.03)';
