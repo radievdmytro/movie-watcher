@@ -271,9 +271,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 />
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
-                    <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flex: 1, minWidth: '300px' }}>
+            <div className="controls-section" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
+                <div className="controls-top-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                    <div className="controls-top-left" style={{ display: 'flex', gap: '15px', alignItems: 'center', flex: 1, minWidth: '280px' }}>
                         <div style={{ position: 'relative', flex: 1 }}>
                             <input
                                 type="text"
@@ -342,7 +342,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         </button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                    <div className="controls-bottom-bar" style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                             {viewMode === 'grid' && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -552,7 +552,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             </div>
 
             {viewMode === 'grid' ? (
-                <div style={{
+                <div className="movie-grid-container" style={{
                     display: 'grid',
                     gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
                     gap: '25px'

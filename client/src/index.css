@@ -288,3 +288,180 @@ input {
   cursor: pointer;
   border: 2px solid #000;
 }
+
+/* ==========================================
+   MOBILE & RESPONSIVE MEDIA QUERIES
+   ========================================== */
+
+/* Tablet & Smaller Screens (<= 768px) */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 15px;
+  }
+
+  /* Header Stacking & Wrapping */
+  .header-content {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 10px;
+    text-align: center;
+  }
+
+  .header-left {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px !important;
+    width: 100%;
+  }
+
+  .logo {
+    font-size: 1.8rem;
+  }
+
+  .header-nav {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  .header-nav .btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  .header-movie-count {
+    width: 100%;
+    margin-left: 0 !important;
+    margin-top: 5px;
+    font-size: 0.8rem !important;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 15px;
+  }
+
+  .header-right .btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  /* Auth Screen Glass panel size */
+  .auth-panel {
+    width: 100% !important;
+    max-width: 400px;
+    margin: 20px;
+    padding: 25px !important;
+  }
+
+  /* Admin Dashboard Styles */
+  .admin-users-table-view {
+    display: none !important;
+  }
+  .admin-users-cards-view {
+    display: flex !important;
+  }
+}
+
+/* Phones (<= 480px) */
+@media (max-width: 480px) {
+  /* Controls Bar optimization on mobile */
+  .controls-section {
+    gap: 10px !important;
+  }
+  
+  .controls-top-bar {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  
+  .controls-top-left {
+    min-width: 100% !important;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  
+  /* Type Switcher tabs spacing */
+  .controls-top-left div[style*="display: flex"] {
+    width: 100%;
+    justify-content: space-around;
+  }
+  
+  .controls-top-left button {
+    flex: 1;
+    text-align: center;
+    padding: 8px 10px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  /* Filters trigger button takes full width */
+  .controls-top-left > button.btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .controls-bottom-bar {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  
+  /* Hide the poster size slider on phone to save space */
+  .controls-bottom-bar div[style*="display: flex"]:first-child {
+    display: none !important;
+  }
+  
+  /* Sorting & grid switcher take full width */
+  .controls-bottom-bar div[style*="display: flex"] {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Movie Grid - Exactly 2 Columns on Phone (Letterboxd Style) */
+  .movie-grid-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Movie detail card spacing adjustments */
+  .movie-card h4 {
+    font-size: 0.85rem !important;
+  }
+  
+  /* Modal responsive fits */
+  .modal-content {
+    width: 95% !important;
+    margin: 10px !important;
+    padding: 15px !important;
+  }
+  
+  .modal-grid {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+  }
+  
+  .modal-poster {
+    max-height: 250px;
+    object-fit: contain;
+  }
+
+  /* Bulk action anchor bar adjusts for phone screens */
+  div[style*="position: fixed"][style*="bottom: 20px"] {
+    left: 10px !important;
+    right: 10px !important;
+    transform: none !important;
+    width: auto !important;
+    padding: 10px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    justify-content: center !important;
+  }
+}

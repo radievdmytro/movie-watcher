@@ -237,10 +237,10 @@ function App() {
         <div className="app">
             <header className="header glass-panel">
                 <div className="container header-content">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                         <h1 className="gold logo" style={{ cursor: 'pointer', margin: 0 }} onClick={() => { if (currentView !== 'shared_collection') setCurrentView('library'); }}>Movie<span className="gold">Watcher</span></h1>
                         {user && currentView !== 'shared_collection' ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div className="header-nav" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <button
                                     onClick={() => setCurrentView('library')}
                                     className="btn"
@@ -279,7 +279,7 @@ function App() {
                                     </button>
                                 )}
                                 {(currentView === 'library' || currentView === 'trash') && (
-                                    <div style={{ fontSize: '0.9rem', color: '#888', marginLeft: '5px' }}>
+                                    <div className="header-movie-count" style={{ fontSize: '0.9rem', color: '#888', marginLeft: '5px' }}>
                                         {movies.length} {currentView === 'library' ? 'Movies' : 'Deleted Items'}
                                     </div>
                                 )}
@@ -288,7 +288,7 @@ function App() {
                     </div>
 
                     {currentView !== 'shared_collection' && user && (
-                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                        <div className="header-right" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                             {currentView === 'trash' && movies.length > 0 && (
                                 <button onClick={emptyTrash} className="btn btn-ghost" style={{ color: 'var(--danger)', fontSize: '0.85rem' }}>
                                     Empty Trash
