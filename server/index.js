@@ -785,6 +785,70 @@ app.get('/api/collections', authenticateToken, (req, res) => {
     }
 });
 
+// ==========================================
+// PUBLIC MOVIE ENDPOINTS (No authentication required)
+// ==========================================
+
+// Public endpoint to fetch a single movie for sharing
+app.get('/api/public/movie/:id', (req, res) => {
+    try {
+        const stmt = db.prepare(`
+            SELECT m.*,
+                   (
+                     SELECT ROUND(AVG(r), 1) FROM (
+                       SELECT m2.user_rating AS r FROM movies m2
+                         WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                       UNION ALL
+                       SELECT h.user_rating AS r FROM user_movie_history h
+                         WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                         AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                     )
+                   ) AS community_rating
+            FROM movies m
+            WHERE m.id = ? AND m.deleted_at IS NULL
+        `);
+        const movie = stmt.get(req.params.id);
+        if (!movie) return res.status(404).json({ error: 'Movie not found' });
+        
+        if (!movie.notes_public) {
+            movie.notes = null;
+        }
+        res.json(movie);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Telegram Open Graph Metadata endpoint
+app.get('/share/movie/:id', (req, res) => {
+    try {
+        const movie = db.prepare('SELECT title, original_title, year, description, poster_url, genres, rating FROM movies WHERE id = ?').get(req.params.id);
+        if (!movie) return res.status(404).send('Movie not found');
+        
+        const title = `${movie.title} (${movie.year})`;
+        const description = `⭐️ ${movie.rating || '-'} | 🎭 ${movie.genres || '-'}\n\n${movie.description || ''}`;
+        
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta property="og:title" content="${title.replace(/"/g, '&quot;')}" />
+    <meta property="og:description" content="${description.replace(/"/g, '&quot;')}" />
+    <meta property="og:image" content="${movie.poster_url}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+        window.location.href = "https://radievdmytro.github.io/movie-watcher/?movie=${req.params.id}";
+    </script>
+</head>
+<body style="background: #121212; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+    <p>Redirecting to Movie Watcher...</p>
+</body>
+</html>`;
+        res.send(html);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
 // GET specific collection with movies (PUBLIC! Required for Shared view)
 app.get('/api/collections/:id', (req, res) => {
     try {
