@@ -43,7 +43,17 @@ function AuthScreen({ onAuthSuccess }) {
                     <img 
                         src="favicon.png" 
                         alt="Radev Movie Selector Logo" 
-                        style={{ width: '75px', height: '75px', borderRadius: '50%', border: '2px solid var(--accent-gold)', boxShadow: '0 0 20px rgba(212,175,55,0.25)' }} 
+                        style={{ 
+                            width: '150px', 
+                            height: '150px', 
+                            objectFit: 'contain',
+                            borderRadius: '0',
+                            border: 'none',
+                            filter: 'drop-shadow(0 0 15px rgba(212,175,55,0.4))',
+                            transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                        }} 
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.08) rotate(3deg)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
                     />
                     <h1 className="logo" style={{ margin: 0, fontSize: '2rem' }}>
                         Radev <span className="gold">Movie Selector</span>

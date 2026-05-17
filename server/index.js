@@ -309,7 +309,15 @@ app.get('/api/movies/category/:filter', authenticateToken, async (req, res) => {
 // GET Active Movies
 app.get('/api/movies', authenticateToken, (req, res) => {
     try {
-        const stmt = db.prepare('SELECT * FROM movies WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC');
+        const stmt = db.prepare(`
+            SELECT m.*, 
+                   (SELECT ROUND(AVG(m2.user_rating), 1) 
+                    FROM movies m2 
+                    WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id) AS community_rating
+            FROM movies m 
+            WHERE m.user_id = ? AND m.deleted_at IS NULL 
+            ORDER BY m.created_at DESC
+        `);
         const movies = stmt.all(req.user.id);
         res.json(movies);
     } catch (error) {
@@ -674,7 +682,11 @@ app.get('/api/collections/:id', (req, res) => {
         if (!collection) return res.status(404).json({ error: 'Collection not found' });
 
         const moviesStmt = db.prepare(`
-            SELECT m.* FROM movies m
+            SELECT m.*,
+                   (SELECT ROUND(AVG(m2.user_rating), 1) 
+                    FROM movies m2 
+                    WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id) AS community_rating
+            FROM movies m
             JOIN collection_movies cm ON m.id = cm.movie_id
             WHERE cm.collection_id = ? AND m.deleted_at IS NULL
             ORDER BY m.created_at DESC

@@ -245,7 +245,17 @@ function App() {
                             <img 
                                 src="favicon.png" 
                                 alt="Radev Movie Selector Mascot" 
-                                style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid var(--accent-gold)', boxShadow: '0 0 10px rgba(212,175,55,0.2)' }} 
+                                style={{ 
+                                    width: '76px', 
+                                    height: '76px', 
+                                    objectFit: 'contain',
+                                    borderRadius: '0',
+                                    border: 'none',
+                                    filter: 'drop-shadow(0 0 8px rgba(212,175,55,0.35))',
+                                    transition: 'transform 0.3s ease'
+                                }} 
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1) rotate(-5deg)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
                             />
                             <h1 className="gold logo" style={{ margin: 0, fontSize: '1.55rem', letterSpacing: '0.5px' }}>
                                 Radev <span className="gold">Movie Selector</span>

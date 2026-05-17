@@ -767,11 +767,15 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                             {/* Quick Actions (Mini) */}
                                             <div style={{ display: 'flex', gap: '5px', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
                                                 <button
-                                                    className="btn-ghost btn-watch-action"
+                                                    className="btn-ghost"
                                                     title={movie.status === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
                                                     style={{
-                                                        flex: 1, padding: '4px', fontSize: '0.8rem',
-                                                        color: '#fff', borderRadius: '4px'
+                                                        flex: 1, padding: '6px 8px', fontSize: '0.8rem',
+                                                        borderRadius: '4px', border: '1px solid', cursor: 'pointer',
+                                                        transition: 'all 0.2s ease', fontWeight: 'bold',
+                                                        background: movie.status === 'watched' ? 'rgba(3, 218, 198, 0.15)' : 'rgba(255,255,255,0.05)',
+                                                        borderColor: movie.status === 'watched' ? '#03dac6' : 'rgba(255,255,255,0.1)',
+                                                        color: movie.status === 'watched' ? '#03dac6' : '#fff',
                                                     }}
                                                     onClick={async () => {
                                                         if (movie.status !== 'watched') {
@@ -783,7 +787,12 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                         }
                                                     }}
                                                 >
-                                                    {movie.status === 'watched' ? 'Watched' : 'Watch'}
+                                                    {movie.status === 'watched' ? (
+                                                        <span>
+                                                            {movie.user_rating ? `★ ${movie.user_rating}` : '✔ Watched'}
+                                                            {movie.community_rating ? ` (${movie.community_rating})` : ''}
+                                                        </span>
+                                                    ) : 'Watch'}
                                                 </button>
                                                 <button
                                                     className="btn-ghost"
@@ -924,18 +933,32 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                     }
                                                 }}
                                                 style={{
-                                                    padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem',
-                                                    background: movie.status === 'watched' ? 'rgba(3, 218, 198, 0.2)' : 'rgba(212, 175, 55, 0.2)',
+                                                    padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem',
+                                                    background: movie.status === 'watched' ? 'rgba(3, 218, 198, 0.15)' : 'rgba(212, 175, 55, 0.15)',
+                                                    border: movie.status === 'watched' ? '1px solid #03dac6' : '1px solid rgba(212, 175, 55, 0.3)',
                                                     color: movie.status === 'watched' ? '#03dac6' : '#d4af37',
                                                     whiteSpace: 'nowrap',
                                                     cursor: 'pointer',
-                                                    border: 'none',
-                                                    transition: 'transform 0.1s'
+                                                    fontWeight: 'bold',
+                                                    transition: 'all 0.2s ease'
                                                 }}
-                                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.transform = 'scale(1.03)';
+                                                    if (movie.status === 'watched') {
+                                                        e.currentTarget.style.boxShadow = '0 0 8px rgba(3, 218, 198, 0.3)';
+                                                    }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.transform = 'scale(1)';
+                                                    e.currentTarget.style.boxShadow = 'none';
+                                                }}
                                             >
-                                                {movie.status === 'watched' ? `Watched ${movie.user_rating ? `(★ ${movie.user_rating})` : ''}` : 'Want to Watch'}
+                                                {movie.status === 'watched' ? (
+                                                    <span>
+                                                        {movie.user_rating ? `★ ${movie.user_rating}` : '✔ Watched'}
+                                                        {movie.community_rating ? ` (${movie.community_rating})` : ''}
+                                                    </span>
+                                                ) : 'Want to Watch'}
                                             </button>
 
                                             <button
