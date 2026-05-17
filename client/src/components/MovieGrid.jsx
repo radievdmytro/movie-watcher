@@ -38,6 +38,7 @@ const Histogram = ({ data, currentRange, min, max, height = 30 }) => {
 function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink }) {
     const [sortField, setSortField] = useState('created_at');
     const [sortDir, setSortDir] = useState('desc');
+    const [hideWatched, setHideWatched] = useState(false);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
     const [posterSize, setPosterSize] = useState(() => {
         return parseInt(localStorage.getItem('posterSize')) || 220;
@@ -195,6 +196,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     }
                 }
 
+                // Status Filter
+                if (hideWatched && movie.status === 'watched') return false;
+
                 return true;
             })
             .sort((a, b) => {
@@ -208,12 +212,12 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 if (valA > valB) return sortDir === 'asc' ? 1 : -1;
                 return 0;
             });
-    }, [movies, sortField, sortDir, filterQuery, filterGenres, filterRating, filterYear, filterType, filterGenreMode]);
+    }, [movies, sortField, sortDir, filterQuery, filterGenres, filterRating, filterYear, filterType, filterGenreMode, hideWatched]);
 
     // Reset visible count when filters change
     useEffect(() => {
         setVisibleCount(30);
-    }, [filterQuery, filterGenres, filterRating, filterYear, filterType, filterGenreMode, sortField, sortDir]);
+    }, [filterQuery, filterGenres, filterRating, filterYear, filterType, filterGenreMode, sortField, sortDir, hideWatched]);
 
     // Infinite Scroll Observer
     useEffect(() => {
@@ -372,6 +376,15 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 >{mode.charAt(0).toUpperCase() + mode.slice(1)}</button>
                             ))}
                         </div>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#ccc', fontSize: '0.85rem', marginLeft: '10px' }}>
+                            <input 
+                                type="checkbox" 
+                                checked={hideWatched} 
+                                onChange={(e) => setHideWatched(e.target.checked)} 
+                                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }} 
+                            />
+                            Hide Watched
+                        </label>
                     </div>
                 </div>
 
@@ -552,10 +565,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
                         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
                             <span style={{ color: '#666' }}>Sort:</span>
-                            {['created_at', 'rating', 'year', 'title'].map(field => (
+                            {['created_at', 'rating', 'year', 'title', 'status'].map(field => (
                                 <button key={field} className="btn-ghost" style={{ color: sortField === field ? 'var(--accent-gold)' : 'inherit', padding: '0 5px', fontSize: '0.9rem' }}
                                     onClick={() => handleSort(field)}
-                                >{field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ')} {sortField === field && (sortDir === 'asc' ? '↑' : '↓')}</button>
+                                >{field === 'status' ? 'Watched' : field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ')} {sortField === field && (sortDir === 'asc' ? '↑' : '↓')}</button>
                             ))}
                         </div>
                     </div>
