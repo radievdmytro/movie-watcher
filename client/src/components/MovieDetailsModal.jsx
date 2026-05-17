@@ -88,7 +88,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
         fetchReviews();
     }, [movie.link]);
 
-    const handleBackdropClick = (e) => {
+    const handleBackdropMouseDown = (e) => {
         if (e.target === e.currentTarget) onClose();
     };
 
@@ -244,7 +244,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
 
     return ReactDOM.createPortal(
         <div
-            onClick={handleBackdropClick}
+            onMouseDown={handleBackdropMouseDown}
             style={{
                 position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                 background: 'rgba(0, 0, 0, 0.85)',
