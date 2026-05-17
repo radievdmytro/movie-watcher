@@ -559,7 +559,8 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                              {submittingReview ? '⏳ Publishing...' : '📢 Publish Review'}
                                          </button>
                                      </form>
-                            )}
+                                 </div>
+                             )}
 
                             {activeTab === 'reviews' && (
                                 <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
