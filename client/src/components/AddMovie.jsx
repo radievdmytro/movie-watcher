@@ -28,7 +28,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
         return match ? match.filter(url => url.includes('hdrezka')) : [];
     };
 
-    const handleSearch = async (isAuto = false) => {
+    const handleSearch = async (isAuto = false, openFullPage = false) => {
         if (!query.trim()) {
             setPreview(null);
             setSearchResults(null);
@@ -68,7 +68,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
                 setSearchResults(data.data);
                 setSelectedLinks(new Set());
                 setShowResultsPanel(true);
-                setFullPageResults(true);
+                if (openFullPage) setFullPageResults(true);
 
                 // Auto-open detail panel if only one result
                 if (data.data.length === 1) {
@@ -98,7 +98,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
     useEffect(() => {
         const timer = setTimeout(() => {
             if (query.trim()) {
-                handleSearch(true);
+                handleSearch(true, false); // auto: dropdown only, never full-page
             }
         }, 300);
         return () => clearTimeout(timer);
@@ -351,7 +351,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
                             height: '40px',
                             outline: 'none'
                         }}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch(false, true)}
                     />
                 )}
 
@@ -380,7 +380,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
                 </button>
 
                 <button
-                    onClick={() => handleSearch(false)}
+                    onClick={() => handleSearch(false, true)}
                     disabled={loading}
                     style={{
                         background: 'linear-gradient(135deg, var(--accent-gold) 0%, #b5952f 100%)',
@@ -545,14 +545,106 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
                 </div>
             </div>
 
-            {/* Full Page Results Panel */}
+
+            {/* Dropdown — auto-search mode (typing) */}
+            <div style={{
+                position: 'absolute',
+                top: 'calc(100% - 20px)',
+                left: '5%', right: '5%',
+                background: 'rgba(22,22,22,0.97)',
+                backdropFilter: 'blur(15px)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderTop: 'none',
+                borderRadius: '0 0 20px 20px',
+                padding: '20px 16px 16px',
+                boxShadow: '0 15px 30px rgba(0,0,0,0.5)',
+                zIndex: 5,
+                opacity: showResultsPanel && searchResults && !fullPageResults ? 1 : 0,
+                transform: showResultsPanel && searchResults && !fullPageResults ? 'translateY(0)' : 'translateY(-12px)',
+                pointerEvents: showResultsPanel && searchResults && !fullPageResults ? 'auto' : 'none',
+                transition: 'all 0.35s cubic-bezier(0.165,0.84,0.44,1)',
+                maxHeight: '420px', overflowY: 'auto'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ color: 'var(--accent-gold)', fontWeight: 600, fontSize: '0.85rem' }}>
+                            {filteredSearchResults.length} results
+                        </span>
+                        {selectedLinks.size > 0 && (
+                            <button onClick={(e) => { e.stopPropagation(); handleAddSelected(); }}
+                                className="btn btn-primary"
+                                style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap' }}>
+                                ✚ Add Selected ({selectedLinks.size})
+                            </button>
+                        )}
+                    </div>
+                    <button onClick={() => { setShowResultsPanel(false); setSelectedLinks(new Set()); }}
+                        style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '1.1rem', cursor: 'pointer', padding: '0 4px' }}>×</button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    {filteredSearchResults.length > 0 ? filteredSearchResults.map((item, idx) => {
+                        const sel = selectedLinks.has(item.link);
+                        return (
+                            <div key={idx} style={{
+                                display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 8px',
+                                border: `1px solid ${sel ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.04)'}`,
+                                background: sel ? 'rgba(212,175,55,0.07)' : 'transparent',
+                                borderRadius: '10px', transition: 'all 0.15s'
+                            }}
+                                onMouseEnter={e => { if (!sel) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                                onMouseLeave={e => { if (!sel) e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                {/* Checkbox */}
+                                <div onClick={(e) => { e.stopPropagation(); toggleSelect(item.link); }} style={{
+                                    width: '17px', height: '17px', borderRadius: '4px', flexShrink: 0,
+                                    background: sel ? 'var(--accent-gold)' : 'transparent',
+                                    border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.2)'}`,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '0.6rem', color: '#000', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.15s'
+                                }}>{sel ? '✓' : ''}</div>
+                                {/* Poster */}
+                                <img src={item.img} alt={item.title}
+                                    style={{ width: '34px', height: '50px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
+                                {/* Info — click = preview */}
+                                <div style={{ flex: 1, cursor: 'pointer', minWidth: 0 }} onClick={() => handleSelectMovie(item.link)}>
+                                    <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#eee', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
+                                    <div style={{ fontSize: '0.71rem', color: '#666', marginTop: '1px' }}>{item.misc}</div>
+                                </div>
+                                {item.rating && <span style={{ fontSize: '0.7rem', background: '#2a2a2a', padding: '2px 6px', borderRadius: '5px', color: '#bbb', flexShrink: 0 }}>★ {item.rating}</span>}
+                                {/* Quick Add */}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleBatchImport([item.link]); }}
+                                    style={{
+                                        background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
+                                        color: 'var(--accent-gold)', borderRadius: '7px', padding: '3px 10px',
+                                        fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
+                                >+ Add</button>
+                            </div>
+                        );
+                    }) : (
+                        <div style={{ padding: '16px', textAlign: 'center', color: '#555', fontSize: '0.85rem' }}>No results</div>
+                    )}
+                </div>
+            </div>
+
+            {/* Full Page Results Panel — opened on Enter / Search button */}
             {fullPageResults && searchResults && (
                 <div style={{
-                    position: 'fixed', inset: 0, background: 'rgba(10,10,10,0.97)',
-                    backdropFilter: 'blur(20px)', zIndex: 9999,
-                    display: 'flex', flexDirection: 'column', overflow: 'hidden',
-                    animation: 'fadeIn 0.25s ease'
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+                    backdropFilter: 'blur(10px)', zIndex: 9999,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    animation: 'fadeIn 0.25s ease', padding: '20px'
                 }}>
+                    <div style={{
+                        width: '100%', maxWidth: '840px', maxHeight: '88vh',
+                        background: 'rgba(18,18,18,0.99)', borderRadius: '16px',
+                        border: '1px solid rgba(255,255,255,0.09)',
+                        boxShadow: '0 24px 60px rgba(0,0,0,0.8)',
+                        display: 'flex', flexDirection: 'column', overflow: 'hidden'
+                    }}>
                     {/* Header */}
                     <div style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -716,6 +808,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
                         </div>
                     )}
                 </div>
+                    </div>
             )}
 
             {/* Helper text */}
