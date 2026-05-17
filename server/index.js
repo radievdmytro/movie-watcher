@@ -137,6 +137,13 @@ function authenticateToken(req, res, next) {
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+        
+        // Verify that the user still exists in the database
+        const dbUser = db.prepare('SELECT id FROM users WHERE id = ?').get(user.id);
+        if (!dbUser) {
+            return res.status(401).json({ error: 'User session has expired or account was reset. Please log in again.' });
+        }
+        
         req.user = user;
         next();
     });

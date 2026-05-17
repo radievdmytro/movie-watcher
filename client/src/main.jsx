@@ -6,7 +6,7 @@ import './index.css'
 // Setup global API URL and Auth token interceptor
 const API_URL = import.meta.env.VITE_API_URL || '';
 const originalFetch = window.fetch;
-window.fetch = function (input, init) {
+window.fetch = async function (input, init) {
     let url = input;
     let options = { ...init };
 
@@ -26,7 +26,17 @@ window.fetch = function (input, init) {
             };
         }
     }
-    return originalFetch(url, options);
+    
+    const response = await originalFetch(url, options);
+    
+    // If the backend returned 401 Unauthorized (session expired or database wiped),
+    // clear the token and force reload to redirect them to the auth screen.
+    if (response.status === 401 && localStorage.getItem('token')) {
+        localStorage.removeItem('token');
+        window.location.reload();
+    }
+    
+    return response;
 };
 
 ReactDOM.createRoot(document.getElementById('app')).render(
