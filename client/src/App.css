@@ -1,0 +1,39 @@
+.app {
+    min-height: 100vh;
+    padding-bottom: 50px;
+}
+
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 1rem 0;
+    margin-bottom: 2rem;
+    border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+}
+
+.gold {
+    color: var(--accent-gold);
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.add-movie-section {
+    width: 100%;
+}
