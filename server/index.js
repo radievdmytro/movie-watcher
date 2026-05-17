@@ -26,8 +26,17 @@ let initDb = null;
 let uploadTimeout = null;
 let isUploading = false;
 
+// Sync Status Tracking
+let lastSyncStatus = 'Not Started';
+let lastSyncTime = null;
+let lastSyncError = null;
+
 async function uploadBackup() {
-    if (!supabaseUrl || !supabaseKey) return;
+    if (!supabaseUrl || !supabaseKey) {
+        lastSyncStatus = 'Unconfigured';
+        lastSyncError = 'Supabase credentials missing in environment variables';
+        return;
+    }
     if (uploadTimeout) clearTimeout(uploadTimeout);
     uploadTimeout = setTimeout(async () => {
         if (isUploading) {
@@ -49,11 +58,21 @@ async function uploadBackup() {
             });
             if (res.ok) {
                 console.log('☁️ Database backup successfully uploaded!');
+                lastSyncStatus = 'Success';
+                lastSyncTime = new Date().toISOString();
+                lastSyncError = null;
             } else {
-                console.error(`☁️ Supabase upload failed with status ${res.status}:`, await res.text());
+                const errBody = await res.text();
+                console.error(`☁️ Supabase upload failed with status ${res.status}:`, errBody);
+                lastSyncStatus = 'Failed';
+                lastSyncTime = new Date().toISOString();
+                lastSyncError = `Upload failed with status ${res.status}: ${errBody}`;
             }
         } catch (err) {
             console.error('☁️ Error uploading database backup:', err);
+            lastSyncStatus = 'Failed';
+            lastSyncTime = new Date().toISOString();
+            lastSyncError = err.message;
         } finally {
             isUploading = false;
         }
@@ -788,6 +807,16 @@ app.get('/api/admin/users/:userId/data', authenticateToken, requireAdmin, (req, 
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// GET Admin sync status with Supabase
+app.get('/api/admin/sync-status', authenticateToken, requireAdmin, (req, res) => {
+    res.json({
+        status: lastSyncStatus,
+        time: lastSyncTime,
+        error: lastSyncError,
+        supabaseConfigured: !!(supabaseUrl && supabaseKey)
+    });
 });
 
 // POST Admin reset password for a user
