@@ -259,6 +259,15 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         }
     };
 
+    const handleUpdateMovie = async (id, fields) => {
+        if (onUpdate) {
+            await onUpdate(id, fields);
+            if (selectedMovie && selectedMovie.id === id) {
+                setSelectedMovie(prev => ({ ...prev, ...fields }));
+            }
+        }
+    };
+
     return (
         <div>
             {/* Modal for Details ... */}
@@ -267,7 +276,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     movie={selectedMovie}
                     openWithWatchedPrompt={openWithWatchedPrompt}
                     onClose={() => { setSelectedMovie(null); setOpenWithWatchedPrompt(false); }}
-                    onUpdate={onUpdate}
+                    onUpdate={handleUpdateMovie}
                     onDelete={onDelete}
                     isTrashMode={isTrashMode}
                 />
