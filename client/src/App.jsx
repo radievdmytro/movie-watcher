@@ -20,6 +20,22 @@ function App() {
     const [selectionAnchor, setSelectionAnchor] = useState(null);
     const [deletingIds, setDeletingIds] = useState([]); // Track items being deleted for animation
     const trashButtonRef = useRef(null);
+    const [highlightedMovieLink, setHighlightedMovieLink] = useState(null);
+
+    const handleScrollToMovie = (link) => {
+        // Close any open panels, switch to library view
+        setCurrentView('library');
+        setHighlightedMovieLink(link);
+        // After a short delay, find the card by data-link and scroll to it
+        setTimeout(() => {
+            const card = document.querySelector(`[data-movie-link="${CSS.escape(link)}"]`);
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            // Clear highlight after animation
+            setTimeout(() => setHighlightedMovieLink(null), 2800);
+        }, 150);
+    };
 
     const [showAddToCollection, setShowAddToCollection] = useState(false);
     const [sharedCollectionId, setSharedCollectionId] = useState(null);
@@ -361,7 +377,7 @@ function App() {
                     <>
                         {currentView === 'library' && (
                             <div className="add-movie-section">
-                                <AddMovie onMovieAdded={fetchMovies} />
+                                <AddMovie onMovieAdded={fetchMovies} onScrollToMovie={handleScrollToMovie} />
                             </div>
                         )}
 
@@ -383,6 +399,7 @@ function App() {
                                     deletingIds={deletingIds}
                                     trashButtonRef={trashButtonRef}
                                     isTrashMode={currentView === 'trash'}
+                                    highlightedLink={highlightedMovieLink}
                                 />
                             )}
                             {!loading && movies.length === 0 && (

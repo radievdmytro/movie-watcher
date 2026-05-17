@@ -35,7 +35,7 @@ const Histogram = ({ data, currentRange, min, max, height = 30 }) => {
 };
 
 
-function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode }) {
+function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink }) {
     const [sortField, setSortField] = useState('created_at');
     const [sortDir, setSortDir] = useState('desc');
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
@@ -612,16 +612,21 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             }
                         }
 
+                        const isHighlighted = highlightedLink && movie.link === highlightedLink;
+
                         return (
                             <div
                                 key={movie.id}
                                 data-movie-id={movie.id}
-                                className="glass-panel movie-card"
+                                data-movie-link={movie.link}
+                                className={`glass-panel movie-card${isHighlighted ? ' movie-highlight-pulse' : ''}`}
                                 style={{
                                     position: isDeleting && animationPhase ? 'fixed' : 'relative',
                                     overflow: 'hidden',
                                     transition: isDeleting ? 'none' : 'transform 0.3s ease-out',
-                                    border: selectedIds.includes(movie.id) ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.05)',
+                                    border: isHighlighted
+                                        ? '2px solid var(--accent-gold)'
+                                        : selectedIds.includes(movie.id) ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.05)',
                                     aspectRatio: '2/3',
                                     borderRadius: '8px',
                                     ...animStyle

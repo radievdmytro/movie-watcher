@@ -483,3 +483,17 @@ input {
   padding: 20px;
   animation: fadeIn 0.3s ease-out;
 }
+
+/* Highlight pulse — shown when user tries to add a duplicate movie */
+@keyframes highlightPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); transform: scale(1); }
+  20%  { box-shadow: 0 0 0 8px rgba(212, 175, 55, 0.6); transform: scale(1.04); }
+  50%  { box-shadow: 0 0 0 16px rgba(212, 175, 55, 0.25); transform: scale(1.02); }
+  80%  { box-shadow: 0 0 0 8px rgba(212, 175, 55, 0.1); transform: scale(1.01); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); transform: scale(1); }
+}
+
+.movie-highlight-pulse {
+  animation: highlightPulse 2.5s ease-out forwards !important;
+  z-index: 10 !important;
+}

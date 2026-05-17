@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-function AddMovie({ onMovieAdded }) {
+function AddMovie({ onMovieAdded, onScrollToMovie }) {
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [preview, setPreview] = useState(null);
@@ -17,6 +17,9 @@ function AddMovie({ onMovieAdded }) {
     const [showSearchFilters, setShowSearchFilters] = useState(false);
 
     const containerRef = useRef(null);
+    const [selectedLinks, setSelectedLinks] = useState(new Set());
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
+    const [fullPageResults, setFullPageResults] = useState(false);
 
     const isHdrezkaUrl = (str) => str.includes('hdrezka') && (str.startsWith('http://') || str.startsWith('https://'));
 
@@ -63,7 +66,9 @@ function AddMovie({ onMovieAdded }) {
                 setShowResultsPanel(false);
             } else if (data.type === 'list') {
                 setSearchResults(data.data);
+                setSelectedLinks(new Set());
                 setShowResultsPanel(true);
+                setFullPageResults(true);
 
                 // Auto-open detail panel if only one result
                 if (data.data.length === 1) {
@@ -130,6 +135,9 @@ function AddMovie({ onMovieAdded }) {
                 if (res.ok) {
                     successCount++;
                     newLogs.push({ msg: `✓ Added: ${data.title}`, type: 'success' });
+                } else if (res.status === 409) {
+                    newLogs.push({ msg: `Already in library: ${url.split('/').filter(Boolean).pop()}`, type: 'info' });
+                    if (onScrollToMovie) onScrollToMovie(url);
                 } else {
                     newLogs.push({ msg: `✗ Failed: ${data.error || 'Unknown error'}`, type: 'error' });
                 }
@@ -161,6 +169,7 @@ function AddMovie({ onMovieAdded }) {
 
     const handleSelectMovie = async (link) => {
         setShowResultsPanel(false);
+        setFullPageResults(false);
         setTimeout(() => {
             setSearchResults(null);
         }, 400);
@@ -200,11 +209,35 @@ function AddMovie({ onMovieAdded }) {
                 onMovieAdded();
             } else {
                 const d = await res.json();
-                alert(d.error);
+                if (res.status === 409 && onScrollToMovie && payload.link) {
+                    setPreview(null);
+                    setQuery('');
+                    onScrollToMovie(payload.link);
+                } else {
+                    alert(d.error);
+                }
             }
         } catch (error) {
             console.error(error);
         }
+    };
+
+    const toggleSelect = (link) => {
+        setSelectedLinks(prev => {
+            const next = new Set(prev);
+            if (next.has(link)) next.delete(link); else next.add(link);
+            return next;
+        });
+    };
+
+    const handleAddSelected = async () => {
+        const links = [...selectedLinks];
+        if (!links.length) return;
+        await handleBatchImport(links);
+        setSelectedLinks(new Set());
+        setFullPageResults(false);
+        setShowResultsPanel(false);
+        setTimeout(() => setSearchResults(null), 400);
     };
 
     const handleFetchCategory = async (filter) => {
@@ -217,7 +250,9 @@ function AddMovie({ onMovieAdded }) {
             const res = await fetch(`/api/movies/category/${filter}`);
             const data = await res.json();
             setSearchResults(data);
+            setSelectedLinks(new Set());
             setShowResultsPanel(true);
+            setFullPageResults(true);
         } catch (error) {
             console.error('Category fetch failed:', error);
             alert('Failed to fetch category');
@@ -510,103 +545,178 @@ function AddMovie({ onMovieAdded }) {
                 </div>
             </div>
 
-            {/* Search Results Dropdown/Panel */}
-            <div
-                style={{
-                    position: 'absolute',
-                    top: 'calc(100% - 20px)', // Overlap slightly for seamless feel
-                    left: '5%',
-                    right: '5%',
-                    background: 'rgba(25, 25, 25, 0.95)',
-                    backdropFilter: 'blur(15px)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderTop: 'none',
-                    borderRadius: '0 0 20px 20px',
-                    padding: '25px 20px 20px 20px',
-                    boxShadow: '0 15px 30px rgba(0,0,0,0.5)',
-                    zIndex: 5,
-                    opacity: showResultsPanel && searchResults ? 1 : 0,
-                    transform: showResultsPanel && searchResults ? 'translateY(0)' : 'translateY(-20px)',
-                    pointerEvents: showResultsPanel && searchResults ? 'auto' : 'none',
-                    transition: 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
-                    maxHeight: '400px',
-                    overflowY: 'auto'
-                }}
-            >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <h4 style={{ color: 'var(--accent-gold)', margin: 0 }}>Select Movie</h4>
-                        {filteredSearchResults.length > 1 && (
-                            <button
-                                onClick={() => handleBatchImport(filteredSearchResults.map(i => i.link))}
-                                className="btn btn-primary"
-                                style={{
-                                    fontSize: '0.7rem',
-                                    padding: '4px 12px',
-                                    height: 'auto',
-                                    whiteSpace: 'nowrap',
-                                    borderRadius: '15px',
-                                    boxShadow: '0 2px 8px rgba(212, 175, 55, 0.4)'
-                                }}
-                            >
-                                ADD {filteredSearchResults.length} RESULTS
-                            </button>
+            {/* Full Page Results Panel */}
+            {fullPageResults && searchResults && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(10,10,10,0.97)',
+                    backdropFilter: 'blur(20px)', zIndex: 9999,
+                    display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                    animation: 'fadeIn 0.25s ease'
+                }}>
+                    {/* Header */}
+                    <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '18px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)',
+                        flexShrink: 0, flexWrap: 'wrap', gap: '12px'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                            <h3 style={{ margin: 0, color: 'var(--accent-gold)', fontSize: '1.15rem' }}>
+                                🎬 Search Results
+                                <span style={{ fontSize: '0.8rem', color: '#666', marginLeft: '10px' }}>
+                                    {filteredSearchResults.length} found
+                                </span>
+                            </h3>
+                            {/* View toggle */}
+                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: '20px', padding: '3px' }}>
+                                {[['grid','⊞ Grid'],['table','☰ List']].map(([mode, label]) => (
+                                    <button key={mode} onClick={() => setViewMode(mode)} style={{
+                                        padding: '5px 14px', borderRadius: '16px', border: 'none', cursor: 'pointer',
+                                        fontSize: '0.78rem', fontWeight: 600,
+                                        background: viewMode === mode ? 'var(--accent-gold)' : 'transparent',
+                                        color: viewMode === mode ? '#000' : '#888', transition: 'all 0.2s'
+                                    }}>{label}</button>
+                                ))}
+                            </div>
+                            {selectedLinks.size > 0 && (
+                                <button onClick={handleAddSelected} className="btn btn-primary" style={{
+                                    fontSize: '0.82rem', padding: '7px 20px', borderRadius: '20px',
+                                    boxShadow: '0 2px 12px rgba(212,175,55,0.4)', animation: 'fadeIn 0.2s'
+                                }}>
+                                    ✚ Add Selected ({selectedLinks.size})
+                                </button>
+                            )}
+                            {filteredSearchResults.length > 1 && (
+                                <button onClick={() => {
+                                    if (selectedLinks.size === filteredSearchResults.length) {
+                                        setSelectedLinks(new Set());
+                                    } else {
+                                        setSelectedLinks(new Set(filteredSearchResults.map(i => i.link)));
+                                    }
+                                }} style={{
+                                    background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                                    color: '#aaa', borderRadius: '16px', padding: '5px 14px',
+                                    fontSize: '0.78rem', cursor: 'pointer'
+                                }}>
+                                    {selectedLinks.size === filteredSearchResults.length ? 'Deselect All' : 'Select All'}
+                                </button>
+                            )}
+                        </div>
+                        <button onClick={() => { setFullPageResults(false); setShowResultsPanel(false); setSelectedLinks(new Set()); }}
+                            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#aaa', borderRadius: '50%', width: '36px', height: '36px', fontSize: '1.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            ×
+                        </button>
+                    </div>
+
+                    {/* Results Body */}
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
+                        {filteredSearchResults.length === 0 ? (
+                            <div style={{ textAlign: 'center', color: '#555', paddingTop: '60px', fontSize: '1rem' }}>No results match your filters</div>
+                        ) : viewMode === 'grid' ? (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
+                                {filteredSearchResults.map((item, idx) => {
+                                    const sel = selectedLinks.has(item.link);
+                                    return (
+                                        <div key={idx} onClick={() => toggleSelect(item.link)} style={{
+                                            background: sel ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+                                            border: `1px solid ${sel ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.07)'}`,
+                                            borderRadius: '14px', overflow: 'hidden', cursor: 'pointer',
+                                            transition: 'all 0.2s', position: 'relative',
+                                            transform: sel ? 'scale(1.02)' : 'scale(1)'
+                                        }}
+                                            onMouseEnter={e => e.currentTarget.style.border = '1px solid rgba(212,175,55,0.4)'}
+                                            onMouseLeave={e => e.currentTarget.style.border = `1px solid ${sel ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.07)'}`}
+                                        >
+                                            <div style={{ position: 'relative' }}>
+                                                <img src={item.img} alt={item.title} style={{ width: '100%', height: '200px', objectFit: 'cover', display: 'block' }} />
+                                                <div style={{
+                                                    position: 'absolute', top: '8px', right: '8px',
+                                                    width: '22px', height: '22px', borderRadius: '50%',
+                                                    background: sel ? 'var(--accent-gold)' : 'rgba(0,0,0,0.6)',
+                                                    border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.4)'}`,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '0.7rem', color: '#000', fontWeight: 'bold',
+                                                    transition: 'all 0.2s'
+                                                }}>{sel ? '✓' : ''}</div>
+                                                {item.rating && <div style={{ position: 'absolute', bottom: '6px', left: '6px', background: 'rgba(0,0,0,0.8)', padding: '2px 7px', borderRadius: '6px', fontSize: '0.75rem', color: '#fff' }}>★ {item.rating}</div>}
+                                            </div>
+                                            <div style={{ padding: '10px' }}>
+                                                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#eee', marginBottom: '4px', lineHeight: 1.3 }}>{item.title}</div>
+                                                <div style={{ fontSize: '0.7rem', color: '#666' }}>{item.misc}</div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', textAlign: 'left' }}>
+                                        <th style={{ padding: '8px 12px', color: '#555', fontWeight: 500, width: '40px' }}></th>
+                                        <th style={{ padding: '8px 12px', color: '#555', fontWeight: 500, width: '50px' }}></th>
+                                        <th style={{ padding: '8px 12px', color: '#555', fontWeight: 500 }}>Title</th>
+                                        <th style={{ padding: '8px 12px', color: '#555', fontWeight: 500 }}>Info</th>
+                                        <th style={{ padding: '8px 12px', color: '#555', fontWeight: 500, width: '70px' }}>Rating</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredSearchResults.map((item, idx) => {
+                                        const sel = selectedLinks.has(item.link);
+                                        return (
+                                            <tr key={idx} onClick={() => toggleSelect(item.link)} style={{
+                                                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                background: sel ? 'rgba(212,175,55,0.08)' : 'transparent',
+                                                cursor: 'pointer', transition: 'background 0.15s'
+                                            }}
+                                                onMouseEnter={e => e.currentTarget.style.background = sel ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.04)'}
+                                                onMouseLeave={e => e.currentTarget.style.background = sel ? 'rgba(212,175,55,0.08)' : 'transparent'}
+                                            >
+                                                <td style={{ padding: '10px 12px' }}>
+                                                    <div style={{
+                                                        width: '18px', height: '18px', borderRadius: '4px',
+                                                        background: sel ? 'var(--accent-gold)' : 'transparent',
+                                                        border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.2)'}`,
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.7rem', color: '#000', fontWeight: 'bold', transition: 'all 0.15s'
+                                                    }}>{sel ? '✓' : ''}</div>
+                                                </td>
+                                                <td style={{ padding: '10px 12px' }}>
+                                                    <img src={item.img} alt="" style={{ width: '36px', height: '52px', objectFit: 'cover', borderRadius: '5px' }} />
+                                                </td>
+                                                <td style={{ padding: '10px 12px', fontWeight: 600, color: '#eee', fontSize: '0.9rem' }}>{item.title}</td>
+                                                <td style={{ padding: '10px 12px', color: '#666', fontSize: '0.8rem' }}>{item.misc}</td>
+                                                <td style={{ padding: '10px 12px', color: '#aaa', fontSize: '0.82rem' }}>{item.rating ? `★ ${item.rating}` : '—'}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         )}
                     </div>
-                    <button onClick={() => setShowResultsPanel(false)} className="btn btn-ghost" style={{ fontSize: '1.2rem', padding: '0 5px' }}>&times;</button>
-                </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {filteredSearchResults.length > 0 ? filteredSearchResults.map((item, idx) => (
-                        <div key={idx} onClick={() => handleSelectMovie(item.link)} style={{
-                            display: 'flex', gap: '15px', padding: '10px',
-                            border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px',
-                            cursor: 'pointer', transition: 'all 0.2s',
-                            position: 'relative'
-                        }}
-                            className="result-item"
-                        >
-                            <img src={item.img} alt={item.title} style={{ width: '50px', height: '75px', objectFit: 'cover', borderRadius: '6px' }} />
-                            <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>{item.title}</div>
-                                    {(() => {
-                                        const isCartoon = item.misc?.toLowerCase().includes('мульт') || item.misc?.toLowerCase().includes('анимац') || item.link?.includes('/cartoons/') || item.link?.includes('/animation/');
-                                        const isAnime = item.misc?.toLowerCase().includes('аниме');
-
-                                        if (isCartoon) return <span className="badge-search" style={{ background: 'rgba(255, 152, 0, 0.3)', color: '#ffcc80', borderColor: 'rgba(255,152,0,0.5)' }}>Cartoon</span>;
-                                        if (isAnime) return <span className="badge-search" style={{ background: 'rgba(233, 30, 99, 0.3)', color: '#f48fb1', borderColor: 'rgba(233,30,99,0.5)' }}>Anime</span>;
-
-                                        return (
-                                            <>
-                                                {item.misc?.toLowerCase().includes('триллер') && <span className="badge-search" style={{ background: 'rgba(183, 28, 28, 0.3)', color: '#ef9a9a', borderColor: 'rgba(183,28,28,0.5)' }}>Thriller</span>}
-                                                {item.misc?.toLowerCase().includes('детектив') && <span className="badge-search" style={{ background: 'rgba(74, 20, 140, 0.3)', color: '#ce93d8', borderColor: 'rgba(74,20,140,0.5)' }}>Detective</span>}
-                                                {item.misc?.toLowerCase().includes('ужас') && <span className="badge-search" style={{ background: 'rgba(46, 125, 50, 0.3)', color: '#a5d6a7', borderColor: 'rgba(46,125,50,0.3)' }}>Horror</span>}
-                                                {item.misc?.toLowerCase().includes('комед') && <span className="badge-search" style={{ background: 'rgba(251, 192, 45, 0.3)', color: '#fff59d', borderColor: 'rgba(251,192,45,0.5)' }}>Comedy</span>}
-                                                {(item.misc?.toLowerCase().includes('мелодрам') || item.misc?.toLowerCase().includes('драма')) && (
-                                                    <span className="badge-search" style={{ background: 'rgba(194, 24, 91, 0.3)', color: '#f48fb1', borderColor: 'rgba(194,24,91,0.5)' }}>Drama</span>
-                                                )}
-                                            </>
-                                        );
-                                    })()}
-                                    {item.type === 'series' && <span className="badge-search" style={{ background: 'rgba(33, 150, 243, 0.3)', color: '#90caf9', borderColor: 'rgba(33,150,243,0.5)' }}>TV</span>}
-
-                                    <style>{`
-                                        .badge-search {
-                                            font-size: 0.55rem; padding: 1px 4px; border-radius: 3px; border: 1px solid;
-                                            text-transform: uppercase; line-height: 1; margin-right: 4px;
-                                        }
-                                    `}</style>
-                                </div>
-                                <div style={{ fontSize: '0.8rem', color: '#888' }}>{item.misc}</div>
-                                {item.rating && <span style={{ fontSize: '0.75rem', background: '#333', padding: '1px 5px', borderRadius: '4px', marginTop: '5px', display: 'inline-block' }}>★ {item.rating}</span>}
+                    {/* Footer sticky action bar */}
+                    {selectedLinks.size > 0 && (
+                        <div style={{
+                            padding: '14px 28px', borderTop: '1px solid rgba(255,255,255,0.08)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            background: 'rgba(18,18,18,0.95)', flexShrink: 0
+                        }}>
+                            <span style={{ color: '#888', fontSize: '0.9rem' }}>
+                                {selectedLinks.size} film{selectedLinks.size > 1 ? 's' : ''} selected
+                            </span>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button onClick={() => setSelectedLinks(new Set())} style={{
+                                    background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                                    color: '#aaa', borderRadius: '20px', padding: '8px 20px', cursor: 'pointer', fontSize: '0.85rem'
+                                }}>Clear</button>
+                                <button onClick={handleAddSelected} className="btn btn-primary" style={{
+                                    padding: '8px 28px', borderRadius: '20px',
+                                    boxShadow: '0 2px 15px rgba(212,175,55,0.35)', fontSize: '0.9rem'
+                                }}>✚ Add {selectedLinks.size} to Library</button>
                             </div>
                         </div>
-                    )) : (
-                        <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>No results match your filters</div>
                     )}
                 </div>
-            </div>
+            )}
 
             {/* Helper text */}
             <div style={{ paddingLeft: '20px', marginTop: '8px', fontSize: '0.8rem', color: '#666' }}>
