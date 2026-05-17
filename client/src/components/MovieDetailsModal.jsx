@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 
 function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt }) {
@@ -18,6 +18,19 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     const [loadingReviews, setLoadingReviews] = useState(false);
     const [newReview, setNewReview] = useState('');
     const [submittingReview, setSubmittingReview] = useState(false);
+    const [editingReviewId, setEditingReviewId] = useState(null);
+    const [editingReviewContent, setEditingReviewContent] = useState('');
+
+    const currentUser = useMemo(() => {
+        const token = localStorage.getItem('token');
+        if (!token) return null;
+        try {
+            return JSON.parse(atob(token.split('.')[1]));
+        } catch (e) {
+            console.error('Failed to parse token:', e);
+            return null;
+        }
+    }, []);
 
     // Autosaved toast fade timer
     useEffect(() => {
@@ -145,7 +158,45 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
             setSubmittingReview(false);
         }
     };
+    const handleDeleteReview = async (reviewId) => {
+        if (!window.confirm('Are you sure you want to delete this review?')) return;
+        try {
+            const res = await fetch(`/api/reviews/${reviewId}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                setReviews(prev => prev.filter(r => r.id !== reviewId));
+            } else {
+                const errData = await res.json();
+                alert(errData.error || 'Failed to delete review');
+            }
+        } catch (err) {
+            console.error('Failed to delete review:', err);
+            alert('Failed to delete review');
+        }
+    };
 
+    const handleUpdateReview = async (reviewId) => {
+        if (!editingReviewContent.trim()) return;
+        try {
+            const res = await fetch(`/api/reviews/${reviewId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: editingReviewContent })
+            });
+            if (res.ok) {
+                setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, content: editingReviewContent.trim() } : r));
+                setEditingReviewId(null);
+                setEditingReviewContent('');
+            } else {
+                const errData = await res.json();
+                alert(errData.error || 'Failed to update review');
+            }
+        } catch (err) {
+            console.error('Failed to update review:', err);
+            alert('Failed to update review');
+        }
+    };
     const handleStatusToggle = async () => {
         const newStatus = movie.status === 'watched' ? 'want_to_watch' : 'watched';
         try {
@@ -538,12 +589,66 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                     }}
                                                 >
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem' }}>
-                                                        <strong style={{ color: 'var(--accent-gold)' }}>👤 {r.username}</strong>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <strong style={{ color: 'var(--accent-gold)' }}>👤 {r.username}</strong>
+                                                            {currentUser && (currentUser.id === r.user_id || currentUser.username?.toLowerCase() === 'radev') && (
+                                                                <div style={{ display: 'flex', gap: '8px', marginLeft: '8px' }}>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setEditingReviewId(r.id);
+                                                                            setEditingReviewContent(r.content);
+                                                                        }}
+                                                                        title="Edit review"
+                                                                        style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.78rem', padding: 0 }}
+                                                                        onMouseEnter={e => e.target.style.color = 'var(--accent-gold)'}
+                                                                        onMouseLeave={e => e.target.style.color = '#888'}
+                                                                    >✏️</button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteReview(r.id)}
+                                                                        title="Delete review"
+                                                                        style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.78rem', padding: 0 }}
+                                                                        onMouseEnter={e => e.target.style.color = 'var(--danger)'}
+                                                                        onMouseLeave={e => e.target.style.color = '#888'}
+                                                                    >🗑️</button>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                         <span style={{ color: '#666' }}>{new Date(r.created_at).toLocaleDateString()}</span>
                                                     </div>
-                                                    <p style={{ color: '#ccc', margin: 0, fontSize: '0.95rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-                                                        {r.content}
-                                                    </p>
+                                                    {editingReviewId === r.id ? (
+                                                        <div style={{ marginTop: '5px' }}>
+                                                            <textarea
+                                                                value={editingReviewContent}
+                                                                onChange={e => setEditingReviewContent(e.target.value)}
+                                                                style={{
+                                                                    width: '100%', minHeight: '60px', boxSizing: 'border-box',
+                                                                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                                                                    borderRadius: '6px', color: '#fff', padding: '8px', fontSize: '0.9rem',
+                                                                    outline: 'none', resize: 'vertical', fontFamily: 'inherit'
+                                                                }}
+                                                            />
+                                                            <div style={{ display: 'flex', gap: '8px', marginTop: '6px', justifyContent: 'flex-end' }}>
+                                                                <button
+                                                                    onClick={() => { setEditingReviewId(null); setEditingReviewContent(''); }}
+                                                                    style={{
+                                                                        background: 'rgba(255,255,255,0.08)', border: 'none', color: '#aaa',
+                                                                        borderRadius: '4px', padding: '4px 10px', fontSize: '0.78rem', cursor: 'pointer'
+                                                                    }}
+                                                                >Cancel</button>
+                                                                <button
+                                                                    onClick={() => handleUpdateReview(r.id)}
+                                                                    style={{
+                                                                        background: 'var(--accent-gold)', border: 'none', color: '#000',
+                                                                        borderRadius: '4px', padding: '4px 12px', fontSize: '0.78rem', fontWeight: 'bold', cursor: 'pointer'
+                                                                    }}
+                                                                >Save</button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <p style={{ color: '#ccc', margin: 0, fontSize: '0.95rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                                                            {r.content}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>

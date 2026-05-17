@@ -481,7 +481,7 @@ app.get('/api/reviews', (req, res) => {
         const { movie_link } = req.query;
         if (!movie_link) return res.status(400).json({ error: 'movie_link query parameter is required' });
 
-        const stmt = db.prepare('SELECT id, username, content, created_at FROM movie_reviews WHERE movie_link = ? ORDER BY created_at DESC');
+        const stmt = db.prepare('SELECT id, user_id, username, content, created_at FROM movie_reviews WHERE movie_link = ? ORDER BY created_at DESC');
         const reviews = stmt.all(movie_link);
         res.json(reviews);
     } catch (error) {
@@ -506,11 +506,55 @@ app.post('/api/reviews', authenticateToken, (req, res) => {
 
         res.json({
             id: info.lastInsertRowid,
+            user_id: req.user.id,
             username: user.username,
             content: content.trim(),
             created_at: new Date().toISOString(),
             success: true
         });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PATCH edit a public review
+app.patch('/api/reviews/:id', authenticateToken, (req, res) => {
+    try {
+        const { id } = req.params;
+        const { content } = req.body;
+        if (!content || !content.trim()) {
+            return res.status(400).json({ error: 'content is required' });
+        }
+
+        const review = db.prepare('SELECT user_id FROM movie_reviews WHERE id = ?').get(id);
+        if (!review) return res.status(404).json({ error: 'Review not found' });
+
+        const isAdmin = req.user.username.toLowerCase() === 'radev';
+        if (review.user_id !== req.user.id && !isAdmin) {
+            return res.status(403).json({ error: 'Access denied: You can only edit your own reviews' });
+        }
+
+        db.prepare('UPDATE movie_reviews SET content = ? WHERE id = ?').run(content.trim(), id);
+        res.json({ success: true, content: content.trim() });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE a public review
+app.delete('/api/reviews/:id', authenticateToken, (req, res) => {
+    try {
+        const { id } = req.params;
+        const review = db.prepare('SELECT user_id FROM movie_reviews WHERE id = ?').get(id);
+        if (!review) return res.status(404).json({ error: 'Review not found' });
+
+        const isAdmin = req.user.username.toLowerCase() === 'radev';
+        if (review.user_id !== req.user.id && !isAdmin) {
+            return res.status(403).json({ error: 'Access denied: You can only delete your own reviews' });
+        }
+
+        db.prepare('DELETE FROM movie_reviews WHERE id = ?').run(id);
+        res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
