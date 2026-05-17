@@ -10,6 +10,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     const [userRating, setUserRating] = useState(movie.user_rating || 0);
     const [hoverRating, setHoverRating] = useState(0);
     const [savingNotes, setSavingNotes] = useState(false);
+    const [savedToastVisible, setSavedToastVisible] = useState(false);
     const [showWatchedPrompt, setShowWatchedPrompt] = useState(openWithWatchedPrompt);
 
     // Reviews states
@@ -17,6 +18,16 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     const [loadingReviews, setLoadingReviews] = useState(false);
     const [newReview, setNewReview] = useState('');
     const [submittingReview, setSubmittingReview] = useState(false);
+
+    // Autosaved toast fade timer
+    useEffect(() => {
+        if (savedToastVisible) {
+            const timer = setTimeout(() => {
+                setSavedToastVisible(false);
+            }, 2500);
+            return () => clearTimeout(timer);
+        }
+    }, [savedToastVisible]);
 
     // Sync state if movie prop changes
     useEffect(() => {
@@ -56,6 +67,8 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
 
     const handleRatingChange = async (ratingVal) => {
         setUserRating(ratingVal);
+        // Instant visual feedback
+        setSavedToastVisible(true);
         try {
             const res = await fetch(`/api/movies/${movie.id}`, {
                 method: 'PATCH',
@@ -375,18 +388,26 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             })}
                                             <span style={{
                                                 marginLeft: '15px', fontSize: '1.05rem', fontWeight: 'bold',
-                                                color: userRating ? 'var(--accent-gold)' : '#666'
+                                                color: userRating ? 'var(--accent-gold)' : '#666',
+                                                whiteSpace: 'nowrap'
                                             }}>
                                                 {userRating ? `${userRating} / 10` : 'Unrated'}
                                             </span>
-                                            {userRating > 0 && (
-                                                <span style={{
-                                                    marginLeft: '12px', fontSize: '0.75rem', color: '#03dac6',
-                                                    opacity: 0.9, fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '4px'
-                                                }}>
-                                                    ✔ Saved automatically!
-                                                </span>
-                                            )}
+                                            
+                                            <span style={{
+                                                marginLeft: '12px', fontSize: '0.75rem', color: '#03dac6',
+                                                fontWeight: '500',
+                                                transition: 'opacity 0.8s ease, transform 0.8s ease',
+                                                opacity: savedToastVisible ? 0.95 : 0,
+                                                transform: savedToastVisible ? 'translateX(0)' : 'translateX(5px)',
+                                                pointerEvents: 'none',
+                                                whiteSpace: 'nowrap',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                            }}>
+                                                ✔ Saved automatically!
+                                            </span>
                                         </div>
                                     </div>
 
