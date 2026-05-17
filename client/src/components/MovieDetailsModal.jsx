@@ -70,17 +70,19 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
         // Instant visual feedback
         setSavedToastVisible(true);
         try {
+            const updates = { user_rating: ratingVal || null };
+            if (ratingVal > 0 && movie.status !== 'watched') {
+                updates.status = 'watched';
+                setShowWatchedPrompt(true);
+                setActiveTab('notes');
+            }
             const res = await fetch(`/api/movies/${movie.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    user_rating: ratingVal || null
-                })
+                body: JSON.stringify(updates)
             });
             if (res.ok) {
-                if (onUpdate) onUpdate(movie.id, { 
-                    user_rating: ratingVal || null
-                });
+                if (onUpdate) onUpdate(movie.id, updates);
             }
         } catch (e) {
             console.error('Failed to autosave rating:', e);
@@ -90,19 +92,21 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     const handleSaveReview = async () => {
         setSavingNotes(true);
         try {
+            const updates = { 
+                notes, 
+                notes_public: isPublic
+            };
+            if (movie.status !== 'watched') {
+                updates.status = 'watched';
+                setShowWatchedPrompt(true);
+            }
             const res = await fetch(`/api/movies/${movie.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    notes, 
-                    notes_public: isPublic
-                })
+                body: JSON.stringify(updates)
             });
             if (res.ok) {
-                if (onUpdate) onUpdate(movie.id, { 
-                    notes, 
-                    notes_public: isPublic
-                });
+                if (onUpdate) onUpdate(movie.id, updates);
                 alert('Review saved successfully!');
                 setShowWatchedPrompt(false);
             } else {
