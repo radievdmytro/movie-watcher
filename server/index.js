@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
+const sharp = require('sharp');
 const { searchMovies, getMovieDetails, getCategoryMovies } = require('./scraper');
 
 const app = express();
@@ -846,6 +848,128 @@ app.get('/share/movie/:id', (req, res) => {
         res.send(html);
     } catch (err) {
         res.status(500).send(err.message);
+    }
+});
+
+// Collection Share endpoint for Telegram HTML
+app.get('/share/collection/:id', (req, res) => {
+    try {
+        const id = req.params.id;
+        const isNumeric = /^\d+$/.test(id);
+        const collection = isNumeric 
+            ? db.prepare('SELECT * FROM collections WHERE id = ?').get(id)
+            : db.prepare('SELECT * FROM collections WHERE share_token = ?').get(id);
+
+        if (!collection) return res.status(404).send('Collection not found');
+
+        // Fetch top 5 movies by rating
+        const topMovies = db.prepare(`
+            SELECT m.title, m.rating
+            FROM movies m
+            JOIN collection_movies cm ON m.id = cm.movie_id
+            WHERE cm.collection_id = ? AND m.deleted_at IS NULL
+            ORDER BY m.rating DESC NULLS LAST
+            LIMIT 5
+        `).all(collection.id);
+
+        const title = collection.title.replace(/"/g, '&quot;');
+        let description = collection.description || topMovies.map(m => m.title).join(', ');
+        description = description.replace(/"/g, '&quot;');
+        
+        const imageUrl = `https://movie-watcher-y1bc.onrender.com/api/public/collection/${id}/og-image.jpg`;
+
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${description}" />
+    <meta property="og:image" content="${imageUrl}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+        window.location.href = "https://radievdmytro.github.io/movie-watcher/?collection=${id}";
+    </script>
+</head>
+<body style="background: #121212; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+    <p>Redirecting to Collection...</p>
+</body>
+</html>`;
+        res.send(html);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// Dynamic OG Image generation for Collections
+app.get('/api/public/collection/:id/og-image.jpg', async (req, res) => {
+    try {
+        const id = req.params.id;
+        const isNumeric = /^\d+$/.test(id);
+        const collection = isNumeric 
+            ? db.prepare('SELECT * FROM collections WHERE id = ?').get(id)
+            : db.prepare('SELECT * FROM collections WHERE share_token = ?').get(id);
+
+        if (!collection) return res.status(404).send('Not found');
+
+        const topMovies = db.prepare(`
+            SELECT m.poster_url
+            FROM movies m
+            JOIN collection_movies cm ON m.id = cm.movie_id
+            WHERE cm.collection_id = ? AND m.deleted_at IS NULL AND m.poster_url IS NOT NULL
+            ORDER BY m.rating DESC NULLS LAST
+            LIMIT 5
+        `).all(collection.id);
+
+        if (topMovies.length === 0) {
+            return res.status(404).send('No posters available');
+        }
+
+        const buffers = [];
+        for (const movie of topMovies) {
+            try {
+                const imgRes = await axios.get(movie.poster_url, { responseType: 'arraybuffer', timeout: 5000 });
+                buffers.push(Buffer.from(imgRes.data));
+            } catch (e) {
+                console.error('Failed to fetch poster for OG image', e.message);
+            }
+        }
+
+        if (buffers.length === 0) {
+            return res.status(404).send('No posters available');
+        }
+
+        const posterWidth = 300;
+        const posterHeight = 450;
+        const resizedPosters = await Promise.all(buffers.map(buf => 
+            sharp(buf).resize(posterWidth, posterHeight, { fit: 'cover' }).toBuffer()
+        ));
+
+        const overlap = 200; 
+        const totalWidth = (resizedPosters.length - 1) * overlap + posterWidth;
+        const startX = Math.max(0, Math.floor((1200 - totalWidth) / 2));
+        const startY = Math.floor((630 - posterHeight) / 2);
+
+        const compositeInputs = resizedPosters.map((buf, i) => ({
+            input: buf,
+            left: startX + (i * overlap),
+            top: startY
+        }));
+
+        const baseImage = await sharp(buffers[0])
+            .resize(1200, 630, { fit: 'cover' })
+            .blur(30)
+            .composite([
+                { input: Buffer.from('<svg><rect width="1200" height="630" fill="rgba(0,0,0,0.6)"/></svg>'), blend: 'over' },
+                ...compositeInputs
+            ])
+            .jpeg({ quality: 80 })
+            .toBuffer();
+
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+        res.send(baseImage);
+    } catch (err) {
+        console.error('OG Image Generation Error:', err);
+        res.status(500).send('Internal Server Error');
     }
 });
 

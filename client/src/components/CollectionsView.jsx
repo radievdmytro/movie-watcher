@@ -103,9 +103,8 @@ function CollectionsView({ onBack }) {
     const handleShare = (collection, e) => {
         e.stopPropagation();
         const token = collection.share_token || collection.id;
-        // Dynamically compute the path to support subdirectories (like /movie-watcher/) on GitHub Pages
-        const path = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
-        const shareUrl = `${window.location.origin}${path}?collection=${token}`;
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const shareUrl = `${baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl}/share/collection/${token}`;
 
         const copyText = (text) => {
             if (navigator.clipboard && window.isSecureContext) {
