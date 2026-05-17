@@ -12,6 +12,12 @@ function CollectionsView({ onBack }) {
     const [selectedMovie, setSelectedMovie] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
 
+    // Inline Actions and Feedback (No native windows!)
+    const [confirmDeleteCollId, setConfirmDeleteCollId] = useState(null);
+    const [confirmRemoveMovieKey, setConfirmRemoveMovieKey] = useState(null); // `${collId}-${movieId}`
+    const [confirmCloneCollId, setConfirmCloneCollId] = useState(null);
+    const [actionFeedback, setActionFeedback] = useState({ id: null, type: '', message: '' });
+
     // Share Modal State
     const [sharingCollection, setSharingCollection] = useState(null);
     const [shareRecipient, setShareRecipient] = useState('');
@@ -69,11 +75,11 @@ function CollectionsView({ onBack }) {
     }, [expandedCollectionId]);
 
     const handleDeleteCollection = async (id, e) => {
-        e.stopPropagation();
-        if (!confirm('Are you sure you want to delete this collection?')) return;
+        if (e) e.stopPropagation();
         try {
             await fetch(`/api/collections/${id}`, { method: 'DELETE' });
             if (expandedCollectionId === id) setExpandedCollectionId(null);
+            setConfirmDeleteCollId(null);
             fetchCollections();
         } catch (err) {
             console.error(err);
@@ -81,12 +87,12 @@ function CollectionsView({ onBack }) {
     };
 
     const handleRemoveMovie = async (collectionId, movieId, e) => {
-        e.stopPropagation();
-        if (!confirm('Remove this movie from the collection?')) return;
+        if (e) e.stopPropagation();
         try {
             await fetch(`/api/collections/${collectionId}/movies/${movieId}`, {
                 method: 'DELETE'
             });
+            setConfirmRemoveMovieKey(null);
             fetchCollectionDetails(collectionId);
             fetchCollections();
         } catch (err) {
@@ -127,7 +133,7 @@ function CollectionsView({ onBack }) {
             })
             .catch(err => {
                 console.error('Failed to copy share link:', err);
-                alert(`Share Link (Copy manually): ${shareUrl}`);
+                setActionFeedback({ id: collection.id, type: 'info', message: `Link: ${shareUrl}` });
             });
     };
 
@@ -161,18 +167,20 @@ function CollectionsView({ onBack }) {
     };
 
     const handleCloneCollection = async (id, e) => {
-        e.stopPropagation();
-        if (!confirm('Would you like to save an editable copy of this collection to your library?')) return;
+        if (e) e.stopPropagation();
         try {
             const res = await fetch(`/api/collections/${id}/clone`, { method: 'POST' });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to clone collection');
 
-            alert('✔ Collection successfully copied to your library!');
+            setActionFeedback({ id, type: 'success', message: '✔ Copied to your library!' });
+            setConfirmCloneCollId(null);
             fetchCollections();
             setActiveTab('mine');
+            setTimeout(() => setActionFeedback({ id: null, type: '', message: '' }), 3000);
         } catch (err) {
-            alert(`Error: ${err.message}`);
+            setActionFeedback({ id, type: 'error', message: `Error: ${err.message}` });
+            setTimeout(() => setActionFeedback({ id: null, type: '', message: '' }), 4000);
         }
     };
 
@@ -370,6 +378,17 @@ function CollectionsView({ onBack }) {
                                             {c.movie_count} Movie(s)
                                         </span>
 
+                                        {actionFeedback.id === c.id && actionFeedback.message && (
+                                            <span style={{
+                                                fontSize: '0.8rem',
+                                                color: actionFeedback.type === 'success' ? '#03dac6' : actionFeedback.type === 'info' ? 'var(--accent-gold)' : 'var(--danger)',
+                                                fontWeight: 'bold',
+                                                marginRight: '8px'
+                                            }}>
+                                                {actionFeedback.message}
+                                            </span>
+                                        )}
+
                                         {activeTab === 'mine' ? (
                                             <>
                                                 <button
@@ -395,25 +414,59 @@ function CollectionsView({ onBack }) {
                                                     📨 Send to User
                                                 </button>
 
-                                                <button
-                                                    onClick={(e) => handleDeleteCollection(c.id, e)}
-                                                    className="btn btn-ghost"
-                                                    style={{ color: 'var(--danger)', padding: '6px', fontSize: '1rem' }}
-                                                    title="Delete Collection"
-                                                >
-                                                    🗑
-                                                </button>
+                                                {confirmDeleteCollId === c.id ? (
+                                                    <span style={{ display: 'flex', gap: '5px', alignItems: 'center', background: 'rgba(239,68,68,0.08)', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(239,68,68,0.2)' }} onClick={e => e.stopPropagation()}>
+                                                        <span style={{ fontSize: '0.78rem', color: '#ff6b6b' }}>Delete?</span>
+                                                        <button
+                                                            onClick={(e) => handleDeleteCollection(c.id, e)}
+                                                            className="btn"
+                                                            style={{ background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                                        >Yes</button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollId(null); }}
+                                                            className="btn"
+                                                            style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                                        >No</button>
+                                                    </span>
+                                                ) : (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollId(c.id); }}
+                                                        className="btn btn-ghost"
+                                                        style={{ color: 'var(--danger)', padding: '6px', fontSize: '1rem' }}
+                                                        title="Delete Collection"
+                                                    >
+                                                        🗑
+                                                    </button>
+                                                )}
                                             </>
                                         ) : (
-                                            <button
-                                                onClick={(e) => handleCloneCollection(c.id, e)}
-                                                className="btn btn-gold"
-                                                style={{
-                                                    padding: '6px 12px', fontSize: '0.8rem', display: 'flex', gap: '5px', alignItems: 'center'
-                                                }}
-                                            >
-                                                📥 Save to My Library
-                                            </button>
+                                            <>
+                                                {confirmCloneCollId === c.id ? (
+                                                    <span style={{ display: 'flex', gap: '5px', alignItems: 'center', background: 'rgba(212,175,55,0.08)', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(212,175,55,0.2)' }} onClick={e => e.stopPropagation()}>
+                                                        <span style={{ fontSize: '0.78rem', color: 'var(--accent-gold)' }}>Copy to library?</span>
+                                                        <button
+                                                            onClick={(e) => handleCloneCollection(c.id, e)}
+                                                            className="btn"
+                                                            style={{ background: 'var(--accent-gold)', color: '#000', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                                        >Yes</button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setConfirmCloneCollId(null); }}
+                                                            className="btn"
+                                                            style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                                        >No</button>
+                                                    </span>
+                                                ) : (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setConfirmCloneCollId(c.id); }}
+                                                        className="btn btn-gold"
+                                                        style={{
+                                                            padding: '6px 12px', fontSize: '0.8rem', display: 'flex', gap: '5px', alignItems: 'center'
+                                                        }}
+                                                    >
+                                                        📥 Save to My Library
+                                                    </button>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>
@@ -455,19 +508,47 @@ function CollectionsView({ onBack }) {
                                                         
                                                         {/* Delete Movie from Collection button (Only if it's my collection!) */}
                                                         {activeTab === 'mine' && (
-                                                            <button
-                                                                onClick={(e) => handleRemoveMovie(c.id, movie.id, e)}
-                                                                style={{
-                                                                    position: 'absolute', top: '8px', right: '8px',
-                                                                    background: 'rgba(0, 0, 0, 0.7)', color: 'var(--danger)',
-                                                                    border: 'none', borderRadius: '50%', width: '26px', height: '26px',
-                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                    cursor: 'pointer', zIndex: 10, fontSize: '0.8rem'
-                                                                }}
-                                                                title="Remove from Collection"
-                                                            >
-                                                                &times;
-                                                            </button>
+                                                            <>
+                                                                {confirmRemoveMovieKey === `${c.id}-${movie.id}` ? (
+                                                                    <div
+                                                                        onClick={e => e.stopPropagation()}
+                                                                        style={{
+                                                                            position: 'absolute', inset: 0,
+                                                                            background: 'rgba(0, 0, 0, 0.85)',
+                                                                            display: 'flex', flexDirection: 'column',
+                                                                            alignItems: 'center', justifyContent: 'center',
+                                                                            gap: '10px', zIndex: 15, padding: '10px',
+                                                                            textAlign: 'center', animation: 'fadeIn 0.2s ease-out'
+                                                                        }}
+                                                                    >
+                                                                        <span style={{ fontSize: '0.8rem', color: '#ff6b6b', fontWeight: 'bold' }}>Remove movie?</span>
+                                                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                                                            <button
+                                                                                onClick={(e) => handleRemoveMovie(c.id, movie.id, e)}
+                                                                                style={{ background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                                                            >Yes</button>
+                                                                            <button
+                                                                                onClick={(e) => { e.stopPropagation(); setConfirmRemoveMovieKey(null); }}
+                                                                                style={{ background: 'rgba(255,255,255,0.15)', color: '#eee', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                                                            >No</button>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); setConfirmRemoveMovieKey(`${c.id}-${movie.id}`); }}
+                                                                        style={{
+                                                                            position: 'absolute', top: '8px', right: '8px',
+                                                                            background: 'rgba(0, 0, 0, 0.7)', color: 'var(--danger)',
+                                                                            border: 'none', borderRadius: '50%', width: '26px', height: '26px',
+                                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                            cursor: 'pointer', zIndex: 10, fontSize: '0.8rem', transition: 'all 0.15s'
+                                                                        }}
+                                                                        title="Remove from Collection"
+                                                                    >
+                                                                        &times;
+                                                                    </button>
+                                                                )}
+                                                            </>
                                                         )}
 
                                                         {/* Bottom title info */}

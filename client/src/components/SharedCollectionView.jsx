@@ -8,6 +8,7 @@ function SharedCollectionView({ collectionId, onExit }) {
     const [selectedMovie, setSelectedMovie] = useState(null);
     const [importingIds, setImportingIds] = useState([]);
     const [importSuccessIds, setImportSuccessIds] = useState([]);
+    const [importFailedIds, setImportFailedIds] = useState([]);
 
     // Filters & Sort
     const [search, setSearch] = useState('');
@@ -37,6 +38,7 @@ function SharedCollectionView({ collectionId, onExit }) {
     const handleImportMovie = async (movie, e) => {
         if (e) e.stopPropagation();
         setImportingIds(prev => [...prev, movie.id]);
+        setImportFailedIds(prev => prev.filter(id => id !== movie.id));
         try {
             const res = await fetch('/api/movies/import', {
                 method: 'POST',
@@ -46,10 +48,13 @@ function SharedCollectionView({ collectionId, onExit }) {
             if (res.ok || res.status === 409) {
                 setImportSuccessIds(prev => [...prev, movie.id]);
             } else {
-                alert('Failed to import movie. Please try again.');
+                setImportFailedIds(prev => [...prev, movie.id]);
+                setTimeout(() => setImportFailedIds(prev => prev.filter(id => id !== movie.id)), 4000);
             }
         } catch (err) {
             console.error('Import failed:', err);
+            setImportFailedIds(prev => [...prev, movie.id]);
+            setTimeout(() => setImportFailedIds(prev => prev.filter(id => id !== movie.id)), 4000);
         } finally {
             setImportingIds(prev => prev.filter(id => id !== movie.id));
         }
@@ -230,6 +235,7 @@ function SharedCollectionView({ collectionId, onExit }) {
                     {filteredMovies.map(movie => {
                         const isImporting = importingIds.includes(movie.id);
                         const isImported = importSuccessIds.includes(movie.id);
+                        const isFailed = importFailedIds.includes(movie.id);
                         return (
                             <div key={movie.id}
                                 onClick={() => setSelectedMovie(movie)}
@@ -248,15 +254,16 @@ function SharedCollectionView({ collectionId, onExit }) {
                                 <button onClick={e => handleImportMovie(movie, e)} disabled={isImporting || isImported}
                                     style={{
                                         position: 'absolute', top: '7px', right: '7px', zIndex: 10,
-                                        background: isImported ? 'rgba(3,218,198,0.9)' : 'rgba(0,0,0,0.78)',
-                                        color: isImported ? '#000' : 'var(--accent-gold)',
+                                        background: isFailed ? 'rgba(239,68,68,0.9)' : isImported ? 'rgba(3,218,198,0.9)' : 'rgba(0,0,0,0.78)',
+                                        color: isFailed ? '#fff' : isImported ? '#000' : 'var(--accent-gold)',
                                         border: '1px solid rgba(255,255,255,0.12)',
                                         borderRadius: '18px', padding: '4px 9px', fontSize: '0.68rem',
                                         fontWeight: 700, cursor: isImported ? 'default' : 'pointer',
                                         whiteSpace: 'nowrap', transition: 'all 0.2s'
                                     }}>
-                                    {isImporting ? '⏳' : isImported ? '✔' : '+ Add'}
+                                    {isImporting ? '⏳' : isFailed ? '❌ Failed' : isImported ? '✔' : '+ Add'}
                                 </button>
+
 
                                 {/* Bottom overlay */}
                                 <div style={{
@@ -299,6 +306,7 @@ function SharedCollectionView({ collectionId, onExit }) {
                             {filteredMovies.map(movie => {
                                 const isImporting = importingIds.includes(movie.id);
                                 const isImported = importSuccessIds.includes(movie.id);
+                                const isFailed = importFailedIds.includes(movie.id);
                                 return (
                                     <tr key={movie.id}
                                         onClick={() => setSelectedMovie(movie)}
@@ -316,13 +324,13 @@ function SharedCollectionView({ collectionId, onExit }) {
                                         <td style={{ padding: '8px 14px', textAlign: 'right' }}>
                                             <button onClick={e => handleImportMovie(movie, e)} disabled={isImporting || isImported}
                                                 style={{
-                                                    background: isImported ? 'rgba(3,218,198,0.15)' : 'rgba(212,175,55,0.12)',
-                                                    color: isImported ? '#03dac6' : 'var(--accent-gold)',
-                                                    border: `1px solid ${isImported ? 'rgba(3,218,198,0.3)' : 'rgba(212,175,55,0.3)'}`,
+                                                    background: isFailed ? 'rgba(239,68,68,0.15)' : isImported ? 'rgba(3,218,198,0.15)' : 'rgba(212,175,55,0.12)',
+                                                    color: isFailed ? '#ff6b6b' : isImported ? '#03dac6' : 'var(--accent-gold)',
+                                                    border: `1px solid ${isFailed ? 'rgba(239,68,68,0.3)' : isImported ? 'rgba(3,218,198,0.3)' : 'rgba(212,175,55,0.3)'}`,
                                                     borderRadius: '8px', padding: '4px 12px', fontSize: '0.75rem',
                                                     cursor: isImported ? 'default' : 'pointer', whiteSpace: 'nowrap'
                                                 }}>
-                                                {isImporting ? '⏳' : isImported ? '✔ Added' : '+ Add'}
+                                                {isImporting ? '⏳' : isFailed ? '❌ Failed' : isImported ? '✔ Added' : '+ Add'}
                                             </button>
                                         </td>
                                     </tr>

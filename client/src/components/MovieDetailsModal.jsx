@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom';
 function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt }) {
     if (!movie) return null;
 
-    const [activeTab, setActiveTab] = useState(openWithWatchedPrompt ? 'notes' : 'about');
+    const [activeTab, setActiveTab] = useState(openWithWatchedPrompt ? 'reviews' : 'about');
     const [notes, setNotes] = useState(movie.notes || '');
     const [isPublic, setIsPublic] = useState(movie.notes_public === 1 || movie.notes_public === true);
     const [userRating, setUserRating] = useState(movie.user_rating || 0);
@@ -20,6 +20,12 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     const [submittingReview, setSubmittingReview] = useState(false);
     const [editingReviewId, setEditingReviewId] = useState(null);
     const [editingReviewContent, setEditingReviewContent] = useState('');
+
+    // Inline feedback states
+    const [notesFeedback, setNotesFeedback] = useState({ type: '', message: '' });
+    const [reviewFeedback, setReviewFeedback] = useState({ type: '', message: '' });
+    const [confirmDeleteReviewId, setConfirmDeleteReviewId] = useState(null);
+    const [editReviewFeedback, setEditReviewFeedback] = useState({ id: null, type: '', message: '' });
 
     const currentUser = useMemo(() => {
         const token = localStorage.getItem('token');
@@ -48,7 +54,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
         setIsPublic(movie.notes_public === 1 || movie.notes_public === true);
         setUserRating(movie.user_rating || 0);
         if (openWithWatchedPrompt) {
-            setActiveTab('notes');
+            setActiveTab('reviews');
             setShowWatchedPrompt(true);
         }
     }, [movie, openWithWatchedPrompt]);
@@ -87,7 +93,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
             if (ratingVal > 0 && movie.status !== 'watched') {
                 updates.status = 'watched';
                 setShowWatchedPrompt(true);
-                setActiveTab('notes');
+                setActiveTab('reviews');
             }
             const res = await fetch(`/api/movies/${movie.id}`, {
                 method: 'PATCH',
@@ -104,6 +110,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
 
     const handleSaveReview = async () => {
         setSavingNotes(true);
+        setNotesFeedback({ type: '', message: '' });
         try {
             const updates = { 
                 notes, 
@@ -120,14 +127,15 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
             });
             if (res.ok) {
                 if (onUpdate) onUpdate(movie.id, updates);
-                alert('Review saved successfully!');
+                setNotesFeedback({ type: 'success', message: '✔ Notes saved successfully!' });
                 setShowWatchedPrompt(false);
+                setTimeout(() => setNotesFeedback({ type: '', message: '' }), 3000);
             } else {
-                alert('Failed to save review.');
+                setNotesFeedback({ type: 'error', message: 'Failed to save notes.' });
             }
         } catch (e) {
             console.error(e);
-            alert('Error saving review.');
+            setNotesFeedback({ type: 'error', message: 'Error saving notes.' });
         } finally {
             setSavingNotes(false);
         }
@@ -137,6 +145,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
         e.preventDefault();
         if (!newReview.trim()) return;
         setSubmittingReview(true);
+        setReviewFeedback({ type: '', message: '' });
         try {
             const res = await fetch('/api/reviews', {
                 method: 'POST',
@@ -147,37 +156,45 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 const data = await res.json();
                 setReviews(prev => [data, ...prev]);
                 setNewReview('');
+                setReviewFeedback({ type: 'success', message: '✔ Review published!' });
+                setTimeout(() => setReviewFeedback({ type: '', message: '' }), 3000);
             } else if (res.status === 401) {
-                alert('You must be logged in to post reviews!');
+                setReviewFeedback({ type: 'error', message: 'You must be logged in to post reviews!' });
             } else {
-                alert('Failed to post review. Please try again.');
+                setReviewFeedback({ type: 'error', message: 'Failed to post review.' });
             }
         } catch (err) {
             console.error('Failed to post review:', err);
+            setReviewFeedback({ type: 'error', message: 'Failed to post review.' });
         } finally {
             setSubmittingReview(false);
         }
     };
+
     const handleDeleteReview = async (reviewId) => {
-        if (!window.confirm('Are you sure you want to delete this review?')) return;
+        setEditReviewFeedback({ id: null, type: '', message: '' });
         try {
             const res = await fetch(`/api/reviews/${reviewId}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
                 setReviews(prev => prev.filter(r => r.id !== reviewId));
+                setConfirmDeleteReviewId(null);
             } else {
                 const errData = await res.json();
-                alert(errData.error || 'Failed to delete review');
+                setEditReviewFeedback({ id: reviewId, type: 'error', message: errData.error || 'Failed to delete review' });
+                setTimeout(() => setEditReviewFeedback({ id: null, type: '', message: '' }), 3000);
             }
         } catch (err) {
             console.error('Failed to delete review:', err);
-            alert('Failed to delete review');
+            setEditReviewFeedback({ id: reviewId, type: 'error', message: 'Failed to delete review' });
+            setTimeout(() => setEditReviewFeedback({ id: null, type: '', message: '' }), 3000);
         }
     };
 
     const handleUpdateReview = async (reviewId) => {
         if (!editingReviewContent.trim()) return;
+        setEditReviewFeedback({ id: null, type: '', message: '' });
         try {
             const res = await fetch(`/api/reviews/${reviewId}`, {
                 method: 'PATCH',
@@ -188,22 +205,27 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, content: editingReviewContent.trim() } : r));
                 setEditingReviewId(null);
                 setEditingReviewContent('');
+                setEditReviewFeedback({ id: reviewId, type: 'success', message: '✔ Review updated!' });
+                setTimeout(() => setEditReviewFeedback({ id: null, type: '', message: '' }), 3000);
             } else {
                 const errData = await res.json();
-                alert(errData.error || 'Failed to update review');
+                setEditReviewFeedback({ id: reviewId, type: 'error', message: errData.error || 'Failed to update review' });
+                setTimeout(() => setEditReviewFeedback({ id: null, type: '', message: '' }), 3000);
             }
         } catch (err) {
             console.error('Failed to update review:', err);
-            alert('Failed to update review');
+            setEditReviewFeedback({ id: reviewId, type: 'error', message: 'Failed to update review' });
+            setTimeout(() => setEditReviewFeedback({ id: null, type: '', message: '' }), 3000);
         }
     };
+
     const handleStatusToggle = async () => {
         const newStatus = movie.status === 'watched' ? 'want_to_watch' : 'watched';
         try {
             if (onUpdate) {
                 await onUpdate(movie.id, { status: newStatus });
                 if (newStatus === 'watched') {
-                    setActiveTab('notes');
+                    setActiveTab('reviews');
                     setShowWatchedPrompt(true);
                 }
             }
@@ -321,6 +343,20 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                         >
                                             {savingNotes ? '⏳ Saving...' : '💾 Save Notes'}
                                         </button>
+                                        {notesFeedback.message && (
+                                            <div style={{
+                                                marginTop: '4px',
+                                                padding: '6px 10px',
+                                                borderRadius: '4px',
+                                                fontSize: '0.78rem',
+                                                textAlign: 'center',
+                                                background: notesFeedback.type === 'success' ? 'rgba(3, 218, 198, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                color: notesFeedback.type === 'success' ? '#03dac6' : 'var(--danger)',
+                                                border: notesFeedback.type === 'success' ? '1px solid rgba(3, 218, 198, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)'
+                                            }}>
+                                                {notesFeedback.message}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -372,20 +408,6 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                 ℹ️ About
                             </button>
 
-                            {!readOnly && !isTrashMode && (
-                                <button
-                                    onClick={() => setActiveTab('notes')}
-                                    style={{
-                                        background: 'none', border: 'none', color: activeTab === 'notes' ? 'var(--accent-gold)' : '#888',
-                                        fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', padding: '5px 10px',
-                                        borderBottom: activeTab === 'notes' ? '2px solid var(--accent-gold)' : '2px solid transparent',
-                                        transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px'
-                                    }}
-                                >
-                                    📝 Rating & Review
-                                </button>
-                            )}
-
                             <button
                                 onClick={() => setActiveTab('reviews')}
                                 style={{
@@ -395,7 +417,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                     transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px'
                                 }}
                             >
-                                💬 Community Feed ({reviews.length})
+                                💬 Reviews & Rating ({reviews.length})
                             </button>
                         </div>
 
@@ -431,10 +453,10 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                 </div>
                             )}
 
-                            {activeTab === 'notes' && !readOnly && !isTrashMode && (
+                            {activeTab === 'reviews' && (
                                 <div style={{ animation: 'fadeIn 0.25s ease-out', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                     {/* Congratulations Alert Banner for marking Watched */}
-                                    {showWatchedPrompt && (
+                                    {showWatchedPrompt && !readOnly && !isTrashMode && (
                                         <div style={{
                                             background: 'rgba(3, 218, 198, 0.08)',
                                             border: '1px solid rgba(3, 218, 198, 0.25)',
@@ -460,110 +482,121 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                     )}
 
                                     {/* Star Rating Selector Component */}
-                                    <div>
-                                        <h4 style={{ color: '#fff', marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                            ⭐ Your Personal Rating
-                                        </h4>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '15px' }}>
-                                            {[...Array(10)].map((_, i) => {
-                                                const starValue = i + 1;
-                                                const isLit = (hoverRating || userRating) >= starValue;
-                                                return (
+                                    {!readOnly && !isTrashMode && (
+                                        <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '10px', padding: '15px' }}>
+                                            <h4 style={{ color: '#fff', marginTop: 0, marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                ⭐ Your Personal Rating
+                                            </h4>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                {[...Array(10)].map((_, i) => {
+                                                    const starValue = i + 1;
+                                                    const isLit = (hoverRating || userRating) >= starValue;
+                                                    return (
+                                                        <button
+                                                            key={starValue}
+                                                            type="button"
+                                                            onClick={() => handleRatingChange(starValue === userRating ? 0 : starValue)}
+                                                            onMouseEnter={() => setHoverRating(starValue)}
+                                                            onMouseLeave={() => setHoverRating(0)}
+                                                            style={{
+                                                                background: 'none', border: 'none', cursor: 'pointer',
+                                                                fontSize: '1.75rem', padding: '1px', outline: 'none',
+                                                                color: isLit ? 'var(--accent-gold)' : 'rgba(255,255,255,0.15)',
+                                                                textShadow: isLit ? '0 0 10px rgba(212,175,55,0.4)' : 'none',
+                                                                transition: 'all 0.1s ease'
+                                                            }}
+                                                        >
+                                                            ★
+                                                        </button>
+                                                    );
+                                                })}
+                                                <span style={{
+                                                    marginLeft: '15px', fontSize: '1.05rem', fontWeight: 'bold',
+                                                    color: userRating ? 'var(--accent-gold)' : '#666',
+                                                    whiteSpace: 'nowrap'
+                                                }}>
+                                                    {userRating ? `${userRating} / 10` : 'Unrated'}
+                                                </span>
+
+                                                {userRating > 0 && (
                                                     <button
-                                                        key={starValue}
                                                         type="button"
-                                                        onClick={() => handleRatingChange(starValue === userRating ? 0 : starValue)}
-                                                        onMouseEnter={() => setHoverRating(starValue)}
-                                                        onMouseLeave={() => setHoverRating(0)}
+                                                        onClick={() => handleRatingChange(0)}
+                                                        title="Clear rating"
                                                         style={{
-                                                            background: 'none', border: 'none', cursor: 'pointer',
-                                                            fontSize: '1.75rem', padding: '1px', outline: 'none',
-                                                            color: isLit ? 'var(--accent-gold)' : 'rgba(255,255,255,0.15)',
-                                                            textShadow: isLit ? '0 0 10px rgba(212,175,55,0.4)' : 'none',
-                                                            transition: 'all 0.1s ease'
+                                                            background: 'rgba(255,255,255,0.07)',
+                                                            border: '1px solid rgba(255,255,255,0.12)',
+                                                            borderRadius: '50%',
+                                                            width: '22px', height: '22px',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            cursor: 'pointer', color: '#888', fontSize: '0.7rem',
+                                                            padding: 0, transition: 'all 0.15s',
+                                                            flexShrink: 0, marginLeft: '8px'
                                                         }}
-                                                    >
-                                                        ★
-                                                    </button>
-                                                );
-                                            })}
-                                            <span style={{
-                                                marginLeft: '15px', fontSize: '1.05rem', fontWeight: 'bold',
-                                                color: userRating ? 'var(--accent-gold)' : '#666',
-                                                whiteSpace: 'nowrap'
-                                            }}>
-                                                {userRating ? `${userRating} / 10` : 'Unrated'}
-                                            </span>
-
-                                            {userRating > 0 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRatingChange(0)}
-                                                    title="Clear rating"
-                                                    style={{
-                                                        background: 'rgba(255,255,255,0.07)',
-                                                        border: '1px solid rgba(255,255,255,0.12)',
-                                                        borderRadius: '50%',
-                                                        width: '22px', height: '22px',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        cursor: 'pointer', color: '#888', fontSize: '0.7rem',
-                                                        padding: 0, transition: 'all 0.15s',
-                                                        flexShrink: 0
-                                                    }}
-                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(207,102,121,0.25)'; e.currentTarget.style.color = 'var(--danger)'; }}
-                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#888'; }}
-                                                >✕</button>
-                                            )}
-                                            
-                                            <span style={{
-                                                marginLeft: '12px', fontSize: '0.75rem', color: '#03dac6',
-                                                fontWeight: '500',
-                                                transition: 'opacity 0.8s ease, transform 0.8s ease',
-                                                opacity: savedToastVisible ? 0.95 : 0,
-                                                transform: savedToastVisible ? 'translateX(0)' : 'translateX(5px)',
-                                                pointerEvents: 'none',
-                                                whiteSpace: 'nowrap',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '4px'
-                                            }}>
-                                                ✔ Saved automatically!
-                                            </span>
+                                                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(207,102,121,0.25)'; e.currentTarget.style.color = 'var(--danger)'; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#888'; }}
+                                                    >✕</button>
+                                                )}
+                                                
+                                                <span style={{
+                                                    marginLeft: '12px', fontSize: '0.75rem', color: '#03dac6',
+                                                    fontWeight: '500',
+                                                    transition: 'opacity 0.8s ease, transform 0.8s ease',
+                                                    opacity: savedToastVisible ? 0.95 : 0,
+                                                    transform: savedToastVisible ? 'translateX(0)' : 'translateX(5px)',
+                                                    pointerEvents: 'none',
+                                                    whiteSpace: 'nowrap',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px'
+                                                }}>
+                                                    ✔ Saved automatically!
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
 
-                                    <form onSubmit={handleAddReview} style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px', marginTop: '10px' }}>
-                                         <h4 style={{ color: '#fff', marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                             📢 Write a Public Community Review
-                                         </h4>
-                                         <textarea
-                                             value={newReview}
-                                             onChange={(e) => setNewReview(e.target.value)}
-                                             placeholder="Write a public review for this movie. Everyone in the community can read this!"
-                                             style={{
-                                                 width: '100%', minHeight: '80px', background: 'rgba(0,0,0,0.4)',
-                                                 border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
-                                                 padding: '12px', color: '#fff', fontSize: '0.95rem', resize: 'vertical',
-                                                 marginBottom: '12px', outline: 'none', fontFamily: 'inherit', lineHeight: '1.5'
-                                             }}
-                                         />
-                                         <button
-                                             type="submit"
-                                             disabled={submittingReview || !newReview.trim()}
-                                             className="btn"
-                                             style={{
-                                                 background: 'var(--accent-gold)', color: '#000',
-                                                 padding: '8px 20px', fontSize: '0.85rem', fontWeight: 'bold'
-                                             }}
-                                         >
-                                             {submittingReview ? '⏳ Publishing...' : '📢 Publish Review'}
-                                         </button>
-                                     </form>
-                                 </div>
-                             )}
-
-                            {activeTab === 'reviews' && (
-                                <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
+                                    {/* Write Public Community Review Form */}
+                                    {!readOnly && !isTrashMode && (
+                                        <form onSubmit={handleAddReview} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '10px', padding: '15px' }}>
+                                             <h4 style={{ color: '#fff', marginTop: 0, marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                 📢 Write a Public Community Review
+                                             </h4>
+                                             <textarea
+                                                 value={newReview}
+                                                 onChange={(e) => setNewReview(e.target.value)}
+                                                 placeholder="Write a public review for this movie. Everyone in the community can read this!"
+                                                 style={{
+                                                     width: '100%', minHeight: '80px', background: 'rgba(0,0,0,0.4)',
+                                                     border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
+                                                     padding: '12px', color: '#fff', fontSize: '0.95rem', resize: 'vertical',
+                                                     marginBottom: '12px', outline: 'none', fontFamily: 'inherit', lineHeight: '1.5'
+                                                 }}
+                                             />
+                                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                                 <button
+                                                     type="submit"
+                                                     disabled={submittingReview || !newReview.trim()}
+                                                     className="btn"
+                                                     style={{
+                                                         background: 'var(--accent-gold)', color: '#000',
+                                                         padding: '8px 20px', fontSize: '0.85rem', fontWeight: 'bold'
+                                                     }}
+                                                 >
+                                                     {submittingReview ? '⏳ Publishing...' : '📢 Publish Review'}
+                                                 </button>
+                                                 {reviewFeedback.message && (
+                                                     <span style={{
+                                                         fontSize: '0.82rem',
+                                                         color: reviewFeedback.type === 'success' ? '#03dac6' : 'var(--danger)',
+                                                         fontWeight: 'bold'
+                                                     }}>
+                                                         {reviewFeedback.message}
+                                                     </span>
+                                                 )}
+                                             </div>
+                                        </form>
+                                    )}
 
 
                                     {/* Reviews list */}
@@ -578,7 +611,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             No community reviews posted yet. Be the first to share your thoughts!
                                         </div>
                                     ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '250px', overflowY: 'auto', paddingRight: '5px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '350px', overflowY: 'auto', paddingRight: '5px' }}>
                                             {reviews.map(r => (
                                                 <div
                                                     key={r.id}
@@ -592,25 +625,46 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                             <strong style={{ color: 'var(--accent-gold)' }}>👤 {r.username}</strong>
                                                             {currentUser && (currentUser.id === r.user_id || currentUser.username?.toLowerCase() === 'radev') && (
-                                                                <div style={{ display: 'flex', gap: '8px', marginLeft: '8px' }}>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            setEditingReviewId(r.id);
-                                                                            setEditingReviewContent(r.content);
-                                                                        }}
-                                                                        title="Edit review"
-                                                                        style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.78rem', padding: 0 }}
-                                                                        onMouseEnter={e => e.target.style.color = 'var(--accent-gold)'}
-                                                                        onMouseLeave={e => e.target.style.color = '#888'}
-                                                                    >✏️</button>
-                                                                    <button
-                                                                        onClick={() => handleDeleteReview(r.id)}
-                                                                        title="Delete review"
-                                                                        style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.78rem', padding: 0 }}
-                                                                        onMouseEnter={e => e.target.style.color = 'var(--danger)'}
-                                                                        onMouseLeave={e => e.target.style.color = '#888'}
-                                                                    >🗑️</button>
+                                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                                    {confirmDeleteReviewId === r.id ? (
+                                                                        <span style={{ display: 'flex', gap: '5px', alignItems: 'center', background: 'rgba(239,68,68,0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(239,68,68,0.2)' }}>
+                                                                            <span style={{ fontSize: '0.72rem', color: '#ff6b6b' }}>Sure delete?</span>
+                                                                            <button
+                                                                                onClick={() => handleDeleteReview(r.id)}
+                                                                                style={{ background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '3px', padding: '1px 6px', fontSize: '0.7rem', cursor: 'pointer' }}
+                                                                            >Yes</button>
+                                                                            <button
+                                                                                onClick={() => setConfirmDeleteReviewId(null)}
+                                                                                style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa', border: 'none', borderRadius: '3px', padding: '1px 6px', fontSize: '0.7rem', cursor: 'pointer' }}
+                                                                            >No</button>
+                                                                        </span>
+                                                                    ) : (
+                                                                        <>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    setEditingReviewId(r.id);
+                                                                                    setEditingReviewContent(r.content);
+                                                                                }}
+                                                                                title="Edit review"
+                                                                                style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.78rem', padding: 0 }}
+                                                                                onMouseEnter={e => e.target.style.color = 'var(--accent-gold)'}
+                                                                                onMouseLeave={e => e.target.style.color = '#888'}
+                                                                            >✏️ Edit</button>
+                                                                            <button
+                                                                                onClick={() => setConfirmDeleteReviewId(r.id)}
+                                                                                title="Delete review"
+                                                                                style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.78rem', padding: 0 }}
+                                                                                onMouseEnter={e => e.target.style.color = 'var(--danger)'}
+                                                                                onMouseLeave={e => e.target.style.color = '#888'}
+                                                                            >🗑️ Delete</button>
+                                                                        </>
+                                                                    )}
                                                                 </div>
+                                                            )}
+                                                            {editReviewFeedback.id === r.id && editReviewFeedback.message && (
+                                                                <span style={{ color: editReviewFeedback.type === 'success' ? '#03dac6' : 'var(--danger)', fontSize: '0.75rem', marginLeft: '8px' }}>
+                                                                    {editReviewFeedback.message}
+                                                                </span>
                                                             )}
                                                         </div>
                                                         <span style={{ color: '#666' }}>{new Date(r.created_at).toLocaleDateString()}</span>

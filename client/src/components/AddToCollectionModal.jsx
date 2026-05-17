@@ -7,6 +7,7 @@ function AddToCollectionModal({ movieIds, onClose, onSuccess }) {
     const [newDesc, setNewDesc] = useState('');
     const [loading, setLoading] = useState(false);
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const [error, setError] = useState('');
     const modalRef = useRef(null);
 
     useEffect(() => {
@@ -26,6 +27,7 @@ function AddToCollectionModal({ movieIds, onClose, onSuccess }) {
         e.preventDefault();
         if (!newTitle.trim()) return;
         setLoading(true);
+        setError('');
         try {
             const res = await fetch('/api/collections', {
                 method: 'POST',
@@ -39,10 +41,12 @@ function AddToCollectionModal({ movieIds, onClose, onSuccess }) {
             if (res.ok) {
                 onSuccess();
             } else {
-                alert('Failed to create collection');
+                const data = await res.json().catch(() => ({}));
+                setError(data.error || 'Failed to create collection');
             }
         } catch (err) {
             console.error(err);
+            setError(err.message);
         } finally {
             setLoading(false);
         }
@@ -50,6 +54,7 @@ function AddToCollectionModal({ movieIds, onClose, onSuccess }) {
 
     const handleAddToExisting = async (collectionId) => {
         setLoading(true);
+        setError('');
         try {
             const res = await fetch(`/api/collections/${collectionId}/movies`, {
                 method: 'POST',
@@ -59,10 +64,12 @@ function AddToCollectionModal({ movieIds, onClose, onSuccess }) {
             if (res.ok) {
                 onSuccess();
             } else {
-                alert('Failed to add to collection');
+                const data = await res.json().catch(() => ({}));
+                setError(data.error || 'Failed to add to collection');
             }
         } catch (err) {
             console.error(err);
+            setError(err.message);
         } finally {
             setLoading(false);
         }
@@ -102,6 +109,16 @@ function AddToCollectionModal({ movieIds, onClose, onSuccess }) {
                 <p style={{ color: '#aaa', fontSize: '0.9rem', marginBottom: '25px' }}>
                     Selected <span style={{ color: '#fff', fontWeight: 'bold' }}>{movieIds.length}</span> movie(s).
                 </p>
+
+                {error && (
+                    <div style={{
+                        padding: '10px 15px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)',
+                        border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ff6b6b', fontSize: '0.85rem',
+                        fontWeight: 'bold', marginBottom: '15px', textAlign: 'center', animation: 'fadeIn 0.2s'
+                    }}>
+                        {error}
+                    </div>
+                )}
 
                 {showCreateForm ? (
                     <form onSubmit={handleCreateAndAdd} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>

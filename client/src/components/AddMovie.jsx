@@ -89,7 +89,11 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
             }
         } catch (error) {
             console.error('Search failed:', error);
-            if (!isAuto) alert('Search failed');
+            if (!isAuto) {
+                setLogs([{ msg: '✗ Search failed', type: 'error' }]);
+                setIsFadingLogs(false);
+                setTimeout(() => setIsFadingLogs(true), 4000);
+            }
         } finally {
             if (urls.length <= 1) setLoading(false);
         }
@@ -214,7 +218,9 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
                     setQuery('');
                     onScrollToMovie(payload.link);
                 } else {
-                    alert(d.error);
+                    setLogs([{ msg: `✗ ${d.error || 'Failed to add movie'}`, type: 'error' }]);
+                    setIsFadingLogs(false);
+                    setTimeout(() => setIsFadingLogs(true), 4000);
                 }
             }
         } catch (error) {
@@ -255,7 +261,9 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
             setFullPageResults(true);
         } catch (error) {
             console.error('Category fetch failed:', error);
-            alert('Failed to fetch category');
+            setLogs([{ msg: '✗ Failed to fetch category', type: 'error' }]);
+            setIsFadingLogs(false);
+            setTimeout(() => setIsFadingLogs(true), 4000);
         } finally {
             setLoading(false);
         }
