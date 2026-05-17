@@ -140,13 +140,63 @@ function App() {
     };
 
     // Single Item Delete (Context dependent)
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         const isLibrary = currentView === 'library';
+
+        let inCollections = false;
+        let collectionNames = [];
+
+        if (isLibrary) {
+            try {
+                const res = await fetch('/api/movies/check-collections', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: [id] })
+                });
+                const data = await res.json();
+                inCollections = data.inCollections;
+                collectionNames = data.collectionNames || [];
+            } catch (err) {
+                console.error('Failed to check collections:', err);
+            }
+        }
+
+        const message = inCollections ? 
+            (
+                <div>
+                    <p>Этот фильм находится в ваших подборках:</p>
+                    <p style={{color: 'var(--accent-gold)'}}>{collectionNames.join(', ')}</p>
+                    <p>Удалить его полностью или скрыть из библиотеки?</p>
+                </div>
+            ) : 
+            (isLibrary ? 'Are you sure you want to move this movie to the trash?' : 'This action cannot be undone. Delete forever?');
+
         setConfirmConfig({
-            title: isLibrary ? 'Move to Trash' : 'Delete Permanently',
-            message: isLibrary ? 'Are you sure you want to move this movie to the trash?' : 'This action cannot be undone. Delete forever?',
-            confirmText: 'Delete',
+            title: isLibrary ? 'Удаление фильма' : 'Delete Permanently',
+            message: message,
+            confirmText: inCollections ? 'Удалить везде' : 'Delete',
             confirmColor: 'var(--danger)',
+            extraActions: inCollections ? [
+                {
+                    label: 'Только скрыть',
+                    color: '#4caf50',
+                    onClick: async () => {
+                        try {
+                            setConfirmConfig(null);
+                            await fetch('/api/movies/bulk-hide', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ids: [id] })
+                            });
+                            setMovies(prev => prev.filter(m => m.id !== id));
+                            setSelectedIds(prev => prev.filter(sid => sid !== id));
+                            if (selectedIds.length <= 1) setSelectionAnchor(null);
+                        } catch (error) {
+                            console.error('Hide failed:', error);
+                        }
+                    }
+                }
+            ] : [],
             onConfirm: async () => {
                 try {
                     const endpoint = isLibrary ? `/api/movies/${id}` : `/api/trash/${id}`;
@@ -163,15 +213,69 @@ function App() {
     };
 
     // Bulk Delete with Animation
-    const handleBulkDelete = () => {
+    const handleBulkDelete = async () => {
         if (selectedIds.length === 0) return;
         const isLibrary = currentView === 'library';
 
+        let inCollections = false;
+        let collectionNames = [];
+
+        if (isLibrary) {
+            try {
+                const res = await fetch('/api/movies/check-collections', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: selectedIds })
+                });
+                const data = await res.json();
+                inCollections = data.inCollections;
+                collectionNames = data.collectionNames || [];
+            } catch (err) {
+                console.error('Failed to check collections:', err);
+            }
+        }
+
+        const message = inCollections ? 
+            (
+                <div>
+                    <p>Эти фильмы (${selectedIds.length} шт.) находятся в ваших подборках:</p>
+                    <p style={{color: 'var(--accent-gold)'}}>{collectionNames.join(', ')}</p>
+                    <p>Хотите удалить их полностью (включая подборки) или только скрыть из общей библиотеки?</p>
+                </div>
+            ) : 
+            `Are you sure you want to ${isLibrary ? 'trash' : 'permanently delete'} ${selectedIds.length} item(s)?`;
+
         setConfirmConfig({
-            title: isLibrary ? 'Move Selection to Trash' : 'Delete Selection Permanently',
-            message: `Are you sure you want to ${isLibrary ? 'trash' : 'permanently delete'} ${selectedIds.length} item(s)?`,
-            confirmText: 'Delete All',
+            title: isLibrary ? 'Удаление фильмов' : 'Delete Selection Permanently',
+            message: message,
+            confirmText: inCollections ? 'Удалить везде' : 'Delete All',
             confirmColor: 'var(--danger)',
+            extraActions: inCollections ? [
+                {
+                    label: 'Только скрыть',
+                    color: '#4caf50',
+                    onClick: async () => {
+                        try {
+                            setConfirmConfig(null);
+                            await fetch('/api/movies/bulk-hide', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ids: selectedIds })
+                            });
+                            // Start delete animation to remove them from library view
+                            setDeletingIds(selectedIds);
+                            setTimeout(() => {
+                                setMovies(prev => prev.filter(m => !selectedIds.includes(m.id)));
+                                setSelectedIds([]);
+                                setSelectionAnchor(null);
+                                setDeletingIds([]);
+                            }, 300);
+                        } catch (error) {
+                            console.error('Hide failed:', error);
+                        }
+                    }
+                }
+            ] : [],
             onConfirm: async () => {
                 try {
                     // Start delete animation

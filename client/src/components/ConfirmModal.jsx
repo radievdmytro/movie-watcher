@@ -2,7 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import '../App.css';
 
-function ConfirmModal({ title, message, onConfirm, onCancel, confirmText = 'Confirm', confirmColor = 'var(--accent-gold)' }) {
+function ConfirmModal({ title, message, onConfirm, onCancel, confirmText = 'Confirm', confirmColor = 'var(--accent-gold)', extraActions = [] }) {
     const content = (
         <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -11,20 +11,34 @@ function ConfirmModal({ title, message, onConfirm, onCancel, confirmText = 'Conf
             zIndex: 99999
         }} onClick={onCancel}>
             <div className="glass-panel" style={{
-                padding: '30px', maxWidth: '400px', width: '90%', textAlign: 'center',
+                padding: '30px', maxWidth: '500px', width: '90%', textAlign: 'center',
                 border: '1px solid rgba(255,255,255,0.1)'
             }} onClick={(e) => e.stopPropagation()}>
                 <h3 style={{ fontSize: '1.5rem', marginBottom: '15px' }}>{title}</h3>
-                <p style={{ marginBottom: '25px', color: '#ccc' }}>{message}</p>
+                <div style={{ marginBottom: '25px', color: '#ccc' }}>{message}</div>
 
-                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
                     <button
                         className="btn btn-ghost"
                         onClick={onCancel}
-                        style={{ flex: 1 }}
+                        style={{ flex: '1 1 100%' }}
                     >
                         Cancel
                     </button>
+                    {extraActions.map((action, idx) => (
+                        <button
+                            key={idx}
+                            className="btn"
+                            onClick={action.onClick}
+                            style={{
+                                flex: 1,
+                                backgroundColor: action.color || '#333',
+                                color: '#fff'
+                            }}
+                        >
+                            {action.label}
+                        </button>
+                    ))}
                     <button
                         className="btn"
                         onClick={onConfirm}

@@ -139,6 +139,10 @@ const initDb = () => {
     db.exec("ALTER TABLE movies ADD COLUMN user_rating REAL DEFAULT NULL");
   } catch (e) { }
 
+  try {
+    db.exec("ALTER TABLE movies ADD COLUMN hidden_from_library INTEGER DEFAULT 0");
+  } catch (e) { }
+
   // Cryptographically backfill share_token for any existing collections lacking one
   try {
     const crypto = require('crypto');

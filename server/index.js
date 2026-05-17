@@ -325,7 +325,7 @@ app.get('/api/movies', authenticateToken, (req, res) => {
                      )
                    ) AS community_rating
             FROM movies m 
-            WHERE m.user_id = ? AND m.deleted_at IS NULL 
+            WHERE m.user_id = ? AND m.deleted_at IS NULL AND m.hidden_from_library = 0
             ORDER BY m.created_at DESC
         `);
         const movies = stmt.all(req.user.id);
@@ -581,6 +581,41 @@ app.post('/api/movies/bulk-delete', authenticateToken, (req, res) => {
         const { ids } = req.body;
         if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });
         const stmt = db.prepare('UPDATE movies SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?');
+        const transaction = db.transaction((ids) => {
+            for (const id of ids) stmt.run(id, req.user.id);
+        });
+        transaction(ids);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST Check if movies are in collections
+app.post('/api/movies/check-collections', authenticateToken, (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!ids || !Array.isArray(ids) || ids.length === 0) return res.json({ inCollections: false, collectionNames: [] });
+        
+        const stmt = db.prepare(`
+            SELECT DISTINCT c.title
+            FROM collections c
+            JOIN collection_movies cm ON c.id = cm.collection_id
+            WHERE cm.movie_id IN (${ids.map(() => '?').join(',')})
+        `);
+        const collectionNames = stmt.all(...ids).map(row => row.title);
+        res.json({ inCollections: collectionNames.length > 0, collectionNames });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST Bulk Hide from library
+app.post('/api/movies/bulk-hide', authenticateToken, (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });
+        const stmt = db.prepare('UPDATE movies SET hidden_from_library = 1 WHERE id = ? AND user_id = ?');
         const transaction = db.transaction((ids) => {
             for (const id of ids) stmt.run(id, req.user.id);
         });
