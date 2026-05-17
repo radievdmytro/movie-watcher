@@ -1,10 +1,113 @@
+import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
 function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, readOnly }) {
     if (!movie) return null;
 
+    const [activeTab, setActiveTab] = useState('about'); // 'about' | 'notes' | 'reviews'
+    const [notes, setNotes] = useState(movie.notes || '');
+    const [isPublic, setIsPublic] = useState(movie.notes_public === 1 || movie.notes_public === true);
+    const [savingNotes, setSavingNotes] = useState(false);
+    const [showWatchedPrompt, setShowWatchedPrompt] = useState(false);
+
+    // Reviews states
+    const [reviews, setReviews] = useState([]);
+    const [loadingReviews, setLoadingReviews] = useState(false);
+    const [newReview, setNewReview] = useState('');
+    const [submittingReview, setSubmittingReview] = useState(false);
+
+    // Sync state if movie prop changes
+    useEffect(() => {
+        setNotes(movie.notes || '');
+        setIsPublic(movie.notes_public === 1 || movie.notes_public === true);
+    }, [movie]);
+
+    // Fetch reviews globally by movie link
+    useEffect(() => {
+        const fetchReviews = async () => {
+            if (!movie.link) return;
+            setLoadingReviews(true);
+            try {
+                const res = await fetch(`/api/reviews?movie_link=${encodeURIComponent(movie.link)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setReviews(data);
+                }
+            } catch (err) {
+                console.error('Error fetching reviews:', err);
+            } finally {
+                setLoadingReviews(false);
+            }
+        };
+
+        fetchReviews();
+    }, [movie.link]);
+
     const handleBackdropClick = (e) => {
         if (e.target === e.currentTarget) onClose();
+    };
+
+    const handleSaveNotes = async () => {
+        setSavingNotes(true);
+        try {
+            const res = await fetch(`/api/movies/${movie.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notes, notes_public: isPublic })
+            });
+            if (res.ok) {
+                if (onUpdate) onUpdate(movie.id, { notes, notes_public: isPublic });
+                alert('Notes saved successfully!');
+            } else {
+                alert('Failed to save notes.');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error saving notes.');
+        } finally {
+            setSavingNotes(false);
+        }
+    };
+
+    const handleAddReview = async (e) => {
+        e.preventDefault();
+        if (!newReview.trim()) return;
+        setSubmittingReview(true);
+        try {
+            const res = await fetch('/api/reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ movie_link: movie.link, content: newReview })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setReviews(prev => [data, ...prev]);
+                setNewReview('');
+            } else if (res.status === 401) {
+                alert('You must be logged in to post reviews!');
+            } else {
+                alert('Failed to post review. Please try again.');
+            }
+        } catch (err) {
+            console.error('Failed to post review:', err);
+        } finally {
+            setSubmittingReview(false);
+        }
+    };
+
+    const handleStatusToggle = async () => {
+        const newStatus = movie.status === 'watched' ? 'want_to_watch' : 'watched';
+        try {
+            if (onUpdate) {
+                await onUpdate(movie.id, { status: newStatus });
+                if (newStatus === 'watched') {
+                    setActiveTab('notes');
+                    setShowWatchedPrompt(true);
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     return ReactDOM.createPortal(
@@ -77,7 +180,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                     </div>
 
                     {/* Right: Info */}
-                    <div style={{ flex: '1', minWidth: '300px' }}>
+                    <div style={{ flex: '1', minWidth: '300px', display: 'flex', flexDirection: 'column' }}>
                         <h2 style={{ fontSize: '2.4rem', margin: '0 0 5px 0', lineHeight: '1.1' }}>{movie.title}</h2>
                         {movie.original_title && (
                             <div style={{ fontSize: '1.1rem', color: '#888', marginBottom: '15px' }}>{movie.original_title}</div>
@@ -95,14 +198,218 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                             <span style={{ color: 'var(--accent-gold)', fontSize: '0.9rem' }}>{movie.genres}</span>
                         </div>
 
-                        <div style={{ marginBottom: '30px' }}>
-                            <h4 style={{ color: '#fff', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.9rem' }}>Synopsis</h4>
-                            <p style={{ color: '#ccc', lineHeight: '1.7', fontSize: '1.05rem' }}>{movie.description}</p>
+                        {/* Interactive Premium Tabs Menu */}
+                        <div style={{ display: 'flex', gap: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '25px', paddingBottom: '0' }}>
+                            <button
+                                onClick={() => setActiveTab('about')}
+                                style={{
+                                    background: 'none', border: 'none', color: activeTab === 'about' ? 'var(--accent-gold)' : '#888',
+                                    fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', padding: '5px 10px',
+                                    borderBottom: activeTab === 'about' ? '2px solid var(--accent-gold)' : '2px solid transparent',
+                                    transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px'
+                                }}
+                            >
+                                ℹ️ About
+                            </button>
+
+                            {!readOnly && !isTrashMode && (
+                                <button
+                                    onClick={() => setActiveTab('notes')}
+                                    style={{
+                                        background: 'none', border: 'none', color: activeTab === 'notes' ? 'var(--accent-gold)' : '#888',
+                                        fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', padding: '5px 10px',
+                                        borderBottom: activeTab === 'notes' ? '2px solid var(--accent-gold)' : '2px solid transparent',
+                                        transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px'
+                                    }}
+                                >
+                                    📝 My Notes
+                                </button>
+                            )}
+
+                            <button
+                                onClick={() => setActiveTab('reviews')}
+                                style={{
+                                    background: 'none', border: 'none', color: activeTab === 'reviews' ? 'var(--accent-gold)' : '#888',
+                                    fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', padding: '5px 10px',
+                                    borderBottom: activeTab === 'reviews' ? '2px solid var(--accent-gold)' : '2px solid transparent',
+                                    transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px'
+                                }}
+                            >
+                                💬 Reviews ({reviews.length})
+                            </button>
                         </div>
 
+                        {/* Tab Content Display */}
+                        <div style={{ flex: 1, marginBottom: '30px' }}>
+                            {activeTab === 'about' && (
+                                <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
+                                    <h4 style={{ color: '#fff', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.9rem' }}>Synopsis</h4>
+                                    <p style={{ color: '#ccc', lineHeight: '1.7', fontSize: '1.05rem', margin: 0 }}>{movie.description}</p>
 
-                        {/* Actions */}
-                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                    {/* Public Owner Notes Display in Shared view */}
+                                    {movie.notes && (
+                                        <div style={{
+                                            background: 'rgba(212,175,55,0.06)',
+                                            borderLeft: '4px solid var(--accent-gold)',
+                                            padding: '16px 20px',
+                                            borderRadius: '0 8px 8px 0',
+                                            marginTop: '25px',
+                                            fontStyle: 'italic',
+                                            color: '#eee',
+                                            border: '1px solid rgba(212,175,55,0.1)'
+                                        }}>
+                                            <strong style={{ display: 'block', color: 'var(--accent-gold)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', fontStyle: 'normal' }}>
+                                                ✍️ Shared Owner's Note
+                                            </strong>
+                                            "{movie.notes}"
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeTab === 'notes' && !readOnly && !isTrashMode && (
+                                <div style={{ animation: 'fadeIn 0.25s ease-out', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    {/* Congratulations Alert Banner for marking Watched */}
+                                    {showWatchedPrompt && (
+                                        <div style={{
+                                            background: 'rgba(3, 218, 198, 0.08)',
+                                            border: '1px solid rgba(3, 218, 198, 0.25)',
+                                            padding: '15px 20px',
+                                            borderRadius: '8px',
+                                            color: '#fff',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            fontSize: '0.95rem'
+                                        }}>
+                                            <div>
+                                                <span style={{ fontSize: '1.2rem', marginRight: '10px' }}>🎉</span>
+                                                <strong>Marked as Watched!</strong> Write your thoughts below.
+                                            </div>
+                                            <button
+                                                onClick={() => setShowWatchedPrompt(false)}
+                                                style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '1.2rem' }}
+                                            >
+                                                &times;
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <h4 style={{ color: '#fff', marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                            📝 Personal Note (Private by default)
+                                        </h4>
+                                        <textarea
+                                            value={notes}
+                                            onChange={(e) => setNotes(e.target.value)}
+                                            placeholder="Write your private review, thoughts, or movie night memories here..."
+                                            style={{
+                                                width: '100%', minHeight: '120px', background: 'rgba(0,0,0,0.4)',
+                                                border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
+                                                padding: '15px', color: '#fff', fontSize: '0.95rem', resize: 'vertical',
+                                                outline: 'none', fontFamily: 'inherit', lineHeight: '1.5', marginBottom: '15px'
+                                            }}
+                                        />
+
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px' }}>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', color: '#ccc', fontSize: '0.95rem' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isPublic}
+                                                    onChange={(e) => setIsPublic(e.target.checked)}
+                                                    style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }}
+                                                />
+                                                Make this note public in my shared collections 🌍
+                                            </label>
+
+                                            <button
+                                                onClick={handleSaveNotes}
+                                                disabled={savingNotes}
+                                                className="btn"
+                                                style={{
+                                                    background: 'var(--accent-gold)', color: '#000',
+                                                    padding: '10px 25px', fontSize: '0.9rem', fontWeight: 'bold'
+                                                }}
+                                            >
+                                                {savingNotes ? '⏳ Saving...' : '💾 Save Notes'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'reviews' && (
+                                <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
+                                    {/* Submit review (Only if authenticated/not guest) */}
+                                    {!readOnly && (
+                                        <form onSubmit={handleAddReview} style={{ marginBottom: '30px' }}>
+                                            <h4 style={{ color: '#fff', marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                📢 Write a Public Community Review
+                                            </h4>
+                                            <textarea
+                                                value={newReview}
+                                                onChange={(e) => setNewReview(e.target.value)}
+                                                placeholder="Write a public review for this movie. Everyone in the community can read this!"
+                                                style={{
+                                                    width: '100%', minHeight: '80px', background: 'rgba(0,0,0,0.4)',
+                                                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
+                                                    padding: '12px', color: '#fff', fontSize: '0.95rem', resize: 'vertical',
+                                                    marginBottom: '12px', outline: 'none', fontFamily: 'inherit', lineHeight: '1.5'
+                                                }}
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={submittingReview || !newReview.trim()}
+                                                className="btn"
+                                                style={{
+                                                    background: 'var(--accent-gold)', color: '#000',
+                                                    padding: '8px 20px', fontSize: '0.85rem', fontWeight: 'bold'
+                                                }}
+                                            >
+                                                {submittingReview ? '⏳ Publishing...' : '📢 Publish Review'}
+                                            </button>
+                                        </form>
+                                    )}
+
+                                    {/* Reviews list */}
+                                    <h4 style={{ color: '#fff', marginBottom: '15px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        💬 Community Feed
+                                    </h4>
+
+                                    {loadingReviews && reviews.length === 0 ? (
+                                        <div style={{ color: '#666', padding: '20px 0' }}>Loading community reviews...</div>
+                                    ) : reviews.length === 0 ? (
+                                        <div style={{ color: '#666', padding: '20px 0', fontStyle: 'italic' }}>
+                                            No community reviews posted yet. Be the first to share your thoughts!
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '250px', overflowY: 'auto', paddingRight: '5px' }}>
+                                            {reviews.map(r => (
+                                                <div
+                                                    key={r.id}
+                                                    style={{
+                                                        padding: '15px', borderRadius: '8px',
+                                                        background: 'rgba(255,255,255,0.02)',
+                                                        border: '1px solid rgba(255,255,255,0.05)'
+                                                    }}
+                                                >
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem' }}>
+                                                        <strong style={{ color: 'var(--accent-gold)' }}>👤 {r.username}</strong>
+                                                        <span style={{ color: '#666' }}>{new Date(r.created_at).toLocaleDateString()}</span>
+                                                    </div>
+                                                    <p style={{ color: '#ccc', margin: 0, fontSize: '0.95rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                                                        {r.content}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Action Controls */}
+                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                             {readOnly ? (
                                 <a
                                     href={movie.link}
@@ -132,7 +439,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             color: movie.status === 'watched' ? '#fff' : '#000',
                                             padding: '12px 25px'
                                         }}
-                                        onClick={() => onUpdate(movie.id, { status: movie.status === 'want_to_watch' ? 'watched' : 'want_to_watch' })}
+                                        onClick={handleStatusToggle}
                                     >
                                         {movie.status === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
                                     </button>
@@ -170,6 +477,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
             <style>{`
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes scaleIn { from { transform: scale(0.9) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+                @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
             `}</style>
         </div>,
         document.body

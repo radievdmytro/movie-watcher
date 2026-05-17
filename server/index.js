@@ -383,15 +383,81 @@ app.post('/api/movies', authenticateToken, (req, res) => {
     }
 });
 
-// PATCH Update Status
+// PATCH Update Movie (Status, Notes, and Notes Public status)
 app.patch('/api/movies/:id', authenticateToken, (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
-        const stmt = db.prepare('UPDATE movies SET status = ? WHERE id = ? AND user_id = ?');
-        const result = stmt.run(status, id, req.user.id);
+        const { status, notes, notes_public } = req.body;
+        
+        // Dynamically build fields to update
+        const fields = [];
+        const values = [];
+        
+        if (status !== undefined) {
+            fields.push('status = ?');
+            values.push(status);
+        }
+        if (notes !== undefined) {
+            fields.push('notes = ?');
+            values.push(notes);
+        }
+        if (notes_public !== undefined) {
+            fields.push('notes_public = ?');
+            values.push(notes_public ? 1 : 0);
+        }
+        
+        if (fields.length === 0) {
+            return res.status(400).json({ error: 'No fields to update' });
+        }
+        
+        values.push(id, req.user.id);
+        const query = `UPDATE movies SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`;
+        const stmt = db.prepare(query);
+        const result = stmt.run(...values);
+        
         if (result.changes === 0) return res.status(404).json({ error: 'Movie not found or unauthorized' });
         res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET public reviews/comments for a specific movie link
+app.get('/api/reviews', (req, res) => {
+    try {
+        const { movie_link } = req.query;
+        if (!movie_link) return res.status(400).json({ error: 'movie_link query parameter is required' });
+
+        const stmt = db.prepare('SELECT id, username, content, created_at FROM movie_reviews WHERE movie_link = ? ORDER BY created_at DESC');
+        const reviews = stmt.all(movie_link);
+        res.json(reviews);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST write a public review for a movie link
+app.post('/api/reviews', authenticateToken, (req, res) => {
+    try {
+        const { movie_link, content } = req.body;
+        if (!movie_link || !content || !content.trim()) {
+            return res.status(400).json({ error: 'movie_link and content are required' });
+        }
+
+        // Get fresh username
+        const user = db.prepare('SELECT username FROM users WHERE id = ?').get(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const stmt = db.prepare('INSERT INTO movie_reviews (user_id, username, movie_link, content) VALUES (?, ?, ?, ?)');
+        const info = stmt.run(req.user.id, user.username, movie_link, content.trim());
+
+        res.json({
+            id: info.lastInsertRowid,
+            username: user.username,
+            content: content.trim(),
+            created_at: new Date().toISOString(),
+            success: true
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -609,7 +675,13 @@ app.get('/api/collections/:id', (req, res) => {
             WHERE cm.collection_id = ? AND m.deleted_at IS NULL
             ORDER BY m.created_at DESC
         `);
-        const movies = moviesStmt.all(collection.id);
+        const movies = moviesStmt.all(collection.id).map(movie => {
+            // Mask private notes for guests viewing a shared collection!
+            if (!movie.notes_public) {
+                movie.notes = null;
+            }
+            return movie;
+        });
         res.json({ ...collection, movies });
     } catch (error) {
         res.status(500).json({ error: error.message });

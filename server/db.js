@@ -76,6 +76,20 @@ const initDb = () => {
     )
   `);
 
+  // Create Global Movie Reviews/Comments Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS movie_reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      username TEXT NOT NULL,
+      movie_link TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  `);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_reviews_movie_link ON movie_reviews(movie_link)');
+
   // Migration for user_id in movies
   try {
     db.exec("ALTER TABLE movies ADD COLUMN user_id INTEGER");
@@ -89,6 +103,16 @@ const initDb = () => {
   // Migration for share_token in collections
   try {
     db.exec("ALTER TABLE collections ADD COLUMN share_token TEXT");
+  } catch (e) { }
+
+  // Migration for notes in movies
+  try {
+    db.exec("ALTER TABLE movies ADD COLUMN notes TEXT");
+  } catch (e) { }
+
+  // Migration for notes_public in movies
+  try {
+    db.exec("ALTER TABLE movies ADD COLUMN notes_public INTEGER DEFAULT 0");
   } catch (e) { }
 
   // Cryptographically backfill share_token for any existing collections lacking one
