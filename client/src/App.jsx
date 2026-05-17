@@ -237,8 +237,20 @@ function App() {
         <div className="app">
             <header className="header glass-panel">
                 <div className="container header-content">
-                    <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                        <h1 className="gold logo" style={{ cursor: 'pointer', margin: 0 }} onClick={() => { if (currentView !== 'shared_collection') setCurrentView('library'); }}>Movie<span className="gold">Watcher</span></h1>
+                    <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <div 
+                            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+                            onClick={() => { if (currentView !== 'shared_collection') setCurrentView('library'); }}
+                        >
+                            <img 
+                                src="/favicon.png" 
+                                alt="Radev Movie Selector Mascot" 
+                                style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid var(--accent-gold)', boxShadow: '0 0 10px rgba(212,175,55,0.2)' }} 
+                            />
+                            <h1 className="gold logo" style={{ margin: 0, fontSize: '1.55rem', letterSpacing: '0.5px' }}>
+                                Radev <span className="gold">Movie Selector</span>
+                            </h1>
+                        </div>
                         {user && currentView !== 'shared_collection' ? (
                             <div className="header-nav" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <button
