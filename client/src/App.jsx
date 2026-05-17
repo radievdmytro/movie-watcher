@@ -243,7 +243,7 @@ function App() {
                             onClick={() => { if (currentView !== 'shared_collection') setCurrentView('library'); }}
                         >
                             <img 
-                                src="/favicon.png" 
+                                src="favicon.png" 
                                 alt="Radev Movie Selector Mascot" 
                                 style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid var(--accent-gold)', boxShadow: '0 0 10px rgba(212,175,55,0.2)' }} 
                             />

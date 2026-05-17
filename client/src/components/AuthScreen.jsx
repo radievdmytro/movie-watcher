@@ -41,7 +41,7 @@ function AuthScreen({ onAuthSuccess }) {
             <div className="auth-card glass-panel animate-fade-in">
                 <div className="auth-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                     <img 
-                        src="/favicon.png" 
+                        src="favicon.png" 
                         alt="Radev Movie Selector Logo" 
                         style={{ width: '75px', height: '75px', borderRadius: '50%', border: '2px solid var(--accent-gold)', boxShadow: '0 0 20px rgba(212,175,55,0.25)' }} 
                     />
