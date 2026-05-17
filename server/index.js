@@ -591,8 +591,16 @@ app.get('/api/collections', authenticateToken, (req, res) => {
 app.get('/api/collections/:id', (req, res) => {
     try {
         const { id } = req.params;
-        const collectionStmt = db.prepare('SELECT * FROM collections WHERE id = ?');
-        const collection = collectionStmt.get(id);
+        let collection;
+        
+        // Support backward compatibility (numeric ID) and secure share tokens (hex string)
+        const isNumeric = /^\d+$/.test(id);
+        if (isNumeric) {
+            collection = db.prepare('SELECT * FROM collections WHERE id = ?').get(id);
+        } else {
+            collection = db.prepare('SELECT * FROM collections WHERE share_token = ?').get(id);
+        }
+        
         if (!collection) return res.status(404).json({ error: 'Collection not found' });
 
         const moviesStmt = db.prepare(`
@@ -601,7 +609,7 @@ app.get('/api/collections/:id', (req, res) => {
             WHERE cm.collection_id = ? AND m.deleted_at IS NULL
             ORDER BY m.created_at DESC
         `);
-        const movies = moviesStmt.all(id);
+        const movies = moviesStmt.all(collection.id);
         res.json({ ...collection, movies });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -614,11 +622,14 @@ app.post('/api/collections', authenticateToken, (req, res) => {
         const { title, description, movieIds } = req.body;
         if (!title) return res.status(400).json({ error: 'Title is required' });
 
-        const insertColl = db.prepare('INSERT INTO collections (title, description, user_id) VALUES (?, ?, ?)');
+        const crypto = require('crypto');
+        const shareToken = crypto.randomBytes(12).toString('hex');
+
+        const insertColl = db.prepare('INSERT INTO collections (title, description, user_id, share_token) VALUES (?, ?, ?, ?)');
         const insertMovie = db.prepare('INSERT INTO collection_movies (collection_id, movie_id) VALUES (?, ?)');
 
-        const runTransaction = db.transaction((title, description, movieIds) => {
-            const info = insertColl.run(title, description || '', req.user.id);
+        const runTransaction = db.transaction((title, description, movieIds, shareToken) => {
+            const info = insertColl.run(title, description || '', req.user.id, shareToken);
             const collectionId = info.lastInsertRowid;
             if (movieIds && Array.isArray(movieIds)) {
                 // Ensure only movies belonging to this user are added
@@ -633,7 +644,7 @@ app.post('/api/collections', authenticateToken, (req, res) => {
             return collectionId;
         });
 
-        const collectionId = runTransaction(title, description, movieIds);
+        const collectionId = runTransaction(title, description, movieIds, shareToken);
         res.json({ id: collectionId, success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -763,7 +774,10 @@ app.post('/api/collections/:id/clone', authenticateToken, (req, res) => {
             WHERE cm.collection_id = ? AND m.deleted_at IS NULL
         `).all(id);
 
-        const insertColl = db.prepare('INSERT INTO collections (title, description, user_id) VALUES (?, ?, ?)');
+        const crypto = require('crypto');
+        const shareToken = crypto.randomBytes(12).toString('hex');
+
+        const insertColl = db.prepare('INSERT INTO collections (title, description, user_id, share_token) VALUES (?, ?, ?, ?)');
         const insertMovie = db.prepare(`
             INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, user_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -775,7 +789,7 @@ app.post('/api/collections/:id/clone', authenticateToken, (req, res) => {
         const runCloneTransaction = db.transaction(() => {
             // Create collection copy
             const title = `Copy of ${originalCollection.title}`;
-            const collInfo = insertColl.run(title, originalCollection.description || '', req.user.id);
+            const collInfo = insertColl.run(title, originalCollection.description || '', req.user.id, shareToken);
             const newCollectionId = collInfo.lastInsertRowid;
 
             for (const m of originalMovies) {

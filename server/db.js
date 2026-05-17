@@ -45,6 +45,7 @@ const initDb = () => {
       description TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       user_id INTEGER,
+      share_token TEXT,
       FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     )
   `;
@@ -84,6 +85,28 @@ const initDb = () => {
   try {
     db.exec("ALTER TABLE collections ADD COLUMN user_id INTEGER");
   } catch (e) { }
+
+  // Migration for share_token in collections
+  try {
+    db.exec("ALTER TABLE collections ADD COLUMN share_token TEXT");
+  } catch (e) { }
+
+  // Cryptographically backfill share_token for any existing collections lacking one
+  try {
+    const crypto = require('crypto');
+    const colsWithoutToken = db.prepare('SELECT id FROM collections WHERE share_token IS NULL').all();
+    if (colsWithoutToken.length > 0) {
+      console.log(`🔑 Generating secure share tokens for ${colsWithoutToken.length} existing collections...`);
+      const updateToken = db.prepare('UPDATE collections SET share_token = ? WHERE id = ?');
+      for (const col of colsWithoutToken) {
+        const token = crypto.randomBytes(12).toString('hex');
+        updateToken.run(token, col.id);
+      }
+      console.log('🟢 Secure share tokens successfully backfilled.');
+    }
+  } catch (err) {
+    console.error('❌ Failed to backfill secure share tokens:', err);
+  }
 
   // Migration for existing tables: try to add deleted_at
   try {

@@ -94,9 +94,12 @@ function CollectionsView({ onBack }) {
         }
     };
 
-    const handleShare = (id, e) => {
+    const handleShare = (collection, e) => {
         e.stopPropagation();
-        const shareUrl = `${window.location.origin}/?collection=${id}`;
+        const token = collection.share_token || collection.id;
+        // Dynamically compute the path to support subdirectories (like /movie-watcher/) on GitHub Pages
+        const path = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
+        const shareUrl = `${window.location.origin}${path}?collection=${token}`;
 
         const copyText = (text) => {
             if (navigator.clipboard && window.isSecureContext) {
@@ -119,7 +122,7 @@ function CollectionsView({ onBack }) {
 
         copyText(shareUrl)
             .then(() => {
-                setCopiedId(id);
+                setCopiedId(collection.id);
                 setTimeout(() => setCopiedId(null), 2000);
             })
             .catch(err => {
@@ -370,7 +373,7 @@ function CollectionsView({ onBack }) {
                                         {activeTab === 'mine' ? (
                                             <>
                                                 <button
-                                                    onClick={(e) => handleShare(c.id, e)}
+                                                    onClick={(e) => handleShare(c, e)}
                                                     className="btn"
                                                     style={{
                                                         background: copiedId === c.id ? '#03dac6' : 'rgba(255,255,255,0.05)',
