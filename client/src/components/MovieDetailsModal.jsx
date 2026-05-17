@@ -26,6 +26,18 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     const [reviewFeedback, setReviewFeedback] = useState({ type: '', message: '' });
     const [confirmDeleteReviewId, setConfirmDeleteReviewId] = useState(null);
     const [editReviewFeedback, setEditReviewFeedback] = useState({ id: null, type: '', message: '' });
+    const [copiedShare, setCopiedShare] = useState(false);
+
+    const handleShare = async () => {
+        const shareUrl = `https://movie-watcher-c8x1.onrender.com/share/movie/${movie.id}`;
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            setCopiedShare(true);
+            setTimeout(() => setCopiedShare(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy', err);
+        }
+    };
 
     const currentUser = useMemo(() => {
         const token = localStorage.getItem('token');
@@ -264,16 +276,22 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 }}
             >
                 {/* Header / Close */}
-                <button
-                    onClick={onClose}
-                    className="btn btn-ghost"
-                    style={{
-                        position: 'absolute', top: '15px', right: '15px',
-                        fontSize: '1.5rem', zIndex: 10, padding: '5px'
-                    }}
-                >
-                    &times;
-                </button>
+                <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', gap: '10px', zIndex: 10 }}>
+                    <button
+                        onClick={handleShare}
+                        className="btn btn-ghost"
+                        style={{ padding: '6px 12px', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: copiedShare ? '#03dac6' : '#fff' }}
+                    >
+                        {copiedShare ? '✔ Copied' : '🔗 Share'}
+                    </button>
+                    <button
+                        onClick={onClose}
+                        className="btn btn-ghost"
+                        style={{ fontSize: '1.5rem', padding: '0 8px', lineHeight: 1 }}
+                    >
+                        &times;
+                    </button>
+                </div>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', padding: '40px' }}>
                     {/* Left: Poster */}

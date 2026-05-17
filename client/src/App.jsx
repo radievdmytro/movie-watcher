@@ -9,6 +9,7 @@ import CollectionsView from './components/CollectionsView';
 import SharedCollectionView from './components/SharedCollectionView';
 import AuthScreen from './components/AuthScreen';
 import AdminDashboard from './components/AdminDashboard';
+import MovieDetailsModal from './components/MovieDetailsModal';
 
 function App() {
     const [movies, setMovies] = useState([]);
@@ -43,13 +44,23 @@ function App() {
     // Modal State
     const [confirmConfig, setConfirmConfig] = useState(null); // { title, message, onConfirm, confirmText, confirmColor }
 
-    // Parse URL on startup for shared collection ID
+    const [sharedMovieData, setSharedMovieData] = useState(null);
+
+    // Parse URL on startup for shared collection ID or movie ID
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const collId = params.get('collection');
+        const movieId = params.get('movie');
         if (collId) {
             setSharedCollectionId(collId);
             setCurrentView('shared_collection');
+        } else if (movieId) {
+            fetch(`/api/public/movie/${movieId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && !data.error) setSharedMovieData(data);
+                })
+                .catch(err => console.error('Failed to load shared movie:', err));
         }
     }, []);
 
@@ -440,6 +451,18 @@ function App() {
                 <ConfirmModal
                     {...confirmConfig}
                     onCancel={() => setConfirmConfig(null)}
+                />
+            )}
+
+            {sharedMovieData && (
+                <MovieDetailsModal
+                    movie={sharedMovieData}
+                    onClose={() => {
+                        setSharedMovieData(null);
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }}
+                    onUpdate={user && user.id === sharedMovieData.user_id ? handleUpdate : undefined}
+                    readOnly={!user || user.id !== sharedMovieData.user_id}
                 />
             )}
         </div>
