@@ -417,7 +417,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                     transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px'
                                 }}
                             >
-                                💬 Reviews & Rating ({reviews.length})
+                                📝 Rating & Community Feed ({reviews.length})
                             </button>
                         </div>
 
