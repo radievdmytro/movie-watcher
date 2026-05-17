@@ -790,6 +790,50 @@ app.get('/api/admin/users/:userId/data', authenticateToken, requireAdmin, (req, 
     }
 });
 
+// POST Admin reset password for a user
+app.post('/api/admin/users/:userId/reset-password', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { newPassword } = req.body;
+        
+        const user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        if (user.username.toLowerCase() === 'radev') {
+            return res.status(400).json({ error: 'You cannot reset the admin password from this panel' });
+        }
+        
+        const passwordToSet = newPassword ? newPassword.trim() : 'Reset123!';
+        if (passwordToSet.length < 3) return res.status(400).json({ error: 'Password must be at least 3 characters long' });
+        
+        const hash = await bcrypt.hash(passwordToSet, 10);
+        db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, userId);
+        
+        res.json({ success: true, newPassword: passwordToSet, message: `Password for @${user.username} has been reset.` });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE Admin delete user account
+app.delete('/api/admin/users/:userId', authenticateToken, requireAdmin, (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        const user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        if (user.username.toLowerCase() === 'radev') {
+            return res.status(400).json({ error: 'You cannot delete the admin account' });
+        }
+        
+        db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+        res.json({ success: true, message: `User @${user.username} has been deleted.` });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ==========================================
 // LIFECYCLE & SERVER START
 // ==========================================
