@@ -1048,7 +1048,7 @@ app.post('/api/collections', authenticateToken, (req, res) => {
         });
 
         const collectionId = runTransaction(title, description, movieIds, shareToken);
-        res.json({ id: collectionId, success: true });
+        res.json({ id: collectionId, share_token: shareToken, success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

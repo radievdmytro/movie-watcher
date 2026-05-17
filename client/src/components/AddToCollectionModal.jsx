@@ -8,6 +8,7 @@ function AddToCollectionModal({ movieIds, onClose, onSuccess }) {
     const [loading, setLoading] = useState(false);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [error, setError] = useState('');
+    const [successMsg, setSuccessMsg] = useState('');
     const modalRef = useRef(null);
 
     useEffect(() => {
@@ -39,7 +40,19 @@ function AddToCollectionModal({ movieIds, onClose, onSuccess }) {
                 })
             });
             if (res.ok) {
-                onSuccess();
+                const data = await res.json();
+                const token = data.share_token || data.id;
+                const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+                const shareUrl = `${baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl}/share/collection/${token}`;
+                
+                try {
+                    await navigator.clipboard.writeText(shareUrl);
+                    setSuccessMsg('✅ Коллекция создана! Ссылка скопирована в буфер обмена, теперь вы можете ею поделиться!');
+                    setTimeout(() => onSuccess(), 3500);
+                } catch (err) {
+                    setSuccessMsg('✅ Коллекция создана! (Не удалось скопировать ссылку)');
+                    setTimeout(() => onSuccess(), 2000);
+                }
             } else {
                 const data = await res.json().catch(() => ({}));
                 setError(data.error || 'Failed to create collection');
@@ -117,6 +130,15 @@ function AddToCollectionModal({ movieIds, onClose, onSuccess }) {
                         fontWeight: 'bold', marginBottom: '15px', textAlign: 'center', animation: 'fadeIn 0.2s'
                     }}>
                         {error}
+                    </div>
+                )}
+                {successMsg && (
+                    <div style={{
+                        padding: '10px 15px', borderRadius: '8px', background: 'rgba(76, 175, 80, 0.08)',
+                        border: '1px solid rgba(76, 175, 80, 0.2)', color: '#4caf50', fontSize: '0.85rem',
+                        fontWeight: 'bold', marginBottom: '15px', textAlign: 'center', animation: 'fadeIn 0.2s'
+                    }}>
+                        {successMsg}
                     </div>
                 )}
 
