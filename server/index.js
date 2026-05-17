@@ -383,11 +383,11 @@ app.post('/api/movies', authenticateToken, (req, res) => {
     }
 });
 
-// PATCH Update Movie (Status, Notes, and Notes Public status)
+// PATCH Update Movie (Status, Notes, Notes Public status, and User Rating)
 app.patch('/api/movies/:id', authenticateToken, (req, res) => {
     try {
         const { id } = req.params;
-        const { status, notes, notes_public } = req.body;
+        const { status, notes, notes_public, user_rating } = req.body;
         
         // Dynamically build fields to update
         const fields = [];
@@ -404,6 +404,10 @@ app.patch('/api/movies/:id', authenticateToken, (req, res) => {
         if (notes_public !== undefined) {
             fields.push('notes_public = ?');
             values.push(notes_public ? 1 : 0);
+        }
+        if (user_rating !== undefined) {
+            fields.push('user_rating = ?');
+            values.push(user_rating);
         }
         
         if (fields.length === 0) {

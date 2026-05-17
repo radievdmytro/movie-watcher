@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
-function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, readOnly }) {
+function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt }) {
     if (!movie) return null;
 
-    const [activeTab, setActiveTab] = useState('about'); // 'about' | 'notes' | 'reviews'
+    const [activeTab, setActiveTab] = useState(openWithWatchedPrompt ? 'notes' : 'about');
     const [notes, setNotes] = useState(movie.notes || '');
     const [isPublic, setIsPublic] = useState(movie.notes_public === 1 || movie.notes_public === true);
+    const [userRating, setUserRating] = useState(movie.user_rating || 0);
+    const [hoverRating, setHoverRating] = useState(0);
     const [savingNotes, setSavingNotes] = useState(false);
-    const [showWatchedPrompt, setShowWatchedPrompt] = useState(false);
+    const [showWatchedPrompt, setShowWatchedPrompt] = useState(openWithWatchedPrompt);
 
     // Reviews states
     const [reviews, setReviews] = useState([]);
@@ -20,7 +22,12 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     useEffect(() => {
         setNotes(movie.notes || '');
         setIsPublic(movie.notes_public === 1 || movie.notes_public === true);
-    }, [movie]);
+        setUserRating(movie.user_rating || 0);
+        if (openWithWatchedPrompt) {
+            setActiveTab('notes');
+            setShowWatchedPrompt(true);
+        }
+    }, [movie, openWithWatchedPrompt]);
 
     // Fetch reviews globally by movie link
     useEffect(() => {
@@ -53,17 +60,26 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
             const res = await fetch(`/api/movies/${movie.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ notes, notes_public: isPublic })
+                body: JSON.stringify({ 
+                    notes, 
+                    notes_public: isPublic,
+                    user_rating: userRating || null
+                })
             });
             if (res.ok) {
-                if (onUpdate) onUpdate(movie.id, { notes, notes_public: isPublic });
-                alert('Notes saved successfully!');
+                if (onUpdate) onUpdate(movie.id, { 
+                    notes, 
+                    notes_public: isPublic,
+                    user_rating: userRating || null
+                });
+                alert('Saved successfully!');
+                setShowWatchedPrompt(false);
             } else {
-                alert('Failed to save notes.');
+                alert('Failed to save.');
             }
         } catch (e) {
             console.error(e);
-            alert('Error saving notes.');
+            alert('Error saving.');
         } finally {
             setSavingNotes(false);
         }
@@ -193,6 +209,18 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                             }}>
                                 ★ {movie.rating || 'N/A'}
                             </span>
+                            
+                            {/* Personal user rating in header */}
+                            {movie.user_rating && (
+                                <span style={{
+                                    background: 'rgba(3, 218, 198, 0.2)', color: '#03dac6',
+                                    padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold',
+                                    border: '1px solid rgba(3, 218, 198, 0.4)'
+                                }}>
+                                    👤 My rating: ★ {movie.user_rating}
+                                </span>
+                            )}
+                            
                             <span style={{ color: '#aaa' }}>{movie.year}</span>
                             <div style={{ width: '1px', height: '15px', background: '#444' }}></div>
                             <span style={{ color: 'var(--accent-gold)', fontSize: '0.9rem' }}>{movie.genres}</span>
@@ -222,7 +250,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                         transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px'
                                     }}
                                 >
-                                    📝 My Notes
+                                    📝 My Review
                                 </button>
                             )}
 
@@ -246,22 +274,26 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                     <h4 style={{ color: '#fff', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.9rem' }}>Synopsis</h4>
                                     <p style={{ color: '#ccc', lineHeight: '1.7', fontSize: '1.05rem', margin: 0 }}>{movie.description}</p>
 
-                                    {/* Public Owner Notes Display in Shared view */}
-                                    {movie.notes && (
+                                    {/* Public Owner Notes & Rating Display in Shared view */}
+                                    {(movie.notes || movie.user_rating) && (
                                         <div style={{
                                             background: 'rgba(212,175,55,0.06)',
                                             borderLeft: '4px solid var(--accent-gold)',
                                             padding: '16px 20px',
                                             borderRadius: '0 8px 8px 0',
                                             marginTop: '25px',
-                                            fontStyle: 'italic',
                                             color: '#eee',
                                             border: '1px solid rgba(212,175,55,0.1)'
                                         }}>
-                                            <strong style={{ display: 'block', color: 'var(--accent-gold)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', fontStyle: 'normal' }}>
-                                                ✍️ Shared Owner's Note
+                                            <strong style={{ display: 'block', color: 'var(--accent-gold)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                                                ✍️ Shared Owner's Review
                                             </strong>
-                                            "{movie.notes}"
+                                            {movie.user_rating && (
+                                                <div style={{ color: 'var(--accent-gold)', fontWeight: 'bold', marginBottom: '8px', fontSize: '0.95rem' }}>
+                                                    Rating: ★ {movie.user_rating} / 10
+                                                </div>
+                                            )}
+                                            {movie.notes && <div style={{ fontStyle: 'italic' }}>"{movie.notes}"</div>}
                                         </div>
                                     )}
                                 </div>
@@ -284,7 +316,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                         }}>
                                             <div>
                                                 <span style={{ fontSize: '1.2rem', marginRight: '10px' }}>🎉</span>
-                                                <strong>Marked as Watched!</strong> Write your thoughts below.
+                                                <strong>Congratulations!</strong> You have watched this movie! Rate it and write a review below.
                                             </div>
                                             <button
                                                 onClick={() => setShowWatchedPrompt(false)}
@@ -295,16 +327,53 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                         </div>
                                     )}
 
+                                    {/* Star Rating Selector Component */}
                                     <div>
                                         <h4 style={{ color: '#fff', marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                            📝 Personal Note (Private by default)
+                                            ⭐ Your Personal Rating
+                                        </h4>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '15px' }}>
+                                            {[...Array(10)].map((_, i) => {
+                                                const starValue = i + 1;
+                                                const isLit = (hoverRating || userRating) >= starValue;
+                                                return (
+                                                    <button
+                                                        key={starValue}
+                                                        type="button"
+                                                        onClick={() => setUserRating(starValue)}
+                                                        onMouseEnter={() => setHoverRating(starValue)}
+                                                        onMouseLeave={() => setHoverRating(0)}
+                                                        style={{
+                                                            background: 'none', border: 'none', cursor: 'pointer',
+                                                            fontSize: '1.75rem', padding: '1px', outline: 'none',
+                                                            color: isLit ? 'var(--accent-gold)' : 'rgba(255,255,255,0.15)',
+                                                            textShadow: isLit ? '0 0 10px rgba(212,175,55,0.4)' : 'none',
+                                                            transition: 'all 0.1s ease'
+                                                        }}
+                                                    >
+                                                        ★
+                                                    </button>
+                                                );
+                                            })}
+                                            <span style={{
+                                                marginLeft: '15px', fontSize: '1.05rem', fontWeight: 'bold',
+                                                color: userRating ? 'var(--accent-gold)' : '#666'
+                                            }}>
+                                                {userRating ? `${userRating} / 10` : 'Unrated'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 style={{ color: '#fff', marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                            📝 Personal Review & Notes (Private by default)
                                         </h4>
                                         <textarea
                                             value={notes}
                                             onChange={(e) => setNotes(e.target.value)}
                                             placeholder="Write your private review, thoughts, or movie night memories here..."
                                             style={{
-                                                width: '100%', minHeight: '120px', background: 'rgba(0,0,0,0.4)',
+                                                width: '100%', minHeight: '100px', background: 'rgba(0,0,0,0.4)',
                                                 border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
                                                 padding: '15px', color: '#fff', fontSize: '0.95rem', resize: 'vertical',
                                                 outline: 'none', fontFamily: 'inherit', lineHeight: '1.5', marginBottom: '15px'
@@ -319,7 +388,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                     onChange={(e) => setIsPublic(e.target.checked)}
                                                     style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }}
                                                 />
-                                                Make this note public in my shared collections 🌍
+                                                Make this note & rating public in shared collections 🌍
                                             </label>
 
                                             <button
@@ -331,7 +400,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                     padding: '10px 25px', fontSize: '0.9rem', fontWeight: 'bold'
                                                 }}
                                             >
-                                                {savingNotes ? '⏳ Saving...' : '💾 Save Notes'}
+                                                {savingNotes ? '⏳ Saving...' : '💾 Save Review'}
                                             </button>
                                         </div>
                                     </div>

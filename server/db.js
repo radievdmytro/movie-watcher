@@ -115,6 +115,11 @@ const initDb = () => {
     db.exec("ALTER TABLE movies ADD COLUMN notes_public INTEGER DEFAULT 0");
   } catch (e) { }
 
+  // Migration for user_rating in movies
+  try {
+    db.exec("ALTER TABLE movies ADD COLUMN user_rating REAL DEFAULT NULL");
+  } catch (e) { }
+
   // Cryptographically backfill share_token for any existing collections lacking one
   try {
     const crypto = require('crypto');

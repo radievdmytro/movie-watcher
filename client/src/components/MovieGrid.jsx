@@ -43,6 +43,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         return parseInt(localStorage.getItem('posterSize')) || 220;
     });
     const [selectedMovie, setSelectedMovie] = useState(null);
+    const [openWithWatchedPrompt, setOpenWithWatchedPrompt] = useState(false);
     const [hoveredDescId, setHoveredDescId] = useState(null);
 
     // Animation state
@@ -264,7 +265,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             {selectedMovie && (
                 <MovieDetailsModal
                     movie={selectedMovie}
-                    onClose={() => setSelectedMovie(null)}
+                    openWithWatchedPrompt={openWithWatchedPrompt}
+                    onClose={() => { setSelectedMovie(null); setOpenWithWatchedPrompt(false); }}
                     onUpdate={onUpdate}
                     onDelete={onDelete}
                     isTrashMode={isTrashMode}
@@ -666,13 +668,21 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                             )}
 
                                             {/* Series badge is always informative */}
+                                            {movie.status === 'watched' && (
+                                                <span className="badge-ui" style={{ background: 'rgba(3, 218, 198, 0.9)', color: '#fff' }}>✔ Watched</span>
+                                            )}
                                             {movie.type === 'series' && <span className="badge-ui" style={{ background: 'rgba(33, 150, 243, 0.9)' }}>TV</span>}
                                             <div style={{
                                                 background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px',
                                                 fontWeight: 'bold', color: 'var(--accent-gold)', fontSize: '0.8rem',
-                                                backdropFilter: 'blur(4px)'
+                                                backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', gap: '4px'
                                             }}>
-                                                {movie.rating ? movie.rating : '-'}
+                                                {movie.rating ? `★ ${movie.rating}` : '-'}
+                                                {movie.user_rating && (
+                                                    <span style={{ color: '#03dac6', borderLeft: '1px solid #444', paddingLeft: '5px', marginLeft: '2px' }}>
+                                                        👤 ★ {movie.user_rating}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
 
@@ -718,7 +728,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#ccc', marginTop: '2px' }}>
                                                 <span>{movie.year}</span>
-                                                <span style={{ color: movie.status === 'watched' ? '#03dac6' : '#d4af37' }}>{movie.status === 'watched' ? 'Seen' : 'To Watch'}</span>
+                                                <span style={{ color: movie.status === 'watched' ? '#03dac6' : '#d4af37', fontWeight: 'bold' }}>
+                                                    {movie.status === 'watched' ? `Watched ${movie.user_rating ? `(★ ${movie.user_rating})` : ''}` : 'To Watch'}
+                                                </span>
                                             </div>
 
                                             {movie.genres && (
@@ -752,9 +764,17 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                         flex: 1, padding: '4px', fontSize: '0.8rem',
                                                         color: '#fff', borderRadius: '4px'
                                                     }}
-                                                    onClick={() => onUpdate(movie.id, { status: movie.status === 'want_to_watch' ? 'watched' : 'want_to_watch' })}
+                                                    onClick={async () => {
+                                                        if (movie.status !== 'watched') {
+                                                            await onUpdate(movie.id, { status: 'watched' });
+                                                            setOpenWithWatchedPrompt(true);
+                                                            setSelectedMovie(movie);
+                                                        } else {
+                                                            await onUpdate(movie.id, { status: 'want_to_watch' });
+                                                        }
+                                                    }}
                                                 >
-                                                    {movie.status === 'watched' ? 'Return' : 'Watch'}
+                                                    {movie.status === 'watched' ? 'Watched' : 'Watch'}
                                                 </button>
                                                 <button
                                                     className="btn-ghost"
@@ -874,13 +894,26 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                         </div>
                                     </td>
                                     <td style={{ padding: '15px', color: 'var(--accent-gold)', fontWeight: 'bold' }}>
-                                        {movie.rating || '-'}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span>★ {movie.rating || '-'}</span>
+                                            {movie.user_rating && (
+                                                <span style={{ color: '#03dac6', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>👤 ★ {movie.user_rating}</span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td style={{ padding: '15px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             <button
                                                 className="btn-ghost"
-                                                onClick={() => onUpdate(movie.id, { status: movie.status === 'want_to_watch' ? 'watched' : 'want_to_watch' })}
+                                                onClick={async () => {
+                                                    if (movie.status !== 'watched') {
+                                                        await onUpdate(movie.id, { status: 'watched' });
+                                                        setOpenWithWatchedPrompt(true);
+                                                        setSelectedMovie(movie);
+                                                    } else {
+                                                        await onUpdate(movie.id, { status: 'want_to_watch' });
+                                                    }
+                                                }}
                                                 style={{
                                                     padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem',
                                                     background: movie.status === 'watched' ? 'rgba(3, 218, 198, 0.2)' : 'rgba(212, 175, 55, 0.2)',
@@ -893,7 +926,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                 onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
                                                 onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                                             >
-                                                {movie.status === 'watched' ? 'Watched' : 'Want to Watch'}
+                                                {movie.status === 'watched' ? `Watched ${movie.user_rating ? `(★ ${movie.user_rating})` : ''}` : 'Want to Watch'}
                                             </button>
 
                                             <button
