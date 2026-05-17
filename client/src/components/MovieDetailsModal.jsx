@@ -436,6 +436,19 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                             </button>
 
                             <button
+                                onClick={() => setActiveTab('player')}
+                                style={{
+                                    background: 'none', border: 'none', color: activeTab === 'player' ? 'var(--accent-gold)' : '#888',
+                                    fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', padding: '5px 10px',
+                                    borderBottom: activeTab === 'player' ? '2px solid var(--accent-gold)' : '2px solid transparent',
+                                    transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px',
+                                    color: '#03dac6'
+                                }}
+                            >
+                                ▶️ Watch Online
+                            </button>
+
+                            <button
                                 onClick={() => setActiveTab('reviews')}
                                 style={{
                                     background: 'none', border: 'none', color: activeTab === 'reviews' ? 'var(--accent-gold)' : '#888',
@@ -477,6 +490,18 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             {movie.notes && <div style={{ fontStyle: 'italic' }}>"{movie.notes}"</div>}
                                         </div>
                                     )}
+                                </div>
+                            )}
+
+                            {activeTab === 'player' && (
+                                <div style={{ animation: 'fadeIn 0.25s ease-out', width: '100%', height: '400px', background: '#000', borderRadius: '8px', overflow: 'hidden' }}>
+                                    <iframe
+                                        src={`https://yohoho.cc/?title=${encodeURIComponent(movie.original_title || movie.title)}`}
+                                        width="100%"
+                                        height="100%"
+                                        frameBorder="0"
+                                        allowFullScreen
+                                    ></iframe>
                                 </div>
                             )}
 
@@ -741,25 +766,34 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                         {/* Modal Action Controls */}
                         <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                             {readOnly ? (
-                                <a
-                                    href={movie.link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="btn"
-                                    style={{
-                                        background: 'var(--accent-gold)',
-                                        color: '#000',
-                                        padding: '12px 35px',
-                                        fontSize: '1.05rem',
-                                        fontWeight: 'bold',
-                                        boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '8px'
-                                    }}
-                                >
-                                    🎬 Watch on HDRezka
-                                </a>
+                                <>
+                                    <button
+                                        onClick={() => setActiveTab('player')}
+                                        className="btn btn-ghost"
+                                        style={{ border: '1px solid rgba(3, 218, 198, 0.4)', color: '#03dac6', padding: '12px 25px' }}
+                                    >
+                                        ▶️ Watch Online
+                                    </button>
+                                    <a
+                                        href={movie.link}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="btn"
+                                        style={{
+                                            background: 'var(--accent-gold)',
+                                            color: '#000',
+                                            padding: '12px 35px',
+                                            fontSize: '1.05rem',
+                                            fontWeight: 'bold',
+                                            boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}
+                                    >
+                                        🎬 Watch on HDRezka
+                                    </a>
+                                </>
                             ) : !isTrashMode ? (
                                 <>
                                     <button
@@ -772,6 +806,13 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                         onClick={handleStatusToggle}
                                     >
                                         {movie.status === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('player')}
+                                        className="btn btn-ghost"
+                                        style={{ border: '1px solid rgba(3, 218, 198, 0.4)', color: '#03dac6', padding: '12px 25px' }}
+                                    >
+                                        ▶️ Watch Online
                                     </button>
                                     <a
                                         href={movie.link}
