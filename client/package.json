@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://ВАШ_GITHUB_ЛОГИН.github.io/movie-watcher/",
+  "homepage": "https://radievdmytro.github.io/movie-watcher/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
