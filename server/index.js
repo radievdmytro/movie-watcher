@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const { searchMovies, getMovieDetails, getCategoryMovies } = require('./scraper');
 
 const app = express();
@@ -14,6 +16,8 @@ app.use(express.json());
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const dbPath = path.join(__dirname, 'movies.db');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'movie_watcher_super_secret_key_12345';
 
 let db = null;
 let initDb = null;
@@ -101,12 +105,89 @@ async function shutdownGracefully() {
 process.on('SIGTERM', shutdownGracefully);
 process.on('SIGINT', shutdownGracefully);
 
+// ==========================================
+// AUTHENTICATION MIDDLEWARE & ENDPOINTS
+// ==========================================
+
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ error: 'Authentication token required' });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+        req.user = user;
+        next();
+    });
+}
+
+// Register
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+
+        const trimmedUser = username.trim().toLowerCase();
+        if (trimmedUser.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters' });
+        if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+
+        const checkUser = db.prepare('SELECT id FROM users WHERE username = ?').get(trimmedUser);
+        if (checkUser) return res.status(409).json({ error: 'Username is already taken' });
+
+        const passwordHash = await bcrypt.hash(password, 10);
+        const stmt = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)');
+        const info = stmt.run(trimmedUser, passwordHash);
+        const userId = info.lastInsertRowid;
+
+        // Auto-assign any existing orphaned movies or collections (user_id IS NULL) to the first registered user!
+        try {
+            db.prepare('UPDATE movies SET user_id = ? WHERE user_id IS NULL').run(userId);
+            db.prepare('UPDATE collections SET user_id = ? WHERE user_id IS NULL').run(userId);
+            console.log(`☁️ Assigned orphaned movies/collections to first user: ${trimmedUser}`);
+        } catch (e) {
+            console.error('Migration update failed:', e);
+        }
+
+        const token = jwt.sign({ id: userId, username: trimmedUser }, JWT_SECRET, { expiresIn: '30d' });
+        res.json({ token, user: { id: userId, username: trimmedUser } });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+
+        const trimmedUser = username.trim().toLowerCase();
+        const user = db.prepare('SELECT * FROM users WHERE username = ?').get(trimmedUser);
+        if (!user) return res.status(401).json({ error: 'Invalid username or password' });
+
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) return res.status(401).json({ error: 'Invalid username or password' });
+
+        const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
+        res.json({ token, user: { id: user.id, username: user.username } });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get Current User (Me)
+app.get('/api/auth/me', authenticateToken, (req, res) => {
+    res.json({ user: req.user });
+});
+
+// Helper: Check if URL is HDRezka
 const isHdrezkaUrl = (str) => {
     return str.toLowerCase().includes('hdrezka') && (str.startsWith('http://') || str.startsWith('https://'));
 };
 
 // Search / Parse Endpoint
-app.post('/api/movies/search', async (req, res) => {
+app.post('/api/movies/search', authenticateToken, async (req, res) => {
     try {
         const { query } = req.body;
         if (!query) return res.status(400).json({ error: 'Query required' });
@@ -125,7 +206,7 @@ app.post('/api/movies/search', async (req, res) => {
 });
 
 // Category Listing Endpoint
-app.get('/api/movies/category/:filter', async (req, res) => {
+app.get('/api/movies/category/:filter', authenticateToken, async (req, res) => {
     try {
         const { filter } = req.params;
         const validFilters = ['watching', 'last', 'popular'];
@@ -140,13 +221,15 @@ app.get('/api/movies/category/:filter', async (req, res) => {
     }
 });
 
-// CRUD Endpoints
+// ==========================================
+// CRUD MOVIE ENDPOINTS (USER SCOPED)
+// ==========================================
 
 // GET Active Movies
-app.get('/api/movies', (req, res) => {
+app.get('/api/movies', authenticateToken, (req, res) => {
     try {
-        const stmt = db.prepare('SELECT * FROM movies WHERE deleted_at IS NULL ORDER BY created_at DESC');
-        const movies = stmt.all();
+        const stmt = db.prepare('SELECT * FROM movies WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC');
+        const movies = stmt.all(req.user.id);
         res.json(movies);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -154,10 +237,10 @@ app.get('/api/movies', (req, res) => {
 });
 
 // GET Trash
-app.get('/api/trash', (req, res) => {
+app.get('/api/trash', authenticateToken, (req, res) => {
     try {
-        const stmt = db.prepare('SELECT * FROM movies WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC');
-        const movies = stmt.all();
+        const stmt = db.prepare('SELECT * FROM movies WHERE user_id = ? AND deleted_at IS NOT NULL ORDER BY deleted_at DESC');
+        const movies = stmt.all(req.user.id);
         res.json(movies);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -165,10 +248,10 @@ app.get('/api/trash', (req, res) => {
 });
 
 // GET All Unique Genres
-app.get('/api/genres', (req, res) => {
+app.get('/api/genres', authenticateToken, (req, res) => {
     try {
-        const stmt = db.prepare('SELECT genres FROM movies WHERE deleted_at IS NULL');
-        const rows = stmt.all();
+        const stmt = db.prepare('SELECT genres FROM movies WHERE user_id = ? AND deleted_at IS NULL');
+        const rows = stmt.all(req.user.id);
         const genreCounts = {};
         rows.forEach(row => {
             if (row.genres) {
@@ -180,7 +263,6 @@ app.get('/api/genres', (req, res) => {
                 });
             }
         });
-        // Sort by count (predominant first)
         const sortedGenres = Object.entries(genreCounts)
             .sort((a, b) => b[1] - a[1])
             .map(([genre]) => genre);
@@ -192,28 +274,27 @@ app.get('/api/genres', (req, res) => {
 });
 
 // POST Add Movie
-app.post('/api/movies', (req, res) => {
+app.post('/api/movies', authenticateToken, (req, res) => {
     try {
         const { title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type } = req.body;
 
-        // Check if exists (check both active and deleted? maybe restore if deleted?)
-        const checkStmt = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ?');
-        const existing = checkStmt.get(link);
+        // Check if exists for this user (restore if deleted)
+        const checkStmt = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
+        const existing = checkStmt.get(link, req.user.id);
         if (existing) {
             if (existing.deleted_at) {
-                // Restore if in trash
-                db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?').run(existing.id);
+                db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ? AND user_id = ?').run(existing.id, req.user.id);
                 return res.json({ id: existing.id, restored: true });
             }
-            return res.status(409).json({ error: 'Movie already exists' });
+            return res.status(409).json({ error: 'Movie already exists in your list' });
         }
 
         const stmt = db.prepare(`
-      INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+          INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, user_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
 
-        const info = stmt.run(title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type || 'movie');
+        const info = stmt.run(title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type || 'movie', req.user.id);
         res.json({ id: info.lastInsertRowid });
     } catch (error) {
         console.error(error);
@@ -222,12 +303,13 @@ app.post('/api/movies', (req, res) => {
 });
 
 // PATCH Update Status
-app.patch('/api/movies/:id', (req, res) => {
+app.patch('/api/movies/:id', authenticateToken, (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
-        const stmt = db.prepare('UPDATE movies SET status = ? WHERE id = ?');
-        stmt.run(status, id);
+        const stmt = db.prepare('UPDATE movies SET status = ? WHERE id = ? AND user_id = ?');
+        const result = stmt.run(status, id, req.user.id);
+        if (result.changes === 0) return res.status(404).json({ error: 'Movie not found or unauthorized' });
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -235,11 +317,12 @@ app.patch('/api/movies/:id', (req, res) => {
 });
 
 // DELETE Soft Delete
-app.delete('/api/movies/:id', (req, res) => {
+app.delete('/api/movies/:id', authenticateToken, (req, res) => {
     try {
         const { id } = req.params;
-        const stmt = db.prepare('UPDATE movies SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
-        stmt.run(id);
+        const stmt = db.prepare('UPDATE movies SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?');
+        const result = stmt.run(id, req.user.id);
+        if (result.changes === 0) return res.status(404).json({ error: 'Movie not found or unauthorized' });
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -247,13 +330,13 @@ app.delete('/api/movies/:id', (req, res) => {
 });
 
 // POST Bulk Soft Delete
-app.post('/api/movies/bulk-delete', (req, res) => {
+app.post('/api/movies/bulk-delete', authenticateToken, (req, res) => {
     try {
         const { ids } = req.body;
         if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });
-        const stmt = db.prepare('UPDATE movies SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
+        const stmt = db.prepare('UPDATE movies SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?');
         const transaction = db.transaction((ids) => {
-            for (const id of ids) stmt.run(id);
+            for (const id of ids) stmt.run(id, req.user.id);
         });
         transaction(ids);
         res.json({ success: true });
@@ -263,11 +346,12 @@ app.post('/api/movies/bulk-delete', (req, res) => {
 });
 
 // RESTORE
-app.post('/api/movies/:id/restore', (req, res) => {
+app.post('/api/movies/:id/restore', authenticateToken, (req, res) => {
     try {
         const { id } = req.params;
-        const stmt = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?');
-        stmt.run(id);
+        const stmt = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ? AND user_id = ?');
+        const result = stmt.run(id, req.user.id);
+        if (result.changes === 0) return res.status(404).json({ error: 'Movie not found or unauthorized' });
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -275,13 +359,13 @@ app.post('/api/movies/:id/restore', (req, res) => {
 });
 
 // POST Bulk Restore
-app.post('/api/movies/bulk-restore', (req, res) => {
+app.post('/api/movies/bulk-restore', authenticateToken, (req, res) => {
     try {
         const { ids } = req.body;
         if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });
-        const stmt = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?');
+        const stmt = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ? AND user_id = ?');
         const transaction = db.transaction((ids) => {
-            for (const id of ids) stmt.run(id);
+            for (const id of ids) stmt.run(id, req.user.id);
         });
         transaction(ids);
         res.json({ success: true });
@@ -291,11 +375,12 @@ app.post('/api/movies/bulk-restore', (req, res) => {
 });
 
 // PERMANENT DELETE (Trash)
-app.delete('/api/trash/:id', (req, res) => {
+app.delete('/api/trash/:id', authenticateToken, (req, res) => {
     try {
         const { id } = req.params;
-        const stmt = db.prepare('DELETE FROM movies WHERE id = ?');
-        stmt.run(id);
+        const stmt = db.prepare('DELETE FROM movies WHERE id = ? AND user_id = ?');
+        const result = stmt.run(id, req.user.id);
+        if (result.changes === 0) return res.status(404).json({ error: 'Movie not found or unauthorized' });
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -303,24 +388,18 @@ app.delete('/api/trash/:id', (req, res) => {
 });
 
 // EMPTY TRASH / Bulk Permanent Delete
-app.delete('/api/trash', (req, res) => {
+app.delete('/api/trash', authenticateToken, (req, res) => {
     try {
         const ids = req.body?.ids;
-        // Optional: if ids provided, delete those. Else delete all > 30 days or all trash? User asked for empty trash and auto 30 days.
-        // If clean=true, delete older than 30 days. If ids provided diff logic.
-        // Let's implement "Empty All"
-
-        let stmt;
         if (ids && Array.isArray(ids)) {
-            stmt = db.prepare('DELETE FROM movies WHERE id = ?');
+            const stmt = db.prepare('DELETE FROM movies WHERE id = ? AND user_id = ?');
             const transaction = db.transaction((ids) => {
-                for (const id of ids) stmt.run(id);
+                for (const id of ids) stmt.run(id, req.user.id);
             });
             transaction(ids);
         } else {
-            // Empty whole trash
-            stmt = db.prepare('DELETE FROM movies WHERE deleted_at IS NOT NULL');
-            stmt.run();
+            const stmt = db.prepare('DELETE FROM movies WHERE deleted_at IS NOT NULL AND user_id = ?');
+            stmt.run(req.user.id);
         }
         res.json({ success: true });
     } catch (error) {
@@ -329,35 +408,35 @@ app.delete('/api/trash', (req, res) => {
 });
 
 // IMPORT URL Direct (Scrape & Save)
-app.post('/api/movies/import', async (req, res) => {
+app.post('/api/movies/import', authenticateToken, async (req, res) => {
     try {
         const { url } = req.body;
         if (!url || !isHdrezkaUrl(url)) return res.status(400).json({ error: 'Valid HDRezka URL required' });
 
-        // Check duplicates first to avoid scrape
-        const checkStmt = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ?');
-        const existing = checkStmt.get(url);
+        // Check duplicates for this user
+        const checkStmt = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
+        const existing = checkStmt.get(url, req.user.id);
 
         if (existing) {
             if (existing.deleted_at) {
-                db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?').run(existing.id);
+                db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ? AND user_id = ?').run(existing.id, req.user.id);
                 return res.json({ id: existing.id, restored: true, title: 'Restored from trash' });
             }
-            return res.status(409).json({ error: 'Movie already exists' });
+            return res.status(409).json({ error: 'Movie already exists in your list' });
         }
 
         const details = await getMovieDetails(url);
         if (!details) return res.status(404).json({ error: 'Could not parse movie details' });
 
         const stmt = db.prepare(`
-            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, user_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const info = stmt.run(
             details.title, details.original_title, details.year, url, details.rating,
             details.description, details.poster_url, details.genres, details.actors, details.director, details.writers,
-            details.type || 'movie'
+            details.type || 'movie', req.user.id
         );
 
         res.json({ id: info.lastInsertRowid, title: details.title });
@@ -368,22 +447,21 @@ app.post('/api/movies/import', async (req, res) => {
 });
 
 // REFRESH DATA
-app.post('/api/movies/refresh', async (req, res) => {
+app.post('/api/movies/refresh', authenticateToken, async (req, res) => {
     try {
         const { ids } = req.body;
         if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });
 
-        // Get links for these IDs
-        const getLinksStmt = db.prepare('SELECT id, link FROM movies WHERE id IN (' + ids.map(() => '?').join(',') + ')');
-        const movies = getLinksStmt.all(...ids);
+        // Get links for these IDs belonging to the logged-in user
+        const getLinksStmt = db.prepare('SELECT id, link FROM movies WHERE id IN (' + ids.map(() => '?').join(',') + ') AND user_id = ?');
+        const movies = getLinksStmt.all(...ids, req.user.id);
 
         const updateStmt = db.prepare(`
             UPDATE movies SET 
                 title = ?, year = ?, rating = ?, description = ?, poster_url = ?, genres = ?, actors = ?, director = ?, writers = ?, type = ?
-            WHERE id = ?
-                `);
+            WHERE id = ? AND user_id = ?
+        `);
 
-        // We process sequentially to be nice to scraper target
         for (const movie of movies) {
             if (!movie.link) continue;
             try {
@@ -392,7 +470,7 @@ app.post('/api/movies/refresh', async (req, res) => {
                     details.title, details.year, details.rating, details.description,
                     details.poster_url, details.genres, details.actors, details.director, details.writers,
                     details.type || 'movie',
-                    movie.id
+                    movie.id, req.user.id
                 );
             } catch (err) {
                 console.error(`Failed to refresh movie ${movie.id}: `, err.message);
@@ -407,27 +485,28 @@ app.post('/api/movies/refresh', async (req, res) => {
 });
 
 // ==========================================
-// COLLECTIONS ENDPOINTS
+// COLLECTIONS ENDPOINTS (USER SCOPED / PUBLIC DISCOVERY)
 // ==========================================
 
 // GET all collections
-app.get('/api/collections', (req, res) => {
+app.get('/api/collections', authenticateToken, (req, res) => {
     try {
         const stmt = db.prepare(`
             SELECT c.*, COUNT(cm.movie_id) as movie_count 
             FROM collections c 
             LEFT JOIN collection_movies cm ON c.id = cm.collection_id 
+            WHERE c.user_id = ?
             GROUP BY c.id
             ORDER BY c.created_at DESC
         `);
-        const collections = stmt.all();
+        const collections = stmt.all(req.user.id);
         res.json(collections);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// GET specific collection with movies
+// GET specific collection with movies (PUBLIC! Required for Shared view)
 app.get('/api/collections/:id', (req, res) => {
     try {
         const { id } = req.params;
@@ -449,20 +528,25 @@ app.get('/api/collections/:id', (req, res) => {
 });
 
 // POST create collection
-app.post('/api/collections', (req, res) => {
+app.post('/api/collections', authenticateToken, (req, res) => {
     try {
         const { title, description, movieIds } = req.body;
         if (!title) return res.status(400).json({ error: 'Title is required' });
 
-        const insertColl = db.prepare('INSERT INTO collections (title, description) VALUES (?, ?)');
+        const insertColl = db.prepare('INSERT INTO collections (title, description, user_id) VALUES (?, ?, ?)');
         const insertMovie = db.prepare('INSERT INTO collection_movies (collection_id, movie_id) VALUES (?, ?)');
 
         const runTransaction = db.transaction((title, description, movieIds) => {
-            const info = insertColl.run(title, description || '');
+            const info = insertColl.run(title, description || '', req.user.id);
             const collectionId = info.lastInsertRowid;
             if (movieIds && Array.isArray(movieIds)) {
+                // Ensure only movies belonging to this user are added
+                const checkStmt = db.prepare('SELECT id FROM movies WHERE id = ? AND user_id = ?');
                 for (const movieId of movieIds) {
-                    insertMovie.run(collectionId, movieId);
+                    const isOwnMovie = checkStmt.get(movieId, req.user.id);
+                    if (isOwnMovie) {
+                        insertMovie.run(collectionId, movieId);
+                    }
                 }
             }
             return collectionId;
@@ -476,11 +560,11 @@ app.post('/api/collections', (req, res) => {
 });
 
 // DELETE collection
-app.delete('/api/collections/:id', (req, res) => {
+app.delete('/api/collections/:id', authenticateToken, (req, res) => {
     try {
         const { id } = req.params;
-        db.prepare('DELETE FROM collection_movies WHERE collection_id = ?').run(id);
-        db.prepare('DELETE FROM collections WHERE id = ?').run(id);
+        const check = db.prepare('DELETE FROM collections WHERE id = ? AND user_id = ?').run(id, req.user.id);
+        if (check.changes === 0) return res.status(403).json({ error: 'Access denied or not found' });
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -488,16 +572,24 @@ app.delete('/api/collections/:id', (req, res) => {
 });
 
 // POST add movies to collection
-app.post('/api/collections/:id/movies', (req, res) => {
+app.post('/api/collections/:id/movies', authenticateToken, (req, res) => {
     try {
         const { id } = req.params;
         const { movieIds } = req.body;
         if (!movieIds || !Array.isArray(movieIds)) return res.status(400).json({ error: 'movieIds array required' });
 
+        const checkColl = db.prepare('SELECT id FROM collections WHERE id = ? AND user_id = ?').get(id, req.user.id);
+        if (!checkColl) return res.status(403).json({ error: 'Access denied or collection not found' });
+
         const insertMovie = db.prepare('INSERT OR IGNORE INTO collection_movies (collection_id, movie_id) VALUES (?, ?)');
+        const checkMovie = db.prepare('SELECT id FROM movies WHERE id = ? AND user_id = ?');
+
         const runTransaction = db.transaction((id, movieIds) => {
             for (const movieId of movieIds) {
-                insertMovie.run(id, movieId);
+                const isOwnMovie = checkMovie.get(movieId, req.user.id);
+                if (isOwnMovie) {
+                    insertMovie.run(id, movieId);
+                }
             }
         });
         runTransaction(id, movieIds);
@@ -508,9 +600,12 @@ app.post('/api/collections/:id/movies', (req, res) => {
 });
 
 // DELETE remove a movie from collection
-app.delete('/api/collections/:id/movies/:movieId', (req, res) => {
+app.delete('/api/collections/:id/movies/:movieId', authenticateToken, (req, res) => {
     try {
         const { id, movieId } = req.params;
+        const checkColl = db.prepare('SELECT id FROM collections WHERE id = ? AND user_id = ?').get(id, req.user.id);
+        if (!checkColl) return res.status(403).json({ error: 'Access denied or collection not found' });
+
         db.prepare('DELETE FROM collection_movies WHERE collection_id = ? AND movie_id = ?').run(id, movieId);
         res.json({ success: true });
     } catch (error) {
@@ -518,9 +613,11 @@ app.delete('/api/collections/:id/movies/:movieId', (req, res) => {
     }
 });
 
+// ==========================================
+// LIFECYCLE & SERVER START
+// ==========================================
 
 async function startApp() {
-    // 1. Download database backup on startup if Supabase URL and Key are provided
     if (supabaseUrl && supabaseKey) {
         console.log('☁️ Checking for database backup on Supabase...');
         try {
@@ -543,13 +640,11 @@ async function startApp() {
         console.log('☁️ Supabase credentials not found. Running with local database only.');
     }
 
-    // 2. Load database module dynamically after backup is ready
     const dbModule = require('./db');
     db = dbModule.db;
     initDb = dbModule.initDb;
     initDb();
 
-    // 3. Auto-cleanup trash older than 30 days
     try {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -559,11 +654,9 @@ async function startApp() {
         console.error('Cleanup error:', err);
     }
 
-    // 4. Start the server
     app.listen(PORT, () => {
         console.log(`Server running on http://localhost:${PORT}`);
     });
 }
 
 startApp();
-

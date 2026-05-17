@@ -7,10 +7,13 @@ import ConfirmModal from './components/ConfirmModal';
 import AddToCollectionModal from './components/AddToCollectionModal';
 import CollectionsView from './components/CollectionsView';
 import SharedCollectionView from './components/SharedCollectionView';
+import AuthScreen from './components/AuthScreen';
 
 function App() {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(null);
+    const [checkingAuth, setCheckingAuth] = useState(true);
     const [currentView, setCurrentView] = useState('library'); // 'library' | 'trash' | 'collections' | 'shared_collection'
     const [selectedIds, setSelectedIds] = useState([]);
     const [selectionAnchor, setSelectionAnchor] = useState(null);
@@ -33,14 +36,40 @@ function App() {
         }
     }, []);
 
+    // Verify token on startup
+    useEffect(() => {
+        const verifyToken = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setCheckingAuth(false);
+                return;
+            }
+            try {
+                const res = await fetch('/api/auth/me');
+                if (res.ok) {
+                    const data = await res.json();
+                    setUser(data.user);
+                } else {
+                    localStorage.removeItem('token');
+                }
+            } catch (err) {
+                console.error('Failed to verify token:', err);
+            } finally {
+                setCheckingAuth(false);
+            }
+        };
+        verifyToken();
+    }, []);
+
     const handleExitSharedView = () => {
         window.history.replaceState({}, document.title, window.location.pathname);
         setSharedCollectionId(null);
-        setCurrentView('library');
+        setCurrentView(user ? 'library' : 'auth');
     };
 
     const fetchMovies = async () => {
         if (currentView !== 'library' && currentView !== 'trash') return;
+        if (!user) return; // Do not fetch movies if not authenticated
         setLoading(true);
         try {
             const endpoint = currentView === 'library' ? '/api/movies' : '/api/trash';
@@ -58,7 +87,7 @@ function App() {
 
     useEffect(() => {
         fetchMovies();
-    }, [currentView]);
+    }, [currentView, user]);
 
     const handleUpdate = async (id, updates) => {
         try {
@@ -71,6 +100,15 @@ function App() {
         } catch (error) {
             console.error('Update failed:', error);
         }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        setUser(null);
+        setMovies([]);
+        setSelectedIds([]);
+        setSelectionAnchor(null);
+        setCurrentView('library');
     };
 
     // Single Item Delete (Context dependent)
@@ -182,13 +220,25 @@ function App() {
         });
     };
 
+    if (checkingAuth) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-app)', color: '#fff' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ border: '4px solid rgba(255,255,255,0.1)', borderTop: '4px solid var(--accent-gold)', borderRadius: '50%', width: '50px', height: '50px', animation: 'spin 1s linear infinite', margin: '0 auto 20px' }}></div>
+                    <div>Verifying Session...</div>
+                    <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="app">
             <header className="header glass-panel">
                 <div className="container header-content">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                        <h1 className="logo" style={{ cursor: 'pointer' }} onClick={() => { if (currentView !== 'shared_collection') setCurrentView('library'); }}>Movie<span className="gold">Watcher</span></h1>
-                        {currentView !== 'shared_collection' ? (
+                        <h1 className="gold logo" style={{ cursor: 'pointer', margin: 0 }} onClick={() => { if (currentView !== 'shared_collection') setCurrentView('library'); }}>Movie<span className="gold">Watcher</span></h1>
+                        {user && currentView !== 'shared_collection' ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <button
                                     onClick={() => setCurrentView('library')}
@@ -221,8 +271,8 @@ function App() {
                         ) : null}
                     </div>
 
-                    {currentView !== 'shared_collection' && (
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    {currentView !== 'shared_collection' && user && (
+                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                             {currentView === 'trash' && movies.length > 0 && (
                                 <button onClick={emptyTrash} className="btn btn-ghost" style={{ color: 'var(--danger)', fontSize: '0.85rem' }}>
                                     Empty Trash
@@ -241,6 +291,13 @@ function App() {
                             >
                                 Trash
                             </button>
+                            <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '24px', margin: '0 5px' }}></div>
+                            <span style={{ fontSize: '0.9rem', color: '#aaa', fontWeight: 500 }}>
+                                👤 {user.username}
+                            </span>
+                            <button onClick={handleLogout} className="btn btn-ghost" style={{ fontSize: '0.85rem', color: '#ff6b6b' }}>
+                                Logout
+                            </button>
                         </div>
                     )}
                 </div>
@@ -252,6 +309,8 @@ function App() {
                         collectionId={sharedCollectionId}
                         onExit={handleExitSharedView}
                     />
+                ) : !user ? (
+                    <AuthScreen onAuthSuccess={setUser} />
                 ) : currentView === 'collections' ? (
                     <CollectionsView
                         onBack={() => setCurrentView('library')}
@@ -294,7 +353,7 @@ function App() {
                 )}
             </main>
 
-            {(currentView === 'library' || currentView === 'trash') && (
+            {user && (currentView === 'library' || currentView === 'trash') && (
                 <BulkActionBar
                     selectedCount={selectedIds.length}
                     onDelete={handleBulkDelete}

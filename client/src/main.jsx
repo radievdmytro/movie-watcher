@@ -3,19 +3,31 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 
-// Setup global API URL interceptor for production deployment
+// Setup global API URL and Auth token interceptor
 const API_URL = import.meta.env.VITE_API_URL || '';
-if (API_URL) {
-    const originalFetch = window.fetch;
-    window.fetch = function (input, init) {
-        if (typeof input === 'string' && input.startsWith('/api')) {
-            // Trim any double slashes if API_URL ends with one
+const originalFetch = window.fetch;
+window.fetch = function (input, init) {
+    let url = input;
+    let options = { ...init };
+
+    if (typeof input === 'string' && input.startsWith('/api')) {
+        // Resolve backend URL in production
+        if (API_URL) {
             const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
-            return originalFetch(baseUrl + input, init);
+            url = baseUrl + input;
         }
-        return originalFetch(input, init);
-    };
-}
+
+        // Inject JWT auth token if stored locally
+        const token = localStorage.getItem('token');
+        if (token) {
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${token}`
+            };
+        }
+    }
+    return originalFetch(url, options);
+};
 
 ReactDOM.createRoot(document.getElementById('app')).render(
     <React.StrictMode>
