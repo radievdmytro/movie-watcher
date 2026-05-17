@@ -29,7 +29,8 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     const [copiedShare, setCopiedShare] = useState(false);
 
     const handleShare = async () => {
-        const shareUrl = `https://movie-watcher-c8x1.onrender.com/share/movie/${movie.id}`;
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const shareUrl = `${baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl}/share/movie/${movie.id}`;
         try {
             await navigator.clipboard.writeText(shareUrl);
             setCopiedShare(true);
