@@ -713,6 +713,58 @@ input {
   }
 }
 
+/* ── Expanded Filters Panel ── */
+.expanded-filters-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(12, 12, 12, 0.98);
+  border-radius: 12px;
+  border: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.expanded-filters-panel.is-open {
+  max-height: 1200px;
+  margin-top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* On desktop, make it an absolute overlay under the sticky panel */
+@media (min-width: 769px) {
+  .expanded-filters-panel.is-open {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 150;
+    margin-top: 0;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    background: rgba(12, 12, 12, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.85);
+    padding: 25px 30px;
+    width: auto;
+  }
+}
+
+/* On mobile, keep it normal static flow inside the sticky container */
+@media (max-width: 768px) {
+  .expanded-filters-panel.is-open {
+    max-height: 1200px;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
+
 /* ==========================================
    SORT TABS — horizontal scroll on narrow screens
    ========================================== */

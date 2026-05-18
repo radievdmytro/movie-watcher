@@ -874,18 +874,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             Hide Watched
                         </label>
                     </div>
-                </div>
 
-                <div className="controls-section-rest" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
-                {/* Expanded Filters Panel */}
-                <div style={{
-                    maxHeight: showFilters ? '1000px' : '0',
-                    overflow: showFilters ? 'visible' : 'hidden',
-                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                    background: 'rgba(255,255,255,0.02)',
-                    borderRadius: '12px',
-                    border: showFilters ? '1px solid rgba(255,255,255,0.05)' : 'none'
-                }}>
+                    {/* Expanded Filters Panel */}
+                    <div className={`expanded-filters-panel ${showFilters ? 'is-open' : ''}`}>
                     <div className="filters-grid" style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -1061,8 +1052,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         </div>
                     </div>
                 </div>
+                </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="controls-section-rest" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                         <label
                             style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#aaa' }}
