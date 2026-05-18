@@ -1094,29 +1094,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                     }}>{label}</button>
                                 ))}
                             </div>
-                            {selectedLinks.size > 0 && (
-                                <div style={{ display: 'flex', gap: isMobile ? '5px' : '10px', alignItems: 'center' }}>
-                                    {selectedLinks.size >= 2 && selectedLinks.size <= (isMobile ? 2 : 3) && (
-                                        <button onClick={handleCompareClick} className="btn btn-ghost" style={{
-                                            fontSize: isMobile ? '0.72rem' : '0.82rem', padding: isMobile ? '4px 10px' : '7px 20px', borderRadius: '20px',
-                                            border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff'
-                                        }}>
-                                            ⚖️ Compare ({selectedLinks.size})
-                                        </button>
-                                    )}
-                                    {selectedLinks.size > (isMobile ? 2 : 3) && (
-                                        <span style={{ fontSize: isMobile ? '0.72rem' : '0.82rem', color: '#888', fontStyle: 'italic', padding: '7px 0' }}>
-                                            Compare (max {isMobile ? 2 : 3})
-                                        </span>
-                                    )}
-                                    <button onClick={handleAddSelected} className="btn btn-primary" style={{
-                                        fontSize: isMobile ? '0.72rem' : '0.82rem', padding: isMobile ? '4px 12px' : '7px 20px', borderRadius: '20px',
-                                        boxShadow: '0 2px 12px rgba(212,175,55,0.4)', animation: 'fadeIn 0.2s'
-                                    }}>
-                                        ✚ Add Selected ({selectedLinks.size})
-                                    </button>
-                                </div>
-                            )}
+
                             {filteredSearchResults.length > 1 && (
                                 <button onClick={() => {
                                     if (selectedLinks.size === filteredSearchResults.length) {
