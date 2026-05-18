@@ -1197,7 +1197,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                         <div style={{ 
                             display: 'flex', 
                             gap: '10px', 
-                            flexWrap: 'wrap', 
+                            flexWrap: isMobile ? 'wrap' : 'nowrap', 
                             marginTop: 'auto', 
                             paddingTop: '15px', 
                             paddingBottom: '15px',
@@ -1249,7 +1249,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             gap: '6px',
-                                            flex: isMobile ? '1 1 auto' : 'initial'
+                                            flex: isMobile ? '1 1 auto' : '0 0 auto'
                                         }}
                                         onClick={handleStatusToggle}
                                     >
@@ -1274,7 +1274,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             justifyContent: 'center',
                                             gap: '6px',
                                             textDecoration: 'none',
-                                            flex: isMobile ? '1 1 auto' : 'initial'
+                                            flex: isMobile ? '1 1 auto' : '0 0 auto'
                                         }}
                                     >
                                         Watch on HDRezka 🌐
@@ -1296,7 +1296,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             gap: '6px',
-                                            flex: isMobile ? '1 1 100%' : 'initial'
+                                            flex: isMobile ? '1 1 100%' : '0 0 auto'
                                         }}
                                     >
                                         <span className="delete-btn-text">Delete </span>🗑️
@@ -1381,7 +1381,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 @keyframes scaleIn { from { transform: scale(0.9) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
                 @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                 
-                @media (min-width: 769px) and (max-width: 1080px) {
+                @media (min-width: 769px) and (max-width: 1150px) {
                     .modal-delete-btn {
                         padding: 12px 16px !important;
                     }
