@@ -1077,12 +1077,19 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                         flexShrink: 0, flexWrap: 'wrap', gap: isMobile ? '8px' : '12px'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px', flexWrap: 'wrap' }}>
-                            <h3 style={{ margin: 0, color: 'var(--accent-gold)', fontSize: isMobile ? '1rem' : '1.15rem' }}>
-                                🎬 Results
-                                <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '6px' }}>
-                                    {filteredSearchResults.length} found
-                                </span>
-                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <h3 style={{ margin: 0, color: 'var(--accent-gold)', fontSize: isMobile ? '1rem' : '1.15rem', display: 'flex', alignItems: 'center' }}>
+                                    🎬 Results
+                                    <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '6px' }}>
+                                        ({filteredSearchResults.length} found)
+                                    </span>
+                                </h3>
+                                {selectedLinks.size > 0 && (
+                                    <span style={{ fontSize: '0.75rem', color: '#888' }}>
+                                        <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>{selectedLinks.size}</span> film{selectedLinks.size > 1 ? 's' : ''} selected
+                                    </span>
+                                )}
+                            </div>
                             {/* View toggle */}
                             <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: '20px', padding: '2px' }}>
                                 {[['grid','⊞ Grid'],['table','☰ List']].map(([mode, label]) => (
@@ -1094,6 +1101,16 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                     }}>{label}</button>
                                 ))}
                             </div>
+
+                            {selectedLinks.size > 0 && (
+                                <button onClick={() => setSelectedLinks(new Set())} style={{
+                                    background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                                    color: '#aaa', borderRadius: '16px', padding: isMobile ? '3px 10px' : '5px 14px',
+                                    fontSize: isMobile ? '0.7rem' : '0.78rem', cursor: 'pointer'
+                                }}>
+                                    Clear
+                                </button>
+                            )}
 
                             {filteredSearchResults.length > 1 && (
                                 <button onClick={() => {
@@ -1244,17 +1261,10 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                     {selectedLinks.size > 0 && (
                         <div style={{
                             padding: '14px 28px', borderTop: '1px solid rgba(255,255,255,0.08)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                             background: 'rgba(18,18,18,0.95)', flexShrink: 0
                         }}>
-                            <span style={{ color: '#888', fontSize: '0.9rem' }}>
-                                {selectedLinks.size} film{selectedLinks.size > 1 ? 's' : ''} selected
-                            </span>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                <button onClick={() => setSelectedLinks(new Set())} style={{
-                                    background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
-                                    color: '#aaa', borderRadius: '20px', padding: '8px 20px', cursor: 'pointer', fontSize: '0.85rem'
-                                }}>Clear</button>
                                 {selectedLinks.size >= 2 && selectedLinks.size <= (isMobile ? 2 : 3) && (
                                     <button onClick={handleCompareClick} className="btn btn-ghost" style={{
                                         padding: '8px 20px', borderRadius: '20px',
