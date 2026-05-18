@@ -6,6 +6,17 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
     const [error, setError] = useState('');
 
     useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
+    useEffect(() => {
         if (!isOpen || !movieLinks || movieLinks.length === 0) {
             setMoviesData([]);
             return;
@@ -67,7 +78,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
             backdropFilter: 'blur(12px)', zIndex: 10000,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '20px', animation: 'fadeIn 0.25s ease'
-        }} onClick={onClose}>
+        }} onMouseDown={onClose}>
             <div style={{
                 background: 'rgba(20, 20, 20, 0.95)',
                 border: '1px solid rgba(255,255,255,0.08)',
@@ -80,7 +91,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                 boxShadow: '0 25px 50px rgba(0,0,0,0.6)',
                 overflow: 'hidden',
                 animation: 'scaleUp 0.3s cubic-bezier(0.165,0.84,0.44,1)'
-            }} onClick={e => e.stopPropagation()}>
+            }} onMouseDown={e => e.stopPropagation()}>
                 {/* Header */}
                 <div style={{
                     padding: '20px 24px',
