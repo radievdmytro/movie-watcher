@@ -1281,6 +1281,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                     </a>
                                     <button
                                         onClick={() => { onDelete(movie.id); onClose(); }}
+                                        className="modal-delete-btn"
                                         style={{
                                             background: 'rgba(239, 68, 68, 0.08)',
                                             border: '1px solid rgba(239, 68, 68, 0.2)',
@@ -1298,7 +1299,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             flex: isMobile ? '1 1 100%' : 'initial'
                                         }}
                                     >
-                                        Delete 🗑️
+                                        <span className="delete-btn-text">Delete </span>🗑️
                                     </button>
                                 </>
                             ) : (
@@ -1379,6 +1380,15 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes scaleIn { from { transform: scale(0.9) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
                 @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                
+                @media (min-width: 769px) and (max-width: 1080px) {
+                    .modal-delete-btn {
+                        padding: 12px 16px !important;
+                    }
+                    .modal-delete-btn .delete-btn-text {
+                        display: none !important;
+                    }
+                }
             `}</style>
         </div>,
         document.body
