@@ -112,8 +112,6 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
         }
     }, [selectedCount, onCompare, isVisible]);
 
-    if (!isVisible && selectedCount === 0) return null;
-
     const activeAnchor = anchor || lastAnchor;
     let clampedLeft = activeAnchor ? activeAnchor.x : (window.innerWidth / 2);
     let clampedTop = activeAnchor ? activeAnchor.y : 85;
@@ -168,6 +166,8 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
         window.addEventListener('resize', updateDragBounds);
         return () => window.removeEventListener('resize', updateDragBounds);
     }, [clampedLeft, clampedTop, barWidth, isMobile]);
+
+    if (!isVisible && selectedCount === 0) return null;
 
     const posTop = `${clampedTop}px`;
     const posLeft = `${clampedLeft}px`;
