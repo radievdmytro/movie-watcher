@@ -4,13 +4,13 @@ import MovieComparisonModal from './MovieComparisonModal';
 
 function EditableField({ value, onSave, style, type = 'text', placeholder, ...props }) {
     const [localValue, setLocalValue] = useState(value || '');
-    const [isFocused, setIsFocused] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
 
     useEffect(() => { setLocalValue(value || ''); }, [value]);
 
     const handleBlur = () => {
-        setIsFocused(false);
+        setIsEditing(false);
         if (localValue !== value) {
             onSave(localValue);
         }
@@ -20,15 +20,15 @@ function EditableField({ value, onSave, style, type = 'text', placeholder, ...pr
         if (e.key === 'Enter' && type !== 'textarea') e.target.blur();
         if (e.key === 'Escape') {
             setLocalValue(value || '');
-            e.target.blur();
+            setIsEditing(false);
         }
     };
 
-    const commonStyle = {
+    const inputStyle = {
         ...style,
-        background: isFocused ? 'rgba(255,255,255,0.08)' : 'transparent',
+        background: 'rgba(255,255,255,0.08)',
         border: 'none',
-        borderBottom: isFocused ? '1px solid var(--accent-gold)' : '1px solid transparent',
+        borderBottom: '1px solid var(--accent-gold)',
         outline: 'none',
         padding: '2px 6px',
         margin: '-2px -6px',
@@ -38,9 +38,48 @@ function EditableField({ value, onSave, style, type = 'text', placeholder, ...pr
         transition: 'all 0.2s',
         fontFamily: 'inherit',
         resize: 'none',
-        borderRadius: '4px',
-        flex: 1
+        borderRadius: '4px'
     };
+
+    if (isEditing) {
+        return (
+            <div 
+                onClick={e => e.stopPropagation()}
+                onMouseDown={e => e.stopPropagation()}
+                onMouseUp={e => e.stopPropagation()}
+                style={{ display: 'flex', width: '100%' }}
+            >
+                {type === 'textarea' ? (
+                    <textarea
+                        value={localValue}
+                        onChange={e => setLocalValue(e.target.value)}
+                        onBlur={handleBlur}
+                        onKeyDown={handleKeyDown}
+                        style={inputStyle}
+                        placeholder={placeholder}
+                        rows={2}
+                        autoFocus
+                        {...props}
+                    />
+                ) : (
+                    <input
+                        type="text"
+                        value={localValue}
+                        onChange={e => setLocalValue(e.target.value)}
+                        onBlur={handleBlur}
+                        onKeyDown={handleKeyDown}
+                        style={inputStyle}
+                        placeholder={placeholder}
+                        autoFocus
+                        {...props}
+                    />
+                )}
+            </div>
+        );
+    }
+
+    const displayValue = value || placeholder;
+    const isPlaceholder = !value;
 
     return (
         <div 
@@ -48,6 +87,7 @@ function EditableField({ value, onSave, style, type = 'text', placeholder, ...pr
             onMouseLeave={() => setIsHovered(false)}
             onClick={e => {
                 e.stopPropagation();
+                setIsEditing(true);
             }}
             onMouseDown={e => {
                 e.stopPropagation();
@@ -57,49 +97,38 @@ function EditableField({ value, onSave, style, type = 'text', placeholder, ...pr
             }}
             style={{ 
                 display: 'inline-flex', 
-                alignItems: type === 'textarea' ? 'flex-start' : 'center', 
+                alignItems: 'center', 
                 gap: '8px', 
-                width: '100%',
-                position: 'relative'
+                cursor: 'pointer',
+                maxWidth: '100%'
             }}
         >
-            {type === 'textarea' ? (
-                <textarea
-                    value={localValue}
-                    onChange={e => setLocalValue(e.target.value)}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={handleBlur}
-                    onKeyDown={handleKeyDown}
-                    style={commonStyle}
-                    placeholder={placeholder}
-                    rows={2}
-                    {...props}
-                />
-            ) : (
-                <input
-                    type="text"
-                    value={localValue}
-                    onChange={e => setLocalValue(e.target.value)}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={handleBlur}
-                    onKeyDown={handleKeyDown}
-                    style={commonStyle}
-                    placeholder={placeholder}
-                    {...props}
-                />
-            )}
+            <span 
+                style={{ 
+                    ...style, 
+                    borderBottom: '1px dashed transparent',
+                    color: isPlaceholder ? '#555' : style.color || '#fff',
+                    fontStyle: isPlaceholder ? 'italic' : 'normal',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    transition: 'border-bottom-color 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderBottomColor = 'var(--accent-gold)'}
+                onMouseLeave={e => e.currentTarget.style.borderBottomColor = 'transparent'}
+            >
+                {displayValue}
+            </span>
             
-            {!isFocused && isHovered && (
+            {isHovered && (
                 <span 
                     style={{ 
                         fontSize: '0.85rem', 
                         color: 'var(--accent-gold)', 
                         opacity: 0.8,
-                        cursor: 'pointer',
                         userSelect: 'none',
                         flexShrink: 0
                     }}
-                    title="Click text to edit"
+                    title="Click to edit"
                 >
                     ✏️
                 </span>
