@@ -51,15 +51,18 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
 
     const filteredOptions = (options || []).filter(opt => {
         const name = typeof opt === 'string' ? opt : opt?.name;
-        return name && name.toLowerCase().includes(inputValue.toLowerCase()) && !selected.includes(name);
+        return name && name.toLowerCase().includes(inputValue.toLowerCase());
     });
 
     const handleSelect = (opt) => {
         const name = typeof opt === 'string' ? opt : opt?.name;
         if (name) {
-            onChange([...selected, name]);
+            if (selected.includes(name)) {
+                onChange(selected.filter(item => item !== name));
+            } else {
+                onChange([...selected, name]);
+            }
             setInputValue('');
-            setIsOpen(false);
         }
     };
 
@@ -180,30 +183,50 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                         filteredOptions.slice(0, 50).map(opt => {
                             const name = typeof opt === 'string' ? opt : opt?.name;
                             const count = typeof opt === 'string' ? null : opt?.count;
+                            const isSelected = selected.includes(name);
                             return (
                                 <div
                                     key={name}
                                     onClick={() => handleSelect(opt)}
                                     style={{
                                         padding: '8px 12px',
-                                        color: '#ccc',
+                                        color: isSelected ? 'var(--accent-gold)' : '#ccc',
+                                        background: isSelected ? 'rgba(212, 175, 55, 0.08)' : 'transparent',
                                         fontSize: '0.85rem',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
                                         display: 'flex',
                                         justifyContent: 'space-between',
-                                        alignItems: 'center'
+                                        alignItems: 'center',
+                                        fontWeight: isSelected ? '500' : 'normal'
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                        e.currentTarget.style.background = isSelected ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.05)';
                                         e.currentTarget.style.color = '#fff';
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = 'transparent';
-                                        e.currentTarget.style.color = '#ccc';
+                                        e.currentTarget.style.background = isSelected ? 'rgba(212, 175, 55, 0.08)' : 'transparent';
+                                        e.currentTarget.style.color = isSelected ? 'var(--accent-gold)' : '#ccc';
                                     }}
                                 >
-                                    <span>{name}</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ 
+                                            width: '14px', 
+                                            height: '14px', 
+                                            border: '1px solid rgba(255, 255, 255, 0.3)', 
+                                            borderRadius: '3px',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '0.65rem',
+                                            color: '#000',
+                                            background: isSelected ? 'var(--accent-gold)' : 'transparent',
+                                            borderColor: isSelected ? 'var(--accent-gold)' : 'rgba(255, 255, 255, 0.3)'
+                                        }}>
+                                            {isSelected && '✓'}
+                                        </span>
+                                        {name}
+                                    </span>
                                     {count !== null && (
                                         <span style={{ fontSize: '0.75rem', color: accentColor, opacity: 0.8 }}>
                                             {count} {count === 1 ? 'movie' : 'movies'}
