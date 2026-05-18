@@ -340,8 +340,9 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
             
             // Check cache
             const cached = db.prepare('SELECT * FROM scraped_movies_cache WHERE link LIKE ?').get(`%${cleanQuery}%`);
-            if (cached) {
-                console.log(`[Search Cache Hit] Instantly returning details for: ${query}`);
+            // Only use cache instantly if it has description (meaning it was fully scraped, not just a partial search result)
+            if (cached && cached.description) {
+                console.log(`[Search Cache Hit] Instantly returning full details for: ${query}`);
                 // Trigger background update to keep it fresh
                 triggerBackgroundUpdate(query);
                 return res.json({ type: 'detail', data: cached, fromCache: true });
@@ -459,7 +460,8 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
             const cleanQuery = cleanUrlPath(query);
             const cached = db.prepare('SELECT * FROM scraped_movies_cache WHERE link LIKE ?').get(`%${cleanQuery}%`);
 
-            if (cached) {
+            // Only return from cache instantly if it's a full record with description
+            if (cached && cached.description) {
                 send('result', { type: 'detail', data: cached, fromCache: true });
                 send('done', { fromCache: true });
                 res.end();
