@@ -34,6 +34,189 @@ const Histogram = ({ data, currentRange, min, max, height = 30 }) => {
     );
 };
 
+const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = [], onChange, accentColor = 'var(--accent-gold)' }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [inputValue, setInputValue] = useState('');
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const filteredOptions = (options || []).filter(opt => 
+        opt && opt.toLowerCase().includes(inputValue.toLowerCase()) && !selected.includes(opt)
+    );
+
+    const handleSelect = (opt) => {
+        onChange([...selected, opt]);
+        setInputValue('');
+        setIsOpen(false);
+    };
+
+    const handleRemove = (opt) => {
+        onChange(selected.filter(item => item !== opt));
+    };
+
+    return (
+        <div ref={containerRef} style={{ position: 'relative', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{label}</span>
+                {selected.length > 0 && (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onChange([]); }} 
+                        style={{ background: 'none', border: 'none', color: accentColor, fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}
+                    >
+                        Clear All ({selected.length})
+                    </button>
+                )}
+            </div>
+            
+            <div 
+                onClick={() => setIsOpen(true)}
+                style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '6px',
+                    width: '100%',
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    padding: '8px 10px',
+                    minHeight: '40px',
+                    cursor: 'text',
+                    alignItems: 'center',
+                    boxSizing: 'border-box'
+                }}
+            >
+                {selected.map(item => (
+                    <span 
+                        key={item} 
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            background: accentColor,
+                            color: '#000',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.8rem',
+                            fontWeight: '500',
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
+                        {item}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleRemove(item); }}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#000',
+                                cursor: 'pointer',
+                                padding: '0 2px',
+                                fontSize: '0.85rem',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center'
+                            }}
+                        >&times;</button>
+                    </span>
+                ))}
+                
+                <input
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => {
+                        setInputValue(e.target.value);
+                        setIsOpen(true);
+                    }}
+                    onFocus={() => setIsOpen(true)}
+                    placeholder={selected.length === 0 ? placeholder : ''}
+                    style={{
+                        flex: '1',
+                        minWidth: '60px',
+                        background: 'none',
+                        border: 'none',
+                        color: '#fff',
+                        outline: 'none',
+                        fontSize: '0.85rem',
+                        padding: '2px 0'
+                    }}
+                />
+            </div>
+
+            {isOpen && (filteredOptions.length > 0 || inputValue.trim() !== '') && (
+                <div 
+                    style={{
+                        position: 'absolute',
+                        top: '105%',
+                        left: 0,
+                        right: 0,
+                        background: '#151515',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '8px',
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        zIndex: 1000,
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                        padding: '4px 0'
+                    }}
+                >
+                    {filteredOptions.length > 0 ? (
+                        filteredOptions.slice(0, 50).map(opt => (
+                            <div
+                                key={opt}
+                                onClick={() => handleSelect(opt)}
+                                style={{
+                                    padding: '8px 12px',
+                                    color: '#ccc',
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                    e.currentTarget.style.color = '#fff';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = '#ccc';
+                                }}
+                            >
+                                <span>{opt}</span>
+                            </div>
+                        ))
+                    ) : (
+                        <div 
+                            onClick={() => {
+                                if (inputValue.trim()) {
+                                    handleSelect(inputValue.trim());
+                                }
+                            }}
+                            style={{
+                                padding: '8px 12px',
+                                color: accentColor,
+                                fontSize: '0.85rem',
+                                cursor: 'pointer',
+                                fontStyle: 'italic'
+                            }}
+                        >
+                            Press to filter by custom text: "{inputValue}"
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink }) {
     const [sortField, setSortField] = useState('created_at');
@@ -63,8 +246,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     const sentinelRef = useRef(null);
     const [filterGenreMode, setFilterGenreMode] = useState('include'); // 'include' | 'exclude'
     const [availableGenres, setAvailableGenres] = useState([]);
-    const [filterDirector, setFilterDirector] = useState('all');
-    const [filterActor, setFilterActor] = useState('all');
+    const [filterDirectors, setFilterDirectors] = useState([]);
+    const [filterActors, setFilterActors] = useState([]);
     const [availableDirectors, setAvailableDirectors] = useState([]);
     const [availableActors, setAvailableActors] = useState([]);
 
@@ -219,15 +402,15 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 }
 
                 // Director Filter
-                if (filterDirector !== 'all') {
+                if (filterDirectors.length > 0) {
                     const movieDirectors = (movie.director || '').split(',').map(d => d.trim().toLowerCase());
-                    if (!movieDirectors.includes(filterDirector.toLowerCase())) return false;
+                    if (!filterDirectors.some(fd => movieDirectors.includes(fd.toLowerCase()))) return false;
                 }
 
                 // Actor Filter
-                if (filterActor !== 'all') {
+                if (filterActors.length > 0) {
                     const movieActors = (movie.actors || '').split(',').map(a => a.trim().toLowerCase());
-                    if (!movieActors.includes(filterActor.toLowerCase())) return false;
+                    if (!filterActors.some(fa => movieActors.includes(fa.toLowerCase()))) return false;
                 }
 
                 // Rating Filter
@@ -266,12 +449,12 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 if (valA > valB) return sortDir === 'asc' ? 1 : -1;
                 return 0;
             });
-    }, [movies, sortField, sortDir, filterQuery, filterGenres, filterDirector, filterActor, filterRating, filterYear, filterType, filterGenreMode, hideWatched]);
+    }, [movies, sortField, sortDir, filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched]);
 
     // Reset visible count when filters change
     useEffect(() => {
         setVisibleCount(30);
-    }, [filterQuery, filterGenres, filterDirector, filterActor, filterRating, filterYear, filterType, filterGenreMode, sortField, sortDir, hideWatched]);
+    }, [filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, sortField, sortDir, hideWatched]);
 
     // Infinite Scroll Observer
     useEffect(() => {
@@ -407,7 +590,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             onClick={() => setShowFilters(!showFilters)}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '8px',
-                                color: showFilters || filterGenres.length > 0 || filterRating[0] > 0 || filterRating[1] < 10 || filterDirector !== 'all' || filterActor !== 'all' ? 'var(--accent-gold)' : 'inherit',
+                                color: showFilters || filterGenres.length > 0 || filterRating[0] > 0 || filterRating[1] < 10 || filterDirectors.length > 0 || filterActors.length > 0 ? 'var(--accent-gold)' : 'inherit',
                                 background: showFilters ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
                                 border: '1px solid rgba(255,255,255,0.1)',
                                 borderRadius: '20px',
@@ -416,8 +599,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                             Filters {
-                                (filterGenres.length > 0 || filterDirector !== 'all' || filterActor !== 'all') && 
-                                `(${filterGenres.length + (filterDirector !== 'all' ? 1 : 0) + (filterActor !== 'all' ? 1 : 0)})`
+                                (filterGenres.length > 0 || filterDirectors.length > 0 || filterActors.length > 0) && 
+                                `(${filterGenres.length + filterDirectors.length + filterActors.length})`
                             }
                         </button>
                     </div>
@@ -599,74 +782,24 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         </div>
 
                         {/* Director Filter */}
-                        <div>
-                            <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>Director</span>
-                                {filterDirector !== 'all' && (
-                                    <button 
-                                        onClick={() => setFilterDirector('all')} 
-                                        style={{ background: 'none', border: 'none', color: 'var(--accent-gold)', fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}
-                                    >
-                                        Clear
-                                    </button>
-                                )}
-                            </div>
-                            <select
-                                value={filterDirector}
-                                onChange={(e) => setFilterDirector(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    background: 'rgba(0, 0, 0, 0.5)',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: '8px',
-                                    color: '#fff',
-                                    padding: '10px',
-                                    outline: 'none',
-                                    fontSize: '0.85rem',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <option value="all">All Directors ({availableDirectors.length})</option>
-                                {availableDirectors.map(d => (
-                                    <option key={d} value={d}>{d}</option>
-                                ))}
-                            </select>
-                        </div>
+                        <MultiSelectAutocomplete
+                            label="Directors"
+                            placeholder="Type or select directors..."
+                            options={availableDirectors}
+                            selected={filterDirectors}
+                            onChange={setFilterDirectors}
+                            accentColor="var(--accent-gold)"
+                        />
 
                         {/* Actor Filter */}
-                        <div>
-                            <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>Actor</span>
-                                {filterActor !== 'all' && (
-                                    <button 
-                                        onClick={() => setFilterActor('all')} 
-                                        style={{ background: 'none', border: 'none', color: 'var(--accent-gold)', fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}
-                                    >
-                                        Clear
-                                    </button>
-                                )}
-                            </div>
-                            <select
-                                value={filterActor}
-                                onChange={(e) => setFilterActor(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    background: 'rgba(0, 0, 0, 0.5)',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: '8px',
-                                    color: '#fff',
-                                    padding: '10px',
-                                    outline: 'none',
-                                    fontSize: '0.85rem',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <option value="all">All Actors ({availableActors.length})</option>
-                                {availableActors.map(a => (
-                                    <option key={a} value={a}>{a}</option>
-                                ))}
-                            </select>
-                        </div>
+                        <MultiSelectAutocomplete
+                            label="Actors"
+                            placeholder="Type or select actors..."
+                            options={availableActors}
+                            selected={filterActors}
+                            onChange={setFilterActors}
+                            accentColor="var(--accent-gold)"
+                        />
 
                         {/* Reset Actions */}
                         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
@@ -679,8 +812,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     setFilterQuery('');
                                     setFilterType('all');
                                     setFilterGenreMode('include');
-                                    setFilterDirector('all');
-                                    setFilterActor('all');
+                                    setFilterDirectors([]);
+                                    setFilterActors([]);
                                 }}
                                 style={{ fontSize: '0.85rem', textDecoration: 'underline', cursor: 'pointer' }}
                             >Reset All Filters</button>
