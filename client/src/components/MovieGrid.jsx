@@ -619,9 +619,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             )}
 
             <div className="controls-section" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
-                {/* Sticky search bar wrapper */}
-                <div className="sticky-search-bar">
-                <div className="controls-top-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                <div className="controls-top-bar sticky-search-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
                     <div className="controls-top-left" style={{ display: 'flex', gap: '15px', alignItems: 'center', flex: 1, minWidth: '280px' }}>
                         <div style={{ position: 'relative', flex: 1, zIndex: isSearchFocused ? 9999 : 2 }}>
                             <input
@@ -846,8 +844,6 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             }
                         </button>
                     </div>
-
-                </div>{/* end sticky-search-bar */}
 
                     <div className="controls-bottom-bar" style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>

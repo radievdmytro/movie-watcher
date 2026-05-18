@@ -31,10 +31,10 @@ function App() {
     const [deletingIds, setDeletingIds] = useState([]); // Track items being deleted for animation
     const trashButtonRef = useRef(null);
     const [highlightedMovieLink, setHighlightedMovieLink] = useState(null);
-    const [scrolled, setScrolled] = useState(false);
+    const [headerScrolled, setHeaderScrolled] = useState(false);
 
     useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 60);
+        const onScroll = () => setHeaderScrolled(window.scrollY > 48);
         window.addEventListener('scroll', onScroll, { passive: true });
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
@@ -427,85 +427,106 @@ function App() {
 
     return (
         <div className="app">
-            <header className={`header glass-panel app-header${scrolled ? ' header-scrolled' : ''}`}>
+            <header className={`header glass-panel app-header${headerScrolled ? ' header-scrolled' : ''}`}>
                 <div className="container header-content">
-                    {/* ─── Logo (shrinks to corner on scroll) ─── */}
-                    <div
-                        className="header-logo-wrap"
-                        onClick={() => { if (currentView !== 'shared_collection') setCurrentView('library'); }}
-                    >
-                        <img
-                            src="favicon.png"
-                            alt="Logo"
-                            className="header-logo-img"
-                        />
-                        <h1 className="gold logo header-logo-text">
-                            Radev's <span className="gold">Movie Selector</span>
-                        </h1>
+                    <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <div 
+                            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+                            onClick={() => { if (currentView !== 'shared_collection') setCurrentView('library'); }}
+                        >
+                            <img 
+                                src="favicon.png" 
+                                alt="Radev Movie Selector Mascot" 
+                                style={{ 
+                                    width: '76px', 
+                                    height: '76px', 
+                                    objectFit: 'contain',
+                                    borderRadius: '0',
+                                    border: 'none',
+                                    filter: 'drop-shadow(0 0 8px rgba(212,175,55,0.35))',
+                                    transition: 'transform 0.3s ease'
+                                }} 
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1) rotate(-5deg)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
+                            />
+                            <h1 className="gold logo" style={{ margin: 0, fontSize: '1.55rem', letterSpacing: '0.5px' }}>
+                                Radev's <span className="gold">Movie Selector</span>
+                            </h1>
+                        </div>
+                        {user && currentView !== 'shared_collection' ? (
+                            <div className="header-nav" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <button
+                                    onClick={() => setCurrentView('library')}
+                                    className="btn"
+                                    style={{
+                                        background: currentView === 'library' ? 'var(--bg-card)' : 'rgba(255,255,255,0.05)',
+                                        color: currentView === 'library' ? '#fff' : '#888',
+                                        borderRadius: '8px'
+                                    }}
+                                >
+                                    Library
+                                </button>
+                                <button
+                                    onClick={() => setCurrentView('collections')}
+                                    className="btn"
+                                    style={{
+                                        background: currentView === 'collections' ? 'var(--bg-card)' : 'rgba(255,255,255,0.05)',
+                                        color: currentView === 'collections' ? 'var(--accent-gold)' : '#888',
+                                        borderRadius: '8px'
+                                    }}
+                                >
+                                    📁 Collections
+                                </button>
+                                {user.username.toLowerCase() === 'radev' && (
+                                    <button
+                                        onClick={() => setCurrentView('admin')}
+                                        className="btn"
+                                        style={{
+                                            background: currentView === 'admin' ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                            color: currentView === 'admin' ? '#fff' : 'var(--accent-gold)',
+                                            border: '1px solid rgba(212, 175, 55, 0.3)',
+                                            borderRadius: '8px',
+                                            fontWeight: 'bold'
+                                        }}
+                                    >
+                                        👑 Admin Panel
+                                    </button>
+                                )}
+                                {(currentView === 'library' || currentView === 'trash') && (
+                                    <div className="header-movie-count" style={{ fontSize: '0.9rem', color: '#888', marginLeft: '5px' }}>
+                                        {movies.length} {currentView === 'library' ? 'Movies' : 'Deleted Items'}
+                                    </div>
+                                )}
+                            </div>
+                        ) : null}
                     </div>
 
-                    {/* ─── Navigation ─── */}
-                    {user && currentView !== 'shared_collection' && (
-                        <nav className="header-nav">
-                            <button
-                                onClick={() => setCurrentView('library')}
-                                className={`btn header-nav-btn${currentView === 'library' ? ' active' : ''}`}
-                            >
-                                📚 <span className="nav-label">Library</span>
-                            </button>
-                            <button
-                                onClick={() => setCurrentView('collections')}
-                                className={`btn header-nav-btn${currentView === 'collections' ? ' active' : ''}`}
-                            >
-                                📁 <span className="nav-label">Collections</span>
-                            </button>
-                            {user.username.toLowerCase() === 'radev' && (
-                                <button
-                                    onClick={() => setCurrentView('admin')}
-                                    className={`btn header-nav-btn admin-btn${currentView === 'admin' ? ' active' : ''}`}
-                                >
-                                    👑 <span className="nav-label">Admin</span>
-                                </button>
-                            )}
-                            {(currentView === 'library' || currentView === 'trash') && (
-                                <span className="header-movie-count">
-                                    {movies.length} {currentView === 'library' ? 'movies' : 'deleted'}
-                                </span>
-                            )}
-                        </nav>
-                    )}
-
-                    {/* ─── Right actions ─── */}
                     {currentView !== 'shared_collection' && user && (
-                        <div className="header-right">
+                        <div className="header-right" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                             {currentView === 'trash' && movies.length > 0 && (
-                                <button onClick={emptyTrash} className="btn btn-ghost" style={{ color: 'var(--danger)', fontSize: '0.82rem' }}>
-                                    <span className="nav-label">Empty Trash</span>
-                                    <span className="icon-only" title="Empty Trash">🗑️✕</span>
+                                <button onClick={emptyTrash} className="btn btn-ghost" style={{ color: 'var(--danger)', fontSize: '0.85rem' }}>
+                                    Empty Trash
                                 </button>
                             )}
                             <button
                                 ref={trashButtonRef}
                                 onClick={() => setCurrentView('trash')}
-                                className={`btn header-icon-btn${currentView === 'trash' ? ' active' : ''}`}
-                                title="Trash"
+                                className="btn"
+                                style={{
+                                    background: currentView === 'trash' ? 'var(--bg-card)' : 'rgba(255,255,255,0.05)',
+                                    color: currentView === 'trash' ? 'var(--accent-gold)' : '#888',
+                                    border: currentView === 'trash' ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.05)',
+                                    borderRadius: '8px'
+                                }}
                             >
-                                <span className="icon-only">🗑️</span>
-                                <span className="nav-label">Trash</span>
+                                Trash
                             </button>
-                            <div className="header-divider" />
-                            <span className="header-user-badge" title={user.username}>
-                                <span className="icon-only">👤</span>
-                                <span className="nav-label">{user.username}</span>
+                            <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '24px', margin: '0 5px' }}></div>
+                            <span style={{ fontSize: '0.9rem', color: '#aaa', fontWeight: 500 }}>
+                                👤 {user.username}
                             </span>
-                            <button
-                                onClick={handleLogout}
-                                className="btn btn-ghost header-icon-btn"
-                                title="Logout"
-                                style={{ color: '#ff6b6b' }}
-                            >
-                                <span className="icon-only">⬅️</span>
-                                <span className="nav-label">Logout</span>
+                            <button onClick={handleLogout} className="btn btn-ghost" style={{ fontSize: '0.85rem', color: '#ff6b6b' }}>
+                                Logout
                             </button>
                         </div>
                     )}
