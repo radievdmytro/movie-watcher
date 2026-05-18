@@ -826,6 +826,16 @@ input {
     grid-template-columns: 1fr 1fr !important;
     gap: 10px !important;
   }
+
+  .compact-controls-row {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    padding-bottom: 2px;
+  }
+  .compact-controls-row::-webkit-scrollbar {
+    display: none !important;
+  }
 }
 
 /* ==========================================

@@ -28,13 +28,21 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
     const [fullPageResults, setFullPageResults] = useState(false);
     
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    
     // Comparison Modal states
     const [isCompareOpen, setIsCompareOpen] = useState(false);
     const [compareLinks, setCompareLinks] = useState([]);
 
     const handleCompareClick = () => {
-        if (selectedLinks.size > 3) {
-            setLogs([{ msg: '⚠ You can compare at most 3 movies at a time', type: 'error' }]);
+        const maxLimit = isMobile ? 2 : 3;
+        if (selectedLinks.size > maxLimit) {
+            setLogs([{ msg: `⚠ You can compare at most ${maxLimit} movies at a time`, type: 'error' }]);
             setIsFadingLogs(false);
             setTimeout(() => setIsFadingLogs(true), 4000);
             return;
@@ -110,7 +118,8 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
         setLoading(true);
         setSearchStreaming(true);
         setSearchStatus('Searching...');
-        if (openFullPage) {
+        const openFull = openFullPage || isMobile;
+        if (openFull) {
             setFullPageResults(true);
         } else {
             // Auto/dropdown mode: reset full-page mode so dropdown becomes visible
@@ -171,7 +180,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                 accumulatedResults = merged;
                                 setSearchResults([...merged]);
                                 setSelectedLinks(new Set());
-                                setShowResultsPanel(!openFullPage);
+                                setShowResultsPanel(!openFull);
                                 if (data.fromCache) setSearchStatus('Searching HDRezka for more...');
                                 else setSearchStatus('');
                             } else if (eventName === 'status') {
@@ -487,32 +496,78 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
 
     return (
         <div style={{ marginBottom: '30px', position: 'relative', zIndex: 200 }} ref={containerRef}>
+            {/* Quick Access Menu Row - Placed BEFORE the search bar */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '12px',
+                overflowX: 'auto',
+                scrollbarWidth: 'none',
+                width: '100%',
+                padding: '2px 0'
+            }} className="compact-controls-row">
+
+                {[
+                    { id: 'watching', label: 'Watching Now', icon: '👀' },
+                    { id: 'last', label: 'New Releases', icon: '✨' },
+                    { id: 'popular', label: 'Popular', icon: '🔥' }
+                ].map(cat => (
+                    <button
+                        key={cat.id}
+                        onClick={() => handleFetchCategory(cat.id)}
+                        disabled={loading}
+                        className="btn-ghost"
+                        style={{
+                            padding: '6px 14px',
+                            borderRadius: '20px',
+                            fontSize: '0.78rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            transition: 'all 0.2s',
+                            cursor: loading ? 'wait' : 'pointer',
+                            whiteSpace: 'nowrap'
+                        }}
+                        onMouseOver={(e) => !loading && (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+                        onMouseOut={(e) => !loading && (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                    >
+                        <span>{cat.icon}</span>
+                        <span>{cat.label}</span>
+                    </button>
+                ))}
+            </div>
+
             {/* Search Bar Container - High Z-Index to stay on top */}
             <div style={{
                 display: 'flex',
                 background: 'var(--bg-card)',
                 borderRadius: '30px',
-                padding: '5px',
+                padding: isMobile ? '3px 6px' : '5px',
                 border: '1px solid rgba(255,255,255,0.1)',
                 boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
                 transition: 'all 0.3s ease',
                 alignItems: inputLines > 1 ? 'flex-start' : 'center',
-                flexWrap: 'wrap',
+                flexWrap: 'nowrap',
                 position: 'relative',
                 zIndex: 10
             }}
                 onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent-gold)'}
                 onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
             >
-                <div style={{ padding: '0 15px', display: 'flex', alignItems: 'center', color: '#666' }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                </div>
+                {!isMobile && (
+                    <div style={{ padding: '0 15px', display: 'flex', alignItems: 'center', color: '#666' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </div>
+                )}
 
                 {inputLines > 1 || query.length > 80 ? (
                     <textarea
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Paste HDRezka link(s) or movie title..."
+                        placeholder={isMobile ? "Search or paste link..." : "Paste HDRezka link(s) or movie title..."}
                         className="search-input"
                         style={{
                             flex: 1,
@@ -520,7 +575,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                             background: 'transparent',
                             border: 'none',
                             color: '#fff',
-                            fontSize: '1rem',
+                            fontSize: isMobile ? '16px' : '0.9rem',
                             outline: 'none',
                             padding: '10px 0',
                             resize: 'vertical',
@@ -532,16 +587,18 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Paste HDRezka link(s) or movie title..."
+                        placeholder={isMobile ? "Search HDRezka / paste link..." : "Paste HDRezka link(s) or movie title..."}
                         className="search-input"
                         style={{
                             flex: 1,
                             background: 'transparent',
                             border: 'none',
                             color: '#fff',
-                            fontSize: '1rem',
+                            fontSize: isMobile ? '16px' : '1rem',
                             height: '40px',
-                            outline: 'none'
+                            outline: 'none',
+                            minWidth: '50px',
+                            paddingLeft: isMobile ? '5px' : '0'
                         }}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch(false, true)}
                     />
@@ -554,21 +611,22 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                         color: showSearchFilters ? 'var(--accent-gold)' : '#888',
                         border: '1px solid ' + (showSearchFilters ? 'var(--accent-gold)' : 'rgba(255,255,255,0.1)'),
                         borderRadius: '20px',
-                        padding: '0 15px',
-                        height: '40px',
-                        fontSize: '0.85rem',
+                        padding: isMobile ? '0 10px' : '0 15px',
+                        height: '34px',
+                        fontSize: isMobile ? '0.75rem' : '0.85rem',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
-                        marginLeft: '10px',
+                        gap: '6px',
+                        marginLeft: '5px',
                         transition: 'all 0.2s',
                         alignSelf: inputLines > 1 ? 'flex-start' : 'auto',
-                        marginTop: inputLines > 1 ? '10px' : '0'
+                        marginTop: inputLines > 1 ? '10px' : '0',
+                        flexShrink: 0
                     }}
                 >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                    Filters
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                    {!isMobile && "Filters"}
                 </button>
 
                 <button
@@ -579,24 +637,31 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                         color: '#000',
                         border: 'none',
                         borderRadius: '25px',
-                        padding: '0 30px',
-                        height: '40px',
+                        padding: isMobile ? '0 12px' : '0 30px',
+                        height: '34px',
                         fontWeight: 'bold',
-                        fontSize: '0.9rem',
+                        fontSize: isMobile ? '0.75rem' : '0.9rem',
                         cursor: loading ? 'wait' : 'pointer',
                         boxShadow: '0 2px 10px rgba(212, 175, 55, 0.3)',
                         transition: 'transform 0.2s',
-                        marginLeft: '10px',
+                        marginLeft: '5px',
                         marginRight: '2px',
                         alignSelf: inputLines > 1 ? 'flex-start' : 'auto',
-                        marginTop: inputLines > 1 ? '10px' : '0'
+                        marginTop: inputLines > 1 ? '10px' : '0',
+                        flexShrink: 0
                     }}
                     onMouseOver={(e) => !loading && (e.currentTarget.style.transform = 'scale(1.05)')}
                     onMouseOut={(e) => !loading && (e.currentTarget.style.transform = 'scale(1)')}
                 >
                     {loading ? (
-                        <div style={{ width: '20px', height: '20px', border: '2px solid #000', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                    ) : (extractUrls(query).length > 1 ? 'IMPORT ALL' : 'SEARCH')}
+                        <div style={{ width: '16px', height: '16px', border: '2px solid #000', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                    ) : (
+                        isMobile ? (
+                            extractUrls(query).length > 1 ? '📥 ALL' : '🔍'
+                        ) : (
+                            extractUrls(query).length > 1 ? 'IMPORT ALL' : 'SEARCH'
+                        )
+                    )}
                 </button>
             </div>
 
@@ -624,44 +689,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                 </div>
             )}
 
-            {/* Category Quick Buttons */}
-            <div style={{
-                display: 'flex',
-                gap: '8px',
-                marginTop: '12px',
-                flexWrap: 'wrap',
-                justifyContent: 'center'
-            }}>
-                {[
-                    { id: 'watching', label: 'Watching Now', icon: '👀' },
-                    { id: 'last', label: 'New Releases', icon: '✨' },
-                    { id: 'popular', label: 'Popular', icon: '🔥' }
-                ].map(cat => (
-                    <button
-                        key={cat.id}
-                        onClick={() => handleFetchCategory(cat.id)}
-                        disabled={loading}
-                        className="btn-ghost"
-                        style={{
-                            padding: '6px 15px',
-                            borderRadius: '20px',
-                            fontSize: '0.8rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            background: 'rgba(255,255,255,0.03)',
-                            border: '1px solid rgba(255,255,255,0.05)',
-                            transition: 'all 0.2s',
-                            cursor: loading ? 'wait' : 'pointer'
-                        }}
-                        onMouseOver={(e) => !loading && (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
-                        onMouseOut={(e) => !loading && (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
-                    >
-                        <span>{cat.icon}</span>
-                        {cat.label}
-                    </button>
-                ))}
-            </div>
+
 
             {/* Global Search Filters Panel (Below Bar) */}
             <div style={{
@@ -671,99 +699,191 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                 background: 'rgba(255,255,255,0.02)',
                 borderRadius: '15px',
                 marginTop: showSearchFilters ? '15px' : '0',
-                padding: showSearchFilters ? '20px' : '0 20px',
+                padding: showSearchFilters ? (isMobile ? '12px' : '20px') : '0 20px',
                 border: showSearchFilters ? '1px solid rgba(255,255,255,0.05)' : 'none',
                 position: 'relative',
                 zIndex: 8
             }}>
-                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                    {/* Type Filter */}
-                    <div>
-                        <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '8px' }}>Content Type</div>
-                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '2px' }}>
-                            {[
-                                { id: 'all', label: 'All' },
-                                { id: 'movie', label: 'Movies' },
-                                { id: 'series', label: 'Series' },
-                                { id: 'cartoon', label: 'Cartoon' }
-                            ].map(t => (
-                                <button key={t.id} onClick={() => setSearchFilterType(t.id)} style={{
-                                    padding: '5px 15px', fontSize: '0.8rem', borderRadius: '18px', border: 'none', cursor: 'pointer',
-                                    background: searchFilterType === t.id ? 'var(--accent-gold)' : 'transparent',
-                                    color: searchFilterType === t.id ? '#000' : '#888',
-                                    transition: 'all 0.2s'
-                                }}>{t.label}</button>
-                            ))}
+                {isMobile ? (
+                    <div style={{ display: 'flex', gap: '10px', flexDirection: 'column', alignItems: 'stretch' }}>
+                        {/* Row 1: Content Type and Year side-by-side on mobile */}
+                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'nowrap', width: '100%', alignItems: 'center' }}>
+                            {/* Type Filter */}
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Content Type</div>
+                                <select
+                                    value={searchFilterType}
+                                    onChange={(e) => setSearchFilterType(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '12px',
+                                        color: '#fff',
+                                        padding: '6px 10px',
+                                        fontSize: '0.8rem',
+                                        outline: 'none',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <option value="all" style={{ background: '#151515' }}>All Categories</option>
+                                    <option value="movie" style={{ background: '#151515' }}>Movies</option>
+                                    <option value="series" style={{ background: '#151515' }}>Series</option>
+                                    <option value="cartoon" style={{ background: '#151515' }}>Cartoons</option>
+                                </select>
+                            </div>
+
+                            {/* Year Slider */}
+                            <div style={{ flex: 1.2 }}>
+                                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '6px', display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>From Year</span>
+                                    <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>{searchFilterYear[0]}</span>
+                                </div>
+                                <input
+                                    type="range" min="1950" max={new Date().getFullYear()} step="1" value={searchFilterYear[0]}
+                                    onChange={(e) => setSearchFilterYear([parseInt(e.target.value), 2030])}
+                                    style={{ width: '100%', accentColor: 'var(--accent-gold)' }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Row 2: Exclude Genres and Reset Row */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '10px' }}>
+                            {/* Genre Exclusion */}
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Exclude Genres</div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                    {['Мультфильмы', 'Аниме', 'Ужасы'].map(g => {
+                                        const isExcl = searchFilterGenres.includes(g) && searchFilterGenreMode === 'exclude';
+                                        return (
+                                            <button
+                                                key={g}
+                                                onClick={() => {
+                                                    if (isExcl) {
+                                                        setSearchFilterGenres(searchFilterGenres.filter(i => i !== g));
+                                                    } else {
+                                                        setSearchFilterGenres([...searchFilterGenres, g]);
+                                                        setSearchFilterGenreMode('exclude');
+                                                    }
+                                                }}
+                                                style={{
+                                                    padding: '3px 8px', fontSize: '0.7rem', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                                                    background: isExcl ? 'var(--danger)' : 'rgba(255,255,255,0.05)',
+                                                    color: isExcl ? '#fff' : '#888',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                {g}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Reset Button */}
+                            <div style={{ alignSelf: 'flex-end', paddingBottom: '2px' }}>
+                                <button
+                                    className="btn-ghost"
+                                    style={{ fontSize: '0.72rem', opacity: 0.6, textDecoration: 'underline' }}
+                                    onClick={() => {
+                                        setSearchFilterType('all');
+                                        setSearchFilterYear([1950, 2030]);
+                                        setSearchFilterGenres([]);
+                                        setSearchFilterGenreMode('include');
+                                    }}
+                                >Reset Filters</button>
+                            </div>
                         </div>
                     </div>
-
-                    {/* Genre Exclusion Example (Cartoons) */}
-                    <div>
-                        <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Exclude Genres</span>
-                            <span style={{ fontSize: '0.7rem', color: 'var(--danger)' }}>{searchFilterGenres.length > 0 ? 'Active' : ''}</span>
+                ) : (
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                        {/* Type Filter */}
+                        <div>
+                            <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '8px' }}>Content Type</div>
+                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '2px' }}>
+                                {[
+                                    { id: 'all', label: 'All' },
+                                    { id: 'movie', label: 'Movies' },
+                                    { id: 'series', label: 'Series' },
+                                    { id: 'cartoon', label: 'Cartoon' }
+                                ].map(t => (
+                                    <button key={t.id} onClick={() => setSearchFilterType(t.id)} style={{
+                                        padding: '5px 15px', fontSize: '0.8rem', borderRadius: '18px', border: 'none', cursor: 'pointer',
+                                        background: searchFilterType === t.id ? 'var(--accent-gold)' : 'transparent',
+                                        color: searchFilterType === t.id ? '#000' : '#888',
+                                        transition: 'all 0.2s'
+                                    }}>{t.label}</button>
+                                ))}
+                            </div>
                         </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                            {['Мультфильмы', 'Аниме', 'Ужасы'].map(g => {
-                                const isExcl = searchFilterGenres.includes(g) && searchFilterGenreMode === 'exclude';
-                                return (
-                                    <button
-                                        key={g}
-                                        onClick={() => {
-                                            if (isExcl) {
-                                                setSearchFilterGenres(searchFilterGenres.filter(i => i !== g));
-                                            } else {
-                                                setSearchFilterGenres([...searchFilterGenres, g]);
-                                                setSearchFilterGenreMode('exclude');
-                                            }
-                                        }}
-                                        style={{
-                                            padding: '4px 10px', fontSize: '0.75rem', borderRadius: '15px', border: 'none', cursor: 'pointer',
-                                            background: isExcl ? 'var(--danger)' : 'rgba(255,255,255,0.05)',
-                                            color: isExcl ? '#fff' : '#888',
-                                            transition: 'all 0.2s'
-                                        }}
-                                    >
-                                        {g}
-                                    </button>
-                                );
-                            })}
+
+                        {/* Genre Exclusion Example (Cartoons) */}
+                        <div>
+                            <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Exclude Genres</span>
+                                <span style={{ fontSize: '0.7rem', color: 'var(--danger)' }}>{searchFilterGenres.length > 0 ? 'Active' : ''}</span>
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                                {['Мультфильмы', 'Аниме', 'Ужасы'].map(g => {
+                                    const isExcl = searchFilterGenres.includes(g) && searchFilterGenreMode === 'exclude';
+                                    return (
+                                        <button
+                                            key={g}
+                                            onClick={() => {
+                                                if (isExcl) {
+                                                    setSearchFilterGenres(searchFilterGenres.filter(i => i !== g));
+                                                } else {
+                                                    setSearchFilterGenres([...searchFilterGenres, g]);
+                                                    setSearchFilterGenreMode('exclude');
+                                                }
+                                            }}
+                                            style={{
+                                                padding: '4px 10px', fontSize: '0.75rem', borderRadius: '15px', border: 'none', cursor: 'pointer',
+                                                background: isExcl ? 'var(--danger)' : 'rgba(255,255,255,0.05)',
+                                                color: isExcl ? '#fff' : '#888',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {g}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Year Slider */}
+                        <div style={{ minWidth: '180px' }}>
+                            <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>From Year</span>
+                                <span style={{ color: 'var(--accent-gold)' }}>{searchFilterYear[0]}</span>
+                            </div>
+                            <input
+                                type="range" min="1950" max={new Date().getFullYear()} step="1" value={searchFilterYear[0]}
+                                onChange={(e) => setSearchFilterYear([parseInt(e.target.value), 2030])}
+                                style={{ width: '100%', accentColor: 'var(--accent-gold)' }}
+                            />
+                        </div>
+
+                        {/* Reset Button */}
+                        <div style={{ marginLeft: 'auto', alignSelf: 'flex-end' }}>
+                            <button
+                                className="btn-ghost"
+                                style={{ fontSize: '0.8rem', opacity: 0.6 }}
+                                onClick={() => {
+                                    setSearchFilterType('all');
+                                    setSearchFilterYear([1950, 2030]);
+                                    setSearchFilterGenres([]);
+                                    setSearchFilterGenreMode('include');
+                                }}
+                            >Reset Search Filters</button>
                         </div>
                     </div>
-
-
-                    {/* Year Slider */}
-                    <div style={{ minWidth: '180px' }}>
-                        <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>From Year</span>
-                            <span style={{ color: 'var(--accent-gold)' }}>{searchFilterYear[0]}</span>
-                        </div>
-                        <input
-                            type="range" min="1950" max={new Date().getFullYear()} step="1" value={searchFilterYear[0]}
-                            onChange={(e) => setSearchFilterYear([parseInt(e.target.value), 2030])}
-                            style={{ width: '100%', accentColor: 'var(--accent-gold)' }}
-                        />
-                    </div>
-
-                    {/* Reset Button */}
-                    <div style={{ marginLeft: 'auto', alignSelf: 'flex-end' }}>
-                        <button
-                            className="btn-ghost"
-                            style={{ fontSize: '0.8rem', opacity: 0.6 }}
-                            onClick={() => {
-                                setSearchFilterType('all');
-                                setSearchFilterYear([1950, 2030]);
-                                setSearchFilterGenres([]);
-                                setSearchFilterGenreMode('include');
-                            }}
-                        >Reset Search Filters</button>
-                    </div>
-                </div>
+                )}
             </div>
 
-
             {/* Dropdown — auto-search mode (typing) */}
-            <div style={{
+            {!isMobile && (
+                <div style={{
                 position: 'absolute',
                 top: 'calc(100% - 20px)',
                 left: '5%', right: '5%',
@@ -793,23 +913,40 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                     style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap' }}>
                                     ✚ Add Selected ({selectedLinks.size})
                                 </button>
-                                {selectedLinks.size >= 2 && selectedLinks.size <= 3 && (
+                                {selectedLinks.size >= 2 && selectedLinks.size <= (isMobile ? 2 : 3) && (
                                     <button onClick={(e) => { e.stopPropagation(); handleCompareClick(); }}
                                         className="btn btn-ghost"
                                         style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
                                         ⚖️ Compare Selected
                                     </button>
                                 )}
-                                {selectedLinks.size > 3 && (
+                                {selectedLinks.size > (isMobile ? 2 : 3) && (
                                     <span style={{ fontSize: '0.72rem', color: '#888', fontStyle: 'italic', display: 'flex', alignItems: 'center' }}>
-                                        Compare (max 3)
+                                        Compare (max {isMobile ? 2 : 3})
                                     </span>
                                 )}
                             </div>
                         )}
                     </div>
                     <button onClick={() => { setShowResultsPanel(false); setSelectedLinks(new Set()); }}
-                        style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '1.1rem', cursor: 'pointer', padding: '0 4px' }}>×</button>
+                        style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            color: '#fff',
+                            borderRadius: '50%',
+                            width: '26px',
+                            height: '26px',
+                            fontSize: '1rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                            padding: 0
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                        onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                    >×</button>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                     {filteredSearchResults.length > 0 ? filteredSearchResults.map((item, idx) => {
@@ -875,63 +1012,97 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                     )}
                 </div>
             </div>
+            )}
 
             {/* Full Page Results Panel — opened on Enter / Search button */}
             {fullPageResults && searchResults && (
-                <div style={{
-                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
-                    backdropFilter: 'blur(10px)', zIndex: 9999,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    animation: 'fadeIn 0.25s ease', padding: '20px'
-                }}>
-                    <div style={{
-                        width: '100%', maxWidth: '840px', maxHeight: '88vh',
-                        background: 'rgba(18,18,18,0.99)', borderRadius: '16px',
-                        border: '1px solid rgba(255,255,255,0.09)',
-                        boxShadow: '0 24px 60px rgba(0,0,0,0.8)',
-                        display: 'flex', flexDirection: 'column', overflow: 'hidden'
-                    }}>
+                <div 
+                    onClick={() => { setFullPageResults(false); setShowResultsPanel(false); setSelectedLinks(new Set()); }}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+                        backdropFilter: 'blur(10px)', zIndex: 9999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        animation: 'fadeIn 0.25s ease', padding: isMobile ? '10px' : '20px'
+                    }}
+                >
+                    <div 
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            width: '100%', maxWidth: '840px', maxHeight: isMobile ? '94vh' : '88vh',
+                            background: 'rgba(18,18,18,0.99)', borderRadius: isMobile ? '12px' : '16px',
+                            border: isMobile ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.09)',
+                            boxShadow: isMobile ? '0 0 25px rgba(212, 175, 55, 0.4)' : '0 24px 60px rgba(0,0,0,0.8)',
+                            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                            position: 'relative'
+                        }}
+                    >
+                    {/* Fixed Absolute Close Button — guarantees perfect closeability on mobile */}
+                    <button onClick={() => { setFullPageResults(false); setShowResultsPanel(false); setSelectedLinks(new Set()); }}
+                        style={{
+                            position: 'absolute',
+                            top: isMobile ? '12px' : '18px',
+                            right: isMobile ? '12px' : '24px',
+                            background: 'rgba(212, 175, 55, 0.2)',
+                            border: '1.5px solid var(--accent-gold)',
+                            color: 'var(--accent-gold)',
+                            borderRadius: '50%',
+                            width: '34px',
+                            height: '34px',
+                            fontSize: '1.25rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 0 10px rgba(212, 175, 55, 0.3)',
+                            zIndex: 100,
+                            padding: 0,
+                            lineHeight: 1
+                        }}
+                    >
+                        ×
+                    </button>
+
                     {/* Header */}
                     <div style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '18px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)',
-                        flexShrink: 0, flexWrap: 'wrap', gap: '12px'
+                        padding: isMobile ? '10px 45px 10px 14px' : '18px 70px 18px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)',
+                        flexShrink: 0, flexWrap: 'wrap', gap: isMobile ? '8px' : '12px'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                            <h3 style={{ margin: 0, color: 'var(--accent-gold)', fontSize: '1.15rem' }}>
-                                🎬 Search Results
-                                <span style={{ fontSize: '0.8rem', color: '#666', marginLeft: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px', flexWrap: 'wrap' }}>
+                            <h3 style={{ margin: 0, color: 'var(--accent-gold)', fontSize: isMobile ? '1rem' : '1.15rem' }}>
+                                🎬 Results
+                                <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '6px' }}>
                                     {filteredSearchResults.length} found
                                 </span>
                             </h3>
                             {/* View toggle */}
-                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: '20px', padding: '3px' }}>
+                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: '20px', padding: '2px' }}>
                                 {[['grid','⊞ Grid'],['table','☰ List']].map(([mode, label]) => (
                                     <button key={mode} onClick={() => setViewMode(mode)} style={{
-                                        padding: '5px 14px', borderRadius: '16px', border: 'none', cursor: 'pointer',
-                                        fontSize: '0.78rem', fontWeight: 600,
+                                        padding: isMobile ? '3px 8px' : '5px 14px', borderRadius: '16px', border: 'none', cursor: 'pointer',
+                                        fontSize: isMobile ? '0.7rem' : '0.78rem', fontWeight: 600,
                                         background: viewMode === mode ? 'var(--accent-gold)' : 'transparent',
                                         color: viewMode === mode ? '#000' : '#888', transition: 'all 0.2s'
                                     }}>{label}</button>
                                 ))}
                             </div>
                             {selectedLinks.size > 0 && (
-                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                    {selectedLinks.size >= 2 && selectedLinks.size <= 3 && (
+                                <div style={{ display: 'flex', gap: isMobile ? '5px' : '10px', alignItems: 'center' }}>
+                                    {selectedLinks.size >= 2 && selectedLinks.size <= (isMobile ? 2 : 3) && (
                                         <button onClick={handleCompareClick} className="btn btn-ghost" style={{
-                                            fontSize: '0.82rem', padding: '7px 20px', borderRadius: '20px',
+                                            fontSize: isMobile ? '0.72rem' : '0.82rem', padding: isMobile ? '4px 10px' : '7px 20px', borderRadius: '20px',
                                             border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff'
                                         }}>
                                             ⚖️ Compare ({selectedLinks.size})
                                         </button>
                                     )}
-                                    {selectedLinks.size > 3 && (
-                                        <span style={{ fontSize: '0.82rem', color: '#888', fontStyle: 'italic', padding: '7px 0' }}>
-                                            Compare (max 3)
+                                    {selectedLinks.size > (isMobile ? 2 : 3) && (
+                                        <span style={{ fontSize: isMobile ? '0.72rem' : '0.82rem', color: '#888', fontStyle: 'italic', padding: '7px 0' }}>
+                                            Compare (max {isMobile ? 2 : 3})
                                         </span>
                                     )}
                                     <button onClick={handleAddSelected} className="btn btn-primary" style={{
-                                        fontSize: '0.82rem', padding: '7px 20px', borderRadius: '20px',
+                                        fontSize: isMobile ? '0.72rem' : '0.82rem', padding: isMobile ? '4px 12px' : '7px 20px', borderRadius: '20px',
                                         boxShadow: '0 2px 12px rgba(212,175,55,0.4)', animation: 'fadeIn 0.2s'
                                     }}>
                                         ✚ Add Selected ({selectedLinks.size})
@@ -947,25 +1118,21 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                     }
                                 }} style={{
                                     background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
-                                    color: '#aaa', borderRadius: '16px', padding: '5px 14px',
-                                    fontSize: '0.78rem', cursor: 'pointer'
+                                    color: '#aaa', borderRadius: '16px', padding: isMobile ? '3px 10px' : '5px 14px',
+                                    fontSize: isMobile ? '0.7rem' : '0.78rem', cursor: 'pointer'
                                 }}>
                                     {selectedLinks.size === filteredSearchResults.length ? 'Deselect All' : 'Select All'}
                                 </button>
                             )}
                         </div>
-                        <button onClick={() => { setFullPageResults(false); setShowResultsPanel(false); setSelectedLinks(new Set()); }}
-                            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#aaa', borderRadius: '50%', width: '36px', height: '36px', fontSize: '1.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            ×
-                        </button>
                     </div>
 
                     {/* Results Body */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
+                    <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '12px 14px' : '20px 28px' }}>
                         {filteredSearchResults.length === 0 ? (
                             <div style={{ textAlign: 'center', color: '#555', paddingTop: '60px', fontSize: '1rem' }}>No results match your filters</div>
                         ) : viewMode === 'grid' ? (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(100px, 1fr))' : 'repeat(auto-fill, minmax(160px, 1fr))', gap: isMobile ? '10px' : '16px' }}>
                                 {filteredSearchResults.map((item, idx) => {
                                     const sel = selectedLinks.has(item.link);
                                     const owned = isOwned(item.link);
@@ -973,7 +1140,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                         <div key={idx} onClick={() => !owned && toggleSelect(item.link)} style={{
                                             background: owned ? 'rgba(212,175,55,0.09)' : sel ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
                                             border: `1px solid ${owned ? 'rgba(212,175,55,0.55)' : sel ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.07)'}`,
-                                            borderRadius: '14px', overflow: 'hidden', cursor: owned ? 'default' : 'pointer',
+                                            borderRadius: isMobile ? '8px' : '14px', overflow: 'hidden', cursor: owned ? 'default' : 'pointer',
                                             transition: 'all 0.2s', position: 'relative',
                                             transform: sel ? 'scale(1.02)' : 'scale(1)'
                                         }}
@@ -981,43 +1148,43 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                             onMouseLeave={e => e.currentTarget.style.border = `1px solid ${owned ? 'rgba(212,175,55,0.55)' : sel ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.07)'}`}
                                         >
                                             <div style={{ position: 'relative' }}>
-                                                <img src={item.img} alt={item.title} style={{ width: '100%', height: '200px', objectFit: 'cover', display: 'block' }} />
+                                                <img src={item.img} alt={item.title} style={{ width: '100%', height: isMobile ? '135px' : '200px', objectFit: 'cover', display: 'block' }} />
                                                 {/* Owned badge / select circle */}
                                                 {owned ? (
                                                     <div style={{
-                                                        position: 'absolute', top: '8px', right: '8px',
+                                                        position: 'absolute', top: '6px', right: '6px',
                                                         background: 'var(--accent-gold)', color: '#000',
-                                                        borderRadius: '10px', padding: '2px 8px',
-                                                        fontSize: '0.65rem', fontWeight: 'bold'
-                                                    }}>✓ In Library</div>
+                                                        borderRadius: '8px', padding: '1px 5px',
+                                                        fontSize: isMobile ? '0.6rem' : '0.65rem', fontWeight: 'bold'
+                                                    }}>✓ In Lib</div>
                                                 ) : (
                                                     <div style={{
-                                                        position: 'absolute', top: '8px', right: '8px',
-                                                        width: '22px', height: '22px', borderRadius: '50%',
+                                                        position: 'absolute', top: '6px', right: '6px',
+                                                        width: isMobile ? '16px' : '22px', height: isMobile ? '16px' : '22px', borderRadius: '50%',
                                                         background: sel ? 'var(--accent-gold)' : 'rgba(0,0,0,0.6)',
                                                         border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.4)'}`,
                                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        fontSize: '0.7rem', color: '#000', fontWeight: 'bold',
+                                                        fontSize: isMobile ? '0.6rem' : '0.7rem', color: '#000', fontWeight: 'bold',
                                                         transition: 'all 0.2s'
                                                     }}>{sel ? '✓' : ''}</div>
                                                 )}
-                                                {item.rating && <div style={{ position: 'absolute', bottom: '6px', left: '6px', background: 'rgba(0,0,0,0.8)', padding: '2px 7px', borderRadius: '6px', fontSize: '0.75rem', color: '#fff' }}>★ {item.rating}</div>}
+                                                {item.rating && <div style={{ position: 'absolute', bottom: '4px', left: '4px', background: 'rgba(0,0,0,0.8)', padding: isMobile ? '1px 5px' : '2px 7px', borderRadius: '4px', fontSize: isMobile ? '0.65rem' : '0.75rem', color: '#fff' }}>★ {item.rating}</div>}
                                             </div>
-                                            <div style={{ padding: '10px' }}>
-                                                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: owned ? 'var(--accent-gold)' : '#eee', marginBottom: '4px', lineHeight: 1.3 }}>{item.title}</div>
-                                                <div style={{ fontSize: '0.7rem', color: '#666' }}>{item.misc}</div>
+                                            <div style={{ padding: isMobile ? '6px' : '10px' }}>
+                                                <div style={{ fontSize: isMobile ? '0.75rem' : '0.85rem', fontWeight: 600, color: owned ? 'var(--accent-gold)' : '#eee', marginBottom: '2px', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
+                                                <div style={{ fontSize: isMobile ? '0.65rem' : '0.7rem', color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.misc}</div>
                                             </div>
                                             {owned && (
-                                                <div style={{ padding: '0 10px 10px' }}>
+                                                <div style={{ padding: isMobile ? '0 6px 6px' : '0 10px 10px' }}>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
                                                         style={{
                                                             width: '100%', background: 'rgba(212,175,55,0.15)',
                                                             border: '1px solid rgba(212,175,55,0.4)', color: 'var(--accent-gold)',
-                                                            borderRadius: '8px', padding: '5px 0', fontSize: '0.75rem',
+                                                            borderRadius: isMobile ? '6px' : '8px', padding: isMobile ? '4px 0' : '5px 0', fontSize: isMobile ? '0.68rem' : '0.75rem',
                                                             cursor: 'pointer', fontWeight: '600'
                                                         }}
-                                                    >📍 Show in Library</button>
+                                                    >📍 Show</button>
                                                 </div>
                                             )}
                                         </div>
@@ -1102,15 +1269,15 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                     background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
                                     color: '#aaa', borderRadius: '20px', padding: '8px 20px', cursor: 'pointer', fontSize: '0.85rem'
                                 }}>Clear</button>
-                                {selectedLinks.size >= 2 && selectedLinks.size <= 3 && (
+                                {selectedLinks.size >= 2 && selectedLinks.size <= (isMobile ? 2 : 3) && (
                                     <button onClick={handleCompareClick} className="btn btn-ghost" style={{
                                         padding: '8px 20px', borderRadius: '20px',
                                         border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem'
                                     }}>⚖️ Compare ({selectedLinks.size})</button>
                                 )}
-                                {selectedLinks.size > 3 && (
+                                {selectedLinks.size > (isMobile ? 2 : 3) && (
                                     <span style={{ fontSize: '0.85rem', color: '#888', fontStyle: 'italic', padding: '8px 0' }}>
-                                        Compare (max 3)
+                                        Compare (max {isMobile ? 2 : 3})
                                     </span>
                                 )}
                                 <button onClick={handleAddSelected} className="btn btn-primary" style={{

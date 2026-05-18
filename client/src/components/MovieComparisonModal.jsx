@@ -4,6 +4,13 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
     const [loading, setLoading] = useState(true);
     const [moviesData, setMoviesData] = useState([]);
     const [error, setError] = useState('');
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         if (isOpen) {
@@ -130,28 +137,28 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                     ) : (
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: `130px repeat(${moviesData.length}, 1fr)`,
-                            gap: '16px',
+                            gridTemplateColumns: isMobile ? `repeat(${moviesData.length}, 1fr)` : `130px repeat(${moviesData.length}, 1fr)`,
+                            gap: isMobile ? '10px' : '16px',
                             alignItems: 'stretch'
                         }}>
                             {/* Posters and Actions Row */}
-                            <div style={{ color: '#888', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center' }}>Movie</div>
+                            {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center' }}>Movie</div>}
                             {moviesData.map((movie, idx) => {
                                 const owned = isOwned(movie.link);
                                 return (
                                     <div key={idx} style={{
                                         display: 'flex', flexDirection: 'column', gap: '12px',
-                                        background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px',
+                                        background: 'rgba(255,255,255,0.02)', padding: isMobile ? '10px' : '16px', borderRadius: '16px',
                                         border: '1px solid rgba(255,255,255,0.04)', position: 'relative'
                                     }}>
                                         <img src={movie.poster_url} alt={movie.title} style={{
-                                            width: '100%', height: '240px', objectFit: 'cover', borderRadius: '12px',
+                                            width: '100%', height: isMobile ? '150px' : '240px', objectFit: 'cover', borderRadius: '12px',
                                             boxShadow: '0 8px 20px rgba(0,0,0,0.4)'
                                         }} />
                                         <div style={{ flex: 1 }}>
-                                            <h4 style={{ margin: '8px 0 4px', fontSize: '1.05rem', fontWeight: 600, color: '#fff', lineHeight: 1.3 }}>{movie.title}</h4>
+                                            <h4 style={{ margin: '8px 0 4px', fontSize: isMobile ? '0.9rem' : '1.05rem', fontWeight: 600, color: '#fff', lineHeight: 1.3 }}>{movie.title}</h4>
                                             {movie.original_title && movie.original_title !== movie.title && (
-                                                <div style={{ fontSize: '0.8rem', color: '#777', fontStyle: 'italic' }}>{movie.original_title}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#777', fontStyle: 'italic' }}>{movie.original_title}</div>
                                             )}
                                         </div>
                                         <div>
@@ -159,17 +166,17 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                                 <div style={{
                                                     background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)',
                                                     color: 'var(--accent-gold)', borderRadius: '10px', padding: '8px',
-                                                    fontSize: '0.8rem', fontWeight: 600, textAlign: 'center'
+                                                    fontSize: isMobile ? '0.75rem' : '0.8rem', fontWeight: 600, textAlign: 'center'
                                                 }}>
-                                                    📍 Already in Library
+                                                    📍 Owned
                                                 </div>
                                             ) : (
                                                 <button onClick={() => { onAddMovie(movie.link); }} style={{
-                                                    width: '100%', padding: '8px 16px', background: 'var(--accent-gold)',
-                                                    border: 'none', color: '#000', borderRadius: '10px', fontSize: '0.85rem',
+                                                    width: '100%', padding: isMobile ? '6px 10px' : '8px 16px', background: 'var(--accent-gold)',
+                                                    border: 'none', color: '#000', borderRadius: '10px', fontSize: isMobile ? '0.78rem' : '0.85rem',
                                                     fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(212,175,55,0.2)'
                                                 }} onMouseEnter={e => e.target.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.target.style.transform = 'translateY(0)'}>
-                                                    ✚ Add to Library
+                                                    ✚ Add
                                                 </button>
                                             )}
                                         </div>
@@ -178,82 +185,82 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                             })}
 
                             {/* Year Row */}
-                            <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Year</div>
+                            {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Year</div>}
                             {moviesData.map((movie, idx) => (
-                                <div key={idx} style={{ color: '#eee', fontSize: '0.9rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0', fontWeight: 500 }}>
+                                <div key={idx} style={{ color: '#eee', fontSize: isMobile ? '0.82rem' : '0.9rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0', fontWeight: 500 }}>
                                     📆 {movie.year}
                                 </div>
                             ))}
 
                             {/* Rating Row */}
-                            <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Rating</div>
+                            {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Rating</div>}
                             {moviesData.map((movie, idx) => {
                                 const isHighest = idx === highestRatingIdx;
                                 return (
                                     <div key={idx} style={{
                                         color: isHighest ? 'var(--accent-gold)' : '#eee',
-                                        fontSize: '0.95rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0',
+                                        fontSize: isMobile ? '0.85rem' : '0.95rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0',
                                         fontWeight: isHighest ? '700' : '500', display: 'flex', alignItems: 'center', gap: '4px'
                                     }}>
-                                        ★ {movie.rating || 'N/A'} {isHighest && <span style={{ fontSize: '0.75rem', background: 'rgba(212,175,55,0.15)', padding: '2px 6px', borderRadius: '4px' }}>Highest</span>}
+                                        ★ {movie.rating || 'N/A'} {isHighest && !isMobile && <span style={{ fontSize: '0.75rem', background: 'rgba(212,175,55,0.15)', padding: '2px 6px', borderRadius: '4px' }}>Highest</span>}
                                     </div>
                                 );
                             })}
 
                             {/* Country Row */}
-                            <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Country</div>
+                            {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Country</div>}
                             {moviesData.map((movie, idx) => (
-                                <div key={idx} style={{ color: '#eee', fontSize: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>
+                                <div key={idx} style={{ color: '#eee', fontSize: isMobile ? '0.78rem' : '0.85rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>
                                     🌍 {movie.country || 'N/A'}
                                 </div>
                             ))}
 
                             {/* Genres Row */}
-                            <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Genres</div>
+                            {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Genres</div>}
                             {moviesData.map((movie, idx) => (
-                                <div key={idx} style={{ color: '#eee', fontSize: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0', lineHeight: 1.4 }}>
+                                <div key={idx} style={{ color: '#eee', fontSize: isMobile ? '0.78rem' : '0.85rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0', lineHeight: 1.4 }}>
                                     🎭 {movie.genres || movie.misc || 'N/A'}
                                 </div>
                             ))}
 
                             {/* Director Row */}
-                            <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Director</div>
+                            {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Director</div>}
                             {moviesData.map((movie, idx) => (
-                                <div key={idx} style={{ color: '#eee', fontSize: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>
+                                <div key={idx} style={{ color: '#eee', fontSize: isMobile ? '0.78rem' : '0.85rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>
                                     🎬 {movie.director || 'N/A'}
                                 </div>
                             ))}
 
                             {/* Duration Row */}
-                            <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Duration</div>
+                            {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Duration</div>}
                             {moviesData.map((movie, idx) => (
-                                <div key={idx} style={{ color: '#eee', fontSize: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>
+                                <div key={idx} style={{ color: '#eee', fontSize: isMobile ? '0.78rem' : '0.85rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>
                                     ⏱️ {movie.duration || 'N/A'}
                                 </div>
                             ))}
 
                             {/* Voice Acting Row */}
-                            <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Voice / Translation</div>
+                            {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Voice / Translation</div>}
                             {moviesData.map((movie, idx) => (
-                                <div key={idx} style={{ color: '#bbb', fontSize: '0.8rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0', lineHeight: 1.4 }}>
+                                <div key={idx} style={{ color: '#bbb', fontSize: isMobile ? '0.75rem' : '0.8rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0', lineHeight: 1.4 }}>
                                     🗣️ {movie.voice_acting || 'N/A'}
                                 </div>
                             ))}
 
                             {/* Actors Row */}
-                            <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Actors</div>
+                            {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Actors</div>}
                             {moviesData.map((movie, idx) => (
-                                <div key={idx} style={{ color: '#ccc', fontSize: '0.8rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0', lineHeight: 1.4 }}>
+                                <div key={idx} style={{ color: '#ccc', fontSize: isMobile ? '0.75rem' : '0.8rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0', lineHeight: 1.4 }}>
                                     👥 {movie.actors || 'N/A'}
                                 </div>
                             ))}
 
                             {/* Description Row */}
-                            <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'flex-start', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Description</div>
+                            {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'flex-start', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Description</div>}
                             {moviesData.map((movie, idx) => (
                                 <div key={idx} style={{
-                                    color: '#aaa', fontSize: '0.8rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0',
-                                    lineHeight: 1.5, maxHeight: '160px', overflowY: 'auto', textAlign: 'justify'
+                                    color: '#aaa', fontSize: isMobile ? '0.75rem' : '0.8rem', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0',
+                                    lineHeight: 1.5, maxHeight: isMobile ? '120px' : '160px', overflowY: 'auto', textAlign: 'justify'
                                 }}>
                                     📖 {movie.description || 'No description available.'}
                                 </div>

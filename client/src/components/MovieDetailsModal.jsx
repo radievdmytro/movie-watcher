@@ -12,6 +12,14 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     const [savingNotes, setSavingNotes] = useState(false);
     const [savedToastVisible, setSavedToastVisible] = useState(false);
     const [showWatchedPrompt, setShowWatchedPrompt] = useState(openWithWatchedPrompt);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [isPosterZoomed, setIsPosterZoomed] = useState(false);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Reviews states
     const [reviews, setReviews] = useState([]);
@@ -285,17 +293,18 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 background: 'rgba(0, 0, 0, 0.85)',
                 backdropFilter: 'blur(10px)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                zIndex: 11000, padding: '20px',
+                zIndex: 11000, padding: isMobile ? '10px' : '20px',
                 animation: 'fadeIn 0.3s ease-out'
             }}
         >
             <div
                 className="glass-panel"
                 style={{
-                    width: '100%', maxWidth: '900px', maxHeight: '90vh',
+                    width: '100%', maxWidth: '900px', maxHeight: isMobile ? '95vh' : '90vh',
                     overflowY: 'auto', position: 'relative',
                     animation: 'scaleIn 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)',
-                    display: 'flex', flexDirection: 'column'
+                    display: 'flex', flexDirection: 'column',
+                    borderRadius: isMobile ? '20px' : '24px'
                 }}
             >
                 {/* Header / Close */}
@@ -383,141 +392,210 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                     </div>
                 )}
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', padding: '40px' }}>
-                    {/* Left: Poster */}
-                    <div style={{ flex: '0 0 300px', maxWidth: '100%' }}>
-                        <img
-                            src={movie.poster_url}
-                            alt={movie.title}
-                            style={{
-                                width: '100%', borderRadius: '12px',
-                                boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                marginBottom: '20px'
-                            }}
-                        />
+                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '16px' : '30px', padding: isMobile ? '16px' : '40px' }}>
+                    {/* Left Column (Desktop only) */}
+                    {!isMobile && (
+                        <div style={{ flex: '0 0 300px', maxWidth: '100%' }}>
+                            <img
+                                src={movie.poster_url}
+                                alt={movie.title}
+                                style={{
+                                    width: '100%', borderRadius: '12px',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    marginBottom: '20px',
+                                    cursor: 'zoom-in',
+                                    transition: 'transform 0.2s'
+                                }}
+                                onClick={() => setIsPosterZoomed(true)}
+                                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+                                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                            />
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', fontSize: '0.9rem' }}>
-                            {movie.director && (
-                                <div>
-                                    <div style={{ color: '#666', marginBottom: '3px', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Director</div>
-                                    <div style={{ color: '#fff', lineHeight: '1.4' }}>{movie.director}</div>
-                                </div>
-                            )}
-                            {movie.writers && (
-                                <div>
-                                    <div style={{ color: '#666', marginBottom: '3px', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Writers</div>
-                                    <div style={{ color: '#fff', lineHeight: '1.4' }}>{movie.writers}</div>
-                                </div>
-                            )}
-                            {movie.actors && (
-                                <div>
-                                    <div style={{ color: '#666', marginBottom: '3px', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Starring</div>
-                                    <div style={{ color: '#fff', lineHeight: '1.4' }}>{movie.actors}</div>
-                                </div>
-                            )}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', fontSize: '0.9rem' }}>
+                                {movie.director && (
+                                    <div>
+                                        <div style={{ color: '#666', marginBottom: '3px', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Director</div>
+                                        <div style={{ color: '#fff', lineHeight: '1.4' }}>{movie.director}</div>
+                                    </div>
+                                )}
+                                {movie.writers && (
+                                    <div>
+                                        <div style={{ color: '#666', marginBottom: '3px', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Writers</div>
+                                        <div style={{ color: '#fff', lineHeight: '1.4' }}>{movie.writers}</div>
+                                    </div>
+                                )}
+                                {movie.actors && (
+                                    <div>
+                                        <div style={{ color: '#666', marginBottom: '3px', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Starring</div>
+                                        <div style={{ color: '#fff', lineHeight: '1.4' }}>{movie.actors}</div>
+                                    </div>
+                                )}
 
-                            {!readOnly && !isTrashMode && (
-                                <div style={{
-                                    borderTop: '1px solid rgba(255,255,255,0.08)',
-                                    paddingTop: '15px',
-                                    marginTop: '20px'
-                                }}>
-                                    <h4 style={{ color: '#fff', marginBottom: '8px', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                        📝 Personal Notes (Private)
-                                    </h4>
-                                    <textarea
-                                        value={notes}
-                                        onChange={(e) => setNotes(e.target.value)}
-                                        placeholder="Write your private review, thoughts, or notes here..."
+                                {!readOnly && !isTrashMode && (
+                                    <div style={{
+                                        borderTop: '1px solid rgba(255,255,255,0.08)',
+                                        paddingTop: '15px',
+                                        marginTop: '20px'
+                                    }}>
+                                        <h4 style={{ color: '#fff', marginBottom: '8px', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                            📝 Personal Notes (Private)
+                                        </h4>
+                                        <textarea
+                                            value={notes}
+                                            onChange={(e) => setNotes(e.target.value)}
+                                            placeholder="Write your private review, thoughts, or notes here..."
+                                            style={{
+                                                width: '100%', minHeight: '90px', background: 'rgba(0,0,0,0.4)',
+                                                border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px',
+                                                padding: '8px', color: '#fff', fontSize: '0.85rem', resize: 'vertical',
+                                                outline: 'none', fontFamily: 'inherit', lineHeight: '1.4', marginBottom: '10px'
+                                            }}
+                                        />
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#aaa', fontSize: '0.78rem' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isPublic}
+                                                    onChange={(e) => setIsPublic(e.target.checked)}
+                                                    style={{ width: '15px', height: '15px', accentColor: 'var(--accent-gold)' }}
+                                                />
+                                                Visible to others in shared collections 👥
+                                            </label>
+                                            <button
+                                                onClick={handleSaveReview}
+                                                disabled={savingNotes}
+                                                className="btn"
+                                                style={{
+                                                    background: 'var(--accent-gold)', color: '#000',
+                                                    padding: '6px 12px', fontSize: '0.78rem', fontWeight: 'bold',
+                                                    width: '100%', borderRadius: '6px'
+                                                }}
+                                            >
+                                                {savingNotes ? '⏳ Saving...' : '💾 Save Notes'}
+                                            </button>
+                                            {notesFeedback.message && (
+                                                <div style={{
+                                                    marginTop: '4px',
+                                                    padding: '6px 10px',
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.78rem',
+                                                    textAlign: 'center',
+                                                    background: notesFeedback.type === 'success' ? 'rgba(3, 218, 198, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                    color: notesFeedback.type === 'success' ? '#03dac6' : 'var(--danger)',
+                                                    border: notesFeedback.type === 'success' ? '1px solid rgba(3, 218, 198, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)'
+                                                }}>
+                                                    {notesFeedback.message}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Right Column / Main Area */}
+                    <div style={{ flex: '1', minWidth: isMobile ? '100%' : '300px', display: 'flex', flexDirection: 'column' }}>
+                        {isMobile ? (
+                            /* Mobile Header (Compact poster + Title side-by-side) */
+                            <div style={{ display: 'flex', gap: '16px', width: '100%', alignItems: 'flex-start', marginBottom: '10px' }}>
+                                <div 
+                                    onClick={() => setIsPosterZoomed(true)}
+                                    style={{ 
+                                        flex: '0 0 100px', 
+                                        cursor: 'zoom-in', 
+                                        position: 'relative',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                                        border: '1px solid rgba(255,255,255,0.1)'
+                                    }}
+                                >
+                                    <img
+                                        src={movie.poster_url}
+                                        alt={movie.title}
                                         style={{
-                                            width: '100%', minHeight: '90px', background: 'rgba(0,0,0,0.4)',
-                                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px',
-                                            padding: '8px', color: '#fff', fontSize: '0.85rem', resize: 'vertical',
-                                            outline: 'none', fontFamily: 'inherit', lineHeight: '1.4', marginBottom: '10px'
+                                            width: '100%',
+                                            height: '145px',
+                                            objectFit: 'cover',
+                                            display: 'block'
                                         }}
                                     />
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#aaa', fontSize: '0.78rem' }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={isPublic}
-                                                onChange={(e) => setIsPublic(e.target.checked)}
-                                                style={{ width: '15px', height: '15px', accentColor: 'var(--accent-gold)' }}
-                                            />
-                                            Visible to others in shared collections 👥
-                                        </label>
-                                        <button
-                                            onClick={handleSaveReview}
-                                            disabled={savingNotes}
-                                            className="btn"
-                                            style={{
-                                                background: 'var(--accent-gold)', color: '#000',
-                                                padding: '6px 12px', fontSize: '0.78rem', fontWeight: 'bold',
-                                                width: '100%', borderRadius: '6px'
-                                            }}
-                                        >
-                                            {savingNotes ? '⏳ Saving...' : '💾 Save Notes'}
-                                        </button>
-                                        {notesFeedback.message && (
-                                            <div style={{
-                                                marginTop: '4px',
-                                                padding: '6px 10px',
-                                                borderRadius: '4px',
-                                                fontSize: '0.78rem',
-                                                textAlign: 'center',
-                                                background: notesFeedback.type === 'success' ? 'rgba(3, 218, 198, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                                color: notesFeedback.type === 'success' ? '#03dac6' : 'var(--danger)',
-                                                border: notesFeedback.type === 'success' ? '1px solid rgba(3, 218, 198, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)'
+                                    <div style={{
+                                        position: 'absolute', bottom: 0, left: 0, right: 0,
+                                        background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '0.62rem',
+                                        textAlign: 'center', padding: '2px 0', fontWeight: 'bold'
+                                    }}>🔍 Zoom</div>
+                                </div>
+
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                    <h2 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{movie.title}</h2>
+                                    {movie.original_title && (
+                                        <div style={{ fontSize: '0.82rem', color: '#888', fontStyle: 'italic', margin: 0 }}>{movie.original_title}</div>
+                                    )}
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginTop: '2px' }}>
+                                        <span style={{
+                                            background: 'var(--accent-gold)', color: '#000',
+                                            padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.78rem'
+                                        }}>
+                                            ★ {movie.rating || 'N/A'}
+                                        </span>
+                                        {movie.user_rating && (
+                                            <span style={{
+                                                background: 'rgba(3, 218, 198, 0.2)', color: '#03dac6',
+                                                padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.78rem',
+                                                border: '1px solid rgba(3, 218, 198, 0.3)'
                                             }}>
-                                                {notesFeedback.message}
-                                            </div>
+                                                👤 ★ {movie.user_rating}
+                                            </span>
                                         )}
+                                        <span style={{ color: '#aaa', fontSize: '0.8rem' }}>{movie.year}</span>
+                                    </div>
+                                    <div style={{ color: 'var(--accent-gold)', fontSize: '0.8rem', fontWeight: 500, lineHeight: 1.3 }}>
+                                        {movie.genres}
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                    </div>
+                            </div>
+                        ) : (
+                            /* Desktop Header */
+                            <>
+                                <h2 style={{ fontSize: '2.4rem', margin: '0 0 5px 0', lineHeight: '1.1' }}>{movie.title}</h2>
+                                {movie.original_title && (
+                                    <div style={{ fontSize: '1.1rem', color: '#888', marginBottom: '15px' }}>{movie.original_title}</div>
+                                )}
 
-                    {/* Right: Info */}
-                    <div style={{ flex: '1', minWidth: '300px', display: 'flex', flexDirection: 'column' }}>
-                        <h2 style={{ fontSize: '2.4rem', margin: '0 0 5px 0', lineHeight: '1.1' }}>{movie.title}</h2>
-                        {movie.original_title && (
-                            <div style={{ fontSize: '1.1rem', color: '#888', marginBottom: '15px' }}>{movie.original_title}</div>
+                                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '25px', alignItems: 'center' }}>
+                                    <span style={{
+                                        background: 'var(--accent-gold)', color: '#000',
+                                        padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold'
+                                    }}>
+                                        ★ {movie.rating || 'N/A'}
+                                    </span>
+                                    {movie.user_rating && (
+                                        <span style={{
+                                            background: 'rgba(3, 218, 198, 0.2)', color: '#03dac6',
+                                            padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold',
+                                            border: '1px solid rgba(3, 218, 198, 0.4)'
+                                        }}>
+                                            👤 My rating: ★ {movie.user_rating}
+                                        </span>
+                                    )}
+                                    <span style={{ color: '#aaa' }}>{movie.year}</span>
+                                    <div style={{ width: '1px', height: '15px', background: '#444' }}></div>
+                                    <span style={{ color: 'var(--accent-gold)', fontSize: '0.9rem' }}>{movie.genres}</span>
+                                </div>
+                            </>
                         )}
 
-                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '25px', alignItems: 'center' }}>
-                            <span style={{
-                                background: 'var(--accent-gold)', color: '#000',
-                                padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold'
-                            }}>
-                                ★ {movie.rating || 'N/A'}
-                            </span>
-                            
-                            {/* Personal user rating in header */}
-                            {movie.user_rating && (
-                                <span style={{
-                                    background: 'rgba(3, 218, 198, 0.2)', color: '#03dac6',
-                                    padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold',
-                                    border: '1px solid rgba(3, 218, 198, 0.4)'
-                                }}>
-                                    👤 My rating: ★ {movie.user_rating}
-                                </span>
-                            )}
-                            
-                            <span style={{ color: '#aaa' }}>{movie.year}</span>
-                            <div style={{ width: '1px', height: '15px', background: '#444' }}></div>
-                            <span style={{ color: 'var(--accent-gold)', fontSize: '0.9rem' }}>{movie.genres}</span>
-                        </div>
-
                         {/* Interactive Premium Tabs Menu */}
-                        <div style={{ display: 'flex', gap: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '25px', paddingBottom: '0' }}>
+                        <div style={{ display: 'flex', gap: isMobile ? '15px' : '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '25px', paddingBottom: '0' }}>
                             <button
                                 onClick={() => setActiveTab('about')}
                                 style={{
                                     background: 'none', border: 'none', color: activeTab === 'about' ? 'var(--accent-gold)' : '#888',
-                                    fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', padding: '5px 10px',
-                                    borderBottom: activeTab === 'about' ? '2px solid var(--accent-gold)' : '2px solid transparent',
+                                    fontSize: isMobile ? '0.92rem' : '1rem', fontWeight: 'bold', cursor: 'pointer', padding: '5px 10px',
+                                    borderBottom: activeTab === 'about' ? '2.5px solid var(--accent-gold)' : '2.5px solid transparent',
                                     transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px'
                                 }}
                             >
@@ -528,12 +606,12 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                 onClick={() => setActiveTab('reviews')}
                                 style={{
                                     background: 'none', border: 'none', color: activeTab === 'reviews' ? 'var(--accent-gold)' : '#888',
-                                    fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', padding: '5px 10px',
-                                    borderBottom: activeTab === 'reviews' ? '2px solid var(--accent-gold)' : '2px solid transparent',
+                                    fontSize: isMobile ? '0.92rem' : '1rem', fontWeight: 'bold', cursor: 'pointer', padding: '5px 10px',
+                                    borderBottom: activeTab === 'reviews' ? '2.5px solid var(--accent-gold)' : '2.5px solid transparent',
                                     transition: 'all 0.2s', paddingBottom: '10px', marginBottom: '-1px'
                                 }}
                             >
-                                📝 Rating & Community Feed ({reviews.length})
+                                {isMobile ? `📝 Feed (${reviews.length})` : `📝 Rating & Community Feed (${reviews.length})`}
                             </button>
                         </div>
 
@@ -541,8 +619,105 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                         <div style={{ flex: 1, marginBottom: '30px' }}>
                             {activeTab === 'about' && (
                                 <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
-                                    <h4 style={{ color: '#fff', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.9rem' }}>Synopsis</h4>
-                                    <p style={{ color: '#ccc', lineHeight: '1.7', fontSize: '1.05rem', margin: 0 }}>{movie.description}</p>
+                                    <h4 style={{ color: '#fff', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.85rem' }}>Synopsis</h4>
+                                    <p style={{ color: '#ccc', lineHeight: '1.65', fontSize: isMobile ? '0.92rem' : '1.05rem', margin: 0, textAlign: 'justify' }}>{movie.description}</p>
+
+                                    {isMobile && (
+                                        <>
+                                            {/* Shrunken Director & Starring grid */}
+                                            <div style={{ 
+                                                display: 'flex', 
+                                                flexDirection: 'column', 
+                                                gap: '8px', 
+                                                fontSize: '0.82rem', 
+                                                background: 'rgba(255,255,255,0.02)', 
+                                                padding: '12px', 
+                                                borderRadius: '8px',
+                                                border: '1px solid rgba(255,255,255,0.04)',
+                                                marginTop: '16px'
+                                            }}>
+                                                {movie.director && (
+                                                    <div>
+                                                        <span style={{ color: '#888', fontWeight: 600 }}>Director: </span>
+                                                        <span style={{ color: '#fff' }}>{movie.director}</span>
+                                                    </div>
+                                                )}
+                                                {movie.writers && (
+                                                    <div>
+                                                        <span style={{ color: '#888', fontWeight: 600 }}>Writers: </span>
+                                                        <span style={{ color: '#fff' }}>{movie.writers}</span>
+                                                    </div>
+                                                )}
+                                                {movie.actors && (
+                                                    <div>
+                                                        <span style={{ color: '#888', fontWeight: 600 }}>Starring: </span>
+                                                        <span style={{ color: '#eee' }}>{movie.actors}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Personal Notes (Private) */}
+                                            {!readOnly && !isTrashMode && (
+                                                <div style={{
+                                                    borderTop: '1px solid rgba(255,255,255,0.08)',
+                                                    paddingTop: '12px',
+                                                    marginTop: '16px'
+                                                }}>
+                                                    <h4 style={{ color: '#fff', marginBottom: '8px', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                        📝 Personal Notes (Private)
+                                                    </h4>
+                                                    <textarea
+                                                        value={notes}
+                                                        onChange={(e) => setNotes(e.target.value)}
+                                                        placeholder="Write your private review, thoughts, or notes here..."
+                                                        style={{
+                                                            width: '100%', minHeight: '80px', background: 'rgba(0,0,0,0.4)',
+                                                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px',
+                                                            padding: '8px', color: '#fff', fontSize: '0.82rem', resize: 'vertical',
+                                                            outline: 'none', fontFamily: 'inherit', lineHeight: '1.4', marginBottom: '8px'
+                                                        }}
+                                                    />
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#aaa', fontSize: '0.75rem' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isPublic}
+                                                                onChange={(e) => setIsPublic(e.target.checked)}
+                                                                style={{ width: '14px', height: '14px', accentColor: 'var(--accent-gold)' }}
+                                                            />
+                                                            Visible to others in shared collections 👥
+                                                        </label>
+                                                        <button
+                                                            onClick={handleSaveReview}
+                                                            disabled={savingNotes}
+                                                            className="btn"
+                                                            style={{
+                                                                background: 'var(--accent-gold)', color: '#000',
+                                                                padding: '8px 12px', fontSize: '0.8rem', fontWeight: 'bold',
+                                                                width: '100%', borderRadius: '6px', border: 'none', cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            {savingNotes ? '⏳ Saving...' : '💾 Save Notes'}
+                                                        </button>
+                                                        {notesFeedback.message && (
+                                                            <div style={{
+                                                                marginTop: '4px',
+                                                                padding: '6px 10px',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.75rem',
+                                                                textAlign: 'center',
+                                                                background: notesFeedback.type === 'success' ? 'rgba(3, 218, 198, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                                color: notesFeedback.type === 'success' ? '#03dac6' : 'var(--danger)',
+                                                                border: notesFeedback.type === 'success' ? '1px solid rgba(3, 218, 198, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)'
+                                                            }}>
+                                                                {notesFeedback.message}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
 
                                     {/* Public Owner Notes & Rating Display in Shared view */}
                                     {(movie.notes || movie.user_rating) && (
@@ -886,13 +1061,21 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                 )}
                                             </div>
                                         )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                                     </div>
+                                 </div>
+                             )}
+                         </div>
 
-                        {/* Modal Action Controls */}
-                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                         {/* Modal Action Controls */}
+                        <div style={{ 
+                            display: 'flex', 
+                            gap: '10px', 
+                            flexWrap: 'wrap', 
+                            marginTop: 'auto', 
+                            paddingTop: '15px', 
+                            borderTop: '1px solid rgba(255,255,255,0.05)',
+                            width: '100%'
+                        }}>
                             {readOnly ? (
                                 <a
                                     href={movie.link}
@@ -900,15 +1083,21 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                     rel="noreferrer"
                                     className="btn"
                                     style={{
-                                        background: 'var(--accent-gold)',
+                                        background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
+                                        border: 'none',
                                         color: '#000',
-                                        padding: '12px 35px',
-                                        fontSize: '1.05rem',
+                                        padding: isMobile ? '10px 20px' : '12px 35px',
+                                        fontSize: isMobile ? '0.88rem' : '1.05rem',
                                         fontWeight: 'bold',
                                         boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
                                         display: 'inline-flex',
                                         alignItems: 'center',
-                                        gap: '8px'
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        borderRadius: '10px',
+                                        textDecoration: 'none',
+                                        transition: 'all 0.2s',
+                                        flex: isMobile ? '1' : 'initial'
                                     }}
                                 >
                                     🎬 Watch on HDRezka
@@ -916,46 +1105,144 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                             ) : !isTrashMode ? (
                                 <>
                                     <button
-                                        className="btn"
                                         style={{
-                                            background: movie.status === 'watched' ? 'rgba(255,255,255,0.1)' : 'var(--accent-gold)',
+                                            background: movie.status === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
+                                            border: movie.status === 'watched' ? '1px solid rgba(255,255,255,0.12)' : 'none',
                                             color: movie.status === 'watched' ? '#fff' : '#000',
-                                            padding: '12px 25px'
+                                            padding: isMobile ? '10px 16px' : '12px 28px',
+                                            fontSize: isMobile ? '0.85rem' : '0.95rem',
+                                            fontWeight: '700',
+                                            borderRadius: '10px',
+                                            cursor: 'pointer',
+                                            boxShadow: movie.status === 'watched' ? 'none' : '0 4px 15px rgba(212, 175, 55, 0.25)',
+                                            transition: 'all 0.2s',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            flex: isMobile ? '1 1 auto' : 'initial'
                                         }}
                                         onClick={handleStatusToggle}
                                     >
-                                        {movie.status === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
+                                        {movie.status === 'watched' ? 'Mark Unwatched ⚪' : 'Mark Watched ⭐'}
                                     </button>
                                     <a
                                         href={movie.link}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="btn btn-ghost"
-                                        style={{ border: '1px solid rgba(255,255,255,0.1)', padding: '12px 25px' }}
+                                        style={{
+                                            background: 'rgba(255,255,255,0.03)',
+                                            border: '1px solid rgba(255,255,255,0.08)',
+                                            color: '#fff',
+                                            padding: isMobile ? '10px 16px' : '12px 28px',
+                                            fontSize: isMobile ? '0.85rem' : '0.95rem',
+                                            fontWeight: '600',
+                                            borderRadius: '10px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            textDecoration: 'none',
+                                            flex: isMobile ? '1 1 auto' : 'initial'
+                                        }}
                                     >
-                                        Watch on HDRezka
+                                        Watch on HDRezka 🌐
                                     </a>
                                     <button
                                         onClick={() => { onDelete(movie.id); onClose(); }}
-                                        className="btn btn-ghost"
-                                        style={{ color: 'var(--danger)', padding: '12px 25px' }}
+                                        style={{
+                                            background: 'rgba(239, 68, 68, 0.08)',
+                                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                                            color: '#ff6b6b',
+                                            padding: isMobile ? '10px 16px' : '12px 28px',
+                                            fontSize: isMobile ? '0.85rem' : '0.95rem',
+                                            fontWeight: '600',
+                                            borderRadius: '10px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            flex: isMobile ? '1 1 100%' : 'initial'
+                                        }}
                                     >
-                                        Delete
+                                        Delete 🗑️
                                     </button>
                                 </>
                             ) : (
                                 <button
                                     onClick={() => { onDelete(movie.id); onClose(); }}
-                                    className="btn btn-primary"
-                                    style={{ background: 'var(--danger)', color: '#fff' }}
+                                    style={{
+                                        background: 'rgba(239, 68, 68, 0.9)',
+                                        border: 'none',
+                                        color: '#fff',
+                                        padding: isMobile ? '10px 16px' : '12px 28px',
+                                        fontSize: isMobile ? '0.85rem' : '0.95rem',
+                                        fontWeight: '700',
+                                        borderRadius: '10px',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+                                        transition: 'all 0.2s',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px',
+                                        flex: isMobile ? '1' : 'initial'
+                                    }}
                                 >
-                                    Delete Permanently
+                                    Delete Permanently 🗑️
                                 </button>
                             )}
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Poster Zoom Modal Overlay */}
+            {isPosterZoomed && (
+                <div
+                    onClick={() => setIsPosterZoomed(false)}
+                    style={{
+                        position: 'fixed',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.95)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 12000,
+                        cursor: 'zoom-out',
+                        animation: 'fadeIn 0.2s ease-out'
+                    }}
+                >
+                    <img
+                        src={movie.poster_url}
+                        alt={movie.title}
+                        style={{
+                            maxWidth: '90%',
+                            maxHeight: '90%',
+                            borderRadius: '12px',
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+                            border: '1px solid rgba(255,255,255,0.15)',
+                            animation: 'scaleIn 0.25s cubic-bezier(0.165, 0.84, 0.44, 1)'
+                        }}
+                    />
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '24px',
+                        color: '#aaa',
+                        fontSize: '0.85rem',
+                        background: 'rgba(255,255,255,0.08)',
+                        padding: '8px 16px',
+                        borderRadius: '20px',
+                        backdropFilter: 'blur(5px)'
+                    }}>
+                        Click anywhere to close
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

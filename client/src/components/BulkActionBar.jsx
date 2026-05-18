@@ -4,7 +4,15 @@ import Draggable from 'react-draggable';
 function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToCollection, onCancelSelection, isTrashMode, anchor }) {
     const [isVisible, setIsVisible] = useState(false);
     const [lastAnchor, setLastAnchor] = useState(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const nodeRef = useRef(null);
+
+    // Track resize for responsiveness
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Sync last transition anchor
     useEffect(() => {
@@ -34,34 +42,138 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
     const translate = activeAnchor ? 'translate(25px, -50%)' : 'translateX(-50%)';
     const scale = show ? 'scale(1)' : 'scale(0.1)';
 
+    const styleMobile = {
+        position: 'fixed',
+        bottom: '24px',
+        left: '50%',
+        transform: show ? 'translate(-50%, 0) scale(1)' : 'translate(-50%, 40px) scale(0.8)',
+        opacity: show ? 1 : 0,
+        pointerEvents: show ? 'auto' : 'none',
+        background: 'rgba(20, 20, 20, 0.96)',
+        backdropFilter: 'blur(16px)',
+        padding: '8px 14px',
+        borderRadius: '30px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05)',
+        display: 'flex',
+        gap: '12px',
+        alignItems: 'center',
+        zIndex: 2500,
+        border: '1px solid var(--accent-gold)',
+        transition: 'all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1)',
+        whiteSpace: 'nowrap',
+        cursor: 'default'
+    };
+
+    const styleDesktop = {
+        position: 'fixed',
+        top: posTop,
+        left: posLeft,
+        opacity: show ? 1 : 0,
+        transform: `${translate} ${scale}`,
+        pointerEvents: show ? 'auto' : 'none',
+        background: 'rgba(31, 31, 31, 0.95)',
+        backdropFilter: 'blur(10px)',
+        padding: '10px 20px',
+        borderRadius: '12px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+        display: 'flex',
+        gap: '15px',
+        alignItems: 'center',
+        zIndex: 2500,
+        border: '1px solid var(--accent-gold)',
+        transition: show
+            ? 'opacity 0.2s ease-out, top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)'
+            : 'opacity 0.2s ease-in, transform 0.3s ease-in',
+        whiteSpace: 'nowrap',
+        cursor: 'default'
+    };
+
+    if (isMobile) {
+        return (
+            <div ref={nodeRef} style={styleMobile}>
+                <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ color: 'var(--accent-gold)' }}>{selectedCount}</span>
+                    <span style={{ color: '#aaa', fontSize: '0.78rem' }}>Selected</span>
+                    <button
+                        onClick={onCancelSelection}
+                        style={{
+                            background: 'none', border: 'none', color: '#ff6b6b',
+                            padding: '2px 4px', fontSize: '0.9rem', cursor: 'pointer', marginLeft: '2px', display: 'inline-flex', alignItems: 'center'
+                        }}
+                        title="Deselect All"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div style={{ height: '14px', width: '1px', background: 'rgba(255,255,255,0.12)' }}></div>
+
+                {!isTrashMode ? (
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <button
+                            onClick={onRefresh}
+                            style={{
+                                background: 'none', border: 'none', color: '#fff',
+                                padding: '4px', fontSize: '1.1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
+                            }}
+                            title="Refresh Selected"
+                        >
+                            ⟳
+                        </button>
+                        <button
+                            onClick={onAddToCollection}
+                            style={{
+                                background: 'none', border: 'none', color: 'var(--accent-gold)',
+                                padding: '4px', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
+                            }}
+                            title="Add to Collection"
+                        >
+                            📁
+                        </button>
+                        <button
+                            onClick={onDelete}
+                            style={{
+                                background: 'none', border: 'none', color: 'var(--danger)',
+                                padding: '4px', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
+                            }}
+                            title="Delete Selected"
+                        >
+                            🗑️
+                        </button>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <button
+                            onClick={onRestore}
+                            style={{
+                                background: 'none', border: 'none', color: '#03dac6',
+                                padding: '4px', fontSize: '1.1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
+                            }}
+                            title="Restore Selected"
+                        >
+                            ↩
+                        </button>
+                        <button
+                            onClick={onDelete}
+                            style={{
+                                background: 'none', border: 'none', color: 'var(--danger)',
+                                padding: '4px', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
+                            }}
+                            title="Delete Permanently"
+                        >
+                            🗑️
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
     return (
         <Draggable nodeRef={nodeRef} handle=".drag-handle">
             <div 
                 ref={nodeRef}
-                style={{
-                    position: 'fixed',
-                    top: posTop,
-                    left: posLeft,
-                    opacity: show ? 1 : 0,
-                    // apply scale/opacity on show/hide, but let top/left animate smoothly
-                    transform: `${translate} ${scale}`,
-                    pointerEvents: show ? 'auto' : 'none',
-                    background: 'rgba(31, 31, 31, 0.95)',
-                    backdropFilter: 'blur(10px)',
-                    padding: '10px 20px',
-                    borderRadius: '12px',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                    display: 'flex',
-                    gap: '15px',
-                    alignItems: 'center',
-                    zIndex: 2500,
-                    border: '1px solid var(--accent-gold)',
-                    transition: show
-                        ? 'opacity 0.2s ease-out, top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)'
-                        : 'opacity 0.2s ease-in, transform 0.3s ease-in',
-                    whiteSpace: 'nowrap',
-                    cursor: 'default'
-                }}
+                style={styleDesktop}
             >
                 <div className="drag-handle" style={{ cursor: 'grab', padding: '0 5px', color: '#666' }}>
                     ⋮⋮

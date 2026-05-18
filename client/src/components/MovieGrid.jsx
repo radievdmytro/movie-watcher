@@ -672,8 +672,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             )}
 
             <>
-                <div className="controls-top-bar sticky-search-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '15px' }}>
-                    <div className="controls-top-left" style={{ display: 'flex', gap: '15px', alignItems: 'center', flex: 1, minWidth: '280px' }}>
+                <div className="controls-top-bar sticky-search-bar" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
+                    {/* Row 1: Search input and Filters toggle button */}
+                    <div className="search-bar-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', width: '100%' }}>
                         <div style={{ position: 'relative', flex: 1, zIndex: isSearchFocused ? 9999 : 2 }}>
                             <input
                                 type="text"
@@ -851,33 +852,6 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             )}
                         </div>
 
-                        {/* Type Switcher */}
-                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                            {[
-                                { id: 'all', label: 'All' },
-                                { id: 'movie', label: 'Movies' },
-                                { id: 'series', label: 'Series' },
-                                { id: 'cartoon', label: 'Cartoon' }
-                            ].map(type => (
-                                <button
-                                    key={type.id}
-                                    onClick={() => setFilterType(type.id)}
-                                    style={{
-                                        padding: '6px 15px',
-                                        borderRadius: '18px',
-                                        fontSize: '0.85rem',
-                                        cursor: 'pointer',
-                                        border: 'none',
-                                        background: filterType === type.id ? 'var(--accent-gold)' : 'transparent',
-                                        color: filterType === type.id ? '#000' : '#888',
-                                        transition: 'all 0.2s'
-                                    }}
-                                >
-                                    {type.label}
-                                </button>
-                            ))}
-                        </div>
-
                         <button
                             className="btn btn-ghost"
                             onClick={() => setShowFilters(!showFilters)}
@@ -887,45 +861,141 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 background: showFilters ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
                                 border: '1px solid rgba(255,255,255,0.1)',
                                 borderRadius: '20px',
-                                padding: '8px 15px'
+                                padding: '8px 15px',
+                                flexShrink: 0
                             }}
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                            Filters {
-                                (filterGenres.length > 0 || filterDirectors.length > 0 || filterActors.length > 0) && 
-                                `(${filterGenres.length + filterDirectors.length + filterActors.length})`
-                            }
+                            <span>Filters</span>
+                            {(filterGenres.length > 0 || filterDirectors.length > 0 || filterActors.length > 0) && (
+                                <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>
+                                    ({filterGenres.length + filterDirectors.length + filterActors.length})
+                                </span>
+                            )}
                         </button>
                     </div>
 
-                    <div className="controls-bottom-bar" style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    {/* Row 2: Super Compact Controls (Type switch, View Mode, Hide Watched) */}
+                    <div className="compact-controls-row" style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '10px',
+                        width: '100%',
+                        flexWrap: 'nowrap'
+                    }}>
+                        {/* Type Switcher */}
+                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            {[
+                                { id: 'all', label: 'All' },
+                                { id: 'movie', label: 'Movies' },
+                                { id: 'series', label: 'Series' },
+                                { id: 'cartoon', label: 'Cartoons' }
+                            ].map(type => (
+                                <button
+                                    key={type.id}
+                                    onClick={() => setFilterType(type.id)}
+                                    style={{
+                                        padding: '4px 10px',
+                                        borderRadius: '13px',
+                                        fontSize: '0.75rem',
+                                        cursor: 'pointer',
+                                        border: 'none',
+                                        background: filterType === type.id ? 'var(--accent-gold)' : 'transparent',
+                                        color: filterType === type.id ? '#000' : '#888',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >
+                                    {type.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* View settings & Watched Toggle */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {/* Poster Size (Desktop only) */}
                             {viewMode === 'grid' && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <span style={{ fontSize: '0.8rem', color: '#666' }}>Poster:</span>
+                                <div className="desktop-genres-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '5px' }}>
+                                    <span style={{ fontSize: '0.75rem', color: '#666' }}>Size:</span>
                                     <input
                                         type="range" min="150" max="400" value={posterSize} onChange={handleSizeChange}
-                                        style={{ accentColor: 'var(--accent-gold)', width: '80px', cursor: 'pointer' }}
+                                        style={{ accentColor: 'var(--accent-gold)', width: '60px', cursor: 'pointer' }}
                                     />
                                 </div>
                             )}
+
+                            {/* View Mode Toggle */}
+                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <button 
+                                    onClick={() => setViewMode('grid')}
+                                    style={{
+                                        padding: '4px 8px',
+                                        borderRadius: '13px',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        background: viewMode === 'grid' ? 'var(--accent-gold)' : 'transparent',
+                                        color: viewMode === 'grid' ? '#000' : '#888',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    title="Grid View"
+                                >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                                </button>
+                                <button 
+                                    onClick={() => setViewMode('table')}
+                                    style={{
+                                        padding: '4px 8px',
+                                        borderRadius: '13px',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        background: viewMode === 'table' ? 'var(--accent-gold)' : 'transparent',
+                                        color: viewMode === 'table' ? '#000' : '#888',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    title="Table View"
+                                >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                                </button>
+                            </div>
+
+                            {/* Hide/Show Watched Button */}
+                            <button
+                                onClick={() => setHideWatched(!hideWatched)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '4px 10px',
+                                    borderRadius: '15px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    background: hideWatched ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.05)',
+                                    color: hideWatched ? 'var(--accent-gold)' : '#888',
+                                    transition: 'all 0.2s',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                {hideWatched ? (
+                                    <>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                                        <span>Hide Watched</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        <span>Show Watched</span>
+                                    </>
+                                )}
+                            </button>
                         </div>
-                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', padding: '2px' }}>
-                            {['grid', 'table'].map(mode => (
-                                <button key={mode} onClick={() => setViewMode(mode)} className="btn-ghost"
-                                    style={{ padding: '5px 10px', background: viewMode === mode ? 'rgba(255,255,255,0.1)' : 'transparent', color: viewMode === mode ? '#fff' : '#888' }}
-                                >{mode.charAt(0).toUpperCase() + mode.slice(1)}</button>
-                            ))}
-                        </div>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#ccc', fontSize: '0.85rem', marginLeft: '10px' }}>
-                            <input 
-                                type="checkbox" 
-                                checked={hideWatched} 
-                                onChange={(e) => setHideWatched(e.target.checked)} 
-                                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }} 
-                            />
-                            Hide Watched
-                        </label>
                     </div>
 
                     {/* Expanded Filters Panel */}

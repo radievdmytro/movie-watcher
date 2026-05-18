@@ -148,6 +148,13 @@ function CollectionsView({ onBack }) {
     const [selectedMovie, setSelectedMovie] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
 
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     // Multiselect & Comparison for Shared Collections
     const [selectedMovieIds, setSelectedMovieIds] = useState([]);
     const [compareMovieLinks, setCompareMovieLinks] = useState([]);
@@ -997,7 +1004,7 @@ function CollectionsView({ onBack }) {
                                                                         >
                                                                             📥 Add Selected to Library
                                                                         </button>
-                                                                        {selectedMovieIds.length >= 2 && selectedMovieIds.length <= 3 && (
+                                                                        {selectedMovieIds.length >= 2 && selectedMovieIds.length <= (isMobile ? 2 : 3) && (
                                                                             <button
                                                                                 onClick={() => {
                                                                                     const selectedMovies = expandedCollection.movies.filter(m => selectedMovieIds.includes(m.id));
@@ -1014,9 +1021,9 @@ function CollectionsView({ onBack }) {
                                                                                 ⚖️ Compare Selected
                                                                             </button>
                                                                         )}
-                                                                        {selectedMovieIds.length > 3 && (
+                                                                        {selectedMovieIds.length > (isMobile ? 2 : 3) && (
                                                                             <span style={{ fontSize: '0.8rem', color: '#888', fontStyle: 'italic', padding: '6px 0' }}>
-                                                                                Compare (max 3)
+                                                                                Compare (max {isMobile ? 2 : 3})
                                                                             </span>
                                                                         )}
                                                                     </>
