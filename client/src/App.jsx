@@ -511,7 +511,8 @@ function App() {
                             <button
                                 ref={trashButtonRef}
                                 onClick={() => setCurrentView('trash')}
-                                className="btn"
+                                className="btn header-btn-trash"
+                                title="Trash"
                                 style={{
                                     background: currentView === 'trash' ? 'var(--bg-card)' : 'rgba(255,255,255,0.05)',
                                     color: currentView === 'trash' ? 'var(--accent-gold)' : '#888',
@@ -519,14 +520,17 @@ function App() {
                                     borderRadius: '8px'
                                 }}
                             >
-                                Trash
+                                <span className="btn-icon">🗑️</span>
+                                <span className="btn-label">Trash</span>
                             </button>
                             <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '24px', margin: '0 5px' }}></div>
-                            <span style={{ fontSize: '0.9rem', color: '#aaa', fontWeight: 500 }}>
-                                👤 {user.username}
+                            <span className="header-username" style={{ fontSize: '0.9rem', color: '#aaa', fontWeight: 500 }}>
+                                <span className="btn-icon">👤</span>
+                                <span className="btn-label"> {user.username}</span>
                             </span>
-                            <button onClick={handleLogout} className="btn btn-ghost" style={{ fontSize: '0.85rem', color: '#ff6b6b' }}>
-                                Logout
+                            <button onClick={handleLogout} className="btn btn-ghost header-btn-logout" title="Logout" style={{ fontSize: '0.85rem', color: '#ff6b6b' }}>
+                                <span className="btn-icon">⏻</span>
+                                <span className="btn-label">Logout</span>
                             </button>
                         </div>
                     )}

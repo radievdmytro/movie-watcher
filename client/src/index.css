@@ -519,51 +519,104 @@ input {
 
 /* ── Compact state when user has scrolled ≥ 48 px ── */
 @media (max-width: 768px) {
+
+  /* All animated elements get smooth transitions */
+  .app-header img[alt*="Mascot"],
+  .app-header .logo,
+  .app-header .header-nav .btn,
+  .app-header .header-right,
+  .app-header .header-btn-trash,
+  .app-header .header-btn-logout,
+  .app-header .header-username,
+  .app-header .btn-label,
+  .app-header .header-movie-count {
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ── Compact: header layout tightens ── */
   .app-header.header-scrolled .header-content {
-    padding-top: 6px !important;
-    padding-bottom: 6px !important;
-    gap: 6px !important;
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+    gap: 4px !important;
+    position: relative;
   }
 
   .app-header.header-scrolled .header-left {
-    gap: 8px !important;
+    gap: 6px !important;
   }
 
-  /* Logo icon shrinks */
+  /* Logo icon shrinks more aggressively */
   .app-header.header-scrolled img[alt*="Mascot"] {
-    width: 36px !important;
-    height: 36px !important;
+    width: 28px !important;
+    height: 28px !important;
   }
 
   /* Logo text shrinks */
   .app-header.header-scrolled .logo {
-    font-size: 1.1rem !important;
+    font-size: 0.95rem !important;
   }
 
-  /* Nav buttons get tighter */
-  .app-header.header-scrolled .header-nav .btn,
-  .app-header.header-scrolled .header-right .btn {
-    padding: 4px 9px !important;
-    font-size: 0.76rem !important;
+  /* Nav buttons tighten */
+  .app-header.header-scrolled .header-nav .btn {
+    padding: 4px 8px !important;
+    font-size: 0.74rem !important;
   }
 
-  /* Hide secondary badge / movie count to save space */
+  /* Hide movie count */
   .app-header.header-scrolled .header-movie-count {
     display: none !important;
   }
 
-  /* Make logo icon + nav transition smooth */
-  .app-header img[alt*="Mascot"],
-  .app-header .logo,
-  .app-header .header-nav .btn,
-  .app-header .header-right .btn {
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  /* ── header-right: float to absolute top-right as icon row ── */
+  .app-header.header-scrolled .header-right {
+    position: absolute !important;
+    top: 6px !important;
+    right: 12px !important;
+    gap: 4px !important;
+    border-top: none !important;
+    padding-top: 0 !important;
+  }
+
+  /* Hide divider line in compact mode */
+  .app-header.header-scrolled .header-right > div[style*="borderLeft"] {
+    display: none !important;
+  }
+
+  /* Trash & Logout buttons: icon-only circle */
+  .app-header.header-scrolled .header-btn-trash,
+  .app-header.header-scrolled .header-btn-logout {
+    padding: 5px 7px !important;
+    border-radius: 50% !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Username: icon only */
+  .app-header.header-scrolled .header-username {
+    display: flex !important;
+    align-items: center !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Hide text labels — keep icons */
+  .app-header.header-scrolled .btn-label {
+    display: none !important;
+    width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Empty Trash button in compact mode */
+  .app-header.header-scrolled .header-right .btn-ghost {
+    padding: 4px 7px !important;
+    font-size: 0.72rem !important;
   }
 }
 
 /* ── Sticky search / controls bar ── */
 .sticky-search-bar {
-  /* On desktop — behaves normally (relative flow) */
   position: relative;
   z-index: 400;
 }
@@ -571,8 +624,7 @@ input {
 @media (max-width: 768px) {
   .sticky-search-bar {
     position: sticky;
-    /* Stick just below the compact header (~52px when scrolled) */
-    top: 52px;
+    top: 48px;    /* normal header height */
     z-index: 400;
     background: rgba(15, 15, 15, 0.97);
     backdrop-filter: blur(10px);
@@ -583,6 +635,13 @@ input {
     margin-right: -15px;
     padding-left: 15px;
     padding-right: 15px;
+    transition: top 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* When header has been scrolled into compact mode, adjust top */
+  .app-header.header-scrolled ~ .container .sticky-search-bar,
+  .app-header.header-scrolled ~ * .sticky-search-bar {
+    top: 40px;
   }
 }
 
