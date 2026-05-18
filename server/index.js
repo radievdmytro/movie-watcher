@@ -1422,61 +1422,71 @@ app.post('/api/collections/:id/movies', authenticateToken, (req, res) => {
     }
 });
 
-// POST copy or move movie to another collection
+// POST copy or move movie(s) to another collection
 app.post('/api/collections/copy-move-movie', authenticateToken, async (req, res) => {
     try {
-        const { movieId, sourceCollectionId, targetCollectionId, actionType } = req.body;
-        if (!movieId || !targetCollectionId || !actionType) {
-            return res.status(400).json({ error: 'movieId, targetCollectionId, and actionType required' });
+        const { movieIds, sourceCollectionId, targetCollectionId, actionType } = req.body;
+        if (!movieIds || !Array.isArray(movieIds) || movieIds.length === 0 || !targetCollectionId || !actionType) {
+            return res.status(400).json({ error: 'movieIds array, targetCollectionId, and actionType required' });
         }
 
-        // 1. Get the movie details from movies table
-        const movie = db.prepare('SELECT * FROM movies WHERE id = ?').get(movieId);
-        if (!movie) return res.status(404).json({ error: 'Movie not found' });
-
-        // 2. Ensure target collection exists and is owned by us
+        // 1. Ensure target collection exists and is owned by us
         const targetColl = db.prepare('SELECT id FROM collections WHERE id = ? AND user_id = ?').get(targetCollectionId, req.user.id);
         if (!targetColl) return res.status(403).json({ error: 'Target collection not found or access denied' });
 
-        // 3. Find or import the movie in our own library (match by link and user_id)
-        let myMovieId;
-        const existingOwnMovie = db.prepare('SELECT id FROM movies WHERE link = ? AND user_id = ?').get(movie.link, req.user.id);
-        if (existingOwnMovie) {
-            myMovieId = existingOwnMovie.id;
-            // If the movie was marked as deleted in trash, restore it
-            if (existingOwnMovie.deleted_at) {
-                db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?').run(existingOwnMovie.id);
-            }
-        } else {
-            // Import it into our own movies table!
-            const stmt = db.prepare(`
-                INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, source_collection_name, source_collection_token, source_user_name, type, user_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `);
-            const info = stmt.run(
-                movie.title, movie.original_title, movie.year, movie.link, movie.rating,
-                movie.description, movie.poster_url, movie.genres, movie.actors, movie.director, movie.writers,
-                movie.country, movie.duration, movie.voice_acting,
-                movie.source_collection_name || null, movie.source_collection_token || null, movie.source_user_name || null,
-                movie.type || 'movie', req.user.id
-            );
-            myMovieId = info.lastInsertRowid;
-        }
-
-        // 4. Add the movie to the target collection
-        db.prepare('INSERT OR IGNORE INTO collection_movies (collection_id, movie_id) VALUES (?, ?)').run(targetCollectionId, myMovieId);
-
-        // 5. If action is 'move' and we own the source collection, remove from source collection
+        const checkMovie = db.prepare('SELECT * FROM movies WHERE id = ?');
+        const checkExistingOwn = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
+        const restoreMovie = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?');
+        const insertMovie = db.prepare(`
+            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, source_collection_name, source_collection_token, source_user_name, type, user_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        const addMovieToColl = db.prepare('INSERT OR IGNORE INTO collection_movies (collection_id, movie_id) VALUES (?, ?)');
+        
+        let sourceColl = null;
         if (actionType === 'move' && sourceCollectionId) {
-            const sourceColl = db.prepare('SELECT id FROM collections WHERE id = ? AND user_id = ?').get(sourceCollectionId, req.user.id);
-            if (sourceColl) {
-                db.prepare('DELETE FROM collection_movies WHERE collection_id = ? AND movie_id = ?').run(sourceCollectionId, movieId);
-            }
+            sourceColl = db.prepare('SELECT id FROM collections WHERE id = ? AND user_id = ?').get(sourceCollectionId, req.user.id);
         }
+        const removeMovieFromColl = db.prepare('DELETE FROM collection_movies WHERE collection_id = ? AND movie_id = ?');
 
-        res.json({ success: true, myMovieId });
+        const runTransaction = db.transaction((movieIds, sourceCollectionId, targetCollectionId, actionType) => {
+            for (const movieId of movieIds) {
+                const movie = checkMovie.get(movieId);
+                if (!movie) continue;
+
+                // Find or import
+                let myMovieId;
+                const existingOwnMovie = checkExistingOwn.get(movie.link, req.user.id);
+                if (existingOwnMovie) {
+                    myMovieId = existingOwnMovie.id;
+                    if (existingOwnMovie.deleted_at) {
+                        restoreMovie.run(existingOwnMovie.id);
+                    }
+                } else {
+                    const info = insertMovie.run(
+                        movie.title, movie.original_title, movie.year, movie.link, movie.rating,
+                        movie.description, movie.poster_url, movie.genres, movie.actors, movie.director, movie.writers,
+                        movie.country, movie.duration, movie.voice_acting,
+                        movie.source_collection_name || null, movie.source_collection_token || null, movie.source_user_name || null,
+                        movie.type || 'movie', req.user.id
+                    );
+                    myMovieId = info.lastInsertRowid;
+                }
+
+                // Add to target collection
+                addMovieToColl.run(targetCollectionId, myMovieId);
+
+                // Remove from source if 'move'
+                if (actionType === 'move' && sourceColl) {
+                    removeMovieFromColl.run(sourceCollectionId, movieId);
+                }
+            }
+        });
+
+        runTransaction(movieIds, sourceCollectionId, targetCollectionId, actionType);
+        res.json({ success: true });
     } catch (error) {
-        console.error('Copy/Move failed:', error);
+        console.error('Bulk Copy/Move failed:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -1489,6 +1499,31 @@ app.delete('/api/collections/:id/movies/:movieId', authenticateToken, (req, res)
         if (!checkColl) return res.status(403).json({ error: 'Access denied or collection not found' });
 
         db.prepare('DELETE FROM collection_movies WHERE collection_id = ? AND movie_id = ?').run(id, movieId);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST remove multiple movies from collection in bulk
+app.post('/api/collections/:id/movies/bulk-delete', authenticateToken, (req, res) => {
+    try {
+        const { id } = req.params;
+        const { movieIds } = req.body;
+        if (!movieIds || !Array.isArray(movieIds) || movieIds.length === 0) {
+            return res.status(400).json({ error: 'movieIds array required' });
+        }
+
+        const checkColl = db.prepare('SELECT id FROM collections WHERE id = ? AND user_id = ?').get(id, req.user.id);
+        if (!checkColl) return res.status(403).json({ error: 'Access denied or collection not found' });
+
+        const deleteStmt = db.prepare('DELETE FROM collection_movies WHERE collection_id = ? AND movie_id = ?');
+        const runTransaction = db.transaction((id, movieIds) => {
+            for (const movieId of movieIds) {
+                deleteStmt.run(id, movieId);
+            }
+        });
+        runTransaction(id, movieIds);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });

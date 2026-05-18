@@ -169,14 +169,14 @@ function CollectionsView({ onBack }) {
     const [sharingLoading, setSharingLoading] = useState(false);
 
     // Copy/Move Movie Modal State
-    const [copyMoveMovieModal, setCopyMoveMovieModal] = useState(null); // null or { movie, sourceCollectionId, sourceCollectionTitle }
+    const [copyMoveMovieModal, setCopyMoveMovieModal] = useState(null); // null or { movies: [], sourceCollectionId, sourceCollectionTitle }
     const [copyMoveActionType, setCopyMoveActionType] = useState('copy'); // 'copy' | 'move'
     const [newCollectionTitle, setNewCollectionTitle] = useState('');
     const [copyMoveLoading, setCopyMoveLoading] = useState(false);
     const [copyMoveError, setCopyMoveError] = useState('');
 
     const handleExecuteCopyMove = async (targetCollectionId) => {
-        if (!copyMoveMovieModal) return;
+        if (!copyMoveMovieModal || !copyMoveMovieModal.movies || copyMoveMovieModal.movies.length === 0) return;
         setCopyMoveLoading(true);
         setCopyMoveError('');
         try {
@@ -184,7 +184,7 @@ function CollectionsView({ onBack }) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    movieId: copyMoveMovieModal.movie.id,
+                    movieIds: copyMoveMovieModal.movies.map(m => m.id),
                     sourceCollectionId: copyMoveMovieModal.sourceCollectionId,
                     targetCollectionId,
                     actionType: copyMoveActionType
@@ -193,18 +193,22 @@ function CollectionsView({ onBack }) {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to complete action');
 
+            const count = copyMoveMovieModal.movies.length;
+            const titleText = count === 1 ? `"${copyMoveMovieModal.movies[0].title}"` : `${count} movies`;
+
             // Success feedback!
             setActionFeedback({
                 id: copyMoveMovieModal.sourceCollectionId,
                 type: 'success',
                 message: copyMoveActionType === 'move' 
-                    ? `✔ Moved "${copyMoveMovieModal.movie.title}" successfully!` 
-                    : `✔ Copied "${copyMoveMovieModal.movie.title}" successfully!`
+                    ? `✔ Moved ${titleText} successfully!` 
+                    : `✔ Copied ${titleText} successfully!`
             });
 
             // Close modal
             setCopyMoveMovieModal(null);
             setNewCollectionTitle('');
+            setSelectedMovieIds([]); // Clear multiselect selections after successful copy/move!
 
             // Reload collections and current expanded collection movies list!
             fetchCollections();
@@ -483,6 +487,23 @@ function CollectionsView({ onBack }) {
                 method: 'DELETE'
             });
             setConfirmRemoveMovieKey(null);
+            fetchCollectionDetails(collectionId);
+            fetchCollections();
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleBulkRemove = async (collectionId) => {
+        if (selectedMovieIds.length === 0) return;
+        if (!window.confirm(`Are you sure you want to remove ${selectedMovieIds.length} movie(s) from this collection?`)) return;
+        try {
+            await fetch(`/api/collections/${collectionId}/movies/bulk-delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ movieIds: selectedMovieIds })
+            });
+            setSelectedMovieIds([]);
             fetchCollectionDetails(collectionId);
             fetchCollections();
         } catch (err) {
@@ -940,7 +961,7 @@ function CollectionsView({ onBack }) {
                                             </div>
                                         ) : (
                                             <>
-                                                {activeTab === 'shared' && expandedCollection && expandedCollection.movies.length > 0 && (
+                                                {expandedCollection && expandedCollection.movies.length > 0 && (
                                                     <div style={{
                                                         display: 'flex', gap: '15px', alignItems: 'center',
                                                         marginBottom: '20px', padding: '12px 18px',
@@ -957,7 +978,7 @@ function CollectionsView({ onBack }) {
                                                                 }
                                                             }}
                                                             className="btn btn-ghost"
-                                                            style={{ border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.8rem', padding: '5px 12px' }}
+                                                            style={{ border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.8rem', padding: '5px 12px', color: '#fff', cursor: 'pointer' }}
                                                         >
                                                             {selectedMovieIds.length === expandedCollection.movies.length ? 'Deselect All' : 'Select All'}
                                                         </button>
@@ -966,27 +987,69 @@ function CollectionsView({ onBack }) {
                                                         </span>
                                                         {selectedMovieIds.length > 0 && (
                                                             <>
-                                                                <button
-                                                                    onClick={() => handleBulkImport(c.id)}
-                                                                    className="btn btn-gold"
-                                                                    style={{ padding: '6px 14px', fontSize: '0.8rem', fontWeight: 'bold' }}
-                                                                >
-                                                                    📥 Add Selected to Library
-                                                                </button>
+                                                                {/* Shared actions */}
+                                                                {activeTab === 'shared' && (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => handleBulkImport(c.id)}
+                                                                            className="btn btn-gold"
+                                                                            style={{ padding: '6px 14px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer' }}
+                                                                        >
+                                                                            📥 Add Selected to Library
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const selectedMovies = expandedCollection.movies.filter(m => selectedMovieIds.includes(m.id));
+                                                                                setCompareMovieLinks(selectedMovies.map(m => m.link));
+                                                                                setIsCompareOpen(true);
+                                                                            }}
+                                                                            className="btn"
+                                                                            style={{
+                                                                                background: 'rgba(255,255,255,0.1)', color: '#fff',
+                                                                                border: '1px solid rgba(255,255,255,0.15)', padding: '6px 14px',
+                                                                                fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer'
+                                                                            }}
+                                                                        >
+                                                                            ⚖️ Compare Selected
+                                                                        </button>
+                                                                    </>
+                                                                )}
+
+                                                                {/* Mine actions */}
+                                                                {activeTab === 'mine' && (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => handleBulkRemove(c.id)}
+                                                                            className="btn"
+                                                                            style={{
+                                                                                background: 'rgba(239, 68, 68, 0.2)', color: '#ff6b6b',
+                                                                                border: '1px solid rgba(239, 68, 68, 0.3)', padding: '6px 14px',
+                                                                                fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px'
+                                                                            }}
+                                                                        >
+                                                                            🗑️ Delete Selected
+                                                                        </button>
+                                                                    </>
+                                                                )}
+
+                                                                {/* Universal bulk Copy / Move actions */}
                                                                 <button
                                                                     onClick={() => {
-                                                                        const selectedMovies = expandedCollection.movies.filter(m => selectedMovieIds.includes(m.id));
-                                                                        setCompareMovieLinks(selectedMovies.map(m => m.link));
-                                                                        setIsCompareOpen(true);
+                                                                        setCopyMoveMovieModal({
+                                                                            movies: expandedCollection.movies.filter(m => selectedMovieIds.includes(m.id)),
+                                                                            sourceCollectionId: c.id,
+                                                                            sourceCollectionTitle: c.title
+                                                                        });
+                                                                        setCopyMoveActionType('copy');
+                                                                        setNewCollectionTitle('');
+                                                                        setCopyMoveError('');
                                                                     }}
-                                                                    className="btn"
+                                                                    className="btn btn-gold"
                                                                     style={{
-                                                                        background: 'rgba(255,255,255,0.1)', color: '#fff',
-                                                                        border: '1px solid rgba(255,255,255,0.15)', padding: '6px 14px',
-                                                                        fontSize: '0.8rem', fontWeight: 'bold'
+                                                                        padding: '6px 14px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px'
                                                                     }}
-                                                                 >
-                                                                    ⚖️ Compare Selected
+                                                                >
+                                                                    📁 Copy / Move Selected
                                                                 </button>
                                                             </>
                                                         )}
@@ -1014,39 +1077,38 @@ function CollectionsView({ onBack }) {
                                                             alt={movie.title}
                                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                         />
-                                                        {activeTab === 'shared' && (
-                                                            <div 
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                style={{
-                                                                    position: 'absolute', top: '10px', left: '10px', zIndex: 12,
-                                                                    background: 'rgba(0,0,0,0.6)', borderRadius: '4px', padding: '4px',
-                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                        {/* Multiselect checkbox shown in both mine and shared tabs */}
+                                                        <div 
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            style={{
+                                                                position: 'absolute', top: '10px', left: '10px', zIndex: 12,
+                                                                background: 'rgba(0,0,0,0.6)', borderRadius: '4px', padding: '4px',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                            }}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedMovieIds.includes(movie.id)}
+                                                                onChange={(e) => {
+                                                                    setSelectedMovieIds(prev => 
+                                                                        e.target.checked 
+                                                                            ? [...prev, movie.id] 
+                                                                            : prev.filter(id => id !== movie.id)
+                                                                    );
                                                                 }}
-                                                            >
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={selectedMovieIds.includes(movie.id)}
-                                                                    onChange={(e) => {
-                                                                        setSelectedMovieIds(prev => 
-                                                                            e.target.checked 
-                                                                                ? [...prev, movie.id] 
-                                                                                : prev.filter(id => id !== movie.id)
-                                                                        );
-                                                                    }}
-                                                                    style={{
-                                                                        cursor: 'pointer', width: '18px', height: '18px',
-                                                                        accentColor: 'var(--accent-gold)'
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        )}
+                                                                style={{
+                                                                    cursor: 'pointer', width: '18px', height: '18px',
+                                                                    accentColor: 'var(--accent-gold)'
+                                                                }}
+                                                            />
+                                                        </div>
 
                                                         {/* Copy / Move to another collection button */}
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setCopyMoveMovieModal({
-                                                                    movie,
+                                                                    movies: [movie],
                                                                     sourceCollectionId: c.id,
                                                                     sourceCollectionTitle: c.title
                                                                 });
@@ -1186,24 +1248,42 @@ function CollectionsView({ onBack }) {
                         </button>
 
                         <h3 style={{ margin: '0 0 15px 0', fontSize: '1.4rem', color: 'var(--accent-gold)' }}>
-                            📁 Copy / Move Movie
+                            📁 Copy / Move Movies
                         </h3>
                         
                         {/* Movie brief */}
-                        <div style={{ display: 'flex', gap: '15px', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', marginBottom: '25px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <img 
-                                src={copyMoveMovieModal.movie.poster_url} 
-                                alt={copyMoveMovieModal.movie.title} 
-                                style={{ width: '50px', height: '75px', objectFit: 'cover', borderRadius: '4px' }} 
-                            />
-                            <div>
-                                <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: '#fff' }}>{copyMoveMovieModal.movie.title}</h4>
-                                <p style={{ margin: 0, fontSize: '0.8rem', color: '#aaa' }}>{copyMoveMovieModal.movie.year} • ★ {copyMoveMovieModal.movie.rating || '-'}</p>
-                                <p style={{ margin: '6px 0 0 0', fontSize: '0.75rem', color: 'var(--accent-gold)' }}>
-                                    Current Collection: <strong>{copyMoveMovieModal.sourceCollectionTitle}</strong>
+                        {copyMoveMovieModal.movies.length === 1 ? (
+                            <div style={{ display: 'flex', gap: '15px', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', marginBottom: '25px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <img 
+                                    src={copyMoveMovieModal.movies[0].poster_url} 
+                                    alt={copyMoveMovieModal.movies[0].title} 
+                                    style={{ width: '50px', height: '75px', objectFit: 'cover', borderRadius: '4px' }} 
+                                />
+                                <div>
+                                    <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: '#fff' }}>{copyMoveMovieModal.movies[0].title}</h4>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#aaa' }}>{copyMoveMovieModal.movies[0].year} • ★ {copyMoveMovieModal.movies[0].rating || '-'}</p>
+                                    <p style={{ margin: '6px 0 0 0', fontSize: '0.75rem', color: 'var(--accent-gold)' }}>
+                                        Current Collection: <strong>{copyMoveMovieModal.sourceCollectionTitle}</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '8px', marginBottom: '25px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <p style={{ margin: '0 0 10px 0', fontSize: '0.95rem', color: '#fff', fontWeight: 'bold' }}>
+                                    📦 Processing {copyMoveMovieModal.movies.length} selected movies:
+                                </p>
+                                <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', paddingRight: '5px' }}>
+                                    {copyMoveMovieModal.movies.map(m => (
+                                        <div key={m.id} style={{ fontSize: '0.85rem', color: '#ccc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            • {m.title} ({m.year})
+                                        </div>
+                                    ))}
+                                </div>
+                                <p style={{ margin: '12px 0 0 0', fontSize: '0.75rem', color: 'var(--accent-gold)' }}>
+                                    Source Collection: <strong>{copyMoveMovieModal.sourceCollectionTitle}</strong>
                                 </p>
                             </div>
-                        </div>
+                        )}
 
                         {/* Action selector */}
                         {activeTab === 'mine' && (
