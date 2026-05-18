@@ -58,7 +58,11 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                 setIsOpen(false);
             }
         };
-        const handleScroll = () => setIsOpen(false);
+        const handleScroll = () => {
+            if (window.innerWidth > 768) {
+                setIsOpen(false);
+            }
+        };
         document.addEventListener('mousedown', handleClickOutside);
         window.addEventListener('scroll', handleScroll, true);
         return () => {
@@ -119,39 +123,59 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                     boxSizing: 'border-box'
                 }}
             >
-                {selected.map(item => (
-                    <span 
-                        key={item} 
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            background: accentColor,
-                            color: '#000',
-                            padding: '2px 8px',
-                            borderRadius: '12px',
-                            fontSize: '0.8rem',
-                            fontWeight: '500',
-                            whiteSpace: 'nowrap'
-                        }}
-                    >
-                        {item}
-                        <button
-                            onClick={(e) => { e.stopPropagation(); handleRemove(item); }}
+                {/* On desktop, show selected items inside input container */}
+                <div className="desktop-genres-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {selected.map(item => (
+                        <span 
+                            key={item} 
                             style={{
-                                background: 'none',
-                                border: 'none',
-                                color: '#000',
-                                cursor: 'pointer',
-                                padding: '0 2px',
-                                fontSize: '0.85rem',
-                                fontWeight: 'bold',
                                 display: 'flex',
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: accentColor,
+                                color: '#000',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                fontSize: '0.8rem',
+                                fontWeight: '500',
+                                whiteSpace: 'nowrap'
                             }}
-                        >&times;</button>
+                        >
+                            {item}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleRemove(item); }}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#000',
+                                    cursor: 'pointer',
+                                    padding: '0 2px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 'bold',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >&times;</button>
+                        </span>
+                    ))}
+                </div>
+
+                {/* On mobile, show only a count badge inside input container */}
+                {selected.length > 0 && (
+                    <span className="mobile-genres-row" style={{
+                        display: 'none',
+                        background: accentColor,
+                        color: '#000',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontSize: '0.8rem',
+                        fontWeight: '500',
+                        marginRight: '6px',
+                        whiteSpace: 'nowrap'
+                    }}>
+                        {selected.length} selected
                     </span>
-                ))}
+                )}
                 
                 <input
                     type="text"
@@ -174,6 +198,32 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                     }}
                 />
             </div>
+
+            {/* Mobile Chips List below the box */}
+            {selected.length > 0 && (
+                <div className="mobile-genres-row" style={{ display: 'none', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                    {selected.map(item => (
+                        <span 
+                            key={item} 
+                            onClick={() => handleRemove(item)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                color: accentColor,
+                                padding: '2px 8px',
+                                borderRadius: '10px',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {item} &times;
+                        </span>
+                    ))}
+                </div>
+            )}
 
             {isOpen && dropdownRect && (
                 <div 
@@ -1066,73 +1116,76 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             </div>
                         </div>
 
-                        {/* Rating Range */}
-                        <div>
-                            <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Rating</span>
-                                <span style={{ color: 'var(--accent-gold)' }}>{filterRating[0]} - {filterRating[1]}</span>
+                        {/* Rating & Year Row */}
+                        <div className="mobile-row-layout" style={{ gridColumn: '1 / -1', display: 'contents' }}>
+                            {/* Rating Range */}
+                            <div>
+                                <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>Rating</span>
+                                    <span style={{ color: 'var(--accent-gold)' }}>{filterRating[0]} - {filterRating[1]}</span>
+                                </div>
+                                <div className="mobile-hide-histogram">
+                                    <Histogram data={ratingDistribution} currentRange={filterRating} min={0} max={10} />
+                                </div>
+                                <div className="range-slider-container">
+                                    <div style={{
+                                        position: 'absolute',
+                                        height: '2px',
+                                        background: 'var(--accent-gold)',
+                                        left: `${(filterRating[0] / 10) * 100}%`,
+                                        right: `${100 - (filterRating[1] / 10) * 100}%`,
+                                        zIndex: 1
+                                    }} />
+                                    <input
+                                        type="range" min="0" max="10" step="0.1" value={filterRating[0]}
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value);
+                                            setFilterRating([Math.min(val, filterRating[1]), filterRating[1]]);
+                                        }}
+                                    />
+                                    <input
+                                        type="range" min="0" max="10" step="0.1" value={filterRating[1]}
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value);
+                                            setFilterRating([filterRating[0], Math.max(val, filterRating[0])]);
+                                        }}
+                                    />
+                                </div>
                             </div>
-                            <div className="mobile-hide-histogram">
-                                <Histogram data={ratingDistribution} currentRange={filterRating} min={0} max={10} />
-                            </div>
-                            <div className="range-slider-container">
-                                <div style={{
-                                    position: 'absolute',
-                                    height: '2px',
-                                    background: 'var(--accent-gold)',
-                                    left: `${(filterRating[0] / 10) * 100}%`,
-                                    right: `${100 - (filterRating[1] / 10) * 100}%`,
-                                    zIndex: 1
-                                }} />
-                                <input
-                                    type="range" min="0" max="10" step="0.1" value={filterRating[0]}
-                                    onChange={(e) => {
-                                        const val = parseFloat(e.target.value);
-                                        setFilterRating([Math.min(val, filterRating[1]), filterRating[1]]);
-                                    }}
-                                />
-                                <input
-                                    type="range" min="0" max="10" step="0.1" value={filterRating[1]}
-                                    onChange={(e) => {
-                                        const val = parseFloat(e.target.value);
-                                        setFilterRating([filterRating[0], Math.max(val, filterRating[0])]);
-                                    }}
-                                />
-                            </div>
-                        </div>
 
-                        {/* Year Range */}
-                        <div>
-                            <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Year</span>
-                                <span style={{ color: 'var(--accent-gold)' }}>{filterYear[0]} - {filterYear[1]}</span>
-                            </div>
-                            <div className="mobile-hide-histogram">
-                                <Histogram data={yearDistribution} currentRange={filterYear} min={minBoundYear} max={maxBoundYear} />
-                            </div>
-                            <div className="range-slider-container">
-                                <div style={{
-                                    position: 'absolute',
-                                    height: '2px',
-                                    background: 'var(--accent-gold)',
-                                    left: `${((filterYear[0] - minBoundYear) / (maxBoundYear - minBoundYear || 1)) * 100}%`,
-                                    right: `${100 - ((filterYear[1] - minBoundYear) / (maxBoundYear - minBoundYear || 1)) * 100}%`,
-                                    zIndex: 1
-                                }} />
-                                <input
-                                    type="range" min={minBoundYear} max={maxBoundYear} value={filterYear[0]}
-                                    onChange={(e) => {
-                                        const val = parseInt(e.target.value);
-                                        setFilterYear([Math.min(val, filterYear[1]), filterYear[1]]);
-                                    }}
-                                />
-                                <input
-                                    type="range" min={minBoundYear} max={maxBoundYear} value={filterYear[1]}
-                                    onChange={(e) => {
-                                        const val = parseInt(e.target.value);
-                                        setFilterYear([filterYear[0], Math.max(val, filterYear[0])]);
-                                    }}
-                                />
+                            {/* Year Range */}
+                            <div>
+                                <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>Year</span>
+                                    <span style={{ color: 'var(--accent-gold)' }}>{filterYear[0]} - {filterYear[1]}</span>
+                                </div>
+                                <div className="mobile-hide-histogram">
+                                    <Histogram data={yearDistribution} currentRange={filterYear} min={minBoundYear} max={maxBoundYear} />
+                                </div>
+                                <div className="range-slider-container">
+                                    <div style={{
+                                        position: 'absolute',
+                                        height: '2px',
+                                        background: 'var(--accent-gold)',
+                                        left: `${((filterYear[0] - minBoundYear) / (maxBoundYear - minBoundYear || 1)) * 100}%`,
+                                        right: `${100 - ((filterYear[1] - minBoundYear) / (maxBoundYear - minBoundYear || 1)) * 100}%`,
+                                        zIndex: 1
+                                    }} />
+                                    <input
+                                        type="range" min={minBoundYear} max={maxBoundYear} value={filterYear[0]}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            setFilterYear([Math.min(val, filterYear[1]), filterYear[1]]);
+                                        }}
+                                    />
+                                    <input
+                                        type="range" min={minBoundYear} max={maxBoundYear} value={filterYear[1]}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            setFilterYear([filterYear[0], Math.max(val, filterYear[0])]);
+                                        }}
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -1160,7 +1213,12 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         </div>
 
                         {/* Reset Actions */}
-                        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', gap: '15px' }}>
+                            <button
+                                className="btn-ghost"
+                                onClick={() => setShowFilters(false)}
+                                style={{ fontSize: '0.85rem', textDecoration: 'underline', cursor: 'pointer', color: '#888' }}
+                            >Collapse Filters</button>
                             <button
                                 className="btn-ghost"
                                 onClick={() => {
