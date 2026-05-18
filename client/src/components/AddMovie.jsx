@@ -820,18 +820,16 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                 onMouseEnter={e => { if (!sel && !owned) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
                                 onMouseLeave={e => { if (!sel && !owned) e.currentTarget.style.background = 'transparent'; }}
                             >
-                                {/* Checkbox — hidden for owned */}
-                                {!owned ? (
-                                    <div onClick={(e) => { e.stopPropagation(); toggleSelect(item.link); }} style={{
-                                        width: '17px', height: '17px', borderRadius: '4px', flexShrink: 0,
-                                        background: sel ? 'var(--accent-gold)' : 'transparent',
-                                        border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.2)'}`,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '0.6rem', color: '#000', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.15s'
-                                    }}>{sel ? '✓' : ''}</div>
-                                ) : (
-                                    <div style={{ width: '17px', height: '17px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-gold)', fontSize: '0.75rem' }}>✓</div>
-                                )}
+                                {/* Unified Checkbox supporting selection for both owned and unowned movies */}
+                                <div onClick={(e) => { e.stopPropagation(); toggleSelect(item.link); }} style={{
+                                    width: '17px', height: '17px', borderRadius: '4px', flexShrink: 0,
+                                    background: sel ? 'var(--accent-gold)' : 'transparent',
+                                    border: `2px solid ${sel ? 'var(--accent-gold)' : owned ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.2)'}`,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '0.6rem', color: '#000', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.15s'
+                                }}>
+                                    {sel ? '✓' : owned ? <span style={{ color: 'var(--accent-gold)', fontSize: '0.55rem' }}>📍</span> : ''}
+                                </div>
                                 {/* Poster */}
                                 <img src={item.img} alt={item.title}
                                     style={{ width: '34px', height: '50px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
