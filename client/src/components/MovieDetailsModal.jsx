@@ -425,7 +425,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                         width: '100%',
                         height: '100%',
                         maxHeight: 'inherit',
-                        overflowY: 'auto', 
+                        overflowY: 'hidden', 
                         position: 'relative',
                         display: 'flex', 
                         flexDirection: 'column',
@@ -476,8 +476,15 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                     </div>
                 )}
 
-                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '16px' : '30px', padding: isMobile ? '16px' : '40px' }}>
-                    {/* Left Column (Desktop only) */}
+                {/* Scrollable Modal Content */}
+                <div style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    width: '100%',
+                    padding: isMobile ? '16px 16px 20px 16px' : '40px 40px 20px 40px'
+                }}>
+                    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '16px' : '30px' }}>
+                        {/* Left Column (Desktop only) */}
                     {!isMobile && (
                         <div style={{ flex: '0 0 300px', maxWidth: '100%' }}>
                             <img
@@ -1188,24 +1195,31 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                 )}
                                             </div>
                                         )}
-                                     </div>
-                                 </div>
-                             )}
-                         </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                         {/* Modal Action Controls */}
-                        <div style={{ 
-                            display: 'flex', 
-                            gap: '10px', 
-                            flexWrap: isMobile ? 'wrap' : 'nowrap', 
-                            marginTop: 'auto', 
-                            paddingTop: '15px', 
-                            paddingBottom: '15px',
-                            marginBottom: isMobile ? '1px' : '0px',
-                            borderTop: '1px solid rgba(255,255,255,0.05)',
-                            width: '100%'
-                        }}>
-                            {readOnly ? (
+                {/* Modal Action Controls (Sticky/fixed at the bottom of .glass-panel) */}
+                <div style={{ 
+                    display: 'flex', 
+                    gap: '10px', 
+                    flexWrap: isMobile ? 'wrap' : 'nowrap', 
+                    paddingTop: '15px', 
+                    paddingBottom: '15px',
+                    paddingLeft: isMobile ? '16px' : '40px',
+                    paddingRight: isMobile ? '16px' : '40px',
+                    borderTop: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(20, 20, 20, 0.95)',
+                    backdropFilter: 'blur(15px)',
+                    width: '100%',
+                    flexShrink: 0
+                }}>
+                    {!isMobile && <div style={{ flex: '0 0 330px' }} />}
+                    {readOnly ? (
                                 <a
                                     href={movie.link}
                                     target="_blank"
@@ -1328,10 +1342,8 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                             )}
                         </div>
                     </div>
+                {/* End of outer wrapper div */}
                 </div>
-            </div>
-            {/* End of outer wrapper div */}
-            </div>
 
             {/* Poster Zoom Modal Overlay */}
             {isPosterZoomed && (
