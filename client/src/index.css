@@ -537,7 +537,7 @@ input {
 /* ── Compact state when user has scrolled ≥ 48 px ── */
 @media (max-width: 768px) {
 
-  /* Smooth transitions on all animating elements */
+  /* Disable CSS transitions for elements controlled by --sp to prevent lag */
   .app-header img[alt*="Mascot"],
   .app-header .logo,
   .app-header .header-nav .btn,
@@ -548,153 +548,145 @@ input {
   .app-header .btn-label,
   .app-header .header-content,
   .app-header .header-left,
-  .app-header .header-movie-count {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  .app-header .header-movie-count,
+  .app-header .header-right > div[style*="borderLeft"] {
+    transition: none !important;
   }
 
-  /* Always make header-content position:relative so absolute children work */
+  /* ── header-content ── */
   .app-header .header-content {
     position: relative;
-    padding-bottom: 60px; /* Space for the absolute bottom strip */
+    /* padding-top: 10 -> 5 */
+    padding-top: calc(10px - 5px * var(--sp, 0)) !important;
+    /* padding-bottom: 60 -> 5 */
+    padding-bottom: calc(60px - 55px * var(--sp, 0)) !important;
+    /* padding-right: 12 -> 115 */
+    padding-right: calc(12px + 103px * var(--sp, 0)) !important;
+    /* gap: 8 -> 4 */
+    gap: calc(8px - 4px * var(--sp, 0)) !important;
   }
 
-  /* ── header-right: ALWAYS absolute on mobile to prevent jumping ── */
+  /* ── header-left ── */
+  .app-header .header-left {
+    /* gap: 8 -> 6 */
+    gap: calc(8px - 2px * var(--sp, 0)) !important;
+    overflow: hidden;
+  }
+
+  /* ── logo image ── */
+  .app-header img[alt*="Mascot"] {
+    /* width/height: 76 -> 26 */
+    width: calc(76px - 50px * var(--sp, 0)) !important;
+    height: calc(76px - 50px * var(--sp, 0)) !important;
+    flex-shrink: 0;
+  }
+
+  /* ── logo text ── */
+  .app-header .logo {
+    /* font-size: 1.35rem -> 0.9rem */
+    font-size: calc(1.35rem - 0.45rem * var(--sp, 0)) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-direction: row !important;
+    gap: calc(6px - 2px * var(--sp, 0));
+  }
+
+  /* ── nav buttons ── */
+  .app-header .header-nav .btn {
+    /* padding: 5px 10px -> 3px 7px */
+    padding-top: calc(5px - 2px * var(--sp, 0)) !important;
+    padding-bottom: calc(5px - 2px * var(--sp, 0)) !important;
+    padding-left: calc(10px - 3px * var(--sp, 0)) !important;
+    padding-right: calc(10px - 3px * var(--sp, 0)) !important;
+    /* font-size: 0.78rem -> 0.72rem */
+    font-size: calc(0.78rem - 0.06rem * var(--sp, 0)) !important;
+  }
+
+  /* ── header-movie-count ── */
+  .app-header .header-movie-count {
+    /* max-height: 40 -> 0 */
+    max-height: calc(40px * (1 - var(--sp, 0))) !important;
+    opacity: calc(1 - var(--sp, 0)) !important;
+    margin-left: calc(5px * (1 - var(--sp, 0))) !important;
+    overflow: hidden;
+  }
+
+  /* ── header-right ── */
   .app-header .header-right {
     position: absolute !important;
-    bottom: 15px;
-    right: 50%;
-    transform: translateX(50%) translateY(0%);
+    /* bottom: 15px -> 50% */
+    bottom: calc(15px + (50% - 15px) * var(--sp, 0)) !important;
+    /* right: 50% -> 8px */
+    right: calc(50% - (50% - 8px) * var(--sp, 0)) !important;
+    /* transform: X(50%) Y(0) -> X(0) Y(50%) */
+    transform: translateX(calc(50% - 50% * var(--sp, 0))) translateY(calc(0% + 50% * var(--sp, 0))) !important;
+    /* gap: 8 -> 2 */
+    gap: calc(8px - 6px * var(--sp, 0)) !important;
     width: max-content !important;
     justify-content: center !important;
+    border-top: none !important;
+    padding-top: 0 !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
   }
 
-  /* Base states for disappearing elements to allow smooth fade out */
-  .app-header .header-movie-count {
-    max-height: 40px;
-    opacity: 1;
-    overflow: hidden;
-  }
-
-  .app-header .header-right > div[style*="borderLeft"] {
-    max-width: 20px;
-    opacity: 1;
-    overflow: hidden;
-  }
-
+  /* ── btn-label ── */
   .app-header .btn-label {
-    max-width: 150px;
-    opacity: 1;
+    /* max-width: 150 -> 0 */
+    max-width: calc(150px * (1 - var(--sp, 0))) !important;
+    opacity: calc(1 - var(--sp, 0)) !important;
     overflow: hidden;
     display: inline-block;
     vertical-align: middle;
   }
 
-  /* Force logo back to a single row on all mobile views */
-  .app-header .logo {
-    flex-direction: row !important;
-    gap: 6px;
-    font-size: 1.35rem !important;
-  }
-
-  /* ── COMPACT: header layout tightens smoothly ── */
-  .app-header.header-scrolled .header-content {
-    padding-top: 5px !important;
-    padding-bottom: 5px !important;
-    gap: 4px !important;
-    /* Reserve space on right for the absolute icon row */
-    padding-right: 115px !important;
-  }
-
-  .app-header.header-scrolled .header-left {
-    gap: 6px !important;
-    /* Prevent overflow into icon area */
-    overflow: hidden;
-  }
-
-  /* Logo icon shrinks */
-  .app-header.header-scrolled img[alt*="Mascot"] {
-    width: 26px !important;
-    height: 26px !important;
-    flex-shrink: 0;
-  }
-
-  /* Logo text shrinks */
-  .app-header.header-scrolled .logo {
-    font-size: 0.9rem !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex-direction: row !important;
-    gap: 4px;
-  }
-
-  /* Nav buttons tighten */
-  .app-header.header-scrolled .header-nav .btn {
-    padding: 3px 7px !important;
-    font-size: 0.72rem !important;
-  }
-
-  /* Fade out movie count */
-  .app-header.header-scrolled .header-movie-count {
-    max-height: 0 !important;
-    opacity: 0 !important;
-    margin: 0 !important;
-  }
-
-  /* ── header-right: smoothly float to top-right corner as icon strip ── */
-  .app-header.header-scrolled .header-right {
-    bottom: 50% !important;
-    right: 8px !important;
-    transform: translateX(0) translateY(50%) !important;
-    gap: 2px !important;
-    border-top: none !important;
-    padding-top: 0 !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-  }
-
-  /* Fade out divider line */
-  .app-header.header-scrolled .header-right > div[style*="borderLeft"] {
-    max-width: 0 !important;
-    opacity: 0 !important;
-    margin: 0 !important;
+  /* ── divider line ── */
+  .app-header .header-right > div[style*="borderLeft"] {
+    /* max-width: 20 -> 0 */
+    max-width: calc(20px * (1 - var(--sp, 0))) !important;
+    opacity: calc(1 - var(--sp, 0)) !important;
+    margin: 0 calc(10px * (1 - var(--sp, 0))) !important;
     padding: 0 !important;
+    overflow: hidden;
   }
 
-  /* Trash & Logout: compact icon-only circles */
-  .app-header.header-scrolled .header-btn-trash,
-  .app-header.header-scrolled .header-btn-logout {
-    padding: 4px 6px !important;
-    border-radius: 50% !important;
-    min-width: 30px !important;
-    min-height: 30px !important;
+  /* ── Trash & Logout buttons ── */
+  .app-header .header-btn-trash,
+  .app-header .header-btn-logout {
+    /* padding: 5px 10px -> 4px 6px */
+    padding-top: calc(5px - 1px * var(--sp, 0)) !important;
+    padding-bottom: calc(5px - 1px * var(--sp, 0)) !important;
+    padding-left: calc(10px - 4px * var(--sp, 0)) !important;
+    padding-right: calc(10px - 4px * var(--sp, 0)) !important;
+    /* border-radius: 8px -> 15px (which is 50% of 30px) */
+    border-radius: calc(8px + 7px * var(--sp, 0)) !important;
+    /* min-size for circles */
+    min-width: calc(0px + 30px * var(--sp, 0)) !important;
+    min-height: calc(0px + 30px * var(--sp, 0)) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    font-size: 1rem !important;
+    font-size: calc(0.78rem + 0.22rem * var(--sp, 0)) !important; /* 0.78 -> 1rem */
   }
 
   /* Username badge: icon only */
-  .app-header.header-scrolled .header-username {
+  .app-header .header-username {
     display: flex !important;
     align-items: center !important;
-    font-size: 1rem !important;
-    padding: 2px !important;
+    font-size: calc(0.78rem + 0.22rem * var(--sp, 0)) !important;
+    padding: calc(5px - 3px * var(--sp, 0)) !important; /* 5 -> 2 */
   }
 
-  /* Fade out ALL text labels in compact mode */
-  .app-header.header-scrolled .btn-label {
-    max-width: 0 !important;
-    opacity: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  /* Empty Trash button (conditionally rendered) */
-  .app-header.header-scrolled .header-right > button:not(.header-btn-trash):not(.header-btn-logout) {
-    padding: 3px 6px !important;
-    font-size: 0.7rem !important;
+  /* Empty Trash button */
+  .app-header .header-right > button:not(.header-btn-trash):not(.header-btn-logout) {
+    /* padding: 5px 10px -> 3px 6px */
+    padding-top: calc(5px - 2px * var(--sp, 0)) !important;
+    padding-bottom: calc(5px - 2px * var(--sp, 0)) !important;
+    padding-left: calc(10px - 4px * var(--sp, 0)) !important;
+    padding-right: calc(10px - 4px * var(--sp, 0)) !important;
+    /* font-size: 0.78 -> 0.7 */
+    font-size: calc(0.78rem - 0.08rem * var(--sp, 0)) !important;
   }
 }
 

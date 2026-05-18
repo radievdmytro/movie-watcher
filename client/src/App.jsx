@@ -34,6 +34,27 @@ function App() {
     const [headerScrolled, setHeaderScrolled] = useState(false);
 
     useEffect(() => {
+        let isTouching = false;
+        let scrollTimeout;
+
+        const handleTouchStart = () => { isTouching = true; };
+        const handleTouchEnd = () => { 
+            isTouching = false; 
+            checkSnap();
+        };
+
+        const checkSnap = () => {
+            if (window.innerWidth > 768) return;
+            // Snap to either 0 or 48 based on scroll position when user lifts finger
+            if (!isTouching && window.scrollY > 0 && window.scrollY < 48) {
+                if (window.scrollY > 24) {
+                    window.scrollTo({ top: 48, behavior: 'smooth' });
+                } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        };
+
         const headerEl = document.querySelector('.app-header');
         const setH = () => {
             if (headerEl) {
@@ -42,19 +63,39 @@ function App() {
                 );
             }
         };
+
         const updateLayout = () => {
-            setHeaderScrolled(window.scrollY > 48);
+            const scrollY = window.scrollY;
+            // Calculate a 0-to-1 scroll progress tied exactly to scroll
+            const progress = Math.min(1, Math.max(0, scrollY / 48));
+            document.documentElement.style.setProperty('--sp', progress);
+            
+            setHeaderScrolled(scrollY > 48);
+            
             // Set immediately for pre-transition height
             requestAnimationFrame(setH);
             // Set again after transition finishes (~410ms) for post-transition height
             setTimeout(setH, 410);
+
+            // Trigger snap check a moment after scrolling stops (for mousewheel/trackpad)
+            if (window.innerWidth <= 768 && !isTouching) {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(checkSnap, 150);
+            }
         };
+
         updateLayout();
+        window.addEventListener('touchstart', handleTouchStart, { passive: true });
+        window.addEventListener('touchend', handleTouchEnd, { passive: true });
         window.addEventListener('scroll', updateLayout, { passive: true });
         window.addEventListener('resize', updateLayout, { passive: true });
+        
         return () => {
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchend', handleTouchEnd);
             window.removeEventListener('scroll', updateLayout);
             window.removeEventListener('resize', updateLayout);
+            clearTimeout(scrollTimeout);
         };
     }, []);
 
