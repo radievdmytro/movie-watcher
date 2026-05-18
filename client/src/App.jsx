@@ -18,7 +18,7 @@ function App() {
     const [checkingAuth, setCheckingAuth] = useState(true);
     const getInitialView = () => {
         const hash = window.location.hash;
-        if (hash === '#collections') return 'collections';
+        if (hash.startsWith('#collections')) return 'collections';
         if (hash === '#trash') return 'trash';
         if (hash === '#admin') return 'admin';
         if (hash === '#library') return 'library';
@@ -61,6 +61,9 @@ function App() {
             return;
         }
         if (user) {
+            if (currentView === 'collections' && window.location.hash.startsWith('#collections/')) {
+                return;
+            }
             window.location.hash = currentView;
         } else {
             window.location.hash = '';
@@ -72,7 +75,7 @@ function App() {
         const handleHashChange = () => {
             if (currentView === 'shared_collection') return;
             const hash = window.location.hash;
-            if (hash === '#collections') {
+            if (hash.startsWith('#collections')) {
                 setCurrentView('collections');
             } else if (hash === '#trash') {
                 setCurrentView('trash');

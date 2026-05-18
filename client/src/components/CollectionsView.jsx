@@ -367,13 +367,39 @@ function CollectionsView({ onBack }) {
         }
     };
 
+    // Synchronize expandedCollectionId state with URL hash and fetch details
     useEffect(() => {
         if (expandedCollectionId) {
+            window.location.hash = `collections/${expandedCollectionId}`;
             fetchCollectionDetails(expandedCollectionId);
         } else {
             setExpandedCollection(null);
+            if (window.location.hash.startsWith('#collections/')) {
+                window.location.hash = 'collections';
+            }
         }
     }, [expandedCollectionId]);
+
+    // Parse hash on mount and listen to window hashchange events for deep-linked collections
+    useEffect(() => {
+        const handleHashChangeInsideCollections = () => {
+            const hash = window.location.hash;
+            if (hash === '#collections') {
+                setExpandedCollectionId(null);
+            } else if (hash.startsWith('#collections/')) {
+                const parts = hash.split('/');
+                const id = parseInt(parts[parts.length - 1]);
+                if (!isNaN(id)) {
+                    setExpandedCollectionId(id);
+                }
+            }
+        };
+
+        handleHashChangeInsideCollections();
+
+        window.addEventListener('hashchange', handleHashChangeInsideCollections);
+        return () => window.removeEventListener('hashchange', handleHashChangeInsideCollections);
+    }, []);
 
     const handleDeleteCollection = async (id, e) => {
         if (e) e.stopPropagation();
