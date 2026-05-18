@@ -693,7 +693,7 @@ input {
 /* ── Sticky search / controls bar — uses JS-measured --header-h ── */
 .sticky-search-bar {
   position: relative;
-  z-index: 400;
+  z-index: 100;
 }
 
 @media (max-width: 768px) {
@@ -701,7 +701,7 @@ input {
     position: sticky;
     /* var(--header-h) is set by JS on every scroll/resize — fallback 90px */
     top: var(--header-h, 90px);
-    z-index: 400;
+    z-index: 100;
     background: rgba(12, 12, 12, 0.98);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
