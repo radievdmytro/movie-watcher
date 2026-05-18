@@ -788,6 +788,20 @@ input {
   flex-shrink: 0;
 }
 
+.mobile-sort-select {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .desktop-sort-tabs {
+    display: none !important;
+  }
+  .mobile-sort-select {
+    display: flex !important;
+    align-items: center;
+  }
+}
+
 /* ==========================================
    DROPDOWNS — always rendered above everything,
    never clipped by parent overflow
