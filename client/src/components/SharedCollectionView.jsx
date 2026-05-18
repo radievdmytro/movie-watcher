@@ -43,7 +43,12 @@ function SharedCollectionView({ collectionId, onExit }) {
             const res = await fetch('/api/movies/import', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: movie.link })
+                body: JSON.stringify({
+                    url: movie.link,
+                    source_collection_name: collection.title,
+                    source_collection_token: collection.share_token,
+                    source_user_name: collection.owner_username
+                })
             });
             if (res.ok || res.status === 409) {
                 setImportSuccessIds(prev => [...prev, movie.id]);

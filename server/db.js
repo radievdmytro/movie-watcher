@@ -39,6 +39,9 @@ const initDb = () => {
       country TEXT,
       duration TEXT,
       voice_acting TEXT,
+      source_collection_name TEXT,
+      source_collection_token TEXT,
+      source_user_name TEXT,
       type TEXT DEFAULT 'movie',
       status TEXT DEFAULT 'want_to_watch',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -221,6 +224,11 @@ const initDb = () => {
   try { db.exec("ALTER TABLE scraped_movies_cache ADD COLUMN country TEXT"); } catch (e) { }
   try { db.exec("ALTER TABLE scraped_movies_cache ADD COLUMN duration TEXT"); } catch (e) { }
   try { db.exec("ALTER TABLE scraped_movies_cache ADD COLUMN voice_acting TEXT"); } catch (e) { }
+
+  // Migrations for source tracking in movies
+  try { db.exec("ALTER TABLE movies ADD COLUMN source_collection_name TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE movies ADD COLUMN source_collection_token TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE movies ADD COLUMN source_user_name TEXT"); } catch (e) { }
 
   // --- ENTERPRISE DATABASE INTEGRITY AUTO-CLEANUP ---
   console.log('🔄 Running database relation integrity checks...');
