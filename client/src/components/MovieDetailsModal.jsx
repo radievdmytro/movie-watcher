@@ -1286,7 +1286,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             background: 'rgba(239, 68, 68, 0.08)',
                                             border: '1px solid rgba(239, 68, 68, 0.2)',
                                             color: '#ff6b6b',
-                                            padding: isMobile ? '10px 16px' : '12px 28px',
+                                            padding: isMobile ? '10px 16px' : '12px 18px',
                                             fontSize: isMobile ? '0.85rem' : '0.95rem',
                                             fontWeight: '600',
                                             borderRadius: '10px',
@@ -1299,7 +1299,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             flex: isMobile ? '1 1 100%' : '0 0 auto'
                                         }}
                                     >
-                                        <span className="delete-btn-text">Delete </span>🗑️
+                                        {isMobile && <span className="delete-btn-text">Delete </span>}🗑️
                                     </button>
                                 </>
                             ) : (
@@ -1380,15 +1380,6 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes scaleIn { from { transform: scale(0.9) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
                 @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-                
-                @media (min-width: 769px) and (max-width: 1150px) {
-                    .modal-delete-btn {
-                        padding: 12px 16px !important;
-                    }
-                    .modal-delete-btn .delete-btn-text {
-                        display: none !important;
-                    }
-                }
             `}</style>
         </div>,
         document.body
