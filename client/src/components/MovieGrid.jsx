@@ -161,9 +161,37 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             .filter(movie => {
                 // Text Search
                 if (filterQuery) {
-                    const q = filterQuery.toLowerCase();
+                    const q = filterQuery.toLowerCase().trim();
                     const searchStr = `${movie.title} ${movie.original_title} ${movie.description}`.toLowerCase();
-                    if (!searchStr.includes(q)) return false;
+                    let matches = searchStr.includes(q);
+
+                    if (!matches && movie.link) {
+                        const cleanUrl = (url) => {
+                            if (!url) return '';
+                            return url
+                                .toLowerCase()
+                                .replace(/^https?:\/\/[^\/]+/, '') // strip domain and protocol
+                                .replace(/^\/+|\/+$/g, '')         // strip leading/trailing slashes
+                                .split('?')[0]                     // strip query params
+                                .split('#')[0];                    // strip hash
+                        };
+
+                        const cleanQ = cleanUrl(q);
+                        const cleanM = cleanUrl(movie.link);
+
+                        if (cleanQ && cleanM && (cleanM.includes(cleanQ) || cleanQ.includes(cleanM))) {
+                            matches = true;
+                        } else {
+                            // Match by numeric ID (e.g. 799863)
+                            const queryId = q.match(/\b\d{4,9}\b/)?.[0] || q.match(/(?:film|series|movie)\/(\d+)/)?.[1];
+                            const movieLinkId = movie.link.toLowerCase().match(/\b\d{4,9}\b/)?.[0] || movie.link.toLowerCase().match(/(?:film|series|movie)\/(\d+)/)?.[1];
+                            if (queryId && movieLinkId && queryId === movieLinkId) {
+                                matches = true;
+                            }
+                        }
+                    }
+
+                    if (!matches) return false;
                 }
 
                 // Genre Filter
