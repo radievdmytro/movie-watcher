@@ -273,4 +273,70 @@ async function getMovieDetails(url) {
     }
 }
 
-module.exports = { searchMovies, getMovieDetails, getCategoryMovies };
+async function getHdrezkaComments(url) {
+    if (!url) return [];
+    try {
+        const qs = require('querystring');
+        // Fetch the page HTML first to get the news_id
+        const html = await smartFetch(url);
+        if (!html) return [];
+        
+        const newsIdMatch = html.match(/news_id\s*=\s*(\d+)/) || html.match(/data-id="(\d+)"/);
+        const newsId = newsIdMatch ? newsIdMatch[1] : null;
+        if (!newsId) return [];
+
+        const parsedUrl = new URL(url);
+        const origin = parsedUrl.origin;
+        const randomUA = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+
+        // Fetch comments HTML via their AJAX endpoint
+        const commentsRes = await axios.post(`${origin}/ajax/get_comments/?t=${Date.now()}`, qs.stringify({
+            news_id: newsId,
+            cstart: 1,
+            type: 0,
+            comment_id: 0,
+            skin: 'hdrezka'
+        }), {
+            headers: {
+                ...BASE_HEADERS,
+                'User-Agent': randomUA,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Referer': url
+            },
+            timeout: 10000
+        });
+
+        const commentsHtml = commentsRes.data.comments;
+        if (!commentsHtml) return [];
+
+        const $ = cheerio.load(commentsHtml);
+        const comments = [];
+        
+        $('.comments-tree-item').each((i, el) => {
+            const author = $(el).find('.name, .author, span.name').first().text().trim();
+            const date = $(el).find('.date').first().text().trim();
+            // Get inner text and clean it up (replace <br> with newlines if needed, but .text() usually strips tags)
+            const text = $(el).find('div.text').first().text().trim() || $(el).find('div.message').first().text().trim();
+            const avatar = $(el).find('.ava img').attr('src');
+            
+            // HDRezka returns some system comments or empty ones occasionally
+            if (author && text) {
+                comments.push({
+                    id: $(el).attr('data-id') || i,
+                    author,
+                    date,
+                    text,
+                    avatar: avatar && avatar.startsWith('http') ? avatar : (avatar ? `${origin}${avatar}` : null)
+                });
+            }
+        });
+
+        return comments;
+    } catch (e) {
+        console.error('[Scraper] Failed to fetch comments:', e.message);
+        return [];
+    }
+}
+
+module.exports = { searchMovies, getMovieDetails, getCategoryMovies, getHdrezkaComments };

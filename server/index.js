@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const sharp = require('sharp');
-const { searchMovies, getMovieDetails, getCategoryMovies } = require('./scraper');
+const { searchMovies, getMovieDetails, getCategoryMovies, getHdrezkaComments } = require('./scraper');
 
 const app = express();
 const PORT = 3000;
@@ -570,6 +570,21 @@ app.get('/api/movies/category/:filter', authenticateToken, async (req, res) => {
 // ==========================================
 
 // GET Active Movies
+// Get HDRezka comments directly via URL
+app.get('/api/hdrezka-comments', async (req, res) => {
+    try {
+        const { url } = req.query;
+        if (!url) {
+            return res.status(400).json({ error: 'Missing url parameter' });
+        }
+        const comments = await getHdrezkaComments(url);
+        res.json(comments);
+    } catch (err) {
+        console.error('Failed to get hdrezka comments:', err);
+        res.status(500).json({ error: 'Failed to fetch comments' });
+    }
+});
+
 app.get('/api/movies', authenticateToken, (req, res) => {
     try {
         const stmt = db.prepare(`

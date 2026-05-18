@@ -21,6 +21,11 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     const [editingReviewId, setEditingReviewId] = useState(null);
     const [editingReviewContent, setEditingReviewContent] = useState('');
 
+    // HDRezka comments states
+    const [hdrezkaComments, setHdrezkaComments] = useState(null);
+    const [loadingHdrezka, setLoadingHdrezka] = useState(false);
+    const [showHdrezkaComments, setShowHdrezkaComments] = useState(false);
+
     // Inline feedback states
     const [notesFeedback, setNotesFeedback] = useState({ type: '', message: '' });
     const [reviewFeedback, setReviewFeedback] = useState({ type: '', message: '' });
@@ -37,6 +42,23 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
             setTimeout(() => setCopiedShare(false), 2000);
         } catch (err) {
             console.error('Failed to copy', err);
+        }
+    };
+
+    const loadHdrezkaComments = async () => {
+        if (!movie.link) return;
+        setLoadingHdrezka(true);
+        try {
+            const res = await fetch(`/api/hdrezka-comments?url=${encodeURIComponent(movie.link)}`);
+            if (res.ok) {
+                const data = await res.json();
+                setHdrezkaComments(data);
+                setShowHdrezkaComments(true);
+            }
+        } catch (err) {
+            console.error('Failed to load hdrezka comments:', err);
+        } finally {
+            setLoadingHdrezka(false);
         }
     };
 
@@ -801,6 +823,70 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             ))}
                                         </div>
                                     )}
+
+                                    {/* HDRezka Comments Section */}
+                                    <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                            <div>
+                                                <h4 style={{ color: '#fff', margin: '0 0 4px 0', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                    🌐 External Comments
+                                                </h4>
+                                                <div style={{ color: '#888', fontSize: '0.75rem' }}>
+                                                    Comments parsed from hdrezka website
+                                                </div>
+                                            </div>
+                                            {!showHdrezkaComments && (
+                                                <button
+                                                    onClick={loadHdrezkaComments}
+                                                    disabled={loadingHdrezka}
+                                                    className="btn"
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.05)', color: '#fff',
+                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                        padding: '6px 14px', fontSize: '0.8rem', borderRadius: '6px',
+                                                        cursor: loadingHdrezka ? 'wait' : 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={e => { if(!loadingHdrezka) e.target.style.background = 'rgba(255,255,255,0.1)' }}
+                                                    onMouseLeave={e => { if(!loadingHdrezka) e.target.style.background = 'rgba(255,255,255,0.05)' }}
+                                                >
+                                                    {loadingHdrezka ? '⏳ Loading...' : '⬇️ Load External Comments'}
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {showHdrezkaComments && hdrezkaComments && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
+                                                {hdrezkaComments.length === 0 ? (
+                                                    <div style={{ color: '#666', fontStyle: 'italic', padding: '10px 0' }}>No external comments found.</div>
+                                                ) : (
+                                                    hdrezkaComments.map(comment => (
+                                                        <div key={comment.id} style={{
+                                                            padding: '15px', borderRadius: '8px',
+                                                            background: 'rgba(0,0,0,0.2)',
+                                                            border: '1px solid rgba(255,255,255,0.03)'
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                                                                <img 
+                                                                    src={comment.avatar || 'https://static.hdrezka.ac/templates/hdrezka/images/noavatar.png'} 
+                                                                    alt={comment.author} 
+                                                                    style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} 
+                                                                    onError={(e) => { e.target.src = 'https://static.hdrezka.ac/templates/hdrezka/images/noavatar.png' }}
+                                                                />
+                                                                <div>
+                                                                    <div style={{ color: '#ddd', fontWeight: 'bold', fontSize: '0.9rem' }}>{comment.author}</div>
+                                                                    <div style={{ color: '#666', fontSize: '0.75rem' }}>{comment.date}</div>
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ color: '#bbb', fontSize: '0.9rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                                                                {comment.text}
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
