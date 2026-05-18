@@ -510,7 +510,142 @@ input {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: padding 0.3s ease, box-shadow 0.3s ease;
 }
+
+.app-header.header-scrolled {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── Header layout ─── */
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  flex-wrap: nowrap;
+}
+
+/* ─── Logo wrap ─── */
+.header-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header-logo-img {
+  width: 62px;
+  height: 62px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.35));
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.header-logo-text {
+  margin: 0;
+  font-size: 1.4rem;
+  letter-spacing: 0.5px;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+/* ─── Nav ─── */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.header-nav::-webkit-scrollbar { display: none; }
+
+.header-nav-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: #888;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.header-nav-btn.active {
+  background: var(--bg-card);
+  color: #fff;
+}
+
+.header-nav-btn.admin-btn {
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: var(--accent-gold);
+}
+
+.header-nav-btn.admin-btn.active {
+  background: rgba(212, 175, 55, 0.2);
+  color: #fff;
+}
+
+.header-movie-count {
+  font-size: 0.82rem;
+  color: #666;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─── Right actions ─── */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.header-icon-btn {
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #888;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.header-icon-btn.active {
+  background: var(--bg-card);
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+}
+
+.header-divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.header-user-badge {
+  font-size: 0.88rem;
+  color: #aaa;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+/* icon-only = emoji; nav-label = text — toggled by media queries */
+.icon-only { display: none; }
+.nav-label  { display: inline; }
 
 /* ==========================================
    SORT TABS — horizontal scroll on narrow screens
@@ -521,14 +656,12 @@ input {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x proximity;
-  scrollbar-width: none;        /* Firefox */
-  -ms-overflow-style: none;     /* IE */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   padding-bottom: 2px;
 }
 
-.sort-tabs-row::-webkit-scrollbar {
-  display: none;
-}
+.sort-tabs-row::-webkit-scrollbar { display: none; }
 
 .sort-tabs-row button {
   scroll-snap-align: start;
@@ -536,12 +669,25 @@ input {
 }
 
 /* ==========================================
-   DROPDOWNS — always rendered above everything,
-   never clipped by parent overflow
+   STICKY SEARCH BAR
    ========================================== */
+.sticky-search-bar {
+  position: sticky;
+  top: 56px;          /* just below the collapsed header */
+  z-index: 400;
+  background: rgba(15, 15, 15, 0.97);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 8px 0;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
 
+/* ==========================================
+   DROPDOWNS — position:fixed escape
+   ========================================== */
 .multiselect-dropdown {
-  position: fixed !important;   /* escape any overflow:hidden ancestor */
+  position: fixed !important;
   z-index: 9999 !important;
   background: #151515;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -553,132 +699,79 @@ input {
 }
 
 /* ==========================================
-   PHONE OVERRIDES — ≤ 480 px
+   PHONE ≤ 600px — compact header & icon-only actions
    ========================================== */
+@media (max-width: 600px) {
 
-@media (max-width: 480px) {
+  /* logo shrinks */
+  .header-logo-img  { width: 36px; height: 36px; }
+  .header-logo-text { font-size: 0.95rem; }
+  .header-content   { padding: 8px 10px; gap: 6px; }
 
-  /* --- Header compact --- */
-  .header-content {
-    padding: 10px 12px !important;
-    gap: 8px !important;
-  }
+  /* nav buttons: icon only (emoji) + hide text */
+  .header-nav-btn   { padding: 6px 8px; font-size: 0.85rem; }
+  .header-nav-btn .nav-label  { display: none; }
 
-  .header-left {
-    gap: 8px !important;
-  }
+  /* right actions: icon only */
+  .header-icon-btn .nav-label  { display: none; }
+  .header-icon-btn .icon-only  { display: inline; }
+  .header-user-badge .nav-label { display: none; }
+  .header-user-badge .icon-only { display: inline; }
+  .header-icon-btn { padding: 6px 8px; }
 
-  .logo {
-    font-size: 1.4rem !important;
-  }
+  /* movie count hidden to save space */
+  .header-movie-count { display: none; }
 
-  .header-nav .btn {
-    padding: 5px 10px !important;
-    font-size: 0.78rem !important;
-  }
+  /* sticky search drops just below the compact header */
+  .sticky-search-bar { top: 52px; }
 
-  .header-right .btn {
-    padding: 5px 10px !important;
-    font-size: 0.78rem !important;
-  }
+  /* controls */
+  .controls-section  { gap: 8px !important; }
+  .controls-top-bar  { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; }
+  .controls-top-left { min-width: 100% !important; flex-direction: column !important; align-items: stretch !important; gap: 8px !important; }
+  .controls-bottom-bar { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; }
 
-  /* --- Controls section --- */
-  .controls-section {
-    gap: 8px !important;
-  }
+  /* filters: 1 column */
+  .filters-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
+  .filters-grid > div[style*="grid-column"] { grid-column: 1 !important; }
 
-  .controls-top-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 8px !important;
-  }
+  /* 2-column movie grid */
+  .movie-grid-container { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  .movie-card h4 { font-size: 0.8rem !important; }
 
-  .controls-top-left {
-    min-width: 100% !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 8px !important;
-  }
+  /* modal */
+  .modal-content { width: 95% !important; margin: 10px !important; padding: 12px !important; }
+  .modal-grid    { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .modal-poster  { max-height: 220px; object-fit: contain; }
 
-  .controls-bottom-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 8px !important;
-  }
-
-  /* --- Filters grid: 1 column on phone --- */
-  .filters-grid {
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
-  }
-
-  /* Genres row spans full width */
-  .filters-grid > div[style*="grid-column"] {
-    grid-column: 1 !important;
-  }
-
-  /* --- Movie grid: 2 columns --- */
-  .movie-grid-container {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-  }
-
-  .movie-card h4 {
-    font-size: 0.8rem !important;
-  }
-
-  /* --- Modal --- */
-  .modal-content {
-    width: 95% !important;
-    margin: 10px !important;
-    padding: 12px !important;
-  }
-
-  .modal-grid {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
-  }
-
-  .modal-poster {
-    max-height: 220px;
-    object-fit: contain;
-  }
-
-  /* --- Bottom bulk-action bar --- */
+  /* bottom bulk-action bar */
   div[style*="position: fixed"][style*="bottom: 20px"] {
-    left: 8px !important;
-    right: 8px !important;
-    transform: none !important;
-    width: auto !important;
-    padding: 8px !important;
-    flex-wrap: wrap !important;
-    gap: 6px !important;
-    justify-content: center !important;
+    left: 8px !important; right: 8px !important;
+    transform: none !important; width: auto !important;
+    padding: 8px !important; flex-wrap: wrap !important;
+    gap: 6px !important; justify-content: center !important;
   }
 
-  /* --- Poster size slider — hide on phone --- */
-  .controls-bottom-bar div[style*="display: flex"]:first-child {
-    display: none !important;
-  }
+  /* hide poster size slider */
+  .controls-bottom-bar div[style*="display: flex"]:first-child { display: none !important; }
 
-  /* --- Table horizontal scroll on phone --- */
-  .table-view-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+  /* table scroll */
+  .table-view-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
 /* ==========================================
-   TABLET — 481 – 768 px
+   PHONE ≤ 480px — extra-compact
    ========================================== */
+@media (max-width: 480px) {
+  .header-logo-text { display: none; }   /* hide title text entirely; keep icon */
+  .header-nav-btn   { padding: 5px 7px; font-size: 0.8rem; }
+}
 
-@media (min-width: 481px) and (max-width: 768px) {
-  .filters-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 16px !important;
-  }
-
-  .movie-grid-container {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
+/* ==========================================
+   TABLET — 601 – 768 px
+   ========================================== */
+@media (min-width: 601px) and (max-width: 768px) {
+  .filters-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+  .movie-grid-container { grid-template-columns: repeat(3, 1fr) !important; }
+  .sticky-search-bar { top: 70px; }
 }
