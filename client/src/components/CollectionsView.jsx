@@ -5,6 +5,7 @@ import MovieComparisonModal from './MovieComparisonModal';
 function EditableField({ value, onSave, style, type = 'text', placeholder, ...props }) {
     const [localValue, setLocalValue] = useState(value || '');
     const [isFocused, setIsFocused] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
     useEffect(() => { setLocalValue(value || ''); }, [value]);
 
@@ -33,39 +34,77 @@ function EditableField({ value, onSave, style, type = 'text', placeholder, ...pr
         margin: '-2px -6px',
         width: '100%',
         boxSizing: 'border-box',
-        cursor: isFocused ? 'text' : 'pointer',
+        cursor: 'text',
         transition: 'all 0.2s',
         fontFamily: 'inherit',
         resize: 'none',
-        borderRadius: '4px'
+        borderRadius: '4px',
+        flex: 1
     };
 
-    return type === 'textarea' ? (
-        <textarea
-            value={localValue}
-            onChange={e => setLocalValue(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            style={commonStyle}
-            placeholder={placeholder}
-            onClick={e => e.stopPropagation()}
-            rows={2}
-            {...props}
-        />
-    ) : (
-        <input
-            type="text"
-            value={localValue}
-            onChange={e => setLocalValue(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            style={commonStyle}
-            placeholder={placeholder}
-            onClick={e => e.stopPropagation()}
-            {...props}
-        />
+    return (
+        <div 
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onClick={e => {
+                e.stopPropagation();
+            }}
+            onMouseDown={e => {
+                e.stopPropagation();
+            }}
+            onMouseUp={e => {
+                e.stopPropagation();
+            }}
+            style={{ 
+                display: 'inline-flex', 
+                alignItems: type === 'textarea' ? 'flex-start' : 'center', 
+                gap: '8px', 
+                width: '100%',
+                position: 'relative'
+            }}
+        >
+            {type === 'textarea' ? (
+                <textarea
+                    value={localValue}
+                    onChange={e => setLocalValue(e.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
+                    style={commonStyle}
+                    placeholder={placeholder}
+                    rows={2}
+                    {...props}
+                />
+            ) : (
+                <input
+                    type="text"
+                    value={localValue}
+                    onChange={e => setLocalValue(e.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
+                    style={commonStyle}
+                    placeholder={placeholder}
+                    {...props}
+                />
+            )}
+            
+            {!isFocused && isHovered && (
+                <span 
+                    style={{ 
+                        fontSize: '0.85rem', 
+                        color: 'var(--accent-gold)', 
+                        opacity: 0.8,
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        flexShrink: 0
+                    }}
+                    title="Click text to edit"
+                >
+                    ✏️
+                </span>
+            )}
+        </div>
     );
 }
 
