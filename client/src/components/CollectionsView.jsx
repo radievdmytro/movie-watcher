@@ -401,6 +401,22 @@ function CollectionsView({ onBack }) {
         return () => window.removeEventListener('hashchange', handleHashChangeInsideCollections);
     }, []);
 
+    // Automatically switch activeTab to match the owned or shared collection on startup/load
+    useEffect(() => {
+        if (!expandedCollectionId) return;
+
+        const inMine = collections.some(c => c.id === expandedCollectionId);
+        if (inMine) {
+            setActiveTab('mine');
+            return;
+        }
+
+        const inShared = sharedCollections.some(c => c.id === expandedCollectionId);
+        if (inShared) {
+            setActiveTab('shared');
+        }
+    }, [collections, sharedCollections, expandedCollectionId]);
+
     const handleDeleteCollection = async (id, e) => {
         if (e) e.stopPropagation();
         try {

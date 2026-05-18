@@ -57,6 +57,7 @@ function App() {
 
     // Synchronize currentView state with URL hash
     useEffect(() => {
+        if (checkingAuth) return; // Do not touch hash while verifying session!
         if (currentView === 'shared_collection') {
             return;
         }
@@ -68,10 +69,11 @@ function App() {
         } else {
             window.location.hash = '';
         }
-    }, [currentView, user]);
+    }, [currentView, user, checkingAuth]);
 
     // Handle hash change events (e.g. browser back/forward or manual hash entry)
     useEffect(() => {
+        if (checkingAuth) return; // Wait until session is verified!
         const handleHashChange = () => {
             if (currentView === 'shared_collection') return;
             const hash = window.location.hash;
@@ -95,7 +97,7 @@ function App() {
 
         window.addEventListener('hashchange', handleHashChange);
         return () => window.removeEventListener('hashchange', handleHashChange);
-    }, [user, currentView]);
+    }, [user, currentView, checkingAuth]);
 
     // Parse URL on startup for shared collection ID or movie ID
     useEffect(() => {
