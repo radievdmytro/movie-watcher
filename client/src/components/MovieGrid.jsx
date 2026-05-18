@@ -860,8 +860,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
                 {/* Expanded Filters Panel */}
                 <div style={{
-                    maxHeight: showFilters ? '500px' : '0',
-                    overflow: 'hidden',
+                    maxHeight: showFilters ? '1000px' : '0',
+                    overflow: showFilters ? 'visible' : 'hidden',
                     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                     background: 'rgba(255,255,255,0.02)',
                     borderRadius: '12px',
