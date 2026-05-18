@@ -692,25 +692,24 @@ input {
 
 /* ── Sticky search / controls bar — uses JS-measured --header-h ── */
 .sticky-search-bar {
-  position: relative;
+  position: sticky;
+  top: var(--header-h, 90px);
   z-index: 100;
+  background: rgba(12, 12, 12, 0.98);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 @media (max-width: 768px) {
   .sticky-search-bar {
-    position: sticky;
-    /* var(--header-h) is set by JS on every scroll/resize — fallback 90px */
-    top: var(--header-h, 90px);
-    z-index: 100;
-    background: rgba(12, 12, 12, 0.98);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 8px 0;
     margin-left: -15px;
     margin-right: -15px;
     padding-left: 15px;
     padding-right: 15px;
+    padding-top: 8px;
+    padding-bottom: 8px;
   }
 }
 
