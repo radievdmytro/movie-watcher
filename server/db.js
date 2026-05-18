@@ -109,6 +109,29 @@ const initDb = () => {
   db.exec('CREATE INDEX IF NOT EXISTS idx_history_movie_link ON user_movie_history(movie_link)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_history_user_link ON user_movie_history(user_id, movie_link)');
 
+  // Create global scraped movies cache table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS scraped_movies_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      original_title TEXT,
+      year INTEGER,
+      link TEXT UNIQUE,
+      rating REAL,
+      description TEXT,
+      poster_url TEXT,
+      genres TEXT,
+      actors TEXT,
+      director TEXT,
+      writers TEXT,
+      type TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_link ON scraped_movies_cache(link)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_title ON scraped_movies_cache(title)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_original_title ON scraped_movies_cache(original_title)');
+
   // Migration for user_id in movies
   try {
     db.exec("ALTER TABLE movies ADD COLUMN user_id INTEGER");

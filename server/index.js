@@ -269,6 +269,63 @@ const isHdrezkaUrl = (str) => {
     return str.toLowerCase().includes('hdrezka') && (str.startsWith('http://') || str.startsWith('https://'));
 };
 
+// Helper: clean URL paths for domain-agnostic mirroring
+const cleanUrlPath = (url) => {
+    if (!url) return '';
+    return url
+        .toLowerCase()
+        .replace(/^https?:\/\/[^\/]+/, '') // strip http/https and domain
+        .replace(/^\/+|\/+$/g, '')         // strip leading/trailing slashes
+        .split('?')[0]                     // strip query params
+        .split('#')[0];                    // strip hash
+};
+
+// Helper: Save movie details to global cache
+const saveToCache = (details) => {
+    if (!details || !details.link) return;
+    try {
+        db.prepare(`
+            INSERT INTO scraped_movies_cache (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(link) DO UPDATE SET
+                title = excluded.title,
+                original_title = excluded.original_title,
+                year = excluded.year,
+                rating = excluded.rating,
+                description = excluded.description,
+                poster_url = excluded.poster_url,
+                genres = excluded.genres,
+                actors = excluded.actors,
+                director = excluded.director,
+                writers = excluded.writers,
+                type = excluded.type,
+                updated_at = CURRENT_TIMESTAMP
+        `).run(
+            details.title, details.original_title, details.year, details.link, details.rating,
+            details.description, details.poster_url, details.genres, details.actors, details.director, details.writers,
+            details.type
+        );
+    } catch (e) {
+        console.error('[Cache Save Error]', e.message);
+    }
+};
+
+// Helper: Trigger background update to keep cache fresh
+const triggerBackgroundUpdate = (url) => {
+    (async () => {
+        try {
+            console.log(`[Cache Background Update] Triggered for: ${url}`);
+            const latestDetails = await getMovieDetails(url);
+            if (latestDetails) {
+                saveToCache(latestDetails);
+                console.log(`[Cache Background Update] Successfully updated cache for: ${latestDetails.title}`);
+            }
+        } catch (e) {
+            console.error('[Cache Background Update Error]', e.message);
+        }
+    })();
+};
+
 // Search / Parse Endpoint
 app.post('/api/movies/search', authenticateToken, async (req, res) => {
     try {
@@ -276,10 +333,92 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
         if (!query) return res.status(400).json({ error: 'Query required' });
 
         if (isHdrezkaUrl(query)) {
+            // 1. Search by URL
+            const cleanQuery = cleanUrlPath(query);
+            
+            // Check cache
+            const cached = db.prepare('SELECT * FROM scraped_movies_cache WHERE link LIKE ?').get(`%${cleanQuery}%`);
+            if (cached) {
+                console.log(`[Search Cache Hit] Instantly returning details for: ${query}`);
+                // Trigger background update to keep it fresh
+                triggerBackgroundUpdate(query);
+                return res.json({ type: 'detail', data: cached, fromCache: true });
+            }
+
+            // Fallback to real-time scrape
+            console.log(`[Search Cache Miss] Scraping HDRezka for: ${query}`);
             const details = await getMovieDetails(query);
+            if (details) {
+                saveToCache(details);
+            }
             return res.json({ type: 'detail', data: details });
         } else {
+            // 2. Search by Text
+            const searchLike = `%${query.trim()}%`;
+            
+            // Check cache first
+            const localResults = db.prepare(`
+                SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type
+                FROM scraped_movies_cache
+                WHERE title LIKE ? OR original_title LIKE ?
+                LIMIT 20
+            `).all(searchLike, searchLike);
+
+            if (localResults.length > 0) {
+                console.log(`[Search Cache Hit] Instantly returning ${localResults.length} text search results for: "${query}"`);
+                
+                // Still trigger HDRezka search in the background to discover any new items or update existing ones
+                (async () => {
+                    try {
+                        const results = await searchMovies(query);
+                        if (results && results.length > 0) {
+                            for (const item of results) {
+                                // Save simple search results to cache so they can be discovered next time
+                                db.prepare(`
+                                    INSERT INTO scraped_movies_cache (title, year, link, poster_url, genres, rating, type, updated_at)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                                    ON CONFLICT(link) DO UPDATE SET
+                                        title = excluded.title,
+                                        year = excluded.year,
+                                        poster_url = excluded.poster_url,
+                                        genres = excluded.genres,
+                                        rating = excluded.rating,
+                                        type = excluded.type,
+                                        updated_at = CURRENT_TIMESTAMP
+                                `).run(item.title, item.year, item.link, item.img, item.misc, item.rating, item.type);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('[Search Background HDRezka Fetch Error]', e.message);
+                    }
+                })();
+
+                return res.json({ type: 'list', data: localResults, fromCache: true });
+            }
+
+            // Fallback to real-time search
+            console.log(`[Search Cache Miss] Searching HDRezka for: "${query}"`);
             const results = await searchMovies(query);
+            if (results && results.length > 0) {
+                for (const item of results) {
+                    try {
+                        db.prepare(`
+                            INSERT INTO scraped_movies_cache (title, year, link, poster_url, genres, rating, type, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                            ON CONFLICT(link) DO UPDATE SET
+                                title = excluded.title,
+                                year = excluded.year,
+                                poster_url = excluded.poster_url,
+                                genres = excluded.genres,
+                                rating = excluded.rating,
+                                type = excluded.type,
+                                updated_at = CURRENT_TIMESTAMP
+                        `).run(item.title, item.year, item.link, item.img, item.misc, item.rating, item.type);
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+            }
             return res.json({ type: 'list', data: results });
         }
     } catch (error) {
@@ -744,6 +883,9 @@ app.post('/api/movies/import', authenticateToken, async (req, res) => {
         const details = await getMovieDetails(url);
         if (!details) return res.status(404).json({ error: 'Could not parse movie details' });
 
+        // Cache the newly imported details
+        saveToCache(details);
+
         const stmt = db.prepare(`
             INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, user_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -782,6 +924,10 @@ app.post('/api/movies/refresh', authenticateToken, async (req, res) => {
             if (!movie.link) continue;
             try {
                 const details = await getMovieDetails(movie.link);
+                
+                // Update details cache
+                saveToCache(details);
+
                 updateStmt.run(
                     details.title, details.year, details.rating, details.description,
                     details.poster_url, details.genres, details.actors, details.director, details.writers,
