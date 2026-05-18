@@ -185,7 +185,7 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                         background: '#151515',
                         border: '1px solid rgba(255, 255, 255, 0.12)',
                         borderRadius: '10px',
-                        maxHeight: '220px',
+                        maxHeight: '432px',
                         overflowY: 'auto',
                         zIndex: 99999,
                         boxShadow: '0 15px 40px rgba(0,0,0,0.7)',
