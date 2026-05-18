@@ -91,7 +91,12 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
         setLoading(true);
         setSearchStreaming(true);
         setSearchStatus('Searching...');
-        if (openFullPage) setFullPageResults(true);
+        if (openFullPage) {
+            setFullPageResults(true);
+        } else {
+            // Auto/dropdown mode: reset full-page mode so dropdown becomes visible
+            setFullPageResults(false);
+        }
 
         const token = localStorage.getItem('token');
         const controller = new AbortController();
