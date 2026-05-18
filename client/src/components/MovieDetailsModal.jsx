@@ -910,7 +910,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             <h4 style={{ color: '#fff', marginTop: 0, marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                                 ⭐ Your Personal Rating
                                             </h4>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '2px' : '6px', flexWrap: 'wrap' }}>
                                                 {[...Array(10)].map((_, i) => {
                                                     const starValue = i + 1;
                                                     const isLit = (hoverRating || userRating) >= starValue;
@@ -923,7 +923,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                             onMouseLeave={() => setHoverRating(0)}
                                                             style={{
                                                                 background: 'none', border: 'none', cursor: 'pointer',
-                                                                fontSize: '1.75rem', padding: '1px', outline: 'none',
+                                                                fontSize: isMobile ? '1.25rem' : '1.75rem', padding: '1px', outline: 'none',
                                                                 color: isLit ? 'var(--accent-gold)' : 'rgba(255,255,255,0.15)',
                                                                 textShadow: isLit ? '0 0 10px rgba(212,175,55,0.4)' : 'none',
                                                                 transition: 'all 0.1s ease'
@@ -934,7 +934,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                     );
                                                 })}
                                                 <span style={{
-                                                    marginLeft: '15px', fontSize: '1.05rem', fontWeight: 'bold',
+                                                    marginLeft: isMobile ? '8px' : '15px', fontSize: isMobile ? '0.9rem' : '1.05rem', fontWeight: 'bold',
                                                     color: hoverRating ? '#fff' : (userRating ? 'var(--accent-gold)' : '#666'),
                                                     whiteSpace: 'nowrap'
                                                 }}>
