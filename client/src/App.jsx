@@ -34,9 +34,28 @@ function App() {
     const [headerScrolled, setHeaderScrolled] = useState(false);
 
     useEffect(() => {
-        const onScroll = () => setHeaderScrolled(window.scrollY > 48);
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
+        const headerEl = document.querySelector('.app-header');
+        const setH = () => {
+            if (headerEl) {
+                document.documentElement.style.setProperty(
+                    '--header-h', headerEl.offsetHeight + 'px'
+                );
+            }
+        };
+        const updateLayout = () => {
+            setHeaderScrolled(window.scrollY > 48);
+            // Set immediately for pre-transition height
+            requestAnimationFrame(setH);
+            // Set again after transition finishes (~410ms) for post-transition height
+            setTimeout(setH, 410);
+        };
+        updateLayout();
+        window.addEventListener('scroll', updateLayout, { passive: true });
+        window.addEventListener('resize', updateLayout, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', updateLayout);
+            window.removeEventListener('resize', updateLayout);
+        };
     }, []);
 
     const handleScrollToMovie = (link) => {
