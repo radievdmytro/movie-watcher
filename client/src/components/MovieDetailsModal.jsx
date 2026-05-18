@@ -21,6 +21,15 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // Block page scrolling behind the modal while open
+    useEffect(() => {
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, []);
+
     // Reviews states
     const [reviews, setReviews] = useState([]);
     const [loadingReviews, setLoadingReviews] = useState(false);
@@ -293,23 +302,28 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 background: 'rgba(0, 0, 0, 0.85)',
                 backdropFilter: 'blur(10px)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                zIndex: 11000, padding: isMobile ? '10px' : '20px',
+                zIndex: 11000, padding: isMobile ? '12px' : '20px',
                 animation: 'fadeIn 0.3s ease-out'
             }}
         >
             <div
                 className="glass-panel"
                 style={{
-                    width: '100%', maxWidth: '900px', maxHeight: isMobile ? '95vh' : '90vh',
-                    overflowY: 'auto', position: 'relative',
+                    width: isMobile ? '94%' : '100%', 
+                    maxWidth: '900px', 
+                    maxHeight: isMobile ? '82vh' : '90vh',
+                    overflowY: 'auto', 
+                    position: 'relative',
                     animation: 'scaleIn 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)',
-                    display: 'flex', flexDirection: 'column',
-                    borderRadius: isMobile ? '20px' : '24px'
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    borderRadius: isMobile ? '20px' : '24px',
+                    border: '1px solid rgba(255, 255, 255, 0.15)'
                 }}
             >
-                {/* Header / Close */}
-                <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', gap: '10px', alignItems: 'center', zIndex: 10 }}>
-                    {onSelectToggle && (
+                {/* Header / Close Button */}
+                <div style={{ position: 'absolute', top: isMobile ? '12px' : '15px', right: isMobile ? '12px' : '15px', display: 'flex', gap: '10px', alignItems: 'center', zIndex: 100 }}>
+                    {!isMobile && onSelectToggle && (
                         <label style={{ 
                             display: 'flex', 
                             alignItems: 'center', 
@@ -334,19 +348,39 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                             {isSelected ? '✓ Selected' : 'Select'}
                         </label>
                     )}
-                    <button
-                        onClick={handleShare}
-                        className="btn btn-ghost"
-                        style={{ padding: '6px 12px', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: copiedShare ? '#03dac6' : '#fff' }}
-                    >
-                        {copiedShare ? '✔ Copied' : '🔗 Share'}
-                    </button>
+                    {!isMobile && (
+                        <button
+                            onClick={handleShare}
+                            className="btn btn-ghost"
+                            style={{ padding: '6px 12px', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: copiedShare ? '#03dac6' : '#fff' }}
+                        >
+                            {copiedShare ? '✔ Copied' : '🔗 Share'}
+                        </button>
+                    )}
                     <button
                         onClick={onClose}
                         className="btn btn-ghost"
-                        style={{ fontSize: '1.5rem', padding: '0 8px', lineHeight: 1 }}
+                        style={{ 
+                            fontSize: '1.2rem', 
+                            padding: 0,
+                            width: isMobile ? '34px' : '38px',
+                            height: isMobile ? '34px' : '38px',
+                            borderRadius: '50%',
+                            background: 'rgba(0, 0, 0, 0.65)',
+                            border: '1px solid rgba(255, 255, 255, 0.25)',
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                        title="Close Modal"
+                        onMouseEnter={e => { e.currentTarget.style.border = '1px solid var(--accent-gold)'; e.currentTarget.style.color = 'var(--accent-gold)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.25)'; e.currentTarget.style.color = '#fff'; }}
                     >
-                        &times;
+                        ✕
                     </button>
                 </div>
 
@@ -529,31 +563,79 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                     }}>🔍 Zoom</div>
                                 </div>
 
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                    <h2 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{movie.title}</h2>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px', paddingRight: '38px' }}>
+                                    <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 700, color: '#fff', lineHeight: 1.25 }}>{movie.title}</h2>
                                     {movie.original_title && (
-                                        <div style={{ fontSize: '0.82rem', color: '#888', fontStyle: 'italic', margin: 0 }}>{movie.original_title}</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#888', fontStyle: 'italic', margin: 0 }}>{movie.original_title}</div>
                                     )}
-                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginTop: '2px' }}>
+                                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginTop: '2px' }}>
                                         <span style={{
                                             background: 'var(--accent-gold)', color: '#000',
-                                            padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.78rem'
+                                            padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem'
                                         }}>
                                             ★ {movie.rating || 'N/A'}
                                         </span>
                                         {movie.user_rating && (
                                             <span style={{
                                                 background: 'rgba(3, 218, 198, 0.2)', color: '#03dac6',
-                                                padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.78rem',
+                                                padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem',
                                                 border: '1px solid rgba(3, 218, 198, 0.3)'
                                             }}>
                                                 👤 ★ {movie.user_rating}
                                             </span>
                                         )}
-                                        <span style={{ color: '#aaa', fontSize: '0.8rem' }}>{movie.year}</span>
+                                        <span style={{ color: '#aaa', fontSize: '0.75rem' }}>{movie.year}</span>
                                     </div>
-                                    <div style={{ color: 'var(--accent-gold)', fontSize: '0.8rem', fontWeight: 500, lineHeight: 1.3 }}>
+                                    <div style={{ color: 'var(--accent-gold)', fontSize: '0.75rem', fontWeight: 500, lineHeight: 1.3 }}>
                                         {movie.genres}
+                                    </div>
+
+                                    {/* Mobile inline Select & Share Actions Row */}
+                                    <div style={{ display: 'flex', gap: '8px', marginTop: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                        {onSelectToggle && (
+                                            <label style={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                gap: '6px', 
+                                                cursor: 'pointer', 
+                                                background: isSelected ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.04)', 
+                                                border: isSelected ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.08)', 
+                                                padding: '5px 10px', 
+                                                borderRadius: '6px', 
+                                                color: isSelected ? 'var(--accent-gold)' : '#fff', 
+                                                fontSize: '0.78rem', 
+                                                transition: 'all 0.2s',
+                                                userSelect: 'none',
+                                                fontWeight: '600'
+                                            }}>
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={isSelected} 
+                                                    onChange={onSelectToggle} 
+                                                    style={{ accentColor: 'var(--accent-gold)', width: '13px', height: '13px', cursor: 'pointer' }}
+                                                />
+                                                {isSelected ? '✓ Selected' : 'Select'}
+                                            </label>
+                                        )}
+                                        <button
+                                            onClick={handleShare}
+                                            className="btn"
+                                            style={{ 
+                                                padding: '5px 10px', 
+                                                fontSize: '0.78rem', 
+                                                borderRadius: '6px', 
+                                                background: 'rgba(255,255,255,0.04)', 
+                                                border: '1px solid rgba(255,255,255,0.08)',
+                                                color: copiedShare ? '#03dac6' : '#fff',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                            }}
+                                        >
+                                            {copiedShare ? '✔ Copied' : '🔗 Share'}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -1073,6 +1155,8 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                             flexWrap: 'wrap', 
                             marginTop: 'auto', 
                             paddingTop: '15px', 
+                            paddingBottom: isMobile ? '22px' : '15px',
+                            marginBottom: isMobile ? '10px' : '0px',
                             borderTop: '1px solid rgba(255,255,255,0.05)',
                             width: '100%'
                         }}>
