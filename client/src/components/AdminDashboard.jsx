@@ -272,7 +272,7 @@ function AdminDashboard({ onBack }) {
 
                     {/* Stats Grid */}
                     {stats && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                             <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                                 <div style={{ fontSize: '2.5rem', color: 'var(--accent-gold)', fontWeight: 'bold', marginBottom: '5px' }}>
                                     {stats.totalUsers}
@@ -286,7 +286,7 @@ function AdminDashboard({ onBack }) {
                                     {stats.totalMovies}
                                 </div>
                                 <div style={{ color: '#888', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    Total Movies
+                                    Total Library Movies
                                 </div>
                             </div>
                             <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
@@ -295,6 +295,14 @@ function AdminDashboard({ onBack }) {
                                 </div>
                                 <div style={{ color: '#888', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                     Total Collections
+                                </div>
+                            </div>
+                            <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                                <div style={{ fontSize: '2.5rem', color: '#e5c158', fontWeight: 'bold', marginBottom: '5px' }}>
+                                    {stats.totalCached || 0}
+                                </div>
+                                <div style={{ color: '#888', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    Global Cached (Rezka)
                                 </div>
                             </div>
                         </div>

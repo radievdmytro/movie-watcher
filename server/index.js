@@ -1541,7 +1541,8 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, (req, res) => {
         const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
         const totalMovies = db.prepare('SELECT COUNT(*) as count FROM movies WHERE deleted_at IS NULL').get().count;
         const totalCollections = db.prepare('SELECT COUNT(*) as count FROM collections').get().count;
-        res.json({ totalUsers, totalMovies, totalCollections });
+        const totalCached = db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count;
+        res.json({ totalUsers, totalMovies, totalCollections, totalCached });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
