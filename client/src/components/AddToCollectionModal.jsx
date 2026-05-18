@@ -158,7 +158,7 @@ function AddToCollectionModal({ movieIds, movies = [], onClose, onSuccess }) {
 
     return ReactDOM.createPortal(
         <div
-            onClick={handleBackdropClick}
+            onMouseDown={handleBackdropClick}
             style={{
                 position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                 background: 'rgba(0, 0, 0, 0.85)',

@@ -9,11 +9,11 @@ function ConfirmModal({ title, message, onConfirm, onCancel, confirmText = 'Conf
             backgroundColor: 'rgba(0,0,0,0.8)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 99999
-        }} onClick={onCancel}>
+        }} onMouseDown={onCancel}>
             <div className="glass-panel" style={{
                 padding: '30px', maxWidth: '500px', width: '90%', textAlign: 'center',
                 border: '1px solid rgba(255,255,255,0.1)'
-            }} onClick={(e) => e.stopPropagation()}>
+            }} onMouseDown={(e) => e.stopPropagation()}>
                 <h3 style={{ fontSize: '1.5rem', marginBottom: '15px' }}>{title}</h3>
                 <div style={{ marginBottom: '25px', color: '#ccc' }}>{message}</div>
 
