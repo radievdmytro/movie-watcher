@@ -36,6 +36,9 @@ const initDb = () => {
       actors TEXT,
       director TEXT,
       writers TEXT,
+      country TEXT,
+      duration TEXT,
+      voice_acting TEXT,
       type TEXT DEFAULT 'movie',
       status TEXT DEFAULT 'want_to_watch',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -132,6 +135,9 @@ const initDb = () => {
       actors TEXT,
       director TEXT,
       writers TEXT,
+      country TEXT,
+      duration TEXT,
+      voice_acting TEXT,
       type TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -205,6 +211,16 @@ const initDb = () => {
   try {
     db.exec("ALTER TABLE movies ADD COLUMN type TEXT DEFAULT 'movie'");
   } catch (e) { }
+
+  // Migrations for country, duration, voice_acting in movies
+  try { db.exec("ALTER TABLE movies ADD COLUMN country TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE movies ADD COLUMN duration TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE movies ADD COLUMN voice_acting TEXT"); } catch (e) { }
+
+  // Migrations for country, duration, voice_acting in scraped_movies_cache
+  try { db.exec("ALTER TABLE scraped_movies_cache ADD COLUMN country TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE scraped_movies_cache ADD COLUMN duration TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE scraped_movies_cache ADD COLUMN voice_acting TEXT"); } catch (e) { }
 
   // --- ENTERPRISE DATABASE INTEGRITY AUTO-CLEANUP ---
   console.log('🔄 Running database relation integrity checks...');

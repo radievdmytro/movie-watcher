@@ -231,6 +231,12 @@ async function getMovieDetails(url) {
         const yearMatch = yearRow ? yearRow.match(/\d{4}/) : title.match(/\d{4}/);
         const year = yearMatch ? parseInt(yearMatch[0]) : null;
 
+        const country = getTableValue('Страна');
+        const duration = getTableValue('Время');
+        
+        let voice_acting = getTableValue('В переводе');
+        if (!voice_acting) voice_acting = getTableValue('Озвучка');
+
         let type = url.includes('/series/') ? 'series' : 'movie';
 
         if (url.includes('/cartoons/') && !genres.toLowerCase().includes('мульт')) {
@@ -252,6 +258,9 @@ async function getMovieDetails(url) {
             actors,
             director,
             writers,
+            country,
+            duration,
+            voice_acting,
             type
         };
 

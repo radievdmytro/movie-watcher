@@ -287,8 +287,8 @@ const saveToCache = (details) => {
     if (!details || !details.link) return;
     try {
         db.prepare(`
-            INSERT INTO scraped_movies_cache (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            INSERT INTO scraped_movies_cache (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, type, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(link) DO UPDATE SET
                 title = excluded.title,
                 original_title = excluded.original_title,
@@ -300,11 +300,15 @@ const saveToCache = (details) => {
                 actors = excluded.actors,
                 director = excluded.director,
                 writers = excluded.writers,
+                country = excluded.country,
+                duration = excluded.duration,
+                voice_acting = excluded.voice_acting,
                 type = excluded.type,
                 updated_at = CURRENT_TIMESTAMP
         `).run(
             details.title, details.original_title, details.year, details.link, details.rating,
             details.description, details.poster_url, details.genres, details.actors, details.director, details.writers,
+            details.country, details.duration, details.voice_acting,
             details.type
         );
     } catch (e) {
@@ -656,13 +660,13 @@ app.post('/api/movies', authenticateToken, (req, res) => {
         const history = db.prepare('SELECT user_rating, notes, notes_public FROM user_movie_history WHERE user_id = ? AND movie_link = ?').get(req.user.id, link);
 
         const stmt = db.prepare(`
-          INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, user_id, user_rating, notes, notes_public)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, type, user_id, user_rating, notes, notes_public)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const info = stmt.run(
             title, original_title, year, link, rating, description, poster_url,
-            genres, actors, director, writers, type || 'movie', req.user.id,
+            genres, actors, director, writers, req.body.country || null, req.body.duration || null, req.body.voice_acting || null, type || 'movie', req.user.id,
             history?.user_rating ?? null,
             history?.notes ?? null,
             history?.notes_public ?? 0
@@ -1005,13 +1009,14 @@ app.post('/api/movies/import', authenticateToken, async (req, res) => {
         saveToCache(details);
 
         const stmt = db.prepare(`
-            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, user_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, type, user_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const info = stmt.run(
             details.title, details.original_title, details.year, url, details.rating,
             details.description, details.poster_url, details.genres, details.actors, details.director, details.writers,
+            details.country, details.duration, details.voice_acting,
             details.type || 'movie', req.user.id
         );
 
@@ -1481,8 +1486,8 @@ app.post('/api/collections/:id/clone', authenticateToken, (req, res) => {
 
         const insertColl = db.prepare('INSERT INTO collections (title, description, user_id, share_token) VALUES (?, ?, ?, ?)');
         const insertMovie = db.prepare(`
-            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type, user_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, type, user_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         const checkMovie = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
         const restoreMovie = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?');
@@ -1508,6 +1513,7 @@ app.post('/api/collections/:id/clone', authenticateToken, (req, res) => {
                     const movieInfo = insertMovie.run(
                         m.title, m.original_title, m.year, m.link, m.rating,
                         m.description, m.poster_url, m.genres, m.actors, m.director, m.writers,
+                        m.country, m.duration, m.voice_acting,
                         m.type || 'movie', req.user.id
                     );
                     targetMovieId = movieInfo.lastInsertRowid;
