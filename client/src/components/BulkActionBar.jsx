@@ -102,15 +102,76 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
         }
     }, [selectedCount]);
 
+    const [barWidth, setBarWidth] = useState(450);
+    const [dragBounds, setDragBounds] = useState(null);
+
+    // Measure actual bar width
+    useEffect(() => {
+        if (nodeRef.current) {
+            setBarWidth(nodeRef.current.offsetWidth);
+        }
+    }, [selectedCount, onCompare, isVisible]);
+
     if (!isVisible && selectedCount === 0) return null;
 
     const activeAnchor = anchor || lastAnchor;
-    const posTop = activeAnchor ? `${activeAnchor.y}px` : '85px';
-    const posLeft = activeAnchor ? `${activeAnchor.x}px` : '50%';
+    let clampedLeft = activeAnchor ? activeAnchor.x : (window.innerWidth / 2);
+    let clampedTop = activeAnchor ? activeAnchor.y : 85;
 
     const show = selectedCount > 0;
     const compareMax = isMobile ? 3 : 4;
     const showCompare = !isTrashMode && selectedCount >= 2 && selectedCount <= compareMax && onCompare;
+
+    if (activeAnchor && !isMobile) {
+        const contentMaxWidth = 1200;
+        const padding = 20;
+        const width = window.innerWidth;
+        const contentLeft = Math.max(padding, (width - contentMaxWidth) / 2 + padding);
+        const contentRight = Math.min(width - padding, width - (width - contentMaxWidth) / 2 - padding);
+
+        // The actual left coordinate is clampedLeft + 25 (due to translate(25px, -50%))
+        // We want: contentLeft <= clampedLeft + 25
+        // We want: clampedLeft + 25 + barWidth <= contentRight
+        const minL = contentLeft - 25;
+        const maxL = contentRight - 25 - barWidth;
+        
+        clampedLeft = Math.max(minL, Math.min(maxL, clampedLeft));
+        clampedTop = Math.max(20, Math.min(window.innerHeight - 80, clampedTop));
+    }
+
+    // Update drag boundary constraints dynamically relative to initial position
+    useEffect(() => {
+        if (isMobile) {
+            setDragBounds(null);
+            return;
+        }
+        const updateDragBounds = () => {
+            const width = window.innerWidth;
+            const contentMaxWidth = 1200;
+            const padding = 20;
+            const contentLeft = Math.max(padding, (width - contentMaxWidth) / 2 + padding);
+            const contentRight = Math.min(width - padding, width - (width - contentMaxWidth) / 2 - padding);
+            
+            const currentLeft = clampedLeft + 25;
+            const minX = contentLeft - currentLeft;
+            const maxX = contentRight - currentLeft - barWidth;
+            
+            setDragBounds({
+                left: minX,
+                right: maxX,
+                top: -clampedTop + 20,
+                bottom: window.innerHeight - clampedTop - 80
+            });
+        };
+        
+        updateDragBounds();
+        window.addEventListener('resize', updateDragBounds);
+        return () => window.removeEventListener('resize', updateDragBounds);
+    }, [clampedLeft, clampedTop, barWidth, isMobile]);
+
+    const posTop = `${clampedTop}px`;
+    const posLeft = `${clampedLeft}px`;
+
     const translate = activeAnchor ? 'translate(25px, -50%)' : 'translateX(-50%)';
     const scale = show ? 'scale(1)' : 'scale(0.1)';
     const barTransition = `all ${COLLAPSE_MS}ms cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.3s cubic-bezier(0.165, 0.84, 0.44, 1)`;
@@ -252,7 +313,7 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
     }
 
     return (
-        <Draggable nodeRef={nodeRef} handle=".drag-handle">
+        <Draggable nodeRef={nodeRef} handle=".drag-handle" bounds={dragBounds || undefined}>
             <div 
                 ref={nodeRef}
                 style={styleDesktop}
