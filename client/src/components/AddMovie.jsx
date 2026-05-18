@@ -502,7 +502,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     const inputLines = query.split(/\n/).length;
 
     return (
-        <div className="add-movie-root" style={{ marginBottom: '30px', position: 'relative', zIndex: 200 }} ref={containerRef}>
+        <div className="add-movie-root" style={{ marginBottom: isMobile ? '10px' : '12px', position: 'relative', zIndex: 200 }} ref={containerRef}>
             {/* Quick Access Menu Row - Placed BEFORE the search bar */}
             <div style={{
                 display: 'flex',
