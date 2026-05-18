@@ -589,6 +589,13 @@ input {
     vertical-align: middle;
   }
 
+  /* Force logo back to a single row on all mobile views */
+  .app-header .logo {
+    flex-direction: row !important;
+    gap: 6px;
+    font-size: 1.35rem !important;
+  }
+
   /* ── COMPACT: header layout tightens smoothly ── */
   .app-header.header-scrolled .header-content {
     padding-top: 5px !important;
