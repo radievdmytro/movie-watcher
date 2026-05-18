@@ -49,14 +49,18 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const filteredOptions = (options || []).filter(opt => 
-        opt && opt.toLowerCase().includes(inputValue.toLowerCase()) && !selected.includes(opt)
-    );
+    const filteredOptions = (options || []).filter(opt => {
+        const name = typeof opt === 'string' ? opt : opt?.name;
+        return name && name.toLowerCase().includes(inputValue.toLowerCase()) && !selected.includes(name);
+    });
 
     const handleSelect = (opt) => {
-        onChange([...selected, opt]);
-        setInputValue('');
-        setIsOpen(false);
+        const name = typeof opt === 'string' ? opt : opt?.name;
+        if (name) {
+            onChange([...selected, name]);
+            setInputValue('');
+            setIsOpen(false);
+        }
     };
 
     const handleRemove = (opt) => {
@@ -168,32 +172,41 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                     }}
                 >
                     {filteredOptions.length > 0 ? (
-                        filteredOptions.slice(0, 50).map(opt => (
-                            <div
-                                key={opt}
-                                onClick={() => handleSelect(opt)}
-                                style={{
-                                    padding: '8px 12px',
-                                    color: '#ccc',
-                                    fontSize: '0.85rem',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                                    e.currentTarget.style.color = '#fff';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'transparent';
-                                    e.currentTarget.style.color = '#ccc';
-                                }}
-                            >
-                                <span>{opt}</span>
-                            </div>
-                        ))
+                        filteredOptions.slice(0, 50).map(opt => {
+                            const name = typeof opt === 'string' ? opt : opt?.name;
+                            const count = typeof opt === 'string' ? null : opt?.count;
+                            return (
+                                <div
+                                    key={name}
+                                    onClick={() => handleSelect(opt)}
+                                    style={{
+                                        padding: '8px 12px',
+                                        color: '#ccc',
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                        e.currentTarget.style.color = '#fff';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'transparent';
+                                        e.currentTarget.style.color = '#ccc';
+                                    }}
+                                >
+                                    <span>{name}</span>
+                                    {count !== null && (
+                                        <span style={{ fontSize: '0.75rem', color: accentColor, opacity: 0.8 }}>
+                                            {count} {count === 1 ? 'movie' : 'movies'}
+                                        </span>
+                                    )}
+                                </div>
+                            );
+                        })
                     ) : (
                         <div 
                             onClick={() => {

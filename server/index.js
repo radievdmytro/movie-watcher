@@ -651,7 +651,7 @@ app.get('/api/directors', authenticateToken, (req, res) => {
         });
         const sortedDirectors = Object.entries(directorCounts)
             .sort((a, b) => b[1] - a[1])
-            .map(([director]) => director);
+            .map(([name, count]) => ({ name, count }));
 
         res.json(sortedDirectors);
     } catch (error) {
@@ -677,7 +677,7 @@ app.get('/api/actors', authenticateToken, (req, res) => {
         });
         const sortedActors = Object.entries(actorCounts)
             .sort((a, b) => b[1] - a[1])
-            .map(([actor]) => actor);
+            .map(([name, count]) => ({ name, count }));
 
         res.json(sortedActors);
     } catch (error) {
