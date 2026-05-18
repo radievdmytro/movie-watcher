@@ -1046,14 +1046,14 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        animation: 'fadeIn 0.25s ease', padding: isMobile ? '40px 10px' : '20px'
+                        animation: 'fadeIn 0.25s ease', padding: isMobile ? '80px 10px' : '20px'
                     }}
                 >
                     <div 
                         onClick={(e) => e.stopPropagation()}
                         style={{
                             width: '100%', maxWidth: '840px',
-                            maxHeight: isMobile ? 'calc(100vh - 80px)' : '88vh',
+                            maxHeight: isMobile ? 'calc(100vh - 160px)' : '88vh',
                             background: 'rgba(18,18,18,0.99)', borderRadius: isMobile ? '12px' : '16px',
                             border: isMobile ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.09)',
                             boxShadow: isMobile ? '0 0 25px rgba(212, 175, 55, 0.4)' : '0 24px 60px rgba(0,0,0,0.8)',
