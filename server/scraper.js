@@ -273,26 +273,34 @@ async function getMovieDetails(url) {
     }
 }
 
-async function getHdrezkaComments(url) {
-    if (!url) return [];
+async function getHdrezkaComments(url, page = 1) {
+    if (!url) return { comments: [], hasMore: false };
+    const PAGE_SIZE = 25;
     try {
         const qs = require('querystring');
         // Fetch the page HTML first to get the news_id
-        const html = await smartFetch(url);
-        if (!html) return [];
+        const { data: html } = await requestWithRetry(url);
+        if (!html) return { comments: [], hasMore: false };
         
         const newsIdMatch = html.match(/news_id\s*=\s*(\d+)/) || html.match(/data-id="(\d+)"/);
         const newsId = newsIdMatch ? newsIdMatch[1] : null;
-        if (!newsId) return [];
+        if (!newsId) {
+            console.warn('[Scraper] Could not extract news_id from page:', url);
+            return { comments: [], hasMore: false };
+        }
 
         const parsedUrl = new URL(url);
         const origin = parsedUrl.origin;
         const randomUA = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 
+        // cstart is 1-based page number in HDRezka's API
+        const cstart = page;
+        console.log(`[Scraper] Fetching comments page ${page} (cstart=${cstart}) for news_id=${newsId}`);
+
         // Fetch comments HTML via their AJAX endpoint
         const commentsRes = await axios.post(`${origin}/ajax/get_comments/?t=${Date.now()}`, qs.stringify({
             news_id: newsId,
-            cstart: 1,
+            cstart,
             type: 0,
             comment_id: 0,
             skin: 'hdrezka'
@@ -302,13 +310,20 @@ async function getHdrezkaComments(url) {
                 'User-Agent': randomUA,
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                 'X-Requested-With': 'XMLHttpRequest',
-                'Referer': url
+                'Referer': url,
+                'Origin': origin
             },
-            timeout: 10000
+            timeout: 15000
         });
 
-        const commentsHtml = commentsRes.data.comments;
-        if (!commentsHtml) return [];
+        const responseData = commentsRes.data;
+        console.log('[Scraper] Comments response keys:', Object.keys(responseData || {}));
+
+        const commentsHtml = responseData.comments || responseData.html || responseData.data;
+        if (!commentsHtml) {
+            console.warn('[Scraper] No comments HTML in response:', JSON.stringify(responseData).slice(0, 200));
+            return { comments: [], hasMore: false };
+        }
 
         const $ = cheerio.load(commentsHtml);
         const comments = [];
@@ -316,14 +331,12 @@ async function getHdrezkaComments(url) {
         $('.comments-tree-item').each((i, el) => {
             const author = $(el).find('.name, .author, span.name').first().text().trim();
             const date = $(el).find('.date').first().text().trim();
-            // Get inner text and clean it up (replace <br> with newlines if needed, but .text() usually strips tags)
             const text = $(el).find('div.text').first().text().trim() || $(el).find('div.message').first().text().trim();
             const avatar = $(el).find('.ava img').attr('src');
             
-            // HDRezka returns some system comments or empty ones occasionally
             if (author && text) {
                 comments.push({
-                    id: $(el).attr('data-id') || i,
+                    id: $(el).attr('data-id') || `${page}_${i}`,
                     author,
                     date,
                     text,
@@ -332,10 +345,16 @@ async function getHdrezkaComments(url) {
             }
         });
 
-        return comments;
+        console.log(`[Scraper] Parsed ${comments.length} comments from page ${page}`);
+
+        // HDRezka paginates by PAGE_SIZE (25) per cstart page
+        // If we got a full page, there are likely more
+        const hasMore = comments.length >= PAGE_SIZE;
+
+        return { comments, hasMore, page };
     } catch (e) {
         console.error('[Scraper] Failed to fetch comments:', e.message);
-        return [];
+        return { comments: [], hasMore: false };
     }
 }
 

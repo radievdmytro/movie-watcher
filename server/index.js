@@ -570,15 +570,16 @@ app.get('/api/movies/category/:filter', authenticateToken, async (req, res) => {
 // ==========================================
 
 // GET Active Movies
-// Get HDRezka comments directly via URL
+// Get HDRezka comments directly via URL (paginated)
 app.get('/api/hdrezka-comments', async (req, res) => {
     try {
-        const { url } = req.query;
+        const { url, page } = req.query;
         if (!url) {
             return res.status(400).json({ error: 'Missing url parameter' });
         }
-        const comments = await getHdrezkaComments(url);
-        res.json(comments);
+        const pageNum = parseInt(page) || 1;
+        const result = await getHdrezkaComments(url, pageNum);
+        res.json(result);
     } catch (err) {
         console.error('Failed to get hdrezka comments:', err);
         res.status(500).json({ error: 'Failed to fetch comments' });

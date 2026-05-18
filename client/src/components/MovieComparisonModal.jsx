@@ -81,52 +81,100 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
     };
 
     const highestRatingIdx = getHighestRatingIdx();
+    const panelMaxWidth = movieLinks.length <= 2 ? '900px' : movieLinks.length === 3 ? '1300px' : '1600px';
 
     return (
         <div style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(12px)', zIndex: 10000,
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            zIndex: 10000,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '20px', animation: 'fadeIn 0.25s ease'
+            padding: isMobile ? '12px' : '20px',
+            animation: 'fadeIn 0.3s ease-out'
         }} onMouseDown={onClose}>
-            <div style={{
-                background: 'rgba(20, 20, 20, 0.95)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '24px',
-                width: '100%',
-                maxWidth: moviesData.length <= 2 ? '900px' : moviesData.length === 3 ? '1300px' : '1600px',
-                maxHeight: '92vh',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '0 25px 50px rgba(0,0,0,0.6)',
-                overflow: 'hidden',
-                animation: 'scaleUp 0.3s cubic-bezier(0.165,0.84,0.44,1)'
-            }} onMouseDown={e => e.stopPropagation()}>
-                {/* Header */}
-                <div style={{
-                    padding: '20px 24px',
-                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+            <div
+                onMouseDown={(e) => e.stopPropagation()}
+                style={{
+                    position: 'relative',
+                    width: isMobile ? '94%' : '100%',
+                    maxWidth: panelMaxWidth,
+                    maxHeight: isMobile ? '82vh' : '92vh',
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    background: 'rgba(255,255,255,0.02)'
+                    flexDirection: 'column',
+                    animation: 'scaleIn 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)',
+                }}
+            >
+                <div style={{
+                    position: 'absolute',
+                    top: isMobile ? '12px' : '15px',
+                    right: isMobile ? '12px' : '15px',
+                    zIndex: 100,
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '1.4rem' }}>⚖️</span>
-                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, color: '#fff' }}>
-                            Compare Movies ({movieLinks.length})
-                        </h3>
-                    </div>
-                    <button onClick={onClose} style={{
-                        background: 'transparent', border: 'none', color: '#888',
-                        fontSize: '1.5rem', cursor: 'pointer', transition: 'color 0.2s'
-                    }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = '#888'}>
-                        &times;
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="btn btn-ghost"
+                        style={{
+                            fontSize: '1.2rem',
+                            padding: 0,
+                            width: isMobile ? '34px' : '38px',
+                            height: isMobile ? '34px' : '38px',
+                            borderRadius: '50%',
+                            background: 'rgba(0, 0, 0, 0.65)',
+                            border: '1px solid rgba(255, 255, 255, 0.25)',
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                        }}
+                        title="Close"
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.border = '1px solid var(--accent-gold)';
+                            e.currentTarget.style.color = 'var(--accent-gold)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.25)';
+                            e.currentTarget.style.color = '#fff';
+                        }}
+                    >
+                        ✕
                     </button>
                 </div>
 
-                {/* Content */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+                <div
+                    className="glass-panel"
+                    style={{
+                        width: '100%',
+                        maxHeight: 'inherit',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        borderRadius: isMobile ? '20px' : '24px',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                    }}
+                >
+                <div style={{
+                    padding: isMobile ? '16px 52px 16px 18px' : '20px 56px 20px 24px',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: 'rgba(255,255,255,0.02)',
+                    flexShrink: 0,
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '1.4rem' }}>⚖️</span>
+                        <h3 style={{ margin: 0, fontSize: isMobile ? '1.05rem' : '1.25rem', fontWeight: 600, color: '#fff' }}>
+                            Compare Movies ({movieLinks.length})
+                        </h3>
+                    </div>
+                </div>
+
+                <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '24px' }}>
                     {loading ? (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '15px' }}>
                             <div style={{ width: '40px', height: '40px', border: '3px solid rgba(212,175,55,0.1)', borderTopColor: 'var(--accent-gold)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
@@ -297,15 +345,16 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                         </div>
                     )}
                 </div>
+                </div>
             </div>
             <style dangerouslySetInnerHTML={{__html: `
                 @keyframes fadeIn {
                     from { opacity: 0; }
                     to { opacity: 1; }
                 }
-                @keyframes scaleUp {
-                    from { transform: scale(0.95); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
+                @keyframes scaleIn {
+                    from { transform: scale(0.9) translateY(20px); opacity: 0; }
+                    to { transform: scale(1) translateY(0); opacity: 1; }
                 }
                 @keyframes spin {
                     0% { transform: rotate(0deg); }

@@ -39,9 +39,13 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     const [editingReviewContent, setEditingReviewContent] = useState('');
 
     // HDRezka comments states
-    const [hdrezkaComments, setHdrezkaComments] = useState(null);
+    const [hdrezkaComments, setHdrezkaComments] = useState([]);
     const [loadingHdrezka, setLoadingHdrezka] = useState(false);
     const [showHdrezkaComments, setShowHdrezkaComments] = useState(false);
+    const [hdrezkaPage, setHdrezkaPage] = useState(1);
+    const [hdrezkaHasMore, setHdrezkaHasMore] = useState(true);
+    const [hdrezkaLoadingMore, setHdrezkaLoadingMore] = useState(false);
+    const hdrezkaScrollRef = useState(null);
 
     // Inline feedback states
     const [notesFeedback, setNotesFeedback] = useState({ type: '', message: '' });
@@ -62,20 +66,48 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
         }
     };
 
-    const loadHdrezkaComments = async () => {
+    const loadHdrezkaComments = async (page = 1) => {
         if (!movie.link) return;
-        setLoadingHdrezka(true);
+        if (page === 1) {
+            setLoadingHdrezka(true);
+            setHdrezkaComments([]);
+            setHdrezkaPage(1);
+            setHdrezkaHasMore(true);
+        } else {
+            setHdrezkaLoadingMore(true);
+        }
         try {
-            const res = await fetch(`/api/hdrezka-comments?url=${encodeURIComponent(movie.link)}`);
+            const res = await fetch(`/api/hdrezka-comments?url=${encodeURIComponent(movie.link)}&page=${page}`);
             if (res.ok) {
                 const data = await res.json();
-                setHdrezkaComments(data);
+                const newComments = data.comments || [];
+                const hasMore = data.hasMore || false;
+                setHdrezkaComments(prev => page === 1 ? newComments : [...(prev || []), ...newComments]);
+                setHdrezkaHasMore(hasMore);
+                setHdrezkaPage(page);
                 setShowHdrezkaComments(true);
+            } else {
+                console.error('Failed to load hdrezka comments: HTTP', res.status);
             }
         } catch (err) {
             console.error('Failed to load hdrezka comments:', err);
         } finally {
             setLoadingHdrezka(false);
+            setHdrezkaLoadingMore(false);
+        }
+    };
+
+    const loadMoreHdrezkaComments = () => {
+        if (!hdrezkaLoadingMore && hdrezkaHasMore) {
+            loadHdrezkaComments(hdrezkaPage + 1);
+        }
+    };
+
+    const handleHdrezkaScroll = (e) => {
+        const el = e.currentTarget;
+        const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+        if (nearBottom && hdrezkaHasMore && !hdrezkaLoadingMore && !loadingHdrezka) {
+            loadMoreHdrezkaComments();
         }
     };
 
@@ -1123,34 +1155,44 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             )}
                                         </div>
 
-                                        {showHdrezkaComments && hdrezkaComments && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
-                                                {hdrezkaComments.length === 0 ? (
+                                        {showHdrezkaComments && hdrezkaComments !== null && (
+                                            <div 
+                                                onScroll={handleHdrezkaScroll}
+                                                style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '450px', overflowY: 'auto', paddingRight: '5px' }}
+                                            >
+                                                {hdrezkaComments.length === 0 && !loadingHdrezka ? (
                                                     <div style={{ color: '#666', fontStyle: 'italic', padding: '10px 0' }}>No external comments found.</div>
                                                 ) : (
                                                     hdrezkaComments.map(comment => (
                                                         <div key={comment.id} style={{
-                                                            padding: '15px', borderRadius: '8px',
+                                                            padding: '12px', borderRadius: '8px',
                                                             background: 'rgba(0,0,0,0.2)',
                                                             border: '1px solid rgba(255,255,255,0.03)'
                                                         }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                                                                 <img 
                                                                     src={comment.avatar || 'https://static.hdrezka.ac/templates/hdrezka/images/noavatar.png'} 
                                                                     alt={comment.author} 
-                                                                    style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} 
+                                                                    style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} 
                                                                     onError={(e) => { e.target.src = 'https://static.hdrezka.ac/templates/hdrezka/images/noavatar.png' }}
                                                                 />
                                                                 <div>
-                                                                    <div style={{ color: '#ddd', fontWeight: 'bold', fontSize: '0.9rem' }}>{comment.author}</div>
-                                                                    <div style={{ color: '#666', fontSize: '0.75rem' }}>{comment.date}</div>
+                                                                    <div style={{ color: '#ddd', fontWeight: 'bold', fontSize: '0.85rem' }}>{comment.author}</div>
+                                                                    <div style={{ color: '#666', fontSize: '0.72rem' }}>{comment.date}</div>
                                                                 </div>
                                                             </div>
-                                                            <div style={{ color: '#bbb', fontSize: '0.9rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                                                            <div style={{ color: '#bbb', fontSize: '0.85rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
                                                                 {comment.text}
                                                             </div>
                                                         </div>
                                                     ))
+                                                )}
+                                                {/* Load More indicator */}
+                                                {hdrezkaLoadingMore && (
+                                                    <div style={{ textAlign: 'center', color: '#888', padding: '10px', fontSize: '0.8rem' }}>⏳ Loading more...</div>
+                                                )}
+                                                {!hdrezkaHasMore && hdrezkaComments.length > 0 && (
+                                                    <div style={{ textAlign: 'center', color: '#555', padding: '10px', fontSize: '0.75rem', fontStyle: 'italic' }}>All comments loaded</div>
                                                 )}
                                             </div>
                                         )}
