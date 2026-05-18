@@ -802,6 +802,32 @@ input {
   }
 }
 
+/* Compact mobile filters grid */
+@media (max-width: 768px) {
+  .filters-grid {
+    gap: 12px !important;
+  }
+  
+  .desktop-genres-row {
+    display: none !important;
+  }
+  
+  .mobile-genres-row {
+    display: flex !important;
+  }
+  
+  .mobile-hide-histogram {
+    display: none !important;
+  }
+  
+  .mobile-row-layout {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+}
+
 /* ==========================================
    DROPDOWNS — always rendered above everything,
    never clipped by parent overflow

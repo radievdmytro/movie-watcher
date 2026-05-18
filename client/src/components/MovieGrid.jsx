@@ -888,64 +888,180 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     }}>
                         {/* Genre Selection */}
                         <div style={{ gridColumn: '1 / -1' }}>
-                            <div style={{
-                                fontSize: '0.85rem', color: '#888', marginBottom: '10px',
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                            }}>
-                                <span>Genres</span>
-                                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px' }}>
-                                    <button
-                                        onClick={() => setFilterGenreMode('include')}
-                                        style={{
-                                            padding: '2px 10px', fontSize: '0.7rem', borderRadius: '13px', border: 'none', cursor: 'pointer',
-                                            background: filterGenreMode === 'include' ? 'var(--accent-gold)' : 'transparent',
-                                            color: filterGenreMode === 'include' ? '#000' : '#888',
-                                            transition: 'all 0.2s'
-                                        }}
-                                    >Include</button>
-                                    <button
-                                        onClick={() => setFilterGenreMode('exclude')}
-                                        style={{
-                                            padding: '2px 10px', fontSize: '0.7rem', borderRadius: '13px', border: 'none', cursor: 'pointer',
-                                            background: filterGenreMode === 'exclude' ? 'var(--danger)' : 'transparent',
-                                            color: filterGenreMode === 'exclude' ? '#fff' : '#888',
-                                            transition: 'all 0.2s'
-                                        }}
-                                    >Exclude</button>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {(showAllGenres ? availableGenres : availableGenres.slice(0, 15)).map(genre => {
-                                    const isSelected = filterGenres.includes(genre);
-                                    return (
+                            {/* Desktop Genres */}
+                            <div className="desktop-genres-row">
+                                <div style={{
+                                    fontSize: '0.85rem', color: '#888', marginBottom: '10px',
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                }}>
+                                    <span>Genres</span>
+                                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px' }}>
                                         <button
-                                            key={genre}
-                                            onClick={() => setFilterGenres(isSelected ? filterGenres.filter(g => g !== genre) : [...filterGenres, genre])}
+                                            onClick={() => setFilterGenreMode('include')}
+                                            style={{
+                                                padding: '2px 10px', fontSize: '0.7rem', borderRadius: '13px', border: 'none', cursor: 'pointer',
+                                                background: filterGenreMode === 'include' ? 'var(--accent-gold)' : 'transparent',
+                                                color: filterGenreMode === 'include' ? '#000' : '#888',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >Include</button>
+                                        <button
+                                            onClick={() => setFilterGenreMode('exclude')}
+                                            style={{
+                                                padding: '2px 10px', fontSize: '0.7rem', borderRadius: '13px', border: 'none', cursor: 'pointer',
+                                                background: filterGenreMode === 'exclude' ? 'var(--danger)' : 'transparent',
+                                                color: filterGenreMode === 'exclude' ? '#fff' : '#888',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >Exclude</button>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {(showAllGenres ? availableGenres : availableGenres.slice(0, 15)).map(genre => {
+                                        const isSelected = filterGenres.includes(genre);
+                                        return (
+                                            <button
+                                                key={genre}
+                                                onClick={() => setFilterGenres(isSelected ? filterGenres.filter(g => g !== genre) : [...filterGenres, genre])}
+                                                style={{
+                                                    padding: '4px 12px', borderRadius: '15px', fontSize: '0.8rem', cursor: 'pointer',
+                                                    background: isSelected ? (filterGenreMode === 'include' ? 'var(--accent-gold)' : 'var(--danger)') : 'rgba(255,255,255,0.05)',
+                                                    color: isSelected ? (filterGenreMode === 'include' ? '#000' : '#fff') : '#888',
+                                                    border: isSelected ? `1px solid ${filterGenreMode === 'include' ? 'var(--accent-gold)' : 'var(--danger)'}` : '1px solid rgba(255,255,255,0.1)',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                {genre}
+                                            </button>
+                                        );
+                                    })}
+                                    {availableGenres.length > 15 && (
+                                        <button
+                                            onClick={() => setShowAllGenres(!showAllGenres)}
                                             style={{
                                                 padding: '4px 12px', borderRadius: '15px', fontSize: '0.8rem', cursor: 'pointer',
-                                                background: isSelected ? (filterGenreMode === 'include' ? 'var(--accent-gold)' : 'var(--danger)') : 'rgba(255,255,255,0.05)',
-                                                color: isSelected ? (filterGenreMode === 'include' ? '#000' : '#fff') : '#888',
-                                                border: isSelected ? `1px solid ${filterGenreMode === 'include' ? 'var(--accent-gold)' : 'var(--danger)'}` : '1px solid rgba(255,255,255,0.1)',
+                                                background: 'transparent',
+                                                color: 'var(--accent-gold)',
+                                                border: '1px dashed var(--accent-gold)',
                                                 transition: 'all 0.2s'
                                             }}
                                         >
-                                            {genre}
+                                            {showAllGenres ? 'Show Less' : `+${availableGenres.length - 15} More`}
                                         </button>
-                                    );
-                                })}
-                                {availableGenres.length > 15 && (
-                                    <button
-                                        onClick={() => setShowAllGenres(!showAllGenres)}
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Mobile Genres Dropdown */}
+                            <div className="mobile-genres-row" style={{ display: 'none', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.85rem', color: '#888' }}>Genres</span>
+                                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px' }}>
+                                        <button
+                                            onClick={() => setFilterGenreMode('include')}
+                                            style={{
+                                                padding: '2px 10px', fontSize: '0.7rem', borderRadius: '13px', border: 'none', cursor: 'pointer',
+                                                background: filterGenreMode === 'include' ? 'var(--accent-gold)' : 'transparent',
+                                                color: filterGenreMode === 'include' ? '#000' : '#888'
+                                            }}
+                                        >Include</button>
+                                        <button
+                                            onClick={() => setFilterGenreMode('exclude')}
+                                            style={{
+                                                padding: '2px 10px', fontSize: '0.7rem', borderRadius: '13px', border: 'none', cursor: 'pointer',
+                                                background: filterGenreMode === 'exclude' ? 'var(--danger)' : 'transparent',
+                                                color: filterGenreMode === 'exclude' ? '#fff' : '#888'
+                                            }}
+                                        >Exclude</button>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <select
+                                        value=""
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (val) {
+                                                if (filterGenres.includes(val)) {
+                                                    setFilterGenres(filterGenres.filter(g => g !== val));
+                                                } else {
+                                                    setFilterGenres([...filterGenres, val]);
+                                                }
+                                            }
+                                        }}
                                         style={{
-                                            padding: '4px 12px', borderRadius: '15px', fontSize: '0.8rem', cursor: 'pointer',
-                                            background: 'transparent',
-                                            color: 'var(--accent-gold)',
-                                            border: '1px dashed var(--accent-gold)',
-                                            transition: 'all 0.2s'
+                                            flex: 1,
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            borderRadius: '12px',
+                                            color: '#fff',
+                                            padding: '6px 12px',
+                                            fontSize: '0.85rem',
+                                            outline: 'none',
+                                            cursor: 'pointer',
+                                            WebkitAppearance: 'none',
+                                            MozAppearance: 'none',
+                                            appearance: 'none',
+                                            paddingRight: '30px',
+                                            backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d4af37' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                                            backgroundRepeat: 'no-repeat',
+                                            backgroundPosition: 'calc(100% - 10px) 50%'
                                         }}
                                     >
-                                        {showAllGenres ? 'Show Less' : `+${availableGenres.length - 15} More`}
-                                    </button>
+                                        <option value="" disabled style={{ background: '#151515', color: '#666' }}>Toggle Genres...</option>
+                                        {availableGenres.map(genre => (
+                                            <option 
+                                                key={genre} 
+                                                value={genre} 
+                                                style={{ 
+                                                    background: '#151515', 
+                                                    color: filterGenres.includes(genre) ? 'var(--accent-gold)' : '#fff' 
+                                                }}
+                                            >
+                                                {filterGenres.includes(genre) ? `✓ ${genre}` : genre}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {filterGenres.length > 0 && (
+                                        <button 
+                                            onClick={() => setFilterGenres([])}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                borderRadius: '12px',
+                                                color: 'var(--accent-gold)',
+                                                padding: '6px 12px',
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer',
+                                                flexShrink: 0
+                                            }}
+                                        >
+                                            Clear ({filterGenres.length})
+                                        </button>
+                                    )}
+                                </div>
+                                {filterGenres.length > 0 && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                                        {filterGenres.map(genre => (
+                                            <span 
+                                                key={genre}
+                                                onClick={() => setFilterGenres(filterGenres.filter(g => g !== genre))}
+                                                style={{
+                                                    padding: '2px 8px',
+                                                    background: filterGenreMode === 'include' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                                    border: `1px solid ${filterGenreMode === 'include' ? 'rgba(212, 175, 55, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                                                    borderRadius: '10px',
+                                                    fontSize: '0.75rem',
+                                                    color: '#fff',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px'
+                                                }}
+                                            >
+                                                {genre} &times;
+                                            </span>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -956,7 +1072,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 <span>Rating</span>
                                 <span style={{ color: 'var(--accent-gold)' }}>{filterRating[0]} - {filterRating[1]}</span>
                             </div>
-                            <Histogram data={ratingDistribution} currentRange={filterRating} min={0} max={10} />
+                            <div className="mobile-hide-histogram">
+                                <Histogram data={ratingDistribution} currentRange={filterRating} min={0} max={10} />
+                            </div>
                             <div className="range-slider-container">
                                 <div style={{
                                     position: 'absolute',
@@ -989,7 +1107,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 <span>Year</span>
                                 <span style={{ color: 'var(--accent-gold)' }}>{filterYear[0]} - {filterYear[1]}</span>
                             </div>
-                            <Histogram data={yearDistribution} currentRange={filterYear} min={minBoundYear} max={maxBoundYear} />
+                            <div className="mobile-hide-histogram">
+                                <Histogram data={yearDistribution} currentRange={filterYear} min={minBoundYear} max={maxBoundYear} />
+                            </div>
                             <div className="range-slider-container">
                                 <div style={{
                                     position: 'absolute',
@@ -1016,25 +1136,28 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             </div>
                         </div>
 
-                        {/* Director Filter */}
-                        <MultiSelectAutocomplete
-                            label="Directors"
-                            placeholder="Type or select directors..."
-                            options={availableDirectors}
-                            selected={filterDirectors}
-                            onChange={setFilterDirectors}
-                            accentColor="var(--accent-gold)"
-                        />
+                        {/* Directors & Actors Row */}
+                        <div className="mobile-row-layout" style={{ gridColumn: '1 / -1', display: 'contents' }}>
+                            {/* Director Filter */}
+                            <MultiSelectAutocomplete
+                                label="Directors"
+                                placeholder="Type or select directors..."
+                                options={availableDirectors}
+                                selected={filterDirectors}
+                                onChange={setFilterDirectors}
+                                accentColor="var(--accent-gold)"
+                            />
 
-                        {/* Actor Filter */}
-                        <MultiSelectAutocomplete
-                            label="Actors"
-                            placeholder="Type or select actors..."
-                            options={availableActors}
-                            selected={filterActors}
-                            onChange={setFilterActors}
-                            accentColor="var(--accent-gold)"
-                        />
+                            {/* Actor Filter */}
+                            <MultiSelectAutocomplete
+                                label="Actors"
+                                placeholder="Type or select actors..."
+                                options={availableActors}
+                                selected={filterActors}
+                                onChange={setFilterActors}
+                                accentColor="var(--accent-gold)"
+                            />
+                        </div>
 
                         {/* Reset Actions */}
                         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
