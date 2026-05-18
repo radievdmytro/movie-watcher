@@ -249,6 +249,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     const [stackPosition, setStackPosition] = useState(null);
 
     const [filterQuery, setFilterQuery] = useState('');
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [filterGenres, setFilterGenres] = useState([]);
     const [filterRating, setFilterRating] = useState([0, 10]);
     const [filterYear, setFilterYear] = useState([1900, new Date().getFullYear() + 2]);
@@ -273,6 +274,33 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             maxBoundYear: Math.max(...years)
         };
     }, [movies]);
+
+    const searchSuggestions = useMemo(() => {
+        if (!filterQuery.trim()) return { directors: [], actors: [], years: [] };
+        const query = filterQuery.toLowerCase().trim();
+
+        // 1. Directors
+        const matchedDirectors = availableDirectors.filter(d => 
+            d && d.name && d.name.toLowerCase().includes(query)
+        ).slice(0, 5);
+
+        // 2. Actors
+        const matchedActors = availableActors.filter(a => 
+            a && a.name && a.name.toLowerCase().includes(query)
+        ).slice(0, 5);
+
+        // 3. Years
+        const uniqueYears = Array.from(new Set(movies.map(m => m.year).filter(y => y)));
+        const matchedYears = uniqueYears.filter(y => 
+            y.toString().includes(query)
+        ).sort((a, b) => b - a).slice(0, 5);
+
+        return {
+            directors: matchedDirectors,
+            actors: matchedActors,
+            years: matchedYears
+        };
+    }, [filterQuery, availableDirectors, availableActors, movies]);
 
     useEffect(() => {
         setFilterYear([minBoundYear, maxBoundYear]);
@@ -553,6 +581,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 placeholder="Search library..."
                                 value={filterQuery}
                                 onChange={(e) => setFilterQuery(e.target.value)}
+                                onFocus={() => setIsSearchFocused(true)}
+                                onBlur={() => setTimeout(() => setIsSearchFocused(false), 250)}
                                 style={{
                                     width: '100%',
                                     background: 'rgba(255,255,255,0.05)',
@@ -568,6 +598,157 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     onClick={() => setFilterQuery('')}
                                     style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}
                                 >&times;</button>
+                            )}
+
+                            {isSearchFocused && (searchSuggestions.directors.length > 0 || searchSuggestions.actors.length > 0 || searchSuggestions.years.length > 0) && (
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: '105%',
+                                        left: 0,
+                                        right: 0,
+                                        background: '#151515',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '12px',
+                                        zIndex: 2000,
+                                        boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
+                                        overflow: 'hidden',
+                                        padding: '5px 0'
+                                    }}
+                                >
+                                    {/* Directors Section */}
+                                    {searchSuggestions.directors.length > 0 && (
+                                        <div>
+                                            <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 'bold', padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', letterSpacing: '1px' }}>
+                                                DIRECTORS ({searchSuggestions.directors.length})
+                                            </div>
+                                            {searchSuggestions.directors.map(dir => (
+                                                <div
+                                                    key={dir.name}
+                                                    onClick={() => {
+                                                        if (!filterDirectors.includes(dir.name)) {
+                                                            setFilterDirectors([...filterDirectors, dir.name]);
+                                                        }
+                                                        setFilterQuery('');
+                                                    }}
+                                                    style={{
+                                                        padding: '8px 15px',
+                                                        fontSize: '0.85rem',
+                                                        color: '#ccc',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        transition: 'background 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                                        e.currentTarget.style.color = '#fff';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'transparent';
+                                                        e.currentTarget.style.color = '#ccc';
+                                                    }}
+                                                >
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ color: 'var(--accent-gold)' }}>🎬</span> {dir.name}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-gold)', opacity: 0.8 }}>
+                                                        {dir.count} {dir.count === 1 ? 'movie' : 'movies'}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Actors Section */}
+                                    {searchSuggestions.actors.length > 0 && (
+                                        <div style={{ marginTop: '5px' }}>
+                                            <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 'bold', padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', letterSpacing: '1px' }}>
+                                                ACTORS ({searchSuggestions.actors.length})
+                                            </div>
+                                            {searchSuggestions.actors.map(act => (
+                                                <div
+                                                    key={act.name}
+                                                    onClick={() => {
+                                                        if (!filterActors.includes(act.name)) {
+                                                            setFilterActors([...filterActors, act.name]);
+                                                        }
+                                                        setFilterQuery('');
+                                                    }}
+                                                    style={{
+                                                        padding: '8px 15px',
+                                                        fontSize: '0.85rem',
+                                                        color: '#ccc',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        transition: 'background 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                                        e.currentTarget.style.color = '#fff';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'transparent';
+                                                        e.currentTarget.style.color = '#ccc';
+                                                    }}
+                                                >
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ color: 'var(--accent-gold)' }}>🎭</span> {act.name}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-gold)', opacity: 0.8 }}>
+                                                        {act.count} {act.count === 1 ? 'movie' : 'movies'}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Years Section */}
+                                    {searchSuggestions.years.length > 0 && (
+                                        <div style={{ marginTop: '5px' }}>
+                                            <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 'bold', padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', letterSpacing: '1px' }}>
+                                                YEARS ({searchSuggestions.years.length})
+                                            </div>
+                                            {searchSuggestions.years.map(yr => (
+                                                <div
+                                                    key={yr}
+                                                    onClick={() => {
+                                                        setFilterYear([yr, yr]);
+                                                        setFilterQuery('');
+                                                    }}
+                                                    style={{
+                                                        padding: '8px 15px',
+                                                        fontSize: '0.85rem',
+                                                        color: '#ccc',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        transition: 'background 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                                        e.currentTarget.style.color = '#fff';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'transparent';
+                                                        e.currentTarget.style.color = '#ccc';
+                                                    }}
+                                                >
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ color: 'var(--accent-gold)' }}>📅</span> Year: {yr}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-gold)', opacity: 0.8 }}>
+                                                        Show movies from {yr}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
 
