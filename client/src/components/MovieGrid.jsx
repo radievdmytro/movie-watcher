@@ -37,7 +37,20 @@ const Histogram = ({ data, currentRange, min, max, height = 30 }) => {
 const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = [], onChange, accentColor = 'var(--accent-gold)' }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
+    const [dropdownRect, setDropdownRect] = useState(null);
     const containerRef = useRef(null);
+
+    const openDropdown = () => {
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            setDropdownRect({
+                top: rect.bottom + window.scrollY,
+                left: rect.left + window.scrollX,
+                width: rect.width
+            });
+        }
+        setIsOpen(true);
+    };
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -45,8 +58,13 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                 setIsOpen(false);
             }
         };
+        const handleScroll = () => setIsOpen(false);
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        window.addEventListener('scroll', handleScroll, true);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('scroll', handleScroll, true);
+        };
     }, []);
 
     const filteredOptions = (options || []).filter(opt => {
@@ -85,7 +103,7 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
             </div>
             
             <div 
-                onClick={() => setIsOpen(true)}
+                onClick={() => openDropdown()}
                 style={{
                     display: 'flex',
                     flexWrap: 'wrap',
@@ -140,9 +158,9 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                     value={inputValue}
                     onChange={(e) => {
                         setInputValue(e.target.value);
-                        setIsOpen(true);
+                        openDropdown();
                     }}
-                    onFocus={() => setIsOpen(true)}
+                    onFocus={() => openDropdown()}
                     placeholder={selected.length === 0 ? placeholder : ''}
                     style={{
                         flex: '1',
@@ -157,20 +175,20 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                 />
             </div>
 
-            {isOpen && (
+            {isOpen && dropdownRect && (
                 <div 
                     style={{
-                        position: 'absolute',
-                        top: '105%',
-                        left: 0,
-                        right: 0,
+                        position: 'fixed',
+                        top: `${dropdownRect.top + 6}px`,
+                        left: `${dropdownRect.left}px`,
+                        width: `${dropdownRect.width}px`,
                         background: '#151515',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '8px',
-                        maxHeight: '200px',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        borderRadius: '10px',
+                        maxHeight: '220px',
                         overflowY: 'auto',
-                        zIndex: 1000,
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                        zIndex: 99999,
+                        boxShadow: '0 15px 40px rgba(0,0,0,0.7)',
                         padding: '4px 0'
                     }}
                 >
@@ -1055,8 +1073,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
                         <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)', margin: '0 10px' }}></div>
 
-                        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
-                            <span style={{ color: '#666' }}>Sort:</span>
+                        <div className="sort-tabs-row" style={{ gap: '8px' }}>
+                            <span style={{ color: '#666', flexShrink: 0 }}>Sort:</span>
                             {['created_at', 'rating', 'year', 'title', 'status'].map(field => (
                                 <button key={field} className="btn-ghost" style={{ color: sortField === field ? 'var(--accent-gold)' : 'inherit', padding: '0 5px', fontSize: '0.9rem' }}
                                     onClick={() => handleSort(field)}

@@ -420,7 +420,7 @@ function App() {
 
     return (
         <div className="app">
-            <header className="header glass-panel">
+            <header className="header glass-panel app-header">
                 <div className="container header-content">
                     <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                         <div 
