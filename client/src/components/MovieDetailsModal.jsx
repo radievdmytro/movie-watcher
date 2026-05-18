@@ -1217,7 +1217,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 <div style={{ 
                     display: 'flex', 
                     gap: '10px', 
-                    flexWrap: isMobile ? 'wrap' : 'nowrap', 
+                    flexWrap: 'nowrap', 
                     paddingTop: '15px', 
                     paddingBottom: '15px',
                     paddingLeft: isMobile ? '16px' : '40px',
@@ -1262,8 +1262,8 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             background: movie.status === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
                                             border: movie.status === 'watched' ? '1px solid rgba(255,255,255,0.12)' : 'none',
                                             color: movie.status === 'watched' ? '#fff' : '#000',
-                                            padding: isMobile ? '10px 16px' : '12px 28px',
-                                            fontSize: isMobile ? '0.85rem' : '0.95rem',
+                                            padding: isMobile ? '10px 12px' : '12px 28px',
+                                            fontSize: isMobile ? '0.82rem' : '0.95rem',
                                             fontWeight: '700',
                                             borderRadius: '10px',
                                             cursor: 'pointer',
@@ -1287,8 +1287,8 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             background: 'rgba(255,255,255,0.03)',
                                             border: '1px solid rgba(255,255,255,0.08)',
                                             color: '#fff',
-                                            padding: isMobile ? '10px 16px' : '12px 28px',
-                                            fontSize: isMobile ? '0.85rem' : '0.95rem',
+                                            padding: isMobile ? '10px 12px' : '12px 28px',
+                                            fontSize: isMobile ? '0.82rem' : '0.95rem',
                                             fontWeight: '600',
                                             borderRadius: '10px',
                                             cursor: 'pointer',
@@ -1310,8 +1310,8 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             background: 'rgba(239, 68, 68, 0.08)',
                                             border: '1px solid rgba(239, 68, 68, 0.2)',
                                             color: '#ff6b6b',
-                                            padding: isMobile ? '10px 16px' : '12px 18px',
-                                            fontSize: isMobile ? '0.85rem' : '0.95rem',
+                                            padding: isMobile ? '10px 14px' : '12px 18px',
+                                            fontSize: isMobile ? '0.82rem' : '0.95rem',
                                             fontWeight: '600',
                                             borderRadius: '10px',
                                             cursor: 'pointer',
@@ -1320,10 +1320,11 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             gap: '6px',
-                                            flex: isMobile ? '1 1 100%' : '0 0 auto'
+                                            flex: '0 0 auto'
                                         }}
+                                        title="Delete Movie"
                                     >
-                                        {isMobile && <span className="delete-btn-text">Delete </span>}🗑️
+                                        🗑️
                                     </button>
                                 </>
                             ) : (
