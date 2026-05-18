@@ -324,7 +324,7 @@ input {
     width: 100%;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 8px !important;
+    gap: 11px !important;
   }
 
   .header-nav .btn {
@@ -343,7 +343,7 @@ input {
     width: 100%;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 8px !important;
+    gap: 11px !important;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     padding-top: 8px;
   }
@@ -621,8 +621,8 @@ input {
     right: calc(50% - (50% - 8px) * var(--sp, 0)) !important;
     /* transform: X(50%) Y(0) -> X(0) Y(50%) */
     transform: translateX(calc(50% - 50% * var(--sp, 0))) translateY(calc(0% + 50% * var(--sp, 0))) !important;
-    /* gap: 8 -> 2 */
-    gap: calc(8px - 6px * var(--sp, 0)) !important;
+    /* gap: 11 -> 5 */
+    gap: calc(11px - 6px * var(--sp, 0)) !important;
     width: max-content !important;
     justify-content: center !important;
     border-top: none !important;
