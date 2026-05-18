@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-function AddMovie({ onMovieAdded, onScrollToMovie }) {
+function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [searchStreaming, setSearchStreaming] = useState(false); // SSE in progress
@@ -33,6 +33,25 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
     const extractUrls = (text) => {
         const match = text.match(/\bhttps?:\/\/\S+/gi);
         return match ? match.filter(url => url.toLowerCase().includes('rezka')) : [];
+    };
+
+    // Domain-agnostic path extractor for library ownership check
+    const cleanLinkPath = (url) => {
+        if (!url) return '';
+        return url.toLowerCase()
+            .replace(/^https?:\/\/[^/]+/, '')
+            .replace(/^\/+|\/+$/g, '')
+            .split('?')[0].split('#')[0];
+    };
+
+    // Set of link paths the current user already owns (deleted_at = null)
+    const ownedPaths = new Set(
+        movies.filter(m => !m.deleted_at).map(m => cleanLinkPath(m.link))
+    );
+
+    const isOwned = (link) => {
+        const clean = cleanLinkPath(link);
+        return clean && ownedPaths.has(clean);
     };
 
     const handleSearch = async (isAuto = false, openFullPage = false) => {
@@ -700,44 +719,62 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                     {filteredSearchResults.length > 0 ? filteredSearchResults.map((item, idx) => {
                         const sel = selectedLinks.has(item.link);
+                        const owned = isOwned(item.link);
                         return (
                             <div key={idx} style={{
                                 display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 8px',
-                                border: `1px solid ${sel ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.04)'}`,
-                                background: sel ? 'rgba(212,175,55,0.07)' : 'transparent',
+                                border: `1px solid ${owned ? 'rgba(212,175,55,0.5)' : sel ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.04)'}`,
+                                background: owned ? 'rgba(212,175,55,0.06)' : sel ? 'rgba(212,175,55,0.07)' : 'transparent',
                                 borderRadius: '10px', transition: 'all 0.15s'
                             }}
-                                onMouseEnter={e => { if (!sel) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-                                onMouseLeave={e => { if (!sel) e.currentTarget.style.background = 'transparent'; }}
+                                onMouseEnter={e => { if (!sel && !owned) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                                onMouseLeave={e => { if (!sel && !owned) e.currentTarget.style.background = 'transparent'; }}
                             >
-                                {/* Checkbox */}
-                                <div onClick={(e) => { e.stopPropagation(); toggleSelect(item.link); }} style={{
-                                    width: '17px', height: '17px', borderRadius: '4px', flexShrink: 0,
-                                    background: sel ? 'var(--accent-gold)' : 'transparent',
-                                    border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.2)'}`,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '0.6rem', color: '#000', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.15s'
-                                }}>{sel ? '✓' : ''}</div>
+                                {/* Checkbox — hidden for owned */}
+                                {!owned ? (
+                                    <div onClick={(e) => { e.stopPropagation(); toggleSelect(item.link); }} style={{
+                                        width: '17px', height: '17px', borderRadius: '4px', flexShrink: 0,
+                                        background: sel ? 'var(--accent-gold)' : 'transparent',
+                                        border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.2)'}`,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '0.6rem', color: '#000', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.15s'
+                                    }}>{sel ? '✓' : ''}</div>
+                                ) : (
+                                    <div style={{ width: '17px', height: '17px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-gold)', fontSize: '0.75rem' }}>✓</div>
+                                )}
                                 {/* Poster */}
                                 <img src={item.img} alt={item.title}
                                     style={{ width: '34px', height: '50px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
                                 {/* Info — click = preview */}
                                 <div style={{ flex: 1, cursor: 'pointer', minWidth: 0 }} onClick={() => handleSelectMovie(item.link)}>
-                                    <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#eee', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
+                                    <div style={{ fontSize: '0.86rem', fontWeight: 600, color: owned ? 'var(--accent-gold)' : '#eee', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
                                     <div style={{ fontSize: '0.71rem', color: '#666', marginTop: '1px' }}>{item.misc}</div>
                                 </div>
                                 {item.rating && <span style={{ fontSize: '0.7rem', background: '#2a2a2a', padding: '2px 6px', borderRadius: '5px', color: '#bbb', flexShrink: 0 }}>★ {item.rating}</span>}
-                                {/* Quick Add */}
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleBatchImport([item.link]); }}
-                                    style={{
-                                        background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
-                                        color: 'var(--accent-gold)', borderRadius: '7px', padding: '3px 10px',
-                                        fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s'
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
-                                >+ Add</button>
+                                {owned ? (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
+                                        style={{
+                                            background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.5)',
+                                            color: 'var(--accent-gold)', borderRadius: '7px', padding: '3px 10px',
+                                            fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s',
+                                            fontWeight: '600'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.3)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.15)'}
+                                    >📍 Show</button>
+                                ) : (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleBatchImport([item.link]); }}
+                                        style={{
+                                            background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
+                                            color: 'var(--accent-gold)', borderRadius: '7px', padding: '3px 10px',
+                                            fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
+                                    >+ Add</button>
+                                )}
                             </div>
                         );
                     }) : (
@@ -823,34 +860,58 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
                                 {filteredSearchResults.map((item, idx) => {
                                     const sel = selectedLinks.has(item.link);
+                                    const owned = isOwned(item.link);
                                     return (
-                                        <div key={idx} onClick={() => toggleSelect(item.link)} style={{
-                                            background: sel ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
-                                            border: `1px solid ${sel ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.07)'}`,
-                                            borderRadius: '14px', overflow: 'hidden', cursor: 'pointer',
+                                        <div key={idx} onClick={() => !owned && toggleSelect(item.link)} style={{
+                                            background: owned ? 'rgba(212,175,55,0.09)' : sel ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+                                            border: `1px solid ${owned ? 'rgba(212,175,55,0.55)' : sel ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.07)'}`,
+                                            borderRadius: '14px', overflow: 'hidden', cursor: owned ? 'default' : 'pointer',
                                             transition: 'all 0.2s', position: 'relative',
                                             transform: sel ? 'scale(1.02)' : 'scale(1)'
                                         }}
-                                            onMouseEnter={e => e.currentTarget.style.border = '1px solid rgba(212,175,55,0.4)'}
-                                            onMouseLeave={e => e.currentTarget.style.border = `1px solid ${sel ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.07)'}`}
+                                            onMouseEnter={e => { if (!owned) e.currentTarget.style.border = '1px solid rgba(212,175,55,0.4)'; }}
+                                            onMouseLeave={e => e.currentTarget.style.border = `1px solid ${owned ? 'rgba(212,175,55,0.55)' : sel ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.07)'}`}
                                         >
                                             <div style={{ position: 'relative' }}>
                                                 <img src={item.img} alt={item.title} style={{ width: '100%', height: '200px', objectFit: 'cover', display: 'block' }} />
-                                                <div style={{
-                                                    position: 'absolute', top: '8px', right: '8px',
-                                                    width: '22px', height: '22px', borderRadius: '50%',
-                                                    background: sel ? 'var(--accent-gold)' : 'rgba(0,0,0,0.6)',
-                                                    border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.4)'}`,
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontSize: '0.7rem', color: '#000', fontWeight: 'bold',
-                                                    transition: 'all 0.2s'
-                                                }}>{sel ? '✓' : ''}</div>
+                                                {/* Owned badge / select circle */}
+                                                {owned ? (
+                                                    <div style={{
+                                                        position: 'absolute', top: '8px', right: '8px',
+                                                        background: 'var(--accent-gold)', color: '#000',
+                                                        borderRadius: '10px', padding: '2px 8px',
+                                                        fontSize: '0.65rem', fontWeight: 'bold'
+                                                    }}>✓ In Library</div>
+                                                ) : (
+                                                    <div style={{
+                                                        position: 'absolute', top: '8px', right: '8px',
+                                                        width: '22px', height: '22px', borderRadius: '50%',
+                                                        background: sel ? 'var(--accent-gold)' : 'rgba(0,0,0,0.6)',
+                                                        border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.4)'}`,
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.7rem', color: '#000', fontWeight: 'bold',
+                                                        transition: 'all 0.2s'
+                                                    }}>{sel ? '✓' : ''}</div>
+                                                )}
                                                 {item.rating && <div style={{ position: 'absolute', bottom: '6px', left: '6px', background: 'rgba(0,0,0,0.8)', padding: '2px 7px', borderRadius: '6px', fontSize: '0.75rem', color: '#fff' }}>★ {item.rating}</div>}
                                             </div>
                                             <div style={{ padding: '10px' }}>
-                                                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#eee', marginBottom: '4px', lineHeight: 1.3 }}>{item.title}</div>
+                                                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: owned ? 'var(--accent-gold)' : '#eee', marginBottom: '4px', lineHeight: 1.3 }}>{item.title}</div>
                                                 <div style={{ fontSize: '0.7rem', color: '#666' }}>{item.misc}</div>
                                             </div>
+                                            {owned && (
+                                                <div style={{ padding: '0 10px 10px' }}>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
+                                                        style={{
+                                                            width: '100%', background: 'rgba(212,175,55,0.15)',
+                                                            border: '1px solid rgba(212,175,55,0.4)', color: 'var(--accent-gold)',
+                                                            borderRadius: '8px', padding: '5px 0', fontSize: '0.75rem',
+                                                            cursor: 'pointer', fontWeight: '600'
+                                                        }}
+                                                    >📍 Show in Library</button>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}
@@ -869,30 +930,47 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
                                 <tbody>
                                     {filteredSearchResults.map((item, idx) => {
                                         const sel = selectedLinks.has(item.link);
+                                        const owned = isOwned(item.link);
                                         return (
-                                            <tr key={idx} onClick={() => toggleSelect(item.link)} style={{
+                                            <tr key={idx} onClick={() => !owned && toggleSelect(item.link)} style={{
                                                 borderBottom: '1px solid rgba(255,255,255,0.04)',
-                                                background: sel ? 'rgba(212,175,55,0.08)' : 'transparent',
-                                                cursor: 'pointer', transition: 'background 0.15s'
+                                                background: owned ? 'rgba(212,175,55,0.07)' : sel ? 'rgba(212,175,55,0.08)' : 'transparent',
+                                                cursor: owned ? 'default' : 'pointer', transition: 'background 0.15s'
                                             }}
-                                                onMouseEnter={e => e.currentTarget.style.background = sel ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.04)'}
-                                                onMouseLeave={e => e.currentTarget.style.background = sel ? 'rgba(212,175,55,0.08)' : 'transparent'}
+                                                onMouseEnter={e => e.currentTarget.style.background = owned ? 'rgba(212,175,55,0.1)' : sel ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.04)'}
+                                                onMouseLeave={e => e.currentTarget.style.background = owned ? 'rgba(212,175,55,0.07)' : sel ? 'rgba(212,175,55,0.08)' : 'transparent'}
                                             >
                                                 <td style={{ padding: '10px 12px' }}>
-                                                    <div style={{
-                                                        width: '18px', height: '18px', borderRadius: '4px',
-                                                        background: sel ? 'var(--accent-gold)' : 'transparent',
-                                                        border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.2)'}`,
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        fontSize: '0.7rem', color: '#000', fontWeight: 'bold', transition: 'all 0.15s'
-                                                    }}>{sel ? '✓' : ''}</div>
+                                                    {owned ? (
+                                                        <div style={{ color: 'var(--accent-gold)', fontSize: '0.85rem', fontWeight: 'bold' }}>✓</div>
+                                                    ) : (
+                                                        <div style={{
+                                                            width: '18px', height: '18px', borderRadius: '4px',
+                                                            background: sel ? 'var(--accent-gold)' : 'transparent',
+                                                            border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.2)'}`,
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            fontSize: '0.7rem', color: '#000', fontWeight: 'bold', transition: 'all 0.15s'
+                                                        }}>{sel ? '✓' : ''}</div>
+                                                    )}
                                                 </td>
                                                 <td style={{ padding: '10px 12px' }}>
                                                     <img src={item.img} alt="" style={{ width: '36px', height: '52px', objectFit: 'cover', borderRadius: '5px' }} />
                                                 </td>
-                                                <td style={{ padding: '10px 12px', fontWeight: 600, color: '#eee', fontSize: '0.9rem' }}>{item.title}</td>
+                                                <td style={{ padding: '10px 12px', fontWeight: 600, color: owned ? 'var(--accent-gold)' : '#eee', fontSize: '0.9rem' }}>{item.title}</td>
                                                 <td style={{ padding: '10px 12px', color: '#666', fontSize: '0.8rem' }}>{item.misc}</td>
                                                 <td style={{ padding: '10px 12px', color: '#aaa', fontSize: '0.82rem' }}>{item.rating ? `★ ${item.rating}` : '—'}</td>
+                                                <td style={{ padding: '10px 12px' }}>
+                                                    {owned && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
+                                                            style={{
+                                                                background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)',
+                                                                color: 'var(--accent-gold)', borderRadius: '6px', padding: '3px 10px',
+                                                                fontSize: '0.72rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap'
+                                                            }}
+                                                        >📍 Show</button>
+                                                    )}
+                                                </td>
                                             </tr>
                                         );
                                     })}
