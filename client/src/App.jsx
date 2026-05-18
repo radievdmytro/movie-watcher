@@ -468,8 +468,10 @@ function App() {
                                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1) rotate(-5deg)'}
                                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
                             />
-                            <h1 className="gold logo" style={{ margin: 0, fontSize: '1.55rem', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
-                                Radev's <span className="gold">Movie Selector</span>
+                            <h1 className="gold logo" style={{ margin: 0, fontSize: '1.35rem', letterSpacing: '0.5px', lineHeight: '1.1', display: 'flex', flexDirection: 'column' }}>
+                                <span>Radev's</span>
+                                <span className="gold">Movie</span>
+                                <span className="gold">Selector</span>
                             </h1>
                         </div>
                         {user && currentView !== 'shared_collection' ? (

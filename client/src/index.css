@@ -585,6 +585,8 @@ input {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    flex-direction: row !important;
+    gap: 4px;
   }
 
   /* Nav buttons tighten */
