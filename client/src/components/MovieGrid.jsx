@@ -63,6 +63,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     const sentinelRef = useRef(null);
     const [filterGenreMode, setFilterGenreMode] = useState('include'); // 'include' | 'exclude'
     const [availableGenres, setAvailableGenres] = useState([]);
+    const [filterDirector, setFilterDirector] = useState('all');
+    const [filterActor, setFilterActor] = useState('all');
+    const [availableDirectors, setAvailableDirectors] = useState([]);
+    const [availableActors, setAvailableActors] = useState([]);
 
     const { minBoundYear, maxBoundYear } = useMemo(() => {
         if (!movies.length) return { minBoundYear: 1900, maxBoundYear: new Date().getFullYear() + 2 };
@@ -83,6 +87,16 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             .then(res => res.json())
             .then(data => setAvailableGenres(data))
             .catch(err => console.error('Failed to fetch genres:', err));
+
+        fetch('/api/directors')
+            .then(res => res.json())
+            .then(data => setAvailableDirectors(data))
+            .catch(err => console.error('Failed to fetch directors:', err));
+
+        fetch('/api/actors')
+            .then(res => res.json())
+            .then(data => setAvailableActors(data))
+            .catch(err => console.error('Failed to fetch actors:', err));
     }, []);
 
     const ratingDistribution = useMemo(() => {
@@ -204,6 +218,18 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     }
                 }
 
+                // Director Filter
+                if (filterDirector !== 'all') {
+                    const movieDirectors = (movie.director || '').split(',').map(d => d.trim().toLowerCase());
+                    if (!movieDirectors.includes(filterDirector.toLowerCase())) return false;
+                }
+
+                // Actor Filter
+                if (filterActor !== 'all') {
+                    const movieActors = (movie.actors || '').split(',').map(a => a.trim().toLowerCase());
+                    if (!movieActors.includes(filterActor.toLowerCase())) return false;
+                }
+
                 // Rating Filter
                 const rating = parseFloat(movie.rating) || 0;
                 if (rating < filterRating[0] || rating > filterRating[1]) return false;
@@ -240,12 +266,12 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 if (valA > valB) return sortDir === 'asc' ? 1 : -1;
                 return 0;
             });
-    }, [movies, sortField, sortDir, filterQuery, filterGenres, filterRating, filterYear, filterType, filterGenreMode, hideWatched]);
+    }, [movies, sortField, sortDir, filterQuery, filterGenres, filterDirector, filterActor, filterRating, filterYear, filterType, filterGenreMode, hideWatched]);
 
     // Reset visible count when filters change
     useEffect(() => {
         setVisibleCount(30);
-    }, [filterQuery, filterGenres, filterRating, filterYear, filterType, filterGenreMode, sortField, sortDir, hideWatched]);
+    }, [filterQuery, filterGenres, filterDirector, filterActor, filterRating, filterYear, filterType, filterGenreMode, sortField, sortDir, hideWatched]);
 
     // Infinite Scroll Observer
     useEffect(() => {
@@ -381,7 +407,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             onClick={() => setShowFilters(!showFilters)}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '8px',
-                                color: showFilters || filterGenres.length > 0 || filterRating[0] > 0 || filterRating[1] < 10 ? 'var(--accent-gold)' : 'inherit',
+                                color: showFilters || filterGenres.length > 0 || filterRating[0] > 0 || filterRating[1] < 10 || filterDirector !== 'all' || filterActor !== 'all' ? 'var(--accent-gold)' : 'inherit',
                                 background: showFilters ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
                                 border: '1px solid rgba(255,255,255,0.1)',
                                 borderRadius: '20px',
@@ -389,7 +415,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             }}
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                            Filters {(filterGenres.length > 0) && `(${filterGenres.length})`}
+                            Filters {
+                                (filterGenres.length > 0 || filterDirector !== 'all' || filterActor !== 'all') && 
+                                `(${filterGenres.length + (filterDirector !== 'all' ? 1 : 0) + (filterActor !== 'all' ? 1 : 0)})`
+                            }
                         </button>
                     </div>
 
@@ -569,6 +598,76 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             </div>
                         </div>
 
+                        {/* Director Filter */}
+                        <div>
+                            <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Director</span>
+                                {filterDirector !== 'all' && (
+                                    <button 
+                                        onClick={() => setFilterDirector('all')} 
+                                        style={{ background: 'none', border: 'none', color: 'var(--accent-gold)', fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
+                            <select
+                                value={filterDirector}
+                                onChange={(e) => setFilterDirector(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    background: 'rgba(0, 0, 0, 0.5)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '8px',
+                                    color: '#fff',
+                                    padding: '10px',
+                                    outline: 'none',
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <option value="all">All Directors ({availableDirectors.length})</option>
+                                {availableDirectors.map(d => (
+                                    <option key={d} value={d}>{d}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Actor Filter */}
+                        <div>
+                            <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Actor</span>
+                                {filterActor !== 'all' && (
+                                    <button 
+                                        onClick={() => setFilterActor('all')} 
+                                        style={{ background: 'none', border: 'none', color: 'var(--accent-gold)', fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
+                            <select
+                                value={filterActor}
+                                onChange={(e) => setFilterActor(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    background: 'rgba(0, 0, 0, 0.5)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '8px',
+                                    color: '#fff',
+                                    padding: '10px',
+                                    outline: 'none',
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <option value="all">All Actors ({availableActors.length})</option>
+                                {availableActors.map(a => (
+                                    <option key={a} value={a}>{a}</option>
+                                ))}
+                            </select>
+                        </div>
+
                         {/* Reset Actions */}
                         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
                             <button
@@ -580,8 +679,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     setFilterQuery('');
                                     setFilterType('all');
                                     setFilterGenreMode('include');
+                                    setFilterDirector('all');
+                                    setFilterActor('all');
                                 }}
-                                style={{ fontSize: '0.85rem', textDecoration: 'underline' }}
+                                style={{ fontSize: '0.85rem', textDecoration: 'underline', cursor: 'pointer' }}
                             >Reset All Filters</button>
                         </div>
                     </div>

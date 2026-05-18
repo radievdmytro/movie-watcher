@@ -633,6 +633,58 @@ app.get('/api/genres', authenticateToken, (req, res) => {
     }
 });
 
+// GET All Unique Directors (sorted by count)
+app.get('/api/directors', authenticateToken, (req, res) => {
+    try {
+        const stmt = db.prepare('SELECT director FROM movies WHERE user_id = ? AND deleted_at IS NULL');
+        const rows = stmt.all(req.user.id);
+        const directorCounts = {};
+        rows.forEach(row => {
+            if (row.director) {
+                row.director.split(',').forEach(d => {
+                    const trimmed = d.trim();
+                    if (trimmed) {
+                        directorCounts[trimmed] = (directorCounts[trimmed] || 0) + 1;
+                    }
+                });
+            }
+        });
+        const sortedDirectors = Object.entries(directorCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([director]) => director);
+
+        res.json(sortedDirectors);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET All Unique Actors (sorted by count)
+app.get('/api/actors', authenticateToken, (req, res) => {
+    try {
+        const stmt = db.prepare('SELECT actors FROM movies WHERE user_id = ? AND deleted_at IS NULL');
+        const rows = stmt.all(req.user.id);
+        const actorCounts = {};
+        rows.forEach(row => {
+            if (row.actors) {
+                row.actors.split(',').forEach(a => {
+                    const trimmed = a.trim();
+                    if (trimmed) {
+                        actorCounts[trimmed] = (actorCounts[trimmed] || 0) + 1;
+                    }
+                });
+            }
+        });
+        const sortedActors = Object.entries(actorCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([actor]) => actor);
+
+        res.json(sortedActors);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // POST Add Movie
 app.post('/api/movies', authenticateToken, (req, res) => {
     try {
