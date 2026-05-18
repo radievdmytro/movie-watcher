@@ -1,9 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import Draggable from 'react-draggable';
 
-function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToCollection, isTrashMode }) {
+function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToCollection, isTrashMode, anchor }) {
     const [isVisible, setIsVisible] = useState(false);
+    const [lastAnchor, setLastAnchor] = useState(null);
     const nodeRef = useRef(null);
+
+    // Sync last transition anchor
+    useEffect(() => {
+        if (anchor) setLastAnchor(anchor);
+    }, [anchor]);
 
     // Coordinate state for appearance and exit animations
     useEffect(() => {
@@ -12,6 +18,7 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
         } else {
             const timer = setTimeout(() => {
                 setIsVisible(false);
+                setLastAnchor(null);
             }, 300); // Wait for fade-out
             return () => clearTimeout(timer);
         }
@@ -19,7 +26,13 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
 
     if (!isVisible && selectedCount === 0) return null;
 
+    const activeAnchor = anchor || lastAnchor;
+    const posTop = activeAnchor ? `${activeAnchor.y}px` : '85px';
+    const posLeft = activeAnchor ? `${activeAnchor.x}px` : '50%';
+
     const show = selectedCount > 0;
+    const translate = activeAnchor ? 'translate(25px, -50%)' : 'translateX(-50%)';
+    const scale = show ? 'scale(1)' : 'scale(0.1)';
 
     return (
         <Draggable nodeRef={nodeRef} handle=".drag-handle">
@@ -27,11 +40,11 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
                 ref={nodeRef}
                 style={{
                     position: 'fixed',
-                    bottom: '40px',
-                    left: '50%',
-                    marginLeft: '-150px', // Roughly center it
+                    top: posTop,
+                    left: posLeft,
                     opacity: show ? 1 : 0,
-                    transform: show ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.9)',
+                    // apply scale/opacity on show/hide, but let top/left animate smoothly
+                    transform: `${translate} ${scale}`,
                     pointerEvents: show ? 'auto' : 'none',
                     background: 'rgba(31, 31, 31, 0.95)',
                     backdropFilter: 'blur(10px)',
@@ -44,8 +57,8 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
                     zIndex: 2500,
                     border: '1px solid var(--accent-gold)',
                     transition: show
-                        ? 'opacity 0.2s ease-out, transform 0.2s ease-out'
-                        : 'opacity 0.2s ease-in, transform 0.2s ease-in',
+                        ? 'opacity 0.2s ease-out, top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                        : 'opacity 0.2s ease-in, transform 0.3s ease-in',
                     whiteSpace: 'nowrap',
                     cursor: 'default'
                 }}
