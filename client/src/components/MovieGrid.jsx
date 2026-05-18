@@ -1315,9 +1315,16 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 </div>
                 </div>
 
-                <div className="controls-section-rest" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div className="controls-section-rest" style={{ marginBottom: '25px' }}>
+                    <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        width: '100%',
+                        flexWrap: isMobile ? 'nowrap' : 'wrap',
+                        gap: '10px'
+                    }}>
+                        {/* Left Side: Select All */}
                         <label
                             style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#aaa', flexShrink: 0 }}
                             onMouseDown={(e) => setSelectionAnchor({ x: e.clientX, y: e.clientY })}
@@ -1326,58 +1333,61 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             <span style={{ fontSize: '0.9rem' }}>Select All ({filteredAndSortedMovies.length})</span>
                         </label>
 
-                        <div className="desktop-sort-tabs" style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)', margin: '0 10px' }}></div>
+                        {/* Right Side: Desktop Tabs / Mobile Select */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'flex-end', flex: isMobile ? '1' : 'initial' }}>
+                            <div className="desktop-sort-tabs" style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)', margin: '0 10px' }}></div>
 
-                        <div className="sort-tabs-row desktop-sort-tabs" style={{ gap: '8px' }}>
-                            <span style={{ color: '#666', flexShrink: 0 }}>Sort:</span>
-                            {['created_at', 'rating', 'year', 'title', 'status'].map(field => (
-                                <button key={field} className="btn-ghost" style={{ color: sortField === field ? 'var(--accent-gold)' : 'inherit', padding: '0 5px', fontSize: '0.9rem' }}
-                                    onClick={() => handleSort(field)}
-                                >{field === 'status' ? 'Watched' : field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ')} {sortField === field && (sortDir === 'asc' ? '↑' : '↓')}</button>
-                            ))}
-                        </div>
+                            <div className="sort-tabs-row desktop-sort-tabs" style={{ gap: '8px' }}>
+                                <span style={{ color: '#666', flexShrink: 0 }}>Sort:</span>
+                                {['created_at', 'rating', 'year', 'title', 'status'].map(field => (
+                                    <button key={field} className="btn-ghost" style={{ color: sortField === field ? 'var(--accent-gold)' : 'inherit', padding: '0 5px', fontSize: '0.9rem' }}
+                                        onClick={() => handleSort(field)}
+                                    >{field === 'status' ? 'Watched' : field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ')} {sortField === field && (sortDir === 'asc' ? '↑' : '↓')}</button>
+                                ))}
+                            </div>
 
-                        <div className="mobile-sort-select" style={{ gap: '8px' }}>
-                            <span style={{ color: '#666', fontSize: '0.9rem', flexShrink: 0 }}>Sort:</span>
-                            <select
-                                value={`${sortField}-${sortDir}`}
-                                onChange={(e) => {
-                                    const [field, dir] = e.target.value.split('-');
-                                    handleSort(field, dir);
-                                }}
-                                style={{
-                                    background: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '12px',
-                                    color: '#fff',
-                                    padding: '6px 12px',
-                                    fontSize: '0.85rem',
-                                    outline: 'none',
-                                    cursor: 'pointer',
-                                    WebkitAppearance: 'none',
-                                    MozAppearance: 'none',
-                                    appearance: 'none',
-                                    paddingRight: '30px',
-                                    backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d4af37' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                                    backgroundRepeat: 'no-repeat',
-                                    backgroundPosition: 'calc(100% - 10px) 50%'
-                                }}
-                            >
-                                <option value="created_at-desc" style={{ background: '#151515', color: '#fff' }}>Added (Newest)</option>
-                                <option value="created_at-asc" style={{ background: '#151515', color: '#fff' }}>Added (Oldest)</option>
-                                <option value="rating-desc" style={{ background: '#151515', color: '#fff' }}>Rating (High to Low)</option>
-                                <option value="rating-asc" style={{ background: '#151515', color: '#fff' }}>Rating (Low to High)</option>
-                                <option value="year-desc" style={{ background: '#151515', color: '#fff' }}>Year (Newest)</option>
-                                <option value="year-asc" style={{ background: '#151515', color: '#fff' }}>Year (Oldest)</option>
-                                <option value="title-asc" style={{ background: '#151515', color: '#fff' }}>Title (A-Z)</option>
-                                <option value="title-desc" style={{ background: '#151515', color: '#fff' }}>Title (Z-A)</option>
-                                <option value="status-desc" style={{ background: '#151515', color: '#fff' }}>Watched Status (Watched First)</option>
-                                <option value="status-asc" style={{ background: '#151515', color: '#fff' }}>Watched Status (Unwatched First)</option>
-                            </select>
+                            <div className="mobile-sort-select" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end', width: '100%' }}>
+                                <span style={{ color: '#666', fontSize: '0.85rem', flexShrink: 0 }}>Sort:</span>
+                                <select
+                                    value={`${sortField}-${sortDir}`}
+                                    onChange={(e) => {
+                                        const [field, dir] = e.target.value.split('-');
+                                        handleSort(field, dir);
+                                    }}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '12px',
+                                        color: '#fff',
+                                        padding: '6px 12px',
+                                        fontSize: '0.85rem',
+                                        outline: 'none',
+                                        cursor: 'pointer',
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'none',
+                                        appearance: 'none',
+                                        paddingRight: '30px',
+                                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d4af37' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                                        backgroundRepeat: 'no-repeat',
+                                        backgroundPosition: 'calc(100% - 10px) 50%',
+                                        maxWidth: '160px'
+                                    }}
+                                >
+                                    <option value="created_at-desc" style={{ background: '#151515', color: '#fff' }}>Added (Newest)</option>
+                                    <option value="created_at-asc" style={{ background: '#151515', color: '#fff' }}>Added (Oldest)</option>
+                                    <option value="rating-desc" style={{ background: '#151515', color: '#fff' }}>Rating (High to Low)</option>
+                                    <option value="rating-asc" style={{ background: '#151515', color: '#fff' }}>Rating (Low to High)</option>
+                                    <option value="year-desc" style={{ background: '#151515', color: '#fff' }}>Year (Newest)</option>
+                                    <option value="year-asc" style={{ background: '#151515', color: '#fff' }}>Year (Oldest)</option>
+                                    <option value="title-asc" style={{ background: '#151515', color: '#fff' }}>Title (A-Z)</option>
+                                    <option value="title-desc" style={{ background: '#151515', color: '#fff' }}>Title (Z-A)</option>
+                                    <option value="status-desc" style={{ background: '#151515', color: '#fff' }}>Watched Status (Watched First)</option>
+                                    <option value="status-asc" style={{ background: '#151515', color: '#fff' }}>Watched Status (Unwatched First)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
             </>
 
             {viewMode === 'grid' ? (
