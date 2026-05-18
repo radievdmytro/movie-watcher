@@ -704,12 +704,12 @@ input {
 
 @media (max-width: 768px) {
   .sticky-search-bar {
-    top: calc(var(--header-h, 90px) + 3px);
+    top: calc(var(--header-h, 90px) - 1px);
     margin-left: -12px;
     margin-right: -12px;
     padding-left: 12px;
     padding-right: 12px;
-    padding-top: 6px;
+    padding-top: 10px;
     padding-bottom: 6px;
     margin-bottom: 8px !important;
     gap: 8px !important;
