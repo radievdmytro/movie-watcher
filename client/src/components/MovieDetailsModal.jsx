@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 
-function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt }) {
+function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle }) {
     if (!movie) return null;
 
     const [activeTab, setActiveTab] = useState(openWithWatchedPrompt ? 'reviews' : 'about');
@@ -277,7 +277,32 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 }}
             >
                 {/* Header / Close */}
-                <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', gap: '10px', zIndex: 10 }}>
+                <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', gap: '10px', alignItems: 'center', zIndex: 10 }}>
+                    {onSelectToggle && (
+                        <label style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px', 
+                            cursor: 'pointer', 
+                            background: isSelected ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255,255,255,0.05)', 
+                            border: isSelected ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.1)', 
+                            padding: '6px 12px', 
+                            borderRadius: '4px', 
+                            color: isSelected ? 'var(--accent-gold)' : '#fff', 
+                            fontSize: '0.9rem', 
+                            transition: 'all 0.2s',
+                            userSelect: 'none',
+                            fontWeight: '500'
+                        }}>
+                            <input 
+                                type="checkbox" 
+                                checked={isSelected} 
+                                onChange={onSelectToggle} 
+                                style={{ accentColor: 'var(--accent-gold)', width: '15px', height: '15px', cursor: 'pointer' }}
+                            />
+                            {isSelected ? '✓ Selected' : 'Select'}
+                        </label>
+                    )}
                     <button
                         onClick={handleShare}
                         className="btn btn-ghost"

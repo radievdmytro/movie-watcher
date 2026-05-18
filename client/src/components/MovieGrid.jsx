@@ -283,6 +283,14 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     onUpdate={handleUpdateMovie}
                     onDelete={onDelete}
                     isTrashMode={isTrashMode}
+                    isSelected={selectedIds ? selectedIds.includes(selectedMovie.id) : false}
+                    onSelectToggle={selectedIds && onSelect ? () => {
+                        if (selectedIds.includes(selectedMovie.id)) {
+                            onSelect(selectedIds.filter(sid => sid !== selectedMovie.id));
+                        } else {
+                            onSelect([...selectedIds, selectedMovie.id]);
+                        }
+                    } : undefined}
                 />
             )}
 
