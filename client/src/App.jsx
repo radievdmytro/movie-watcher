@@ -534,6 +534,10 @@ function App() {
                     onRefresh={handleBulkRefresh}
                     onRestore={handleBulkRestore}
                     onAddToCollection={() => setShowAddToCollection(true)}
+                    onCancelSelection={() => {
+                        setSelectedIds([]);
+                        setSelectionAnchor(null);
+                    }}
                     isTrashMode={currentView === 'trash'}
                     anchor={selectionAnchor}
                 />

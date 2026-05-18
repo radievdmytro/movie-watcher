@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Draggable from 'react-draggable';
 
-function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToCollection, isTrashMode, anchor }) {
+function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToCollection, onCancelSelection, isTrashMode, anchor }) {
     const [isVisible, setIsVisible] = useState(false);
     const [lastAnchor, setLastAnchor] = useState(null);
     const nodeRef = useRef(null);
@@ -67,8 +67,16 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
                     ⋮⋮
                 </div>
 
-                <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.85rem' }}>
-                    <span style={{ color: 'var(--accent-gold)' }}>{selectedCount}</span> Selected
+                <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span><span style={{ color: 'var(--accent-gold)' }}>{selectedCount}</span> Selected</span>
+                    <button
+                        onClick={onCancelSelection}
+                        className="btn-ghost"
+                        style={{ color: '#aaa', padding: '0px 4px', fontSize: '1.1rem', marginTop: '-2px' }}
+                        title="Deselect All"
+                    >
+                        ✕
+                    </button>
                 </div>
 
                 <div style={{ height: '16px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
