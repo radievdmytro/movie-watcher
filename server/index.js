@@ -429,7 +429,121 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
     }
 });
 
-// Category Listing Endpoint
+// ==========================================
+// STREAMING SEARCH ENDPOINT (SSE)
+// Returns results progressively via Server-Sent Events
+// ==========================================
+app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
+    const { q: query } = req.query;
+    if (!query) {
+        res.status(400).json({ error: 'Query required' });
+        return;
+    }
+
+    // Setup SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    const send = (eventName, data) => {
+        res.write(`event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    const isDone = () => res.writableEnded;
+
+    try {
+        if (isHdrezkaUrl(query)) {
+            // ---- URL MODE: instant cache lookup, then scrape ----
+            const cleanQuery = cleanUrlPath(query);
+            const cached = db.prepare('SELECT * FROM scraped_movies_cache WHERE link LIKE ?').get(`%${cleanQuery}%`);
+
+            if (cached) {
+                send('result', { type: 'detail', data: cached, fromCache: true });
+                send('done', { fromCache: true });
+                res.end();
+                // Background freshness update
+                triggerBackgroundUpdate(query);
+                return;
+            }
+
+            // Not cached — scrape in real time
+            send('status', { msg: 'Fetching from HDRezka...' });
+            const details = await getMovieDetails(query);
+            if (details) {
+                saveToCache(details);
+                send('result', { type: 'detail', data: details });
+            }
+            send('done', {});
+            res.end();
+        } else {
+            // ---- TEXT SEARCH MODE ----
+            const searchLike = `%${query.trim()}%`;
+
+            // 1. Instant local DB results
+            const localResults = db.prepare(`
+                SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type
+                FROM scraped_movies_cache
+                WHERE title LIKE ? OR original_title LIKE ?
+                ORDER BY updated_at DESC
+                LIMIT 20
+            `).all(searchLike, searchLike);
+
+            if (localResults.length > 0) {
+                send('results', { items: localResults, fromCache: true });
+            }
+
+            // 2. Fetch from HDRezka (may return new items not in cache)
+            send('status', { msg: 'Searching HDRezka...' });
+            try {
+                const freshResults = await searchMovies(query);
+                if (!isDone()) {
+                    // Save to cache
+                    for (const item of (freshResults || [])) {
+                        try {
+                            db.prepare(`
+                                INSERT INTO scraped_movies_cache (title, year, link, poster_url, genres, rating, type, updated_at)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                                ON CONFLICT(link) DO UPDATE SET
+                                    title = excluded.title, year = excluded.year,
+                                    poster_url = excluded.poster_url, genres = excluded.genres,
+                                    rating = excluded.rating, type = excluded.type,
+                                    updated_at = CURRENT_TIMESTAMP
+                            `).run(item.title, item.year, item.link, item.img, item.misc, item.rating, item.type);
+                        } catch (e) { /* ignore */ }
+                    }
+
+                    // Find items that are genuinely new (not already sent from cache)
+                    const cachedLinks = new Set(localResults.map(r => cleanUrlPath(r.link)));
+                    const newItems = (freshResults || []).filter(r => !cachedLinks.has(cleanUrlPath(r.link)));
+
+                    if (newItems.length > 0) {
+                        send('results', { items: newItems, fromCache: false });
+                    } else if (localResults.length === 0) {
+                        // Send the fresh results even if no new ones (in case cache was empty)
+                        send('results', { items: freshResults || [], fromCache: false });
+                    }
+                }
+            } catch (scrapeErr) {
+                if (!isDone()) send('error', { msg: 'HDRezka search failed' });
+            }
+
+            if (!isDone()) {
+                send('done', {});
+                res.end();
+            }
+        }
+    } catch (err) {
+        console.error('[SSE Search Error]', err);
+        if (!isDone()) {
+            send('error', { msg: err.message });
+            res.end();
+        }
+    }
+});
+
+
 app.get('/api/movies/category/:filter', authenticateToken, async (req, res) => {
     try {
         const { filter } = req.params;

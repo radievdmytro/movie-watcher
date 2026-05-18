@@ -67,8 +67,10 @@ function getActiveUrl(pathOrUrl) {
 async function requestWithRetry(urlPath, options = {}, retries = 3) {
     let lastError;
     for (let attempt = 0; attempt < retries; attempt++) {
-        // Space out requests naturally
-        await delay(200 + Math.random() * 400);
+        // Only delay on retries, not on the first attempt
+        if (attempt > 0) {
+            await delay(300 + Math.random() * 300);
+        }
 
         const activeUrl = getActiveUrl(urlPath);
         const headers = {
@@ -82,7 +84,7 @@ async function requestWithRetry(urlPath, options = {}, retries = 3) {
             const response = await axios.get(activeUrl, {
                 ...options,
                 headers,
-                timeout: 8000 // 8 seconds timeout
+                timeout: 6000 // reduced from 8s to 6s
             });
             return response;
         } catch (err) {
@@ -96,8 +98,8 @@ async function requestWithRetry(urlPath, options = {}, retries = 3) {
                 console.log(`[Scraper] Rotating active mirror domain to: ${MIRRORS[currentMirrorIndex]}`);
             }
 
-            // Exponential backoff
-            await delay(1000 * Math.pow(2, attempt));
+            // Exponential backoff on retries
+            await delay(800 * Math.pow(2, attempt));
         }
     }
     throw new Error(`Scraper request failed after ${retries} retries. Last error: ${lastError.message}`);
@@ -151,21 +153,7 @@ async function searchMovies(query) {
         const results = parseMovieList($);
         console.log(`[Scraper] Search found ${results.length} results`);
 
-        // Enhance ratings of top 8 results politely (Sequential spaced fetches)
-        const resultsToEnhance = results.slice(0, 8).filter(r => !r.rating);
-        for (const r of resultsToEnhance) {
-            try {
-                // Sequential spacing delay
-                await delay(400 + Math.random() * 400);
-                const details = await getMovieDetails(r.link);
-                if (details && details.rating) {
-                    r.rating = details.rating;
-                }
-            } catch (e) {
-                // Ignore individual detail failures in search feeds
-            }
-        }
-
+        // Cache and return immediately — rating enrichment happens async via background updates
         setToCache(searchCache, cacheKey, results);
         return results;
 

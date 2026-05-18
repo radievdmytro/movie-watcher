@@ -3,11 +3,14 @@ import { useState, useEffect, useRef } from 'react';
 function AddMovie({ onMovieAdded, onScrollToMovie }) {
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
+    const [searchStreaming, setSearchStreaming] = useState(false); // SSE in progress
+    const [searchStatus, setSearchStatus] = useState('');          // status text
     const [preview, setPreview] = useState(null);
     const [searchResults, setSearchResults] = useState(null);
     const [showResultsPanel, setShowResultsPanel] = useState(false);
     const [logs, setLogs] = useState([]);
     const [isFadingLogs, setIsFadingLogs] = useState(false);
+    const activeStreamRef = useRef(null); // track open SSE connection
 
     // Filters for search results
     const [searchFilterType, setSearchFilterType] = useState('all');
@@ -33,17 +36,25 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
     };
 
     const handleSearch = async (isAuto = false, openFullPage = false) => {
-        if (!query.trim()) {
+        const q = query.trim();
+        if (!q) {
             setPreview(null);
             setSearchResults(null);
             setShowResultsPanel(false);
+            setSearchStreaming(false);
+            setSearchStatus('');
             return;
         }
 
-        const urls = extractUrls(query);
-        if (isAuto && (urls.length > 1 || query.length < 3)) return;
+        const urls = extractUrls(q);
+        if (isAuto && (urls.length > 1 || q.length < 3)) return;
 
-        setLoading(true);
+        // Close any running SSE stream
+        if (activeStreamRef.current) {
+            activeStreamRef.current.abort();
+            activeStreamRef.current = null;
+        }
+
         if (!isAuto) {
             setPreview(null);
             setSearchResults(null);
@@ -52,60 +63,129 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
         }
 
         if (urls.length > 1) {
+            setLoading(true);
             await handleBatchImport(urls);
             setLoading(false);
             return;
         }
 
+        setLoading(true);
+        setSearchStreaming(true);
+        setSearchStatus('Searching...');
+        if (openFullPage) setFullPageResults(true);
+
+        const token = localStorage.getItem('token');
+        const controller = new AbortController();
+        activeStreamRef.current = controller;
+
         try {
-            const res = await fetch('/api/movies/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: query.trim() })
+            const res = await fetch(`/api/movies/search/stream?q=${encodeURIComponent(q)}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+                signal: controller.signal
             });
-            const data = await res.json();
 
-            if (data.type === 'detail') {
-                setPreview(data.data);
-                setShowResultsPanel(false);
-            } else if (data.type === 'list') {
-                setSearchResults(data.data);
-                setSelectedLinks(new Set());
-                setShowResultsPanel(true);
-                if (openFullPage) setFullPageResults(true);
+            if (!res.ok) throw new Error('Stream failed');
 
-                // Auto-open detail panel if only one result
-                if (data.data.length === 1) {
-                    const singleResult = data.data[0];
-                    try {
-                        const detailRes = await fetch('/api/movies/details', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ link: singleResult.link })
-                        });
-                        const detailData = await detailRes.json();
-                        setPreview(detailData);
-                        setShowResultsPanel(false);
-                    } catch (err) {
-                        console.error('Failed to auto-fetch details:', err);
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let accumulatedResults = [];
+
+            const parseSSEChunk = (chunk) => {
+                buffer += chunk;
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // keep incomplete line
+                let eventName = '';
+                for (const line of lines) {
+                    if (line.startsWith('event: ')) {
+                        eventName = line.slice(7).trim();
+                    } else if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (eventName === 'result' && data.type === 'detail') {
+                                // URL mode — show preview immediately
+                                setPreview(data.data);
+                                setShowResultsPanel(false);
+                                setSearchStreaming(false);
+                                setSearchStatus('');
+                                setLoading(false);
+                            } else if (eventName === 'results') {
+                                // Text mode — merge results progressively
+                                const incoming = data.items || [];
+                                const existingLinks = new Set(accumulatedResults.map(r => r.link));
+                                const merged = [...accumulatedResults];
+                                for (const item of incoming) {
+                                    if (!existingLinks.has(item.link)) {
+                                        merged.push(item);
+                                        existingLinks.add(item.link);
+                                    } else {
+                                        // Update existing entry with fresher data
+                                        const idx = merged.findIndex(r => r.link === item.link);
+                                        if (idx !== -1) merged[idx] = { ...merged[idx], ...item };
+                                    }
+                                }
+                                accumulatedResults = merged;
+                                setSearchResults([...merged]);
+                                setSelectedLinks(new Set());
+                                setShowResultsPanel(!openFullPage);
+                                if (data.fromCache) setSearchStatus('Searching HDRezka for more...');
+                                else setSearchStatus('');
+                            } else if (eventName === 'status') {
+                                setSearchStatus(data.msg || '');
+                            } else if (eventName === 'done') {
+                                setSearchStreaming(false);
+                                setSearchStatus('');
+                                setLoading(false);
+                            } else if (eventName === 'error') {
+                                setSearchStatus('');
+                                setSearchStreaming(false);
+                                setLoading(false);
+                            }
+                        } catch (e) { /* ignore parse errors */ }
+                        eventName = '';
                     }
                 }
+            };
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                parseSSEChunk(decoder.decode(value, { stream: true }));
             }
         } catch (error) {
-            console.error('Search failed:', error);
-            if (!isAuto) {
-                setLogs([{ msg: '✗ Search failed', type: 'error' }]);
-                setIsFadingLogs(false);
-                setTimeout(() => setIsFadingLogs(true), 4000);
+            if (error.name !== 'AbortError') {
+                console.error('Search stream failed:', error);
+                if (!isAuto) {
+                    setLogs([{ msg: '✗ Search failed', type: 'error' }]);
+                    setIsFadingLogs(false);
+                    setTimeout(() => setIsFadingLogs(true), 4000);
+                }
             }
         } finally {
-            if (urls.length <= 1) setLoading(false);
+            setLoading(false);
+            setSearchStreaming(false);
+            setSearchStatus('');
         }
     };
 
+    // Debounced auto-search (text mode only; URL mode triggers instantly)
     useEffect(() => {
+        const q = query.trim();
+        if (!q) {
+            setPreview(null);
+            setSearchResults(null);
+            setShowResultsPanel(false);
+            setSearchStatus('');
+            if (activeStreamRef.current) { activeStreamRef.current.abort(); activeStreamRef.current = null; }
+            return;
+        }
+        // If it's a URL, trigger immediately (no debounce needed)
+        if (isHdrezkaUrl(q)) {
+            handleSearch(true, false);
+            return;
+        }
         const timer = setTimeout(() => {
-            if (query.trim()) {
+            if (q) {
                 handleSearch(true, false); // auto: dropdown only, never full-page
             }
         }, 300);
@@ -419,6 +499,30 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
                     ) : (extractUrls(query).length > 1 ? 'IMPORT ALL' : 'SEARCH')}
                 </button>
             </div>
+
+            {/* Streaming progress bar */}
+            <div style={{
+                height: '2px',
+                borderRadius: '2px',
+                background: 'rgba(255,255,255,0.05)',
+                overflow: 'hidden',
+                marginTop: '4px',
+                opacity: searchStreaming ? 1 : 0,
+                transition: 'opacity 0.3s'
+            }}>
+                <div style={{
+                    height: '100%',
+                    background: 'linear-gradient(90deg, var(--accent-gold) 0%, #ffe066 50%, var(--accent-gold) 100%)',
+                    backgroundSize: '200% 100%',
+                    animation: searchStreaming ? 'shimmer 1.4s infinite linear' : 'none',
+                    width: '100%'
+                }} />
+            </div>
+            {searchStatus && (
+                <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '4px', paddingLeft: '16px', transition: 'opacity 0.3s' }}>
+                    {searchStatus}
+                </div>
+            )}
 
             {/* Category Quick Buttons */}
             <div style={{
@@ -899,6 +1003,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                 @keyframes deplete { from { width: 100%; } to { width: 0%; } }
+                @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
                 .search-input::placeholder { color: #555; }
                 .result-item:hover {
                     background: rgba(255, 255, 255, 0.08) !important;
