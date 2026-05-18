@@ -618,8 +618,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 />
             )}
 
-            <div className="controls-section" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
-                <div className="controls-top-bar sticky-search-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+            <>
+                <div className="controls-top-bar sticky-search-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '15px' }}>
                     <div className="controls-top-left" style={{ display: 'flex', gap: '15px', alignItems: 'center', flex: 1, minWidth: '280px' }}>
                         <div style={{ position: 'relative', flex: 1, zIndex: isSearchFocused ? 9999 : 2 }}>
                             <input
@@ -876,6 +876,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     </div>
                 </div>
 
+                <div className="controls-section-rest" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
                 {/* Expanded Filters Panel */}
                 <div style={{
                     maxHeight: showFilters ? '1000px' : '0',
@@ -1084,6 +1085,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     </div>
                 </div>
             </div>
+            </>
 
             {viewMode === 'grid' ? (
                 <div className="movie-grid-container" style={{

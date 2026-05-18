@@ -372,7 +372,7 @@ input {
 /* Phones (<= 480px) */
 @media (max-width: 480px) {
   /* Controls Bar optimization on mobile */
-  .controls-section {
+  .controls-section, .controls-section-rest {
     gap: 10px !important;
   }
   
@@ -592,6 +592,8 @@ input {
     padding-top: 0 !important;
     flex-wrap: nowrap !important;
     align-items: center !important;
+    width: auto !important;
+    justify-content: flex-end !important;
   }
 
   /* Hide divider line in compact mode */
@@ -729,7 +731,7 @@ input {
   }
 
   /* --- Controls section --- */
-  .controls-section {
+  .controls-section, .controls-section-rest {
     gap: 8px !important;
   }
 
