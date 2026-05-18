@@ -16,7 +16,16 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
     const [checkingAuth, setCheckingAuth] = useState(true);
-    const [currentView, setCurrentView] = useState('library'); // 'library' | 'trash' | 'collections' | 'shared_collection' | 'admin'
+    const getInitialView = () => {
+        const hash = window.location.hash;
+        if (hash === '#collections') return 'collections';
+        if (hash === '#trash') return 'trash';
+        if (hash === '#admin') return 'admin';
+        if (hash === '#library') return 'library';
+        return 'library';
+    };
+
+    const [currentView, setCurrentView] = useState(getInitialView); // 'library' | 'trash' | 'collections' | 'shared_collection' | 'admin'
     const [selectedIds, setSelectedIds] = useState([]);
     const [selectionAnchor, setSelectionAnchor] = useState(null);
     const [deletingIds, setDeletingIds] = useState([]); // Track items being deleted for animation
@@ -45,6 +54,45 @@ function App() {
     const [confirmConfig, setConfirmConfig] = useState(null); // { title, message, onConfirm, confirmText, confirmColor }
 
     const [sharedMovieData, setSharedMovieData] = useState(null);
+
+    // Synchronize currentView state with URL hash
+    useEffect(() => {
+        if (currentView === 'shared_collection') {
+            return;
+        }
+        if (user) {
+            window.location.hash = currentView;
+        } else {
+            window.location.hash = '';
+        }
+    }, [currentView, user]);
+
+    // Handle hash change events (e.g. browser back/forward or manual hash entry)
+    useEffect(() => {
+        const handleHashChange = () => {
+            if (currentView === 'shared_collection') return;
+            const hash = window.location.hash;
+            if (hash === '#collections') {
+                setCurrentView('collections');
+            } else if (hash === '#trash') {
+                setCurrentView('trash');
+            } else if (hash === '#admin') {
+                if (user && user.username.toLowerCase() === 'radev') {
+                    setCurrentView('admin');
+                } else {
+                    setCurrentView('library');
+                    window.location.hash = 'library';
+                }
+            } else if (hash === '#library') {
+                setCurrentView('library');
+            } else if (user) {
+                setCurrentView('library');
+            }
+        };
+
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, [user, currentView]);
 
     // Parse URL on startup for shared collection ID or movie ID
     useEffect(() => {
@@ -92,7 +140,7 @@ function App() {
     const handleExitSharedView = () => {
         window.history.replaceState({}, document.title, window.location.pathname);
         setSharedCollectionId(null);
-        setCurrentView(user ? 'library' : 'auth');
+        setCurrentView(user ? getInitialView() : 'auth');
     };
 
     const fetchMovies = async () => {
@@ -137,6 +185,7 @@ function App() {
         setSelectedIds([]);
         setSelectionAnchor(null);
         setCurrentView('library');
+        window.location.hash = '';
     };
 
     // Single Item Delete (Context dependent)
