@@ -630,36 +630,44 @@ function CollectionsView({ onBack }) {
                                     <div style={{ flex: '1', minWidth: '200px' }}>
                                         {activeTab === 'mine' ? (
                                             <>
-                                                <EditableField
-                                                    value={c.title}
-                                                    placeholder="Collection Title"
-                                                    style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: 'var(--accent-gold)', fontWeight: 'bold' }}
-                                                    onSave={(newVal) => {
-                                                        if (newVal.trim() && newVal !== c.title) {
-                                                            handleUpdateCollection(c.id, { title: newVal }, { title: c.title });
-                                                        }
-                                                    }}
-                                                />
-                                                <EditableField
-                                                    type="textarea"
-                                                    value={c.description || ''}
-                                                    placeholder="No description provided. Click to add."
-                                                    style={{ margin: 0, color: '#aaa', fontSize: '0.9rem', width: '100%' }}
-                                                    onSave={(newVal) => {
-                                                        if (newVal !== (c.description || '')) {
-                                                            handleUpdateCollection(c.id, { description: newVal }, { description: c.description });
-                                                        }
-                                                    }}
-                                                />
+                                                <div style={{ display: 'block', marginBottom: '4px' }}>
+                                                    <EditableField
+                                                        value={c.title}
+                                                        placeholder="Collection Title"
+                                                        style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: 'var(--accent-gold)', fontWeight: 'bold' }}
+                                                        onSave={(newVal) => {
+                                                            if (newVal.trim() && newVal !== c.title) {
+                                                                handleUpdateCollection(c.id, { title: newVal }, { title: c.title });
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div style={{ display: 'block' }}>
+                                                    <EditableField
+                                                        type="textarea"
+                                                        value={c.description || ''}
+                                                        placeholder="No description provided. Click to add."
+                                                        style={{ margin: 0, color: '#aaa', fontSize: '0.9rem', width: '100%' }}
+                                                        onSave={(newVal) => {
+                                                            if (newVal !== (c.description || '')) {
+                                                                handleUpdateCollection(c.id, { description: newVal }, { description: c.description });
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
                                             </>
                                         ) : (
                                             <>
-                                                <h3 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: 'var(--accent-gold)' }}>
-                                                    {c.title}
-                                                </h3>
-                                                <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
-                                                    {c.description || 'No description provided.'}
-                                                </p>
+                                                <div style={{ display: 'block', marginBottom: '4px' }}>
+                                                    <h3 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: 'var(--accent-gold)' }}>
+                                                        {c.title}
+                                                    </h3>
+                                                </div>
+                                                <div style={{ display: 'block' }}>
+                                                    <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
+                                                        {c.description || 'No description provided.'}
+                                                    </p>
+                                                </div>
                                             </>
                                         )}
                                         <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginTop: '6px' }}>
