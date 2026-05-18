@@ -555,14 +555,46 @@ input {
   /* Always make header-content position:relative so absolute children work */
   .app-header .header-content {
     position: relative;
+    padding-bottom: 60px; /* Space for the absolute bottom strip */
   }
 
-  /* ── COMPACT: header layout tightens ── */
+  /* ── header-right: ALWAYS absolute on mobile to prevent jumping ── */
+  .app-header .header-right {
+    position: absolute !important;
+    bottom: 15px;
+    right: 50%;
+    transform: translateX(50%) translateY(0%);
+    width: max-content !important;
+    justify-content: center !important;
+  }
+
+  /* Base states for disappearing elements to allow smooth fade out */
+  .app-header .header-movie-count {
+    max-height: 40px;
+    opacity: 1;
+    overflow: hidden;
+  }
+
+  .app-header .header-right > div[style*="borderLeft"] {
+    max-width: 20px;
+    opacity: 1;
+    overflow: hidden;
+  }
+
+  .app-header .btn-label {
+    max-width: 150px;
+    opacity: 1;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* ── COMPACT: header layout tightens smoothly ── */
   .app-header.header-scrolled .header-content {
     padding-top: 5px !important;
     padding-bottom: 5px !important;
     gap: 4px !important;
-    /* Reserve space on right for the absolute icon row (~110px for 3 icons) */
+    /* Reserve space on right for the absolute icon row */
     padding-right: 115px !important;
   }
 
@@ -595,29 +627,32 @@ input {
     font-size: 0.72rem !important;
   }
 
-  /* Hide movie count */
+  /* Fade out movie count */
   .app-header.header-scrolled .header-movie-count {
-    display: none !important;
+    max-height: 0 !important;
+    opacity: 0 !important;
+    margin: 0 !important;
   }
 
-  /* ── header-right: float absolute to top-right corner as icon strip ── */
+  /* ── header-right: smoothly float to top-right corner as icon strip ── */
   .app-header.header-scrolled .header-right {
-    position: absolute !important;
-    top: 50% !important;
+    bottom: 50% !important;
     right: 8px !important;
-    transform: translateY(-50%) !important;
+    transform: translateX(0) translateY(50%) !important;
     gap: 2px !important;
     border-top: none !important;
     padding-top: 0 !important;
     flex-wrap: nowrap !important;
     align-items: center !important;
-    width: auto !important;
     justify-content: flex-end !important;
   }
 
-  /* Hide divider line in compact mode */
+  /* Fade out divider line */
   .app-header.header-scrolled .header-right > div[style*="borderLeft"] {
-    display: none !important;
+    max-width: 0 !important;
+    opacity: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   /* Trash & Logout: compact icon-only circles */
@@ -641,11 +676,12 @@ input {
     padding: 2px !important;
   }
 
-  /* Hide ALL text labels in compact mode */
+  /* Fade out ALL text labels in compact mode */
   .app-header.header-scrolled .btn-label {
-    display: none !important;
-    width: 0 !important;
-    overflow: hidden !important;
+    max-width: 0 !important;
+    opacity: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
   /* Empty Trash button (conditionally rendered) */
@@ -727,7 +763,7 @@ input {
 
   /* --- Header compact --- */
   .header-content {
-    padding: 10px 12px !important;
+    padding: 10px 12px 60px 12px !important;
     gap: 8px !important;
   }
 
