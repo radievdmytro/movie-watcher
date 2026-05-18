@@ -1268,7 +1268,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             background: movie.status === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
                                             border: movie.status === 'watched' ? '1px solid rgba(255,255,255,0.12)' : 'none',
                                             color: movie.status === 'watched' ? '#fff' : '#000',
-                                            padding: isMobile ? '10px 12px' : '12px 28px',
+                                            padding: isMobile ? '8px 10px' : '12px 28px',
                                             fontSize: isMobile ? '0.82rem' : '0.95rem',
                                             fontWeight: '700',
                                             borderRadius: '10px',
@@ -1283,7 +1283,19 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                         }}
                                         onClick={handleStatusToggle}
                                     >
-                                        {movie.status === 'watched' ? 'Mark Unwatched ⚪' : 'Mark Watched ⭐'}
+                                        {isMobile ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', textAlign: 'left' }}>
+                                                <span style={{ fontSize: '1rem', lineHeight: 1 }}>
+                                                    {movie.status === 'watched' ? '⚪' : '⭐'}
+                                                </span>
+                                                <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.72rem', lineHeight: '1.15', fontWeight: '700' }}>
+                                                    <span>Mark</span>
+                                                    <span>{movie.status === 'watched' ? 'Unwatched' : 'Watched'}</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            movie.status === 'watched' ? 'Mark Unwatched ⚪' : 'Mark Watched ⭐'
+                                        )}
                                     </button>
                                     <a
                                         href={movie.link}
@@ -1293,7 +1305,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             background: 'rgba(255,255,255,0.03)',
                                             border: '1px solid rgba(255,255,255,0.08)',
                                             color: '#fff',
-                                            padding: isMobile ? '10px 12px' : '12px 28px',
+                                            padding: isMobile ? '8px 10px' : '12px 28px',
                                             fontSize: isMobile ? '0.82rem' : '0.95rem',
                                             fontWeight: '600',
                                             borderRadius: '10px',
@@ -1307,7 +1319,17 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             flex: isMobile ? '1 1 auto' : '0 0 auto'
                                         }}
                                     >
-                                        Watch on HDRezka 🌐
+                                        {isMobile ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', textAlign: 'left' }}>
+                                                <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>🌐</span>
+                                                <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.72rem', lineHeight: '1.15', fontWeight: '700' }}>
+                                                    <span>Watch on</span>
+                                                    <span>HDRezka</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>Watch on HDRezka 🌐</>
+                                        )}
                                     </a>
                                     <button
                                         onClick={() => { onDelete(movie.id); onClose(); }}
@@ -1316,7 +1338,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             background: 'rgba(239, 68, 68, 0.08)',
                                             border: '1px solid rgba(239, 68, 68, 0.2)',
                                             color: '#ff6b6b',
-                                            padding: isMobile ? '10px 14px' : '12px 18px',
+                                            padding: isMobile ? '8px 14px' : '12px 18px',
                                             fontSize: isMobile ? '0.82rem' : '0.95rem',
                                             fontWeight: '600',
                                             borderRadius: '10px',
