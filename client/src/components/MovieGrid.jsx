@@ -1505,14 +1505,26 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                             )}
                                             {movie.type === 'series' && <span className="badge-ui" style={{ background: 'rgba(33, 150, 243, 0.9)' }}>TV</span>}
                                             <div style={{
-                                                background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px',
-                                                fontWeight: 'bold', color: 'var(--accent-gold)', fontSize: '0.8rem',
-                                                backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', gap: '4px'
+                                                background: 'rgba(0,0,0,0.6)', 
+                                                padding: isMobile ? '1px 4px' : '2px 6px', 
+                                                borderRadius: isMobile ? '2px' : '4px',
+                                                fontWeight: 'bold', 
+                                                color: 'var(--accent-gold)', 
+                                                fontSize: isMobile ? '0.65rem' : '0.8rem',
+                                                backdropFilter: 'blur(4px)', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                gap: '2px'
                                             }}>
                                                 {movie.rating ? `★ ${movie.rating}` : '-'}
                                                 {movie.user_rating && (
-                                                    <span style={{ color: '#03dac6', borderLeft: '1px solid #444', paddingLeft: '5px', marginLeft: '2px' }}>
-                                                        👤 ★ {movie.user_rating}
+                                                    <span style={{ 
+                                                        color: '#03dac6', 
+                                                        borderLeft: '1px solid #444', 
+                                                        paddingLeft: isMobile ? '3px' : '5px', 
+                                                        marginLeft: isMobile ? '1px' : '2px' 
+                                                    }}>
+                                                        👤 {isMobile ? '' : '★ '}{movie.user_rating}
                                                     </span>
                                                 )}
                                             </div>
@@ -1523,6 +1535,13 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #fff; 
                         font-size: 0.65rem; backdrop-filter: blur(4px); text-transform: uppercase;
                         display: inline-block;
+                    }
+                    @media (max-width: 768px) {
+                        .badge-ui {
+                            padding: 1px 3px;
+                            font-size: 0.5rem;
+                            border-radius: 2px;
+                        }
                     }
                 `}</style>
                                     </div>
@@ -1593,12 +1612,21 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                     className="btn-ghost"
                                                     title={movie.status === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
                                                     style={{
-                                                        flex: 1, padding: '6px 8px', fontSize: '0.8rem',
-                                                        borderRadius: '4px', border: '1px solid', cursor: 'pointer',
-                                                        transition: 'all 0.2s ease', fontWeight: 'bold',
+                                                        flex: 1, 
+                                                        padding: isMobile ? '4px 6px' : '6px 8px', 
+                                                        fontSize: isMobile ? '0.7rem' : '0.8rem',
+                                                        borderRadius: '4px', 
+                                                        border: '1px solid', 
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease', 
+                                                        fontWeight: 'bold',
                                                         background: movie.status === 'watched' ? 'rgba(3, 218, 198, 0.15)' : 'rgba(255,255,255,0.05)',
                                                         borderColor: movie.status === 'watched' ? '#03dac6' : 'rgba(255,255,255,0.1)',
                                                         color: movie.status === 'watched' ? '#03dac6' : '#fff',
+                                                        height: isMobile ? '28px' : 'auto',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
                                                     }}
                                                     onClick={async () => {
                                                         if (movie.status !== 'watched') {
@@ -1613,14 +1641,25 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                     {movie.status === 'watched' ? (
                                                         <span>
                                                             {movie.user_rating ? `★ ${movie.user_rating}` : '✔ Watched'}
-                                                            {movie.community_rating ? ` (${movie.community_rating})` : ''}
                                                         </span>
                                                     ) : 'Watch'}
                                                 </button>
                                                 <button
                                                     className="btn-ghost"
                                                     title="Delete"
-                                                    style={{ padding: '4px 8px', background: 'rgba(255,0,0,0.2)', color: '#ff6b6b', borderRadius: '4px' }}
+                                                    style={{ 
+                                                        padding: isMobile ? '4px 6px' : '4px 8px', 
+                                                        background: 'rgba(255,0,0,0.2)', 
+                                                        color: '#ff6b6b', 
+                                                        borderRadius: '4px',
+                                                        fontSize: isMobile ? '0.75rem' : '0.9rem',
+                                                        height: isMobile ? '28px' : 'auto',
+                                                        width: isMobile ? '28px' : '28px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0
+                                                    }}
                                                     onClick={() => onDelete(movie.id)}
                                                 >
                                                     🗑
