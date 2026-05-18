@@ -99,6 +99,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
         } else {
             // Auto/dropdown mode: reset full-page mode so dropdown becomes visible
             setFullPageResults(false);
+            setShowResultsPanel(true); // Open the dropdown panel instantly for better UX
         }
 
         const token = localStorage.getItem('token');
@@ -198,7 +199,14 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     // Debounced auto-search (text mode only; URL mode triggers instantly)
     useEffect(() => {
         const q = query.trim();
-        if (!q) {
+        // Trigger instantly for valid HDRezka URLs regardless of length
+        if (isHdrezkaUrl(q)) {
+            handleSearch(true, false);
+            return;
+        }
+
+        // Require at least 3 characters for auto-search text queries
+        if (q.length < 3) {
             setPreview(null);
             setSearchResults(null);
             setShowResultsPanel(false);
@@ -206,15 +214,9 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
             if (activeStreamRef.current) { activeStreamRef.current.abort(); activeStreamRef.current = null; }
             return;
         }
-        // If it's a URL, trigger immediately (no debounce needed)
-        if (isHdrezkaUrl(q)) {
-            handleSearch(true, false);
-            return;
-        }
+
         const timer = setTimeout(() => {
-            if (q) {
-                handleSearch(true, false); // auto: dropdown only, never full-page
-            }
+            handleSearch(true, false); // auto: dropdown only, never full-page
         }, 300);
         return () => clearTimeout(timer);
     }, [query]);
