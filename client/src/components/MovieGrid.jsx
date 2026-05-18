@@ -154,7 +154,7 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                 />
             </div>
 
-            {isOpen && (filteredOptions.length > 0 || inputValue.trim() !== '') && (
+            {isOpen && (
                 <div 
                     style={{
                         position: 'absolute',
@@ -171,7 +171,12 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                         padding: '4px 0'
                     }}
                 >
-                    {filteredOptions.length > 0 ? (
+                    {options.length === 0 ? (
+                        <div style={{ padding: '12px 15px', color: '#666', fontSize: '0.8rem', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>{label === 'Directors' ? '🎬' : '🎭'}</span>
+                            <span>No {label.toLowerCase()} in your library yet. Type manually to filter!</span>
+                        </div>
+                    ) : filteredOptions.length > 0 ? (
                         filteredOptions.slice(0, 50).map(opt => {
                             const name = typeof opt === 'string' ? opt : opt?.name;
                             const count = typeof opt === 'string' ? null : opt?.count;
