@@ -363,7 +363,7 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
                 SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type
                 FROM scraped_movies_cache
                 WHERE cyrillic_like(title, ?) OR cyrillic_like(original_title, ?)
-                LIMIT 20
+                LIMIT 150
             `).all(query.trim(), query.trim());
 
             if (localResults.length > 0) {
@@ -487,7 +487,7 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
                 FROM scraped_movies_cache
                 WHERE cyrillic_like(title, ?) OR cyrillic_like(original_title, ?)
                 ORDER BY updated_at DESC
-                LIMIT 20
+                LIMIT 150
             `).all(qTrimmed, qTrimmed);
 
             if (localResults.length > 0) {

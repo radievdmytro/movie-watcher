@@ -380,7 +380,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
         }
     };
 
-    const filteredSearchResults = (searchResults || []).filter(item => {
+    let filteredSearchResults = (searchResults || []).filter(item => {
         const rating = parseFloat(item.rating) || 0;
         const year = parseInt(item.year) || 0;
 
@@ -409,6 +409,49 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
 
         return true;
     });
+
+    // Premium search result sorting based on query matching closeness
+    const qTrimmed = query.trim().toLowerCase();
+    if (qTrimmed && !qTrimmed.startsWith('http://') && !qTrimmed.startsWith('https://')) {
+        const getMatchScore = (title, originalTitle, qText) => {
+            const t = (title || '').toLowerCase();
+            const ot = (originalTitle || '').toLowerCase();
+            
+            // 1. Exact match
+            if (t === qText || ot === qText) return 100;
+            
+            // 2. Starts with query
+            if (t.startsWith(qText) || ot.startsWith(qText)) return 90;
+            
+            // 3. Contains as a whole word
+            const wordRegex = new RegExp('(?:^|[^а-яёА-ЯЁa-zA-Z0-9])' + qText.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '(?:$|[^а-яёА-ЯЁa-zA-Z0-9])', 'i');
+            if (wordRegex.test(t) || wordRegex.test(ot)) return 80;
+            
+            // 4. Contains query anywhere
+            if (t.includes(qText) || ot.includes(qText)) return 70;
+            
+            return 0;
+        };
+
+        filteredSearchResults = [...filteredSearchResults].sort((a, b) => {
+            const scoreA = getMatchScore(a.title, a.original_title, qTrimmed);
+            const scoreB = getMatchScore(b.title, b.original_title, qTrimmed);
+            
+            if (scoreA !== scoreB) {
+                return scoreB - scoreA; // higher score first
+            }
+            
+            // Tie-breaker 1: Year (newer first)
+            const yearA = parseInt(a.year) || 0;
+            const yearB = parseInt(b.year) || 0;
+            if (yearA !== yearB) return yearB - yearA;
+            
+            // Tie-breaker 2: Rating (higher first)
+            const ratingA = parseFloat(a.rating) || 0;
+            const ratingB = parseFloat(b.rating) || 0;
+            return ratingB - ratingA;
+        });
+    }
 
     const inputLines = query.split(/\n/).length;
 
