@@ -319,7 +319,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                     </button>
                 </div>
 
-                {movie.source_collection_name && movie.source_collection_token && (
+                {movie.source_collection_name && (
                     <div style={{
                         background: 'linear-gradient(90deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.02) 100%)',
                         borderBottom: '1px solid rgba(212,175,55,0.2)',
@@ -328,28 +328,35 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                         color: '#ddd',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px'
+                        gap: '8px',
+                        flexWrap: 'wrap'
                     }}>
                         <span style={{ fontSize: '1.1rem' }}>🎁</span>
                         <span>Saved from collection</span>
-                        <a 
-                            href={`/?collection=${movie.source_collection_token}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ 
-                                color: 'var(--accent-gold)', 
-                                fontWeight: 700, 
-                                textDecoration: 'none', 
-                                padding: '2px 8px',
-                                background: 'rgba(212,175,55,0.1)',
-                                borderRadius: '4px',
-                                transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.2)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.1)'}
-                        >
-                            {movie.source_collection_name}
-                        </a>
+                        {movie.source_collection_token ? (
+                            <a 
+                                href={`/?collection=${movie.source_collection_token}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ 
+                                    color: 'var(--accent-gold)', 
+                                    fontWeight: 700, 
+                                    textDecoration: 'none', 
+                                    padding: '2px 8px',
+                                    background: 'rgba(212,175,55,0.1)',
+                                    borderRadius: '4px',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.2)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.1)'}
+                            >
+                                {movie.source_collection_name}
+                            </a>
+                        ) : (
+                            <span style={{ color: 'var(--accent-gold)', fontWeight: 700 }}>
+                                {movie.source_collection_name}
+                            </span>
+                        )}
                         <span style={{ color: '#888' }}>by {movie.source_user_name || 'unknown'}</span>
                     </div>
                 )}
