@@ -237,7 +237,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                                         e.currentTarget.style.transform = 'translateY(0)';
                                                     }}
                                                 >
-                                                    {isMobile ? 'Подробнее' : 'Подробнее →'}
+                                                    {isMobile ? 'Подробнее' : 'Details →'}
                                                 </button>
                                             ) : owned ? (
                                                 <div style={{
