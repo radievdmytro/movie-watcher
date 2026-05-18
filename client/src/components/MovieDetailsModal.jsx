@@ -307,21 +307,17 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
             }}
         >
             <div
-                className="glass-panel"
                 style={{
+                    position: 'relative',
                     width: isMobile ? '94%' : '100%', 
                     maxWidth: '900px', 
                     maxHeight: isMobile ? '82vh' : '90vh',
-                    overflowY: 'auto', 
-                    position: 'relative',
-                    animation: 'scaleIn 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)',
                     display: 'flex', 
                     flexDirection: 'column',
-                    borderRadius: isMobile ? '20px' : '24px',
-                    border: '1px solid rgba(255, 255, 255, 0.15)'
+                    animation: 'scaleIn 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)'
                 }}
             >
-                {/* Header / Close Button */}
+                {/* Header / Close Button fixed relative to the outer container, so it NEVER scrolls! */}
                 <div style={{ position: 'absolute', top: isMobile ? '12px' : '15px', right: isMobile ? '12px' : '15px', display: 'flex', gap: '10px', alignItems: 'center', zIndex: 100 }}>
                     {!isMobile && onSelectToggle && (
                         <label style={{ 
@@ -383,6 +379,21 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                         ✕
                     </button>
                 </div>
+
+                <div
+                    className="glass-panel"
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        maxHeight: 'inherit',
+                        overflowY: 'auto', 
+                        position: 'relative',
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        borderRadius: isMobile ? '20px' : '24px',
+                        border: '1px solid rgba(255, 255, 255, 0.15)'
+                    }}
+                >
 
                 {movie.source_collection_name && (
                     <div style={{
@@ -1155,8 +1166,8 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                             flexWrap: 'wrap', 
                             marginTop: 'auto', 
                             paddingTop: '15px', 
-                            paddingBottom: isMobile ? '22px' : '15px',
-                            marginBottom: isMobile ? '10px' : '0px',
+                            paddingBottom: '15px',
+                            marginBottom: isMobile ? '1px' : '0px',
                             borderTop: '1px solid rgba(255,255,255,0.05)',
                             width: '100%'
                         }}>
@@ -1283,6 +1294,8 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                         </div>
                     </div>
                 </div>
+            </div>
+            {/* End of outer wrapper div */}
             </div>
 
             {/* Poster Zoom Modal Overlay */}
