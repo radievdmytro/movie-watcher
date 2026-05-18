@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import MovieComparisonModal from './MovieComparisonModal';
 
 function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     const [query, setQuery] = useState('');
@@ -26,6 +27,21 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     const [selectedLinks, setSelectedLinks] = useState(new Set());
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
     const [fullPageResults, setFullPageResults] = useState(false);
+    
+    // Comparison Modal states
+    const [isCompareOpen, setIsCompareOpen] = useState(false);
+    const [compareLinks, setCompareLinks] = useState([]);
+
+    const handleCompareClick = () => {
+        if (selectedLinks.size > 3) {
+            setLogs([{ msg: '⚠ You can compare at most 3 movies at a time', type: 'error' }]);
+            setIsFadingLogs(false);
+            setTimeout(() => setIsFadingLogs(true), 4000);
+            return;
+        }
+        setCompareLinks(Array.from(selectedLinks));
+        setIsCompareOpen(true);
+    };
 
     const isHdrezkaUrl = (str) => {
         if (!str) return false;
@@ -759,11 +775,20 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                             {filteredSearchResults.length} results
                         </span>
                         {selectedLinks.size > 0 && (
-                            <button onClick={(e) => { e.stopPropagation(); handleAddSelected(); }}
-                                className="btn btn-primary"
-                                style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap' }}>
-                                ✚ Add Selected ({selectedLinks.size})
-                            </button>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                <button onClick={(e) => { e.stopPropagation(); handleAddSelected(); }}
+                                    className="btn btn-primary"
+                                    style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap' }}>
+                                    ✚ Add Selected ({selectedLinks.size})
+                                </button>
+                                {selectedLinks.size >= 2 && (
+                                    <button onClick={(e) => { e.stopPropagation(); handleCompareClick(); }}
+                                        className="btn btn-ghost"
+                                        style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
+                                        ⚖️ Compare Selected
+                                    </button>
+                                )}
+                            </div>
                         )}
                     </div>
                     <button onClick={() => { setShowResultsPanel(false); setSelectedLinks(new Set()); }}
@@ -876,12 +901,22 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                 ))}
                             </div>
                             {selectedLinks.size > 0 && (
-                                <button onClick={handleAddSelected} className="btn btn-primary" style={{
-                                    fontSize: '0.82rem', padding: '7px 20px', borderRadius: '20px',
-                                    boxShadow: '0 2px 12px rgba(212,175,55,0.4)', animation: 'fadeIn 0.2s'
-                                }}>
-                                    ✚ Add Selected ({selectedLinks.size})
-                                </button>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    {selectedLinks.size >= 2 && (
+                                        <button onClick={handleCompareClick} className="btn btn-ghost" style={{
+                                            fontSize: '0.82rem', padding: '7px 20px', borderRadius: '20px',
+                                            border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff'
+                                        }}>
+                                            ⚖️ Compare ({selectedLinks.size})
+                                        </button>
+                                    )}
+                                    <button onClick={handleAddSelected} className="btn btn-primary" style={{
+                                        fontSize: '0.82rem', padding: '7px 20px', borderRadius: '20px',
+                                        boxShadow: '0 2px 12px rgba(212,175,55,0.4)', animation: 'fadeIn 0.2s'
+                                    }}>
+                                        ✚ Add Selected ({selectedLinks.size})
+                                    </button>
+                                </div>
                             )}
                             {filteredSearchResults.length > 1 && (
                                 <button onClick={() => {
@@ -1042,11 +1077,17 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                             <span style={{ color: '#888', fontSize: '0.9rem' }}>
                                 {selectedLinks.size} film{selectedLinks.size > 1 ? 's' : ''} selected
                             </span>
-                            <div style={{ display: 'flex', gap: '12px' }}>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                 <button onClick={() => setSelectedLinks(new Set())} style={{
                                     background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
                                     color: '#aaa', borderRadius: '20px', padding: '8px 20px', cursor: 'pointer', fontSize: '0.85rem'
                                 }}>Clear</button>
+                                {selectedLinks.size >= 2 && (
+                                    <button onClick={handleCompareClick} className="btn btn-ghost" style={{
+                                        padding: '8px 20px', borderRadius: '20px',
+                                        border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem'
+                                    }}>⚖️ Compare ({selectedLinks.size})</button>
+                                )}
                                 <button onClick={handleAddSelected} className="btn btn-primary" style={{
                                     padding: '8px 28px', borderRadius: '20px',
                                     boxShadow: '0 2px 15px rgba(212,175,55,0.35)', fontSize: '0.9rem'
@@ -1165,6 +1206,15 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                     </div>
                 </div>
             )}
+
+            {/* Side-by-Side Comparison Modal */}
+            <MovieComparisonModal
+                isOpen={isCompareOpen}
+                onClose={() => { setIsCompareOpen(false); setCompareLinks([]); }}
+                movieLinks={compareLinks}
+                onAddMovie={handleCompareAdd => handleBatchImport([handleCompareAdd])}
+                isOwned={isOwned}
+            />
 
             <style>{`
                 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
