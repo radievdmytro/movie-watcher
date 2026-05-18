@@ -172,6 +172,13 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
         fetchReviews();
     }, [movie.link]);
 
+    // Auto-load first page of external comments when user opens the Feed tab
+    useEffect(() => {
+        if (activeTab === 'reviews' && movie.link && !showHdrezkaComments && !loadingHdrezka) {
+            loadHdrezkaComments(1);
+        }
+    }, [activeTab]);
+
     const handleBackdropMouseDown = (e) => {
         if (e.target === e.currentTarget) onClose();
     };
@@ -1132,26 +1139,11 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                     🌐 External Comments
                                                 </h4>
                                                 <div style={{ color: '#888', fontSize: '0.75rem' }}>
-                                                    Comments parsed from hdrezka website
+                                                    Comments from hdrezka
                                                 </div>
                                             </div>
-                                            {!showHdrezkaComments && (
-                                                <button
-                                                    onClick={loadHdrezkaComments}
-                                                    disabled={loadingHdrezka}
-                                                    className="btn"
-                                                    style={{
-                                                        background: 'rgba(255,255,255,0.05)', color: '#fff',
-                                                        border: '1px solid rgba(255,255,255,0.1)',
-                                                        padding: '6px 14px', fontSize: '0.8rem', borderRadius: '6px',
-                                                        cursor: loadingHdrezka ? 'wait' : 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onMouseEnter={e => { if(!loadingHdrezka) e.target.style.background = 'rgba(255,255,255,0.1)' }}
-                                                    onMouseLeave={e => { if(!loadingHdrezka) e.target.style.background = 'rgba(255,255,255,0.05)' }}
-                                                >
-                                                    {loadingHdrezka ? '⏳ Loading...' : '⬇️ Load External Comments'}
-                                                </button>
+                                            {loadingHdrezka && (
+                                                <div style={{ color: '#888', fontSize: '0.8rem' }}>⏳ Loading...</div>
                                             )}
                                         </div>
 
