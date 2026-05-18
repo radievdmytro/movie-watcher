@@ -258,9 +258,13 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
             setLogs([...newLogs]);
 
             try {
+                const token = localStorage.getItem('token');
                 const res = await fetch('/api/movies/import', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({ url })
                 });
                 const data = await res.json();
@@ -308,9 +312,13 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
         }, 400);
         setLoading(true);
         try {
+            const token = localStorage.getItem('token');
             const res = await fetch('/api/movies/search', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ query: link })
             });
             const data = await res.json();
@@ -330,9 +338,13 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
             const payload = { ...preview };
             if (!payload.link && isHdrezkaUrl(query)) payload.link = query;
 
+            const token = localStorage.getItem('token');
             const res = await fetch('/api/movies', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(payload)
             });
 
