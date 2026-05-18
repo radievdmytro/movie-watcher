@@ -264,6 +264,18 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Block body scrolling when full-page search results are open
+    useEffect(() => {
+        if (fullPageResults && searchResults) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [fullPageResults, searchResults]);
+
     const handleBatchImport = async (urls) => {
         let successCount = 0;
         const newLogs = [];
