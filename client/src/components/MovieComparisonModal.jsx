@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAddMovie, isOwned }) {
+export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAddMovie, isOwned, getOwnedMovie, onOpenMovie }) {
     const [loading, setLoading] = useState(true);
     const [moviesData, setMoviesData] = useState([]);
     const [error, setError] = useState('');
@@ -144,7 +144,9 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                             {/* Posters and Actions Row */}
                             {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center' }}>Movie</div>}
                             {moviesData.map((movie, idx) => {
-                                const owned = isOwned(movie.link);
+                                const libraryMovie = getOwnedMovie?.(movie.link) ?? null;
+                                const owned = libraryMovie != null || (isOwned?.(movie.link) ?? false);
+                                const canOpenDetails = owned && libraryMovie && onOpenMovie;
                                 return (
                                     <div key={idx} style={{
                                         display: 'flex', flexDirection: 'column', gap: '12px',
@@ -162,16 +164,43 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                             )}
                                         </div>
                                         <div>
-                                            {owned ? (
+                                            {canOpenDetails ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onOpenMovie(libraryMovie)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: isMobile ? '6px 10px' : '8px 16px',
+                                                        background: 'rgba(212, 175, 55, 0.12)',
+                                                        border: '1px solid rgba(212, 175, 55, 0.45)',
+                                                        color: 'var(--accent-gold)',
+                                                        borderRadius: '10px',
+                                                        fontSize: isMobile ? '0.78rem' : '0.85rem',
+                                                        fontWeight: 600,
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(212, 175, 55, 0.22)';
+                                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(212, 175, 55, 0.12)';
+                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                    }}
+                                                >
+                                                    {isMobile ? 'Подробнее' : 'Подробнее →'}
+                                                </button>
+                                            ) : owned ? (
                                                 <div style={{
                                                     background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)',
                                                     color: 'var(--accent-gold)', borderRadius: '10px', padding: '8px',
                                                     fontSize: isMobile ? '0.75rem' : '0.8rem', fontWeight: 600, textAlign: 'center'
                                                 }}>
-                                                    📍 Owned
+                                                    📍 In library
                                                 </div>
                                             ) : (
-                                                <button onClick={() => { onAddMovie(movie.link); }} style={{
+                                                <button onClick={() => { onAddMovie?.(movie.link); }} style={{
                                                     width: '100%', padding: isMobile ? '6px 10px' : '8px 16px', background: 'var(--accent-gold)',
                                                     border: 'none', color: '#000', borderRadius: '10px', fontSize: isMobile ? '0.78rem' : '0.85rem',
                                                     fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(212,175,55,0.2)'

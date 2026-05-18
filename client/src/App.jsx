@@ -12,6 +12,15 @@ import AdminDashboard from './components/AdminDashboard';
 import MovieDetailsModal from './components/MovieDetailsModal';
 import MovieComparisonModal from './components/MovieComparisonModal';
 
+const cleanLinkPath = (url) => {
+    if (!url) return '';
+    return url.toLowerCase()
+        .replace(/^https?:\/\/[^/]+/, '')
+        .replace(/^\/+|\/+$/g, '')
+        .split('?')[0]
+        .split('#')[0];
+};
+
 function App() {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -124,6 +133,7 @@ function App() {
     const [sharedMovieData, setSharedMovieData] = useState(null);
     const [isCompareOpen, setIsCompareOpen] = useState(false);
     const [compareLinks, setCompareLinks] = useState([]);
+    const [compareDetailsMovie, setCompareDetailsMovie] = useState(null);
 
     // Synchronize currentView state with URL hash
     useEffect(() => {
@@ -717,6 +727,17 @@ function App() {
                 />
             )}
 
+            {compareDetailsMovie && (
+                <MovieDetailsModal
+                    movie={compareDetailsMovie}
+                    onClose={() => setCompareDetailsMovie(null)}
+                    onUpdate={(id, updates) => {
+                        handleUpdate(id, updates);
+                        setCompareDetailsMovie(prev => (prev?.id === id ? { ...prev, ...updates } : prev));
+                    }}
+                />
+            )}
+
             {isCompareOpen && (
                 <MovieComparisonModal
                     isOpen={isCompareOpen}
@@ -725,7 +746,10 @@ function App() {
                         setCompareLinks([]);
                     }}
                     movieLinks={compareLinks}
-                    isOwned={() => true}
+                    getOwnedMovie={(link) =>
+                        movies.find(m => !m.deleted_at && cleanLinkPath(m.link) === cleanLinkPath(link))
+                    }
+                    onOpenMovie={setCompareDetailsMovie}
                 />
             )}
         </div>

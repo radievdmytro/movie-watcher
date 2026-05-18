@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import MovieComparisonModal from './MovieComparisonModal';
+import MovieDetailsModal from './MovieDetailsModal';
 
 function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     const [query, setQuery] = useState('');
@@ -38,6 +39,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     // Comparison Modal states
     const [isCompareOpen, setIsCompareOpen] = useState(false);
     const [compareLinks, setCompareLinks] = useState([]);
+    const [compareDetailsMovie, setCompareDetailsMovie] = useState(null);
 
     const handleCompareClick = () => {
         const maxLimit = isMobile ? 2 : 3;
@@ -79,6 +81,11 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     const isOwned = (link) => {
         const clean = cleanLinkPath(link);
         return clean && ownedPaths.has(clean);
+    };
+
+    const getOwnedMovie = (link) => {
+        const clean = cleanLinkPath(link);
+        return movies.find(m => !m.deleted_at && cleanLinkPath(m.link) === clean);
     };
 
     const handleSearch = async (isAuto = false, openFullPage = false) => {
@@ -1399,6 +1406,22 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                 </div>
             )}
 
+            {compareDetailsMovie && (
+                <MovieDetailsModal
+                    movie={compareDetailsMovie}
+                    onClose={() => setCompareDetailsMovie(null)}
+                    onUpdate={async (id, updates) => {
+                        await fetch(`/api/movies/${id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(updates),
+                        });
+                        setCompareDetailsMovie(prev => (prev?.id === id ? { ...prev, ...updates } : prev));
+                        onMovieAdded?.();
+                    }}
+                />
+            )}
+
             {/* Side-by-Side Comparison Modal */}
             <MovieComparisonModal
                 isOpen={isCompareOpen}
@@ -1406,6 +1429,8 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                 movieLinks={compareLinks}
                 onAddMovie={handleCompareAdd => handleBatchImport([handleCompareAdd])}
                 isOwned={isOwned}
+                getOwnedMovie={getOwnedMovie}
+                onOpenMovie={setCompareDetailsMovie}
             />
 
             <style>{`

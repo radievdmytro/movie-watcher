@@ -22,14 +22,14 @@ function SharedCollectionView({ collectionId, onExit }) {
     const [selectedMovieIds, setSelectedMovieIds] = useState([]);
     const [compareMovieLinks, setCompareMovieLinks] = useState([]);
     const [isCompareOpen, setIsCompareOpen] = useState(false);
-    const [ownedMovieLinks, setOwnedMovieLinks] = useState([]);
+    const [ownedMovies, setOwnedMovies] = useState([]);
 
     const fetchOwnedMovies = async () => {
         try {
             const res = await fetch('/api/movies');
             const data = await res.json();
             if (Array.isArray(data)) {
-                setOwnedMovieLinks(data.map(m => m.link));
+                setOwnedMovies(data);
             }
         } catch (err) {
             console.error('Failed to fetch owned movies:', err);
@@ -531,7 +531,12 @@ function SharedCollectionView({ collectionId, onExit }) {
                             }
                         }
                     }}
-                    isOwned={(link) => ownedMovieLinks.includes(link)}
+                    getOwnedMovie={(link) => {
+                        const norm = (u) => (u || '').toLowerCase().replace(/^https?:\/\/[^/]+/, '').replace(/^\/+|\/+$/g, '').split('?')[0].split('#')[0];
+                        const target = norm(link);
+                        return ownedMovies.find(m => norm(m.link) === target);
+                    }}
+                    onOpenMovie={setSelectedMovie}
                 />
             )}
 
