@@ -298,21 +298,21 @@ function App() {
         const message = inCollections ? 
             (
                 <div>
-                    <p>Этот фильм находится в ваших подборках:</p>
+                    <p>This movie is in your collections:</p>
                     <p style={{color: 'var(--accent-gold)'}}>{collectionNames.join(', ')}</p>
-                    <p>Удалить его полностью или скрыть из библиотеки?</p>
+                    <p>Do you want to delete it permanently everywhere or just hide it from the library?</p>
                 </div>
             ) : 
             (isLibrary ? 'Are you sure you want to move this movie to the trash?' : 'This action cannot be undone. Delete forever?');
 
         setConfirmConfig({
-            title: isLibrary ? 'Удаление фильма' : 'Delete Permanently',
+            title: isLibrary ? 'Delete Movie' : 'Delete Permanently',
             message: message,
-            confirmText: inCollections ? 'Удалить везде' : 'Delete',
+            confirmText: inCollections ? 'Delete Everywhere' : 'Delete',
             confirmColor: 'var(--danger)',
             extraActions: inCollections ? [
                 {
-                    label: 'Только скрыть',
+                    label: 'Only Hide',
                     color: '#4caf50',
                     onClick: async () => {
                         try {
@@ -372,21 +372,21 @@ function App() {
         const message = inCollections ? 
             (
                 <div>
-                    <p>Эти фильмы (${selectedIds.length} шт.) находятся в ваших подборках:</p>
+                    <p>These movies ({selectedIds.length} pcs) are in your collections:</p>
                     <p style={{color: 'var(--accent-gold)'}}>{collectionNames.join(', ')}</p>
-                    <p>Хотите удалить их полностью (включая подборки) или только скрыть из общей библиотеки?</p>
+                    <p>Do you want to delete them permanently everywhere (including collections) or just hide them from the library?</p>
                 </div>
             ) : 
             `Are you sure you want to ${isLibrary ? 'trash' : 'permanently delete'} ${selectedIds.length} item(s)?`;
 
         setConfirmConfig({
-            title: isLibrary ? 'Удаление фильмов' : 'Delete Selection Permanently',
+            title: isLibrary ? 'Delete Movies' : 'Delete Selection Permanently',
             message: message,
-            confirmText: inCollections ? 'Удалить везде' : 'Delete All',
+            confirmText: inCollections ? 'Delete Everywhere' : 'Delete All',
             confirmColor: 'var(--danger)',
             extraActions: inCollections ? [
                 {
-                    label: 'Только скрыть',
+                    label: 'Only Hide',
                     color: '#4caf50',
                     onClick: async () => {
                         try {
