@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import MovieDetailsModal from './MovieDetailsModal';
+import MovieComparisonModal from './MovieComparisonModal';
 
 function SharedCollectionView({ collectionId, onExit }) {
     const [collection, setCollection] = useState(null);
@@ -9,6 +10,47 @@ function SharedCollectionView({ collectionId, onExit }) {
     const [importingIds, setImportingIds] = useState([]);
     const [importSuccessIds, setImportSuccessIds] = useState([]);
     const [importFailedIds, setImportFailedIds] = useState([]);
+
+    // Multiselect & Comparison for Shared Collection
+    const [selectedMovieIds, setSelectedMovieIds] = useState([]);
+    const [compareMovieLinks, setCompareMovieLinks] = useState([]);
+    const [isCompareOpen, setIsCompareOpen] = useState(false);
+    const [ownedMovieLinks, setOwnedMovieLinks] = useState([]);
+
+    const fetchOwnedMovies = async () => {
+        try {
+            const res = await fetch('/api/movies');
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                setOwnedMovieLinks(data.map(m => m.link));
+            }
+        } catch (err) {
+            console.error('Failed to fetch owned movies:', err);
+        }
+    };
+
+    const handleBulkImport = async () => {
+        if (!collection) return;
+        try {
+            const res = await fetch(`/api/collections/${collection.id}/import-movies`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ movieIds: selectedMovieIds })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to import movies');
+
+            setImportSuccessIds(prev => [...prev, ...selectedMovieIds]);
+            setSelectedMovieIds([]);
+            fetchOwnedMovies();
+        } catch (err) {
+            console.error('Bulk import failed:', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchOwnedMovies();
+    }, []);
 
     // Filters & Sort
     const [search, setSearch] = useState('');
@@ -226,6 +268,59 @@ function SharedCollectionView({ collectionId, onExit }) {
                 </div>
             </div>
 
+            {collection && collection.movies.length > 0 && (
+                <div style={{
+                    display: 'flex', gap: '15px', alignItems: 'center',
+                    marginBottom: '20px', padding: '12px 18px',
+                    background: 'rgba(255,255,255,0.02)', borderRadius: '10px',
+                    border: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap'
+                }} onClick={e => e.stopPropagation()}>
+                    <button
+                        onClick={() => {
+                            const allIds = collection.movies.map(m => m.id);
+                            if (selectedMovieIds.length === allIds.length) {
+                                setSelectedMovieIds([]);
+                            } else {
+                                setSelectedMovieIds(allIds);
+                            }
+                        }}
+                        className="btn btn-ghost"
+                        style={{ border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.8rem', padding: '5px 12px' }}
+                    >
+                        {selectedMovieIds.length === collection.movies.length ? 'Deselect All' : 'Select All'}
+                    </button>
+                    <span style={{ fontSize: '0.85rem', color: '#888' }}>
+                        {selectedMovieIds.length} movie(s) selected
+                    </span>
+                    {selectedMovieIds.length > 0 && (
+                        <>
+                            <button
+                                onClick={handleBulkImport}
+                                className="btn btn-gold"
+                                style={{ padding: '6px 14px', fontSize: '0.8rem', fontWeight: 'bold' }}
+                            >
+                                📥 Add Selected to Library
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const selectedMovies = collection.movies.filter(m => selectedMovieIds.includes(m.id));
+                                    setCompareMovieLinks(selectedMovies.map(m => m.link));
+                                    setIsCompareOpen(true);
+                                }}
+                                className="btn"
+                                style={{
+                                    background: 'rgba(255,255,255,0.1)', color: '#fff',
+                                    border: '1px solid rgba(255,255,255,0.15)', padding: '6px 14px',
+                                    fontSize: '0.8rem', fontWeight: 'bold'
+                                }}
+                            >
+                                ⚖️ Compare Selected
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
+
             {/* Movies */}
             {filteredMovies.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: '#555' }}>
@@ -254,6 +349,32 @@ function SharedCollectionView({ collectionId, onExit }) {
                             >
                                 <img src={movie.poster_url} alt={movie.title}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+
+                                {/* Checkbox */}
+                                <div 
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{
+                                        position: 'absolute', top: '7px', left: '7px', zIndex: 12,
+                                        background: 'rgba(0,0,0,0.6)', borderRadius: '4px', padding: '4px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedMovieIds.includes(movie.id)}
+                                        onChange={(e) => {
+                                            setSelectedMovieIds(prev => 
+                                                e.target.checked 
+                                                    ? [...prev, movie.id] 
+                                                    : prev.filter(id => id !== movie.id)
+                                            );
+                                        }}
+                                        style={{
+                                            cursor: 'pointer', width: '18px', height: '18px',
+                                            accentColor: 'var(--accent-gold)'
+                                        }}
+                                    />
+                                </div>
 
                                 {/* Add button */}
                                 <button onClick={e => handleImportMovie(movie, e)} disabled={isImporting || isImported}
@@ -299,6 +420,20 @@ function SharedCollectionView({ collectionId, onExit }) {
                     <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '480px' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}>
+                                <th style={{ padding: '10px 14px', textAlign: 'left', color: '#555', fontWeight: 500, fontSize: '0.78rem', width: '30px' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={filteredMovies.length > 0 && selectedMovieIds.length === filteredMovies.length}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setSelectedMovieIds(filteredMovies.map(m => m.id));
+                                            } else {
+                                                setSelectedMovieIds([]);
+                                            }
+                                        }}
+                                        style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+                                    />
+                                </th>
                                 <th style={{ padding: '10px 14px', textAlign: 'left', color: '#555', fontWeight: 500, fontSize: '0.78rem', width: '44px' }}></th>
                                 <th style={{ padding: '10px 14px', textAlign: 'left', color: '#555', fontWeight: 500, fontSize: '0.78rem' }}>Title</th>
                                 <th style={{ padding: '10px 14px', textAlign: 'left', color: '#555', fontWeight: 500, fontSize: '0.78rem' }}>Year</th>
@@ -319,6 +454,20 @@ function SharedCollectionView({ collectionId, onExit }) {
                                         onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
                                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                     >
+                                        <td style={{ padding: '8px 14px' }} onClick={e => e.stopPropagation()}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedMovieIds.includes(movie.id)}
+                                                onChange={(e) => {
+                                                    setSelectedMovieIds(prev => 
+                                                        e.target.checked 
+                                                            ? [...prev, movie.id] 
+                                                            : prev.filter(id => id !== movie.id)
+                                                    );
+                                                }}
+                                                style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+                                            />
+                                        </td>
                                         <td style={{ padding: '8px 14px' }}>
                                             <img src={movie.poster_url} alt="" style={{ width: '32px', height: '46px', objectFit: 'cover', borderRadius: '4px' }} />
                                         </td>
@@ -344,6 +493,32 @@ function SharedCollectionView({ collectionId, onExit }) {
                         </tbody>
                     </table>
                 </div>
+            )}
+
+            {isCompareOpen && (
+                <MovieComparisonModal
+                    isOpen={isCompareOpen}
+                    onClose={() => setIsCompareOpen(false)}
+                    movieLinks={compareMovieLinks}
+                    onAddMovie={async (link) => {
+                        const movie = collection.movies.find(m => m.link === link);
+                        if (movie) {
+                            handleImportMovie(movie);
+                        } else {
+                            try {
+                                await fetch('/api/movies/import', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ url: link })
+                                });
+                                fetchOwnedMovies();
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        }
+                    }}
+                    isOwned={(link) => ownedMovieLinks.includes(link)}
+                />
             )}
 
             <style>{`

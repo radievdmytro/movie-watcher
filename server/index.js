@@ -1555,6 +1555,78 @@ app.post('/api/collections/:id/clone', authenticateToken, (req, res) => {
     }
 });
 
+// POST import movies from collection to library (without cloning collection)
+app.post('/api/collections/:id/import-movies', authenticateToken, (req, res) => {
+    try {
+        const { id } = req.params;
+        const { movieIds } = req.body;
+
+        // Fetch collection to get owner details and title for source metadata
+        const collection = db.prepare(`
+            SELECT c.*, u.username as owner_username 
+            FROM collections c 
+            JOIN users u ON c.user_id = u.id 
+            WHERE c.id = ?
+        `).get(id);
+        
+        if (!collection) return res.status(404).json({ error: 'Collection not found' });
+
+        let query = `
+            SELECT m.* FROM movies m
+            JOIN collection_movies cm ON m.id = cm.movie_id
+            WHERE cm.collection_id = ? AND m.deleted_at IS NULL
+        `;
+        const params = [id];
+
+        if (movieIds && Array.isArray(movieIds) && movieIds.length > 0) {
+            query += ` AND m.id IN (${movieIds.map(() => '?').join(',')})`;
+            params.push(...movieIds);
+        }
+
+        const moviesToImport = db.prepare(query).all(...params);
+
+        const checkMovie = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
+        const restoreMovie = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?');
+        const insertMovie = db.prepare(`
+            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, source_collection_name, source_collection_token, source_user_name, type, user_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        let importedCount = 0;
+        let skippedCount = 0;
+
+        const runImportTransaction = db.transaction(() => {
+            for (const m of moviesToImport) {
+                const existing = checkMovie.get(m.link, req.user.id);
+                if (existing) {
+                    if (existing.deleted_at) {
+                        restoreMovie.run(existing.id);
+                        importedCount++;
+                    } else {
+                        skippedCount++;
+                    }
+                } else {
+                    insertMovie.run(
+                        m.title, m.original_title, m.year, m.link, m.rating,
+                        m.description, m.poster_url, m.genres, m.actors, m.director, m.writers,
+                        m.country, m.duration, m.voice_acting,
+                        collection.title, collection.share_token, collection.owner_username,
+                        m.type || 'movie', req.user.id
+                    );
+                    importedCount++;
+                }
+            }
+        });
+
+        runImportTransaction();
+
+        res.json({ success: true, importedCount, skippedCount });
+    } catch (error) {
+        console.error('Bulk import failed:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ==========================================
 // ADMIN DASHBOARD ENDPOINTS
 // ==========================================
