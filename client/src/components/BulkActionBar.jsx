@@ -24,27 +24,15 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
 
     if (!isVisible && selectedCount === 0) return null;
 
-    // Use current or cached anchor to stay in place during exit
-    const activeAnchor = anchor || lastAnchor;
-    const posTop = activeAnchor ? `${activeAnchor.y}px` : '85px';
-    const posLeft = activeAnchor ? `${activeAnchor.x}px` : '50%';
-
-    // Genie Effect Logic:
-    // When shown: appears at full size instantly, no scale animation
-    // When hidden: shrinks down with scale animation
+    // Fixed positioning at bottom center
     const show = selectedCount > 0;
-    const translate = activeAnchor
-        ? 'translate(25px, -50%)'
-        : 'translateX(-50%)';
-    const scale = show ? 'scale(1)' : 'scale(0.1)';
-
+    
     return (
         <div style={{
             position: 'fixed',
-            top: posTop,
-            left: posLeft,
-            transformOrigin: 'left center', // Grow from the point near the checkbox
-            transform: `${translate} ${scale}`,
+            bottom: '30px',
+            left: '50%',
+            transform: show ? 'translate(-50%, 0)' : 'translate(-50%, 50px)',
             opacity: show ? 1 : 0,
             pointerEvents: show ? 'auto' : 'none',
             background: 'rgba(31, 31, 31, 0.95)',
@@ -57,10 +45,7 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
             alignItems: 'center',
             zIndex: 2500,
             border: '1px solid var(--accent-gold)',
-            // Only animate shrinking on exit, instant appearance
-            transition: show
-                ? 'opacity 0.2s ease-out'
-                : 'opacity 0.2s ease-in, transform 0.3s cubic-bezier(0.6, -0.28, 0.735, 0.045)',
+            transition: 'opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
             whiteSpace: 'nowrap'
         }}>
             <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.85rem' }}>
