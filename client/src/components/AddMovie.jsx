@@ -495,7 +495,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     const inputLines = query.split(/\n/).length;
 
     return (
-        <div style={{ marginBottom: '30px', position: 'relative', zIndex: 200 }} ref={containerRef}>
+        <div className="add-movie-root" style={{ marginBottom: '30px', position: 'relative', zIndex: 200 }} ref={containerRef}>
             {/* Quick Access Menu Row - Placed BEFORE the search bar */}
             <div style={{
                 display: 'flex',
@@ -506,7 +506,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                 scrollbarWidth: 'none',
                 width: '100%',
                 padding: '2px 0'
-            }} className="compact-controls-row">
+            }} className="compact-controls-row add-movie-quick-row">
 
                 {[
                     { id: 'watching', label: 'Watching Now', icon: '👀' },
@@ -1292,7 +1292,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
             )}
 
             {/* Helper text */}
-            <div style={{ paddingLeft: '20px', marginTop: '8px', fontSize: '0.8rem', color: '#666' }}>
+            <div className="add-movie-helper" style={{ paddingLeft: '20px', marginTop: '8px', fontSize: '0.8rem', color: '#666' }}>
                 Supported: HDRezka links (single or batch) & Movie Titles
             </div>
 

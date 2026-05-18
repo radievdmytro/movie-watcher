@@ -37,3 +37,37 @@
 .add-movie-section {
     width: 100%;
 }
+
+@media (max-width: 768px) {
+    .app {
+        padding-bottom: 28px;
+    }
+
+    .header {
+        padding: 0.35rem 0;
+        margin-bottom: 0.5rem;
+    }
+
+    .main-content {
+        gap: 0.5rem;
+    }
+
+    .movie-list-section {
+        margin-top: 0;
+    }
+
+    .add-movie-root {
+        margin-bottom: 10px !important;
+    }
+
+    .add-movie-helper {
+        margin-top: 4px !important;
+        padding-left: 8px !important;
+        margin-bottom: 0 !important;
+        font-size: 0.72rem !important;
+    }
+
+    .add-movie-quick-row {
+        margin-bottom: 8px !important;
+    }
+}

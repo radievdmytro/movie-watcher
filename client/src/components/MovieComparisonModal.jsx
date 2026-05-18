@@ -94,7 +94,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '24px',
                 width: '100%',
-                maxWidth: moviesData.length <= 2 ? '900px' : '1300px',
+                maxWidth: moviesData.length <= 2 ? '900px' : moviesData.length === 3 ? '1300px' : '1600px',
                 maxHeight: '92vh',
                 display: 'flex',
                 flexDirection: 'column',

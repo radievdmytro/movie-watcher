@@ -459,11 +459,12 @@ function App() {
     };
 
     const handleBulkCompare = () => {
+        const compareMax = window.innerWidth <= 768 ? 3 : 4;
         const links = movies
             .filter(m => selectedIds.includes(m.id))
             .map(m => m.link)
             .filter(Boolean);
-        if (links.length < 2 || links.length > 3) return;
+        if (links.length < 2 || links.length > compareMax) return;
         setCompareLinks(links);
         setIsCompareOpen(true);
     };

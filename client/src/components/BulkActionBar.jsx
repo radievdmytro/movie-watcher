@@ -109,7 +109,8 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
     const posLeft = activeAnchor ? `${activeAnchor.x}px` : '50%';
 
     const show = selectedCount > 0;
-    const showCompare = !isTrashMode && selectedCount >= 2 && selectedCount <= 3 && onCompare;
+    const compareMax = isMobile ? 3 : 4;
+    const showCompare = !isTrashMode && selectedCount >= 2 && selectedCount <= compareMax && onCompare;
     const translate = activeAnchor ? 'translate(25px, -50%)' : 'translateX(-50%)';
     const scale = show ? 'scale(1)' : 'scale(0.1)';
     const barTransition = `all ${COLLAPSE_MS}ms cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.3s cubic-bezier(0.165, 0.84, 0.44, 1)`;
