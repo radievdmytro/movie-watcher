@@ -168,6 +168,87 @@ function CollectionsView({ onBack }) {
     const [shareSuccess, setShareSuccess] = useState('');
     const [sharingLoading, setSharingLoading] = useState(false);
 
+    // Copy/Move Movie Modal State
+    const [copyMoveMovieModal, setCopyMoveMovieModal] = useState(null); // null or { movie, sourceCollectionId, sourceCollectionTitle }
+    const [copyMoveActionType, setCopyMoveActionType] = useState('copy'); // 'copy' | 'move'
+    const [newCollectionTitle, setNewCollectionTitle] = useState('');
+    const [copyMoveLoading, setCopyMoveLoading] = useState(false);
+    const [copyMoveError, setCopyMoveError] = useState('');
+
+    const handleExecuteCopyMove = async (targetCollectionId) => {
+        if (!copyMoveMovieModal) return;
+        setCopyMoveLoading(true);
+        setCopyMoveError('');
+        try {
+            const res = await fetch('/api/collections/copy-move-movie', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    movieId: copyMoveMovieModal.movie.id,
+                    sourceCollectionId: copyMoveMovieModal.sourceCollectionId,
+                    targetCollectionId,
+                    actionType: copyMoveActionType
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to complete action');
+
+            // Success feedback!
+            setActionFeedback({
+                id: copyMoveMovieModal.sourceCollectionId,
+                type: 'success',
+                message: copyMoveActionType === 'move' 
+                    ? `✔ Moved "${copyMoveMovieModal.movie.title}" successfully!` 
+                    : `✔ Copied "${copyMoveMovieModal.movie.title}" successfully!`
+            });
+
+            // Close modal
+            setCopyMoveMovieModal(null);
+            setNewCollectionTitle('');
+
+            // Reload collections and current expanded collection movies list!
+            fetchCollections();
+            if (expandedCollectionId) {
+                const resColl = await fetch(`/api/collections/${expandedCollectionId}`);
+                if (resColl.ok) {
+                    const dataColl = await resColl.json();
+                    setExpandedCollection(dataColl);
+                }
+            }
+            
+            setTimeout(() => setActionFeedback({ id: null, type: '', message: '', undoAction: null }), 4000);
+        } catch (err) {
+            setCopyMoveError(err.message);
+        } finally {
+            setCopyMoveLoading(false);
+        }
+    };
+
+    const handleCreateAndPlace = async () => {
+        if (!newCollectionTitle.trim() || !copyMoveMovieModal) return;
+        setCopyMoveLoading(true);
+        setCopyMoveError('');
+        try {
+            const resNewColl = await fetch('/api/collections', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: newCollectionTitle.trim(),
+                    description: '',
+                    movieIds: []
+                })
+            });
+            const dataNewColl = await resNewColl.json();
+            if (!resNewColl.ok) throw new Error(dataNewColl.error || 'Failed to create collection');
+
+            const newCollectionId = dataNewColl.id;
+            await handleExecuteCopyMove(newCollectionId);
+        } catch (err) {
+            setCopyMoveError(err.message);
+            setCopyMoveLoading(false);
+        }
+    };
+
     const fetchCollections = async () => {
         setLoading(true);
         try {
@@ -917,8 +998,45 @@ function CollectionsView({ onBack }) {
                                                                 />
                                                             </div>
                                                         )}
-                                                        {/* Rest of the movie card */}
-                                                        
+
+                                                        {/* Copy / Move to another collection button */}
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setCopyMoveMovieModal({
+                                                                    movie,
+                                                                    sourceCollectionId: c.id,
+                                                                    sourceCollectionTitle: c.title
+                                                                });
+                                                                setCopyMoveActionType('copy');
+                                                                setNewCollectionTitle('');
+                                                                setCopyMoveError('');
+                                                            }}
+                                                            style={{
+                                                                position: 'absolute', 
+                                                                top: '8px', 
+                                                                right: activeTab === 'mine' ? '38px' : '8px',
+                                                                background: 'rgba(0, 0, 0, 0.7)', 
+                                                                color: 'var(--accent-gold)',
+                                                                border: 'none', 
+                                                                borderRadius: '50%', 
+                                                                width: '26px', 
+                                                                height: '26px',
+                                                                display: 'flex', 
+                                                                alignItems: 'center', 
+                                                                justifyContent: 'center',
+                                                                cursor: 'pointer', 
+                                                                zIndex: 10, 
+                                                                fontSize: '0.85rem', 
+                                                                transition: 'all 0.15s'
+                                                            }}
+                                                            title="Copy or Move to another collection"
+                                                            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                                                            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                                        >
+                                                            📁
+                                                        </button>
+
                                                         {/* Delete Movie from Collection button (Only if it's my collection!) */}
                                                         {activeTab === 'mine' && (
                                                             <>
@@ -993,8 +1111,175 @@ function CollectionsView({ onBack }) {
                     })}
                 </div>
             )}
+            {copyMoveMovieModal && (
+                <div
+                    onMouseDown={(e) => {
+                        if (e.target === e.currentTarget) setCopyMoveMovieModal(null);
+                    }}
+                    style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.85)',
+                        backdropFilter: 'blur(10px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 20000, padding: '20px'
+                    }}
+                >
+                    <div
+                        className="glass-panel"
+                        style={{
+                            width: '100%', maxWidth: '480px', maxHeight: '85vh',
+                            overflowY: 'auto', padding: '30px', position: 'relative',
+                            animation: 'scaleIn 0.3s cubic-bezier(0.165, 0.84, 0.44, 1)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '12px',
+                            background: 'var(--bg-card)'
+                        }}
+                    >
+                        <button
+                            onClick={() => setCopyMoveMovieModal(null)}
+                            className="btn btn-ghost"
+                            style={{ position: 'absolute', top: '15px', right: '15px', fontSize: '1.4rem', color: '#fff', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                        >
+                            &times;
+                        </button>
+
+                        <h3 style={{ margin: '0 0 15px 0', fontSize: '1.4rem', color: 'var(--accent-gold)' }}>
+                            📁 Copy / Move Movie
+                        </h3>
+                        
+                        {/* Movie brief */}
+                        <div style={{ display: 'flex', gap: '15px', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', marginBottom: '25px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <img 
+                                src={copyMoveMovieModal.movie.poster_url} 
+                                alt={copyMoveMovieModal.movie.title} 
+                                style={{ width: '50px', height: '75px', objectFit: 'cover', borderRadius: '4px' }} 
+                            />
+                            <div>
+                                <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: '#fff' }}>{copyMoveMovieModal.movie.title}</h4>
+                                <p style={{ margin: 0, fontSize: '0.8rem', color: '#aaa' }}>{copyMoveMovieModal.movie.year} • ★ {copyMoveMovieModal.movie.rating || '-'}</p>
+                                <p style={{ margin: '6px 0 0 0', fontSize: '0.75rem', color: 'var(--accent-gold)' }}>
+                                    Current Collection: <strong>{copyMoveMovieModal.sourceCollectionTitle}</strong>
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Action selector */}
+                        {activeTab === 'mine' && (
+                            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                                <button
+                                    onClick={() => setCopyMoveActionType('copy')}
+                                    className="btn"
+                                    style={{
+                                        flex: 1,
+                                        background: copyMoveActionType === 'copy' ? 'var(--accent-gold)' : 'rgba(255,255,255,0.05)',
+                                        color: copyMoveActionType === 'copy' ? '#000' : '#888',
+                                        borderRadius: '8px',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 'bold',
+                                        padding: '10px',
+                                        border: 'none',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    📋 Copy (Leave here)
+                                </button>
+                                <button
+                                    onClick={() => setCopyMoveActionType('move')}
+                                    className="btn"
+                                    style={{
+                                        flex: 1,
+                                        background: copyMoveActionType === 'move' ? 'var(--accent-gold)' : 'rgba(255,255,255,0.05)',
+                                        color: copyMoveActionType === 'move' ? '#000' : '#888',
+                                        borderRadius: '8px',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 'bold',
+                                        padding: '10px',
+                                        border: 'none',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    🚚 Move (Delete from here)
+                                </button>
+                            </div>
+                        )}
+
+                        {copyMoveError && (
+                            <div style={{
+                                padding: '10px 15px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)',
+                                border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ff6b6b', fontSize: '0.85rem',
+                                fontWeight: 'bold', marginBottom: '15px', textAlign: 'center'
+                            }}>
+                                {copyMoveError}
+                            </div>
+                        )}
+
+                        {/* Create new collection inline */}
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                            <input
+                                type="text"
+                                placeholder="Create new collection & place there..."
+                                value={newCollectionTitle}
+                                onChange={e => setNewCollectionTitle(e.target.value)}
+                                style={{
+                                    flex: 1, background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)', padding: '10px 15px',
+                                    borderRadius: '8px', color: '#fff', outline: 'none', fontSize: '0.85rem'
+                                }}
+                            />
+                            <button
+                                onClick={handleCreateAndPlace}
+                                disabled={copyMoveLoading || !newCollectionTitle.trim()}
+                                className="btn btn-gold"
+                                style={{ padding: '0 15px', fontSize: '0.8rem', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                            >
+                                {copyMoveLoading ? '...' : 'Create'}
+                            </button>
+                        </div>
+
+                        {/* Existing collections list */}
+                        <div>
+                            <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                Add to Existing Collection
+                            </h4>
+                            {collections.filter(x => x.id !== copyMoveMovieModal.sourceCollectionId).length === 0 ? (
+                                <p style={{ color: '#555', fontSize: '0.85rem', fontStyle: 'italic', textAlign: 'center', padding: '15px 0' }}>
+                                    No other collections available.
+                                </p>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                                    {collections
+                                        .filter(x => x.id !== copyMoveMovieModal.sourceCollectionId)
+                                        .map(targetColl => (
+                                            <button
+                                                key={targetColl.id}
+                                                disabled={copyMoveLoading}
+                                                onClick={() => handleExecuteCopyMove(targetColl.id)}
+                                                style={{
+                                                    width: '100%', padding: '10px 15px', background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px',
+                                                    color: '#fff', textAlign: 'left', cursor: 'pointer',
+                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                    transition: 'all 0.2s', fontSize: '0.85rem'
+                                                }}
+                                                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                                                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                                            >
+                                                <span style={{ fontWeight: 'bold' }}>{targetColl.title}</span>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--accent-gold)' }}>
+                                                    {targetColl.movie_count} movies
+                                                </span>
+                                            </button>
+                                        ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style>{`
                 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes scaleIn { from { transform: scale(0.95) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
             `}</style>
         </div>
     );
