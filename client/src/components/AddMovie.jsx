@@ -6,6 +6,9 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     const [searchStreaming, setSearchStreaming] = useState(false); // SSE in progress
     const [searchStatus, setSearchStatus] = useState('');          // status text
     const [preview, setPreview] = useState(null);
+    const [expandPreviewText, setExpandPreviewText] = useState(false);
+    useEffect(() => setExpandPreviewText(false), [preview]);
+
     const [searchResults, setSearchResults] = useState(null);
     const [showResultsPanel, setShowResultsPanel] = useState(false);
     const [logs, setLogs] = useState([]);
@@ -1061,18 +1064,55 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                     alignItems: 'flex-start',
                     padding: '25px',
                     animation: 'slideDown 0.5s cubic-bezier(0.165, 0.84, 0.44, 1)',
-                    border: '1px solid rgba(212, 175, 55, 0.2)'
+                    border: '1px solid rgba(212, 175, 55, 0.2)',
+                    transition: 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)'
                 }}>
                     <div style={{ position: 'relative', flexShrink: 0 }}>
                         <img src={preview.poster_url} alt="" style={{ width: '120px', borderRadius: '8px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)' }} />
                     </div>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <h3 style={{ marginTop: 0, fontSize: '1.4rem' }}>{preview.title} <span style={{ color: 'var(--accent-gold)', fontSize: '1rem', marginLeft: '5px' }}>{preview.year}</span></h3>
                         <div style={{ display: 'flex', gap: '10px', fontSize: '0.85rem', color: '#888', marginBottom: '15px' }}>
                             {preview.rating && <span style={{ background: '#333', padding: '2px 6px', borderRadius: '4px', color: '#fff' }}>★ {preview.rating}</span>}
                             <span>{preview.genres}</span>
                         </div>
-                        <p style={{ fontSize: '0.95rem', color: '#ccc', lineHeight: '1.6' }}>{preview.description?.substring(0, 200)}...</p>
+                        <div 
+                            onClick={() => setExpandPreviewText(!expandPreviewText)}
+                            style={{ 
+                                fontSize: '0.95rem', 
+                                color: '#ccc', 
+                                lineHeight: '1.6',
+                                cursor: 'pointer',
+                                padding: '10px',
+                                background: 'rgba(255, 255, 255, 0.03)',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.05)',
+                                transition: 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
+                                position: 'relative'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'}
+                        >
+                            <div style={{ 
+                                display: '-webkit-box',
+                                WebkitLineClamp: expandPreviewText ? 'unset' : 3,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                transition: 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)'
+                            }}>
+                                {preview.description}
+                            </div>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--accent-gold)',
+                                marginTop: '5px',
+                                textAlign: 'right',
+                                fontWeight: 'bold',
+                                opacity: 0.8
+                            }}>
+                                {expandPreviewText ? 'Show less ▲' : 'Read more ▼'}
+                            </div>
+                        </div>
                         <div style={{ marginTop: '20px', display: 'flex', gap: '15px' }}>
                             <button onClick={handleAdd} className="btn btn-primary" style={{ padding: '10px 30px' }}>Add to Library</button>
                             <button onClick={() => setPreview(null)} className="btn btn-ghost">Cancel</button>
