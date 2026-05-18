@@ -1374,6 +1374,26 @@ app.delete('/api/collections/:id', authenticateToken, (req, res) => {
     }
 });
 
+// PATCH collection (Update title/description)
+app.patch('/api/collections/:id', authenticateToken, (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, description } = req.body;
+        
+        const existing = db.prepare('SELECT * FROM collections WHERE id = ? AND user_id = ?').get(id, req.user.id);
+        if (!existing) return res.status(403).json({ error: 'Access denied or not found' });
+
+        const newTitle = title !== undefined ? title : existing.title;
+        const newDescription = description !== undefined ? description : existing.description;
+
+        db.prepare('UPDATE collections SET title = ?, description = ? WHERE id = ?').run(newTitle, newDescription, id);
+        
+        res.json({ success: true, title: newTitle, description: newDescription });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // POST add movies to collection
 app.post('/api/collections/:id/movies', authenticateToken, (req, res) => {
     try {

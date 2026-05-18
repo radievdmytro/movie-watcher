@@ -1,6 +1,73 @@
 import { useState, useEffect } from 'react';
 import MovieDetailsModal from './MovieDetailsModal';
 
+function EditableField({ value, onSave, style, type = 'text', placeholder, ...props }) {
+    const [localValue, setLocalValue] = useState(value || '');
+    const [isFocused, setIsFocused] = useState(false);
+
+    useEffect(() => { setLocalValue(value || ''); }, [value]);
+
+    const handleBlur = () => {
+        setIsFocused(false);
+        if (localValue !== value) {
+            onSave(localValue);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && type !== 'textarea') e.target.blur();
+        if (e.key === 'Escape') {
+            setLocalValue(value || '');
+            e.target.blur();
+        }
+    };
+
+    const commonStyle = {
+        ...style,
+        background: isFocused ? 'rgba(255,255,255,0.08)' : 'transparent',
+        border: 'none',
+        borderBottom: isFocused ? '1px solid var(--accent-gold)' : '1px solid transparent',
+        outline: 'none',
+        padding: '2px 6px',
+        margin: '-2px -6px',
+        width: '100%',
+        boxSizing: 'border-box',
+        cursor: isFocused ? 'text' : 'pointer',
+        transition: 'all 0.2s',
+        fontFamily: 'inherit',
+        resize: 'none',
+        borderRadius: '4px'
+    };
+
+    return type === 'textarea' ? (
+        <textarea
+            value={localValue}
+            onChange={e => setLocalValue(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            style={commonStyle}
+            placeholder={placeholder}
+            onClick={e => e.stopPropagation()}
+            rows={2}
+            {...props}
+        />
+    ) : (
+        <input
+            type="text"
+            value={localValue}
+            onChange={e => setLocalValue(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            style={commonStyle}
+            placeholder={placeholder}
+            onClick={e => e.stopPropagation()}
+            {...props}
+        />
+    );
+}
+
 function CollectionsView({ onBack }) {
     const [activeTab, setActiveTab] = useState('mine'); // 'mine' | 'shared'
     const [collections, setCollections] = useState([]);
@@ -16,7 +83,8 @@ function CollectionsView({ onBack }) {
     const [confirmDeleteCollId, setConfirmDeleteCollId] = useState(null);
     const [confirmRemoveMovieKey, setConfirmRemoveMovieKey] = useState(null); // `${collId}-${movieId}`
     const [confirmCloneCollId, setConfirmCloneCollId] = useState(null);
-    const [actionFeedback, setActionFeedback] = useState({ id: null, type: '', message: '' });
+    const [actionFeedback, setActionFeedback] = useState({ id: null, type: '', message: '', undoAction: null });
+    const [undoTimeoutIds, setUndoTimeoutIds] = useState({});
 
     // Share Modal State
     const [sharingCollection, setSharingCollection] = useState(null);
@@ -81,6 +149,53 @@ function CollectionsView({ onBack }) {
             if (expandedCollectionId === id) setExpandedCollectionId(null);
             setConfirmDeleteCollId(null);
             fetchCollections();
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleUpdateCollection = async (id, updates, prevValues) => {
+        try {
+            await fetch(`/api/collections/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates)
+            });
+            
+            setCollections(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+            
+            setActionFeedback({ 
+                id, 
+                type: 'undo', 
+                message: '✔ Saved.', 
+                undoAction: () => handleUndoCollection(id, prevValues) 
+            });
+
+            if (undoTimeoutIds[id]) clearTimeout(undoTimeoutIds[id]);
+
+            const timeoutId = setTimeout(() => {
+                setActionFeedback(prev => prev.id === id ? { id: null, type: '', message: '', undoAction: null } : prev);
+            }, 10000);
+            
+            setUndoTimeoutIds(prev => ({ ...prev, [id]: timeoutId }));
+        } catch (err) {
+            console.error(err);
+            setActionFeedback({ id, type: 'error', message: 'Failed to save.' });
+            setTimeout(() => setActionFeedback({ id: null, type: '', message: '', undoAction: null }), 3000);
+        }
+    };
+
+    const handleUndoCollection = async (id, revertValues) => {
+        try {
+            await fetch(`/api/collections/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(revertValues)
+            });
+            setCollections(prev => prev.map(c => c.id === id ? { ...c, ...revertValues } : c));
+            if (undoTimeoutIds[id]) clearTimeout(undoTimeoutIds[id]);
+            setActionFeedback({ id, type: 'success', message: '↩ Reverted!', undoAction: null });
+            setTimeout(() => setActionFeedback({ id: null, type: '', message: '', undoAction: null }), 2000);
         } catch (err) {
             console.error(err);
         }
@@ -351,12 +466,40 @@ function CollectionsView({ onBack }) {
                                     onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.01)'}
                                 >
                                     <div style={{ flex: '1', minWidth: '200px' }}>
-                                        <h3 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: 'var(--accent-gold)' }}>
-                                            {c.title}
-                                        </h3>
-                                        <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
-                                            {c.description || 'No description provided.'}
-                                        </p>
+                                        {activeTab === 'mine' ? (
+                                            <>
+                                                <EditableField
+                                                    value={c.title}
+                                                    placeholder="Collection Title"
+                                                    style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: 'var(--accent-gold)', fontWeight: 'bold' }}
+                                                    onSave={(newVal) => {
+                                                        if (newVal.trim() && newVal !== c.title) {
+                                                            handleUpdateCollection(c.id, { title: newVal }, { title: c.title });
+                                                        }
+                                                    }}
+                                                />
+                                                <EditableField
+                                                    type="textarea"
+                                                    value={c.description || ''}
+                                                    placeholder="No description provided. Click to add."
+                                                    style={{ margin: 0, color: '#aaa', fontSize: '0.9rem', width: '100%' }}
+                                                    onSave={(newVal) => {
+                                                        if (newVal !== (c.description || '')) {
+                                                            handleUpdateCollection(c.id, { description: newVal }, { description: c.description });
+                                                        }
+                                                    }}
+                                                />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <h3 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: 'var(--accent-gold)' }}>
+                                                    {c.title}
+                                                </h3>
+                                                <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
+                                                    {c.description || 'No description provided.'}
+                                                </p>
+                                            </>
+                                        )}
                                         <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginTop: '6px' }}>
                                             <span style={{ fontSize: '0.8rem', color: '#666' }}>
                                                 Created: {new Date(c.created_at).toLocaleDateString()}
@@ -378,14 +521,29 @@ function CollectionsView({ onBack }) {
                                         </span>
 
                                         {actionFeedback.id === c.id && actionFeedback.message && (
-                                            <span style={{
-                                                fontSize: '0.8rem',
-                                                color: actionFeedback.type === 'success' ? '#03dac6' : actionFeedback.type === 'info' ? 'var(--accent-gold)' : 'var(--danger)',
-                                                fontWeight: 'bold',
-                                                marginRight: '8px'
-                                            }}>
-                                                {actionFeedback.message}
-                                            </span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px' }} onClick={e => e.stopPropagation()}>
+                                                <span style={{
+                                                    fontSize: '0.8rem',
+                                                    color: actionFeedback.type === 'error' ? 'var(--danger)' : actionFeedback.type === 'undo' ? 'var(--accent-gold)' : '#03dac6',
+                                                    fontWeight: 'bold'
+                                                }}>
+                                                    {actionFeedback.message}
+                                                </span>
+                                                {actionFeedback.type === 'undo' && actionFeedback.undoAction && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); actionFeedback.undoAction(); }}
+                                                        style={{
+                                                            background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px',
+                                                            color: '#fff', fontSize: '0.75rem', padding: '2px 8px', cursor: 'pointer',
+                                                            transition: 'background 0.2s', fontWeight: 'bold'
+                                                        }}
+                                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                                    >
+                                                        Undo
+                                                    </button>
+                                                )}
+                                            </div>
                                         )}
 
                                         {activeTab === 'mine' ? (
