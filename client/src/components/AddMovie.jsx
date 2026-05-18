@@ -1040,7 +1040,8 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                             border: isMobile ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.09)',
                             boxShadow: isMobile ? '0 0 25px rgba(212, 175, 55, 0.4)' : '0 24px 60px rgba(0,0,0,0.8)',
                             display: 'flex', flexDirection: 'column', overflow: 'hidden',
-                            position: 'relative'
+                            position: 'relative',
+                            transform: isMobile ? 'none' : 'translateY(30px)'
                         }}
                     >
                     {/* Fixed Absolute Close Button — guarantees perfect closeability on mobile */}
