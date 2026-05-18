@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import MovieDetailsModal from './MovieDetailsModal';
 
 const Checkbox = ({ checked, onChange, style }) => (
@@ -44,8 +45,8 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
         if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
             setDropdownRect({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
+                top: rect.bottom,
+                left: rect.left,
                 width: rect.width
             });
         }
@@ -59,9 +60,7 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
             }
         };
         const handleScroll = () => {
-            if (window.innerWidth > 768) {
-                setIsOpen(false);
-            }
+            setIsOpen(false);
         };
         document.addEventListener('mousedown', handleClickOutside);
         window.addEventListener('scroll', handleScroll, true);
@@ -185,6 +184,14 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                         openDropdown();
                     }}
                     onFocus={() => openDropdown()}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (inputValue.trim()) {
+                                handleSelect(inputValue.trim());
+                            }
+                        }
+                    }}
                     placeholder={selected.length === 0 ? placeholder : ''}
                     style={{
                         flex: '1',
@@ -225,7 +232,7 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                 </div>
             )}
 
-            {isOpen && dropdownRect && (
+            {isOpen && dropdownRect && createPortal(
                 <div 
                     style={{
                         position: 'fixed',
@@ -235,13 +242,40 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                         background: '#151515',
                         border: '1px solid rgba(255, 255, 255, 0.12)',
                         borderRadius: '10px',
-                        maxHeight: '432px',
+                        maxHeight: '220px',
                         overflowY: 'auto',
-                        zIndex: 99999,
+                        zIndex: 999999,
                         boxShadow: '0 15px 40px rgba(0,0,0,0.7)',
                         padding: '4px 0'
                     }}
                 >
+                    {inputValue.trim() && (
+                        <div 
+                            onClick={() => handleSelect(inputValue.trim())}
+                            style={{
+                                padding: '8px 12px',
+                                color: accentColor,
+                                fontSize: '0.85rem',
+                                cursor: 'pointer',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontWeight: '500'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                e.currentTarget.style.color = '#fff';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = accentColor;
+                            }}
+                        >
+                            <span>🔍</span>
+                            <span>Filter by custom: <strong>"{inputValue.trim()}"</strong></span>
+                        </div>
+                    )}
                     {options.length === 0 ? (
                         <div style={{ padding: '12px 15px', color: '#666', fontSize: '0.8rem', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span>{label === 'Directors' ? '🎬' : '🎭'}</span>
@@ -303,25 +337,13 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
                                 </div>
                             );
                         })
-                    ) : (
-                        <div 
-                            onClick={() => {
-                                if (inputValue.trim()) {
-                                    handleSelect(inputValue.trim());
-                                }
-                            }}
-                            style={{
-                                padding: '8px 12px',
-                                color: accentColor,
-                                fontSize: '0.85rem',
-                                cursor: 'pointer',
-                                fontStyle: 'italic'
-                            }}
-                        >
-                            Press to filter by custom text: "{inputValue}"
+                    ) : !inputValue.trim() ? (
+                        <div style={{ padding: '12px 15px', color: '#666', fontSize: '0.8rem', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>No matches found.</span>
                         </div>
-                    )}
-                </div>
+                    ) : null}
+                </div>,
+                document.body
             )}
         </div>
     );
