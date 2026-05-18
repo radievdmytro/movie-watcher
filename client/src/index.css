@@ -693,7 +693,7 @@ input {
 /* ── Sticky search / controls bar — uses JS-measured --header-h ── */
 .sticky-search-bar {
   position: sticky;
-  top: calc(var(--header-h, 90px) + 4px);
+  top: calc(var(--header-h, 90px) + 19px);
   z-index: 100;
   background: rgba(12, 12, 12, 0.98);
   backdrop-filter: blur(12px);
