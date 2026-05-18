@@ -486,7 +486,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '16px' : '30px' }}>
                         {/* Left Column (Desktop only) */}
                     {!isMobile && (
-                        <div style={{ flex: '0 0 300px', maxWidth: '100%' }}>
+                        <div style={{ flex: '0 0 240px', maxWidth: '100%' }}>
                             <img
                                 src={movie.poster_url}
                                 alt={movie.title}
@@ -913,75 +913,85 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
 
                                     {/* Star Rating Selector Component */}
                                     {!readOnly && !isTrashMode && (
-                                        <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '10px', padding: '15px' }}>
-                                            <h4 style={{ color: '#fff', marginTop: 0, marginBottom: '10px', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '10px', padding: isMobile ? '12px' : '10px 14px' }}>
+                                            <h4 style={{ color: '#fff', marginTop: 0, marginBottom: '8px', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                                 ⭐ Your Personal Rating
                                             </h4>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '2px' : '6px', flexWrap: 'wrap' }}>
-                                                {[...Array(10)].map((_, i) => {
-                                                    const starValue = i + 1;
-                                                    const isLit = (hoverRating || userRating) >= starValue;
-                                                    return (
-                                                        <button
-                                                            key={starValue}
-                                                            type="button"
-                                                            onClick={() => handleRatingChange(starValue === userRating ? 0 : starValue)}
-                                                            onMouseEnter={() => setHoverRating(starValue)}
-                                                            onMouseLeave={() => setHoverRating(0)}
-                                                            style={{
-                                                                background: 'none', border: 'none', cursor: 'pointer',
-                                                                fontSize: isMobile ? '1.25rem' : '1.75rem', padding: '1px', outline: 'none',
-                                                                color: isLit ? 'var(--accent-gold)' : 'rgba(255,255,255,0.15)',
-                                                                textShadow: isLit ? '0 0 10px rgba(212,175,55,0.4)' : 'none',
-                                                                transition: 'all 0.1s ease'
-                                                            }}
-                                                        >
-                                                            ★
-                                                        </button>
-                                                    );
-                                                })}
-                                                <span style={{
-                                                    marginLeft: isMobile ? '8px' : '15px', fontSize: isMobile ? '0.9rem' : '1.05rem', fontWeight: 'bold',
-                                                    color: hoverRating ? '#fff' : (userRating ? 'var(--accent-gold)' : '#666'),
-                                                    whiteSpace: 'nowrap'
-                                                }}>
-                                                    {hoverRating ? `${hoverRating} / 10` : (userRating ? `${userRating} / 10` : 'Unrated')}
-                                                </span>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '10px', flexWrap: 'wrap' }}>
+                                                {/* Left side: Stars */}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '2px' : '4px' }}>
+                                                    {[...Array(10)].map((_, i) => {
+                                                        const starValue = i + 1;
+                                                        const isLit = (hoverRating || userRating) >= starValue;
+                                                        return (
+                                                            <button
+                                                                key={starValue}
+                                                                type="button"
+                                                                onClick={() => handleRatingChange(starValue === userRating ? 0 : starValue)}
+                                                                onMouseEnter={() => setHoverRating(starValue)}
+                                                                onMouseLeave={() => setHoverRating(0)}
+                                                                style={{
+                                                                    background: 'none', border: 'none', cursor: 'pointer',
+                                                                    fontSize: isMobile ? '1.25rem' : '1.45rem', padding: '1px', outline: 'none',
+                                                                    color: isLit ? 'var(--accent-gold)' : 'rgba(255,255,255,0.15)',
+                                                                    textShadow: isLit ? '0 0 10px rgba(212,175,55,0.4)' : 'none',
+                                                                    transition: 'all 0.1s ease'
+                                                                }}
+                                                            >
+                                                                ★
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
 
-                                                {userRating > 0 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRatingChange(0)}
-                                                        title="Clear rating"
-                                                        style={{
-                                                            background: 'rgba(255,255,255,0.07)',
-                                                            border: '1px solid rgba(255,255,255,0.12)',
-                                                            borderRadius: '50%',
-                                                            width: '22px', height: '22px',
-                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                            cursor: 'pointer', color: '#888', fontSize: '0.7rem',
-                                                            padding: 0, transition: 'all 0.15s',
-                                                            flexShrink: 0, marginLeft: '8px'
-                                                        }}
-                                                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(207,102,121,0.25)'; e.currentTarget.style.color = 'var(--danger)'; }}
-                                                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#888'; }}
-                                                    >✕</button>
-                                                )}
-                                                
-                                                <span style={{
-                                                    marginLeft: '12px', fontSize: '0.75rem', color: '#03dac6',
-                                                    fontWeight: '500',
-                                                    transition: 'opacity 0.8s ease, transform 0.8s ease',
-                                                    opacity: savedToastVisible ? 0.95 : 0,
-                                                    transform: savedToastVisible ? 'translateX(0)' : 'translateX(5px)',
-                                                    pointerEvents: 'none',
-                                                    whiteSpace: 'nowrap',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '4px'
-                                                }}>
-                                                    ✔ Saved automatically!
-                                                </span>
+                                                {/* Right side: Indicators (Text rating, clear cross, and saved status) */}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0, minHeight: '24px' }}>
+                                                    {/* Saved automatically toast */}
+                                                    <span style={{
+                                                        fontSize: '0.72rem', color: '#03dac6',
+                                                        fontWeight: '500',
+                                                        transition: 'opacity 0.8s ease, transform 0.8s ease',
+                                                        opacity: savedToastVisible ? 0.95 : 0,
+                                                        transform: savedToastVisible ? 'translateX(0)' : 'translateX(5px)',
+                                                        pointerEvents: 'none',
+                                                        whiteSpace: 'nowrap'
+                                                    }}>
+                                                        ✔ Saved!
+                                                    </span>
+
+                                                    {/* Rating numeric indicator */}
+                                                    <span style={{
+                                                        fontSize: isMobile ? '0.85rem' : '0.9rem', fontWeight: 'bold',
+                                                        color: hoverRating ? '#fff' : (userRating ? 'var(--accent-gold)' : '#666'),
+                                                        whiteSpace: 'nowrap',
+                                                        minWidth: '50px',
+                                                        textAlign: 'right'
+                                                    }}>
+                                                        {hoverRating ? `${hoverRating} / 10` : (userRating ? `${userRating} / 10` : 'Unrated')}
+                                                    </span>
+
+                                                    {/* Clear rating button placeholder (so it always occupies space and never shifts) */}
+                                                    <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                        {userRating > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRatingChange(0)}
+                                                                title="Clear rating"
+                                                                style={{
+                                                                    background: 'rgba(255,255,255,0.07)',
+                                                                    border: '1px solid rgba(255,255,255,0.12)',
+                                                                    borderRadius: '50%',
+                                                                    width: '22px', height: '22px',
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                    cursor: 'pointer', color: '#888', fontSize: '0.7rem',
+                                                                    padding: 0, transition: 'all 0.15s'
+                                                                }}
+                                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(207,102,121,0.25)'; e.currentTarget.style.color = 'var(--danger)'; }}
+                                                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#888'; }}
+                                                            >✕</button>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -1218,7 +1228,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                     width: '100%',
                     flexShrink: 0
                 }}>
-                    {!isMobile && <div style={{ flex: '0 0 330px' }} />}
+                    {!isMobile && <div style={{ flex: '0 0 270px' }} />}
                     {readOnly ? (
                                 <a
                                     href={movie.link}
