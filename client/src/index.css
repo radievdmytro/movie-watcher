@@ -67,6 +67,7 @@ input {
   border-radius: var(--radius);
   font-weight: 500;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .btn-primary {
@@ -515,6 +516,22 @@ input {
     padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
     min-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
     background 0.35s ease;
+}
+
+/* ── Intermediate desktop: shrink gaps to fit all buttons on one line ── */
+@media (max-width: 1200px) {
+  .app-header .header-left { gap: 8px !important; }
+  .app-header .header-nav { gap: 6px !important; }
+  .app-header .header-right { gap: 8px !important; }
+  .app-header .btn { 
+    padding: 6px 12px !important; 
+    font-size: 0.85rem !important; 
+  }
+  .app-header .logo { font-size: 1.3rem !important; }
+  .app-header img[alt*="Mascot"] { 
+    width: 60px !important; 
+    height: 60px !important; 
+  }
 }
 
 /* ── Compact state when user has scrolled ≥ 48 px ── */

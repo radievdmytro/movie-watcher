@@ -512,7 +512,7 @@ function App() {
                                     </button>
                                 )}
                                 {(currentView === 'library' || currentView === 'trash') && (
-                                    <div className="header-movie-count" style={{ fontSize: '0.9rem', color: '#888', marginLeft: '5px' }}>
+                                    <div className="header-movie-count" style={{ fontSize: '0.9rem', color: '#888', marginLeft: '5px', whiteSpace: 'nowrap' }}>
                                         {movies.length} {currentView === 'library' ? 'Movies' : 'Deleted Items'}
                                     </div>
                                 )}
