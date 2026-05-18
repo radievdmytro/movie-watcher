@@ -301,21 +301,28 @@ function SharedCollectionView({ collectionId, onExit }) {
                             >
                                 📥 Add Selected to Library
                             </button>
-                            <button
-                                onClick={() => {
-                                    const selectedMovies = collection.movies.filter(m => selectedMovieIds.includes(m.id));
-                                    setCompareMovieLinks(selectedMovies.map(m => m.link));
-                                    setIsCompareOpen(true);
-                                }}
-                                className="btn"
-                                style={{
-                                    background: 'rgba(255,255,255,0.1)', color: '#fff',
-                                    border: '1px solid rgba(255,255,255,0.15)', padding: '6px 14px',
-                                    fontSize: '0.8rem', fontWeight: 'bold'
-                                }}
-                            >
-                                ⚖️ Compare Selected
-                            </button>
+                            {selectedMovieIds.length >= 2 && selectedMovieIds.length <= 3 && (
+                                <button
+                                    onClick={() => {
+                                        const selectedMovies = collection.movies.filter(m => selectedMovieIds.includes(m.id));
+                                        setCompareMovieLinks(selectedMovies.map(m => m.link));
+                                        setIsCompareOpen(true);
+                                    }}
+                                    className="btn"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.1)', color: '#fff',
+                                        border: '1px solid rgba(255,255,255,0.15)', padding: '6px 14px',
+                                        fontSize: '0.8rem', fontWeight: 'bold'
+                                    }}
+                                >
+                                    ⚖️ Compare Selected
+                                </button>
+                            )}
+                            {selectedMovieIds.length > 3 && (
+                                <span style={{ fontSize: '0.8rem', color: '#888', fontStyle: 'italic', padding: '6px 0' }}>
+                                    Compare (max 3)
+                                </span>
+                            )}
                         </>
                     )}
                 </div>

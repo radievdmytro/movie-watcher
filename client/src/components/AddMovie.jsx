@@ -793,12 +793,17 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                     style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap' }}>
                                     ✚ Add Selected ({selectedLinks.size})
                                 </button>
-                                {selectedLinks.size >= 2 && (
+                                {selectedLinks.size >= 2 && selectedLinks.size <= 3 && (
                                     <button onClick={(e) => { e.stopPropagation(); handleCompareClick(); }}
                                         className="btn btn-ghost"
                                         style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
                                         ⚖️ Compare Selected
                                     </button>
+                                )}
+                                {selectedLinks.size > 3 && (
+                                    <span style={{ fontSize: '0.72rem', color: '#888', fontStyle: 'italic', display: 'flex', alignItems: 'center' }}>
+                                        Compare (max 3)
+                                    </span>
                                 )}
                             </div>
                         )}
@@ -912,13 +917,18 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                             </div>
                             {selectedLinks.size > 0 && (
                                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                    {selectedLinks.size >= 2 && (
+                                    {selectedLinks.size >= 2 && selectedLinks.size <= 3 && (
                                         <button onClick={handleCompareClick} className="btn btn-ghost" style={{
                                             fontSize: '0.82rem', padding: '7px 20px', borderRadius: '20px',
                                             border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff'
                                         }}>
                                             ⚖️ Compare ({selectedLinks.size})
                                         </button>
+                                    )}
+                                    {selectedLinks.size > 3 && (
+                                        <span style={{ fontSize: '0.82rem', color: '#888', fontStyle: 'italic', padding: '7px 0' }}>
+                                            Compare (max 3)
+                                        </span>
                                     )}
                                     <button onClick={handleAddSelected} className="btn btn-primary" style={{
                                         fontSize: '0.82rem', padding: '7px 20px', borderRadius: '20px',
@@ -1092,11 +1102,16 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                     background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
                                     color: '#aaa', borderRadius: '20px', padding: '8px 20px', cursor: 'pointer', fontSize: '0.85rem'
                                 }}>Clear</button>
-                                {selectedLinks.size >= 2 && (
+                                {selectedLinks.size >= 2 && selectedLinks.size <= 3 && (
                                     <button onClick={handleCompareClick} className="btn btn-ghost" style={{
                                         padding: '8px 20px', borderRadius: '20px',
                                         border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem'
                                     }}>⚖️ Compare ({selectedLinks.size})</button>
+                                )}
+                                {selectedLinks.size > 3 && (
+                                    <span style={{ fontSize: '0.85rem', color: '#888', fontStyle: 'italic', padding: '8px 0' }}>
+                                        Compare (max 3)
+                                    </span>
                                 )}
                                 <button onClick={handleAddSelected} className="btn btn-primary" style={{
                                     padding: '8px 28px', borderRadius: '20px',
