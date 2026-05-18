@@ -3,6 +3,14 @@ const path = require('path');
 
 const db = new Database('movies.db', { verbose: console.log });
 
+// Register custom case-insensitive LIKE function for Cyrillic/Unicode support in SQLite
+db.function('cyrillic_like', (text, pattern) => {
+  if (!text || !pattern) return 0;
+  const lowerText = text.toLowerCase();
+  const lowerPattern = pattern.toLowerCase().replace(/%/g, '');
+  return lowerText.includes(lowerPattern) ? 1 : 0;
+});
+
 const initDb = () => {
   // Create Users Table
   db.exec(`

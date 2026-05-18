@@ -362,9 +362,9 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
             const localResults = db.prepare(`
                 SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type
                 FROM scraped_movies_cache
-                WHERE title LIKE ? OR original_title LIKE ?
+                WHERE cyrillic_like(title, ?) OR cyrillic_like(original_title, ?)
                 LIMIT 20
-            `).all(searchLike, searchLike);
+            `).all(query.trim(), query.trim());
 
             if (localResults.length > 0) {
                 console.log(`[Search Cache Hit] Instantly returning ${localResults.length} text search results for: "${query}"`);
@@ -479,16 +479,16 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
             res.end();
         } else {
             // ---- TEXT SEARCH MODE ----
-            const searchLike = `%${query.trim()}%`;
+            const qTrimmed = query.trim();
 
             // 1. Instant local DB results
             const localResults = db.prepare(`
                 SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type
                 FROM scraped_movies_cache
-                WHERE title LIKE ? OR original_title LIKE ?
+                WHERE cyrillic_like(title, ?) OR cyrillic_like(original_title, ?)
                 ORDER BY updated_at DESC
                 LIMIT 20
-            `).all(searchLike, searchLike);
+            `).all(qTrimmed, qTrimmed);
 
             if (localResults.length > 0) {
                 send('results', { items: localResults, fromCache: true });
