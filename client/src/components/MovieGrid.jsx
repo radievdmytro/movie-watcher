@@ -1589,9 +1589,6 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#ccc', marginTop: '2px' }}>
                                                 <span>{movie.year}</span>
-                                                <span style={{ color: movie.status === 'watched' ? '#03dac6' : '#d4af37', fontWeight: 'bold' }}>
-                                                    {movie.status === 'watched' ? `Watched ${movie.user_rating ? `(★ ${movie.user_rating})` : ''}` : 'To Watch'}
-                                                </span>
                                             </div>
 
                                             {movie.genres && (
