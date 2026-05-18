@@ -266,7 +266,9 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
 
 // Helper: Check if URL is HDRezka
 const isHdrezkaUrl = (str) => {
-    return str.toLowerCase().includes('hdrezka') && (str.startsWith('http://') || str.startsWith('https://'));
+    if (!str) return false;
+    const lower = str.toLowerCase().trim();
+    return lower.includes('rezka') && (lower.startsWith('http://') || lower.startsWith('https://'));
 };
 
 // Helper: clean URL paths for domain-agnostic mirroring

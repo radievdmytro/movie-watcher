@@ -21,11 +21,15 @@ function AddMovie({ onMovieAdded, onScrollToMovie }) {
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
     const [fullPageResults, setFullPageResults] = useState(false);
 
-    const isHdrezkaUrl = (str) => str.includes('hdrezka') && (str.startsWith('http://') || str.startsWith('https://'));
+    const isHdrezkaUrl = (str) => {
+        if (!str) return false;
+        const lower = str.toLowerCase().trim();
+        return lower.includes('rezka') && (lower.startsWith('http://') || lower.startsWith('https://'));
+    };
 
     const extractUrls = (text) => {
         const match = text.match(/\bhttps?:\/\/\S+/gi);
-        return match ? match.filter(url => url.includes('hdrezka')) : [];
+        return match ? match.filter(url => url.toLowerCase().includes('rezka')) : [];
     };
 
     const handleSearch = async (isAuto = false, openFullPage = false) => {
