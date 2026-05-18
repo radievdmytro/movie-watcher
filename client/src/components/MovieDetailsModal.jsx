@@ -481,7 +481,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                     flex: 1,
                     overflowY: 'auto',
                     width: '100%',
-                    padding: isMobile ? '16px 16px 20px 16px' : '40px 40px 20px 40px'
+                    padding: isMobile ? '16px 16px 85px 16px' : '40px 40px 95px 40px'
                 }}>
                     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '16px' : '30px' }}>
                         {/* Left Column (Desktop only) */}
@@ -1223,10 +1223,16 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                     paddingLeft: isMobile ? '16px' : '40px',
                     paddingRight: isMobile ? '16px' : '40px',
                     borderTop: '1px solid rgba(255,255,255,0.08)',
-                    background: 'rgba(20, 20, 20, 0.95)',
-                    backdropFilter: 'blur(15px)',
+                    background: 'rgba(20, 20, 20, 0.85)',
+                    backdropFilter: 'blur(20px)',
                     width: '100%',
-                    flexShrink: 0
+                    boxSizing: 'border-box',
+                    flexShrink: 0,
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 10
                 }}>
                     {!isMobile && <div style={{ flex: '0 0 270px' }} />}
                     {readOnly ? (
