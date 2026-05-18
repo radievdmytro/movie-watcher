@@ -10,6 +10,7 @@ import SharedCollectionView from './components/SharedCollectionView';
 import AuthScreen from './components/AuthScreen';
 import AdminDashboard from './components/AdminDashboard';
 import MovieDetailsModal from './components/MovieDetailsModal';
+import MovieComparisonModal from './components/MovieComparisonModal';
 
 function App() {
     const [movies, setMovies] = useState([]);
@@ -121,6 +122,8 @@ function App() {
     const [confirmConfig, setConfirmConfig] = useState(null); // { title, message, onConfirm, confirmText, confirmColor }
 
     const [sharedMovieData, setSharedMovieData] = useState(null);
+    const [isCompareOpen, setIsCompareOpen] = useState(false);
+    const [compareLinks, setCompareLinks] = useState([]);
 
     // Synchronize currentView state with URL hash
     useEffect(() => {
@@ -455,6 +458,16 @@ function App() {
         }
     };
 
+    const handleBulkCompare = () => {
+        const links = movies
+            .filter(m => selectedIds.includes(m.id))
+            .map(m => m.link)
+            .filter(Boolean);
+        if (links.length < 2 || links.length > 3) return;
+        setCompareLinks(links);
+        setIsCompareOpen(true);
+    };
+
     const emptyTrash = () => {
         setConfirmConfig({
             title: 'Empty Trash',
@@ -661,6 +674,7 @@ function App() {
                     onRefresh={handleBulkRefresh}
                     onRestore={handleBulkRestore}
                     onAddToCollection={() => setShowAddToCollection(true)}
+                    onCompare={currentView === 'library' ? handleBulkCompare : undefined}
                     onCancelSelection={() => {
                         setSelectedIds([]);
                         setSelectionAnchor(null);
@@ -699,6 +713,18 @@ function App() {
                     }}
                     onUpdate={user && user.id === sharedMovieData.user_id ? handleUpdate : undefined}
                     readOnly={!user || user.id !== sharedMovieData.user_id}
+                />
+            )}
+
+            {isCompareOpen && (
+                <MovieComparisonModal
+                    isOpen={isCompareOpen}
+                    onClose={() => {
+                        setIsCompareOpen(false);
+                        setCompareLinks([]);
+                    }}
+                    movieLinks={compareLinks}
+                    isOwned={() => true}
                 />
             )}
         </div>

@@ -1,7 +1,77 @@
 import { useState, useEffect, useRef } from 'react';
 import Draggable from 'react-draggable';
 
-function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToCollection, onCancelSelection, isTrashMode, anchor }) {
+const COLLAPSE_MS = 360;
+
+function CollapsingDivider({ visible, vertical = true }) {
+    const size = vertical ? { height: '16px', width: '1px' } : { height: '14px', width: '1px' };
+    return (
+        <div
+            aria-hidden={!visible}
+            style={{
+                ...size,
+                background: 'rgba(255,255,255,0.1)',
+                overflow: 'hidden',
+                flexShrink: 0,
+                maxWidth: visible ? '1px' : 0,
+                maxHeight: visible ? (vertical ? '16px' : '14px') : 0,
+                opacity: visible ? 1 : 0,
+                margin: visible ? undefined : 0,
+                transition: `max-width ${COLLAPSE_MS}ms cubic-bezier(0.165, 0.84, 0.44, 1), max-height ${COLLAPSE_MS}ms cubic-bezier(0.165, 0.84, 0.44, 1), opacity ${COLLAPSE_MS * 0.7}ms ease, margin ${COLLAPSE_MS}ms cubic-bezier(0.165, 0.84, 0.44, 1)`,
+            }}
+        />
+    );
+}
+
+function CollapsingCompareSlot({ visible, isMobile, onCompare }) {
+    return (
+        <div
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                overflow: 'hidden',
+                flexShrink: 0,
+                maxWidth: visible ? (isMobile ? 36 : 130) : 0,
+                opacity: visible ? 1 : 0,
+                pointerEvents: visible ? 'auto' : 'none',
+                transition: `max-width ${COLLAPSE_MS}ms cubic-bezier(0.165, 0.84, 0.44, 1), opacity ${COLLAPSE_MS * 0.75}ms ease`,
+            }}
+        >
+            <button
+                onClick={onCompare}
+                className={isMobile ? undefined : 'btn-ghost'}
+                style={
+                    isMobile
+                        ? {
+                              background: 'none',
+                              border: 'none',
+                              color: '#fff',
+                              padding: '4px',
+                              fontSize: '1rem',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              whiteSpace: 'nowrap',
+                          }
+                        : {
+                              color: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              fontSize: '0.8rem',
+                              padding: '4px 8px',
+                              whiteSpace: 'nowrap',
+                          }
+                }
+                title="Compare selected"
+            >
+                ⚖️{!isMobile && ' Compare'}
+            </button>
+        </div>
+    );
+}
+
+function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToCollection, onCompare, onCancelSelection, isTrashMode, anchor }) {
     const [isVisible, setIsVisible] = useState(false);
     const [lastAnchor, setLastAnchor] = useState(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -39,8 +109,10 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
     const posLeft = activeAnchor ? `${activeAnchor.x}px` : '50%';
 
     const show = selectedCount > 0;
+    const showCompare = !isTrashMode && selectedCount >= 2 && selectedCount <= 3 && onCompare;
     const translate = activeAnchor ? 'translate(25px, -50%)' : 'translateX(-50%)';
     const scale = show ? 'scale(1)' : 'scale(0.1)';
+    const barTransition = `all ${COLLAPSE_MS}ms cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.3s cubic-bezier(0.165, 0.84, 0.44, 1)`;
 
     const styleMobile = {
         position: 'fixed',
@@ -59,7 +131,7 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
         alignItems: 'center',
         zIndex: 2500,
         border: '1px solid var(--accent-gold)',
-        transition: 'all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1)',
+        transition: barTransition,
         whiteSpace: 'nowrap',
         cursor: 'default'
     };
@@ -82,7 +154,7 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
         zIndex: 2500,
         border: '1px solid var(--accent-gold)',
         transition: show
-            ? 'opacity 0.2s ease-out, top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)'
+            ? `${barTransition}, top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)`
             : 'opacity 0.2s ease-in, transform 0.3s ease-in',
         whiteSpace: 'nowrap',
         cursor: 'default'
@@ -109,7 +181,14 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
                 <div style={{ height: '14px', width: '1px', background: 'rgba(255,255,255,0.12)' }}></div>
 
                 {!isTrashMode ? (
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            gap: '10px',
+                            alignItems: 'center',
+                            transition: `gap ${COLLAPSE_MS}ms cubic-bezier(0.165, 0.84, 0.44, 1)`,
+                        }}
+                    >
                         <button
                             onClick={onRefresh}
                             style={{
@@ -130,6 +209,8 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
                         >
                             📁
                         </button>
+                        <CollapsingDivider visible={showCompare} vertical={false} />
+                        <CollapsingCompareSlot visible={showCompare} isMobile onCompare={onCompare} />
                         <button
                             onClick={onDelete}
                             style={{
@@ -210,6 +291,8 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
                         >
                             📁 Add to Collection
                         </button>
+                        <CollapsingDivider visible={showCompare} />
+                        <CollapsingCompareSlot visible={showCompare} isMobile={false} onCompare={onCompare} />
                         <div style={{ height: '16px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
                         <button
                             onClick={onDelete}
