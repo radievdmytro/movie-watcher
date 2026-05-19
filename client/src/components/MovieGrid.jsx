@@ -639,6 +639,86 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             .map(item => item.movie);
     }, [movies, sortField, sortDir, filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults]);
 
+    const filteredOnboardingCacheMovies = useMemo(() => {
+        return onboardingCacheMovies.filter(movie => {
+            // Genre Filter
+            if (filterGenres.length > 0) {
+                const movieGenres = (movie.genres || movie.misc || '').split(',').map(g => g.trim());
+                if (filterGenreMode === 'include') {
+                    if (!filterGenres.every(fg => movieGenres.includes(fg))) return false;
+                } else {
+                    if (filterGenres.some(fg => movieGenres.includes(fg))) return false;
+                }
+            }
+
+            // Director Filter
+            if (filterDirectors.length > 0) {
+                const movieDirectors = (movie.director || '').split(',').map(d => d.trim().toLowerCase());
+                if (!filterDirectors.some(fd => movieDirectors.includes(fd.toLowerCase()))) return false;
+            }
+
+            // Actor Filter
+            if (filterActors.length > 0) {
+                const movieActors = (movie.actors || '').split(',').map(a => a.trim().toLowerCase());
+                if (!filterActors.some(fa => movieActors.includes(fa.toLowerCase()))) return false;
+            }
+
+            // Rating Filter
+            const rating = parseFloat(movie.rating) || 0;
+            if (rating < filterRating[0] || rating > filterRating[1]) return false;
+
+            // Year Filter
+            if (movie.year < filterYear[0] || movie.year > filterYear[1]) return false;
+
+            // Type Filter
+            if (filterType !== 'all') {
+                if (filterType === 'cartoon') {
+                    const isCartoon = movie.genres?.toLowerCase().includes('мульт') ||
+                        movie.genres?.toLowerCase().includes('анимац') ||
+                        movie.misc?.toLowerCase().includes('мульт') ||
+                        movie.misc?.toLowerCase().includes('анимац') ||
+                        movie.link?.includes('/cartoons/') ||
+                        movie.link?.includes('/animation/');
+                    if (!isCartoon) return false;
+                } else if (movie.type !== filterType) {
+                    return false;
+                }
+            }
+
+            // Search query filter (if active)
+            if (filterQuery) {
+                const q = filterQuery.toLowerCase().trim();
+                const titleMatch = movie.title && movie.title.toLowerCase().includes(q);
+                const origTitleMatch = movie.original_title && movie.original_title.toLowerCase().includes(q);
+                const yearMatch = movie.year && movie.year.toString().includes(q);
+                const genreMatch = (movie.genres || movie.misc || '').toLowerCase().includes(q);
+                const directorMatch = movie.director && movie.director.toLowerCase().includes(q);
+                const actorMatch = movie.actors && movie.actors.toLowerCase().includes(q);
+                const descMatch = movie.description && movie.description.toLowerCase().includes(q);
+                
+                if (!titleMatch && !origTitleMatch && !yearMatch && !genreMatch && !directorMatch && !actorMatch && !descMatch) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }, [onboardingCacheMovies, filterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType]);
+
+    const hasActiveFilter = useMemo(() => {
+        return !!(
+            filterQuery.trim() ||
+            filterGenres.length > 0 ||
+            filterType !== 'all' ||
+            filterDirectors.length > 0 ||
+            filterActors.length > 0 ||
+            filterRating[0] > 0 ||
+            filterRating[1] < 10 ||
+            filterYear[0] > 1900 ||
+            filterYear[1] < new Date().getFullYear() + 2
+        );
+    }, [filterQuery, filterGenres, filterType, filterDirectors, filterActors, filterRating, filterYear]);
+
     // Background cache search when library has few/no results or integrated cache search is enabled
     useEffect(() => {
         if (searchDb !== 'library') {
@@ -2833,7 +2913,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 </div>
             )}
 
-            {!isTrashMode && (movies.length < 5 || visibleCount >= filteredAndSortedMovies.length) && (
+            {!isTrashMode && (movies.length < 5 || visibleCount >= filteredAndSortedMovies.length || hasActiveFilter) && filteredOnboardingCacheMovies.length > 0 && (
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -2872,7 +2952,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
                         gap: '25px'
                     }}>
-                        {onboardingCacheMovies.map((movie, idx) => {
+                        {filteredOnboardingCacheMovies.map((movie, idx) => {
                             const isAdded = addedLinks.has(movie.link);
                             const isAdding = addingLinks.has(movie.link);
 
