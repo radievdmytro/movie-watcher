@@ -1387,10 +1387,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     lineHeight: '1.4'
                                 }}>
                                     {filteredAndSortedMovies.length === 0 
-                                        ? <>Нет совпадений в вашей библиотеке. </> 
-                                        : <>Найдено всего <strong style={{ color: '#fff', textShadow: '0 0 8px rgba(255,255,255,0.2)' }}>{filteredAndSortedMovies.length}</strong> в библиотеке. </>
+                                        ? <>No matches in your library. </> 
+                                        : <>Only <strong style={{ color: '#fff', textShadow: '0 0 8px rgba(255,255,255,0.2)' }}>{filteredAndSortedMovies.length}</strong> library matches. </>
                                     }
-                                    Найдено <strong style={{ color: '#c084fc', textShadow: '0 0 8px rgba(192, 132, 252, 0.3)' }}>{backgroundCacheResults.length}</strong> фильмов в Website Cache!
+                                    Found <strong style={{ color: '#c084fc', textShadow: '0 0 8px rgba(192, 132, 252, 0.3)' }}>{backgroundCacheResults.length}</strong> movies in Website Cache!
                                 </span>
                             </div>
                             <button
@@ -2757,7 +2757,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                     <span style={{ fontSize: '1.8rem' }}>👋</span>
                                     <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '700', color: '#fff' }}>
-                                        Добро пожаловать в вашу Синематеку!
+                                        Welcome to your Cinemathèque!
                                     </h2>
                                 </div>
                                 
@@ -2777,12 +2777,12 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     animation: 'pulse 2s infinite ease-in-out'
                                 }}>
                                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#c084fc', display: 'inline-block', boxShadow: '0 0 8px #c084fc' }}></span>
-                                    <span>В базе кэша: <strong style={{ color: '#fff' }}>{onboardingCacheStats.totalCached.toLocaleString() || '2,500+'}</strong> фильмов</span>
+                                    <span>In cache database: <strong style={{ color: '#fff' }}>{onboardingCacheStats.totalCached.toLocaleString() || '2,500+'}</strong> movies</span>
                                 </div>
                             </div>
                             
                             <p style={{ margin: 0, fontSize: '0.9rem', color: '#ccc', lineHeight: '1.6' }}>
-                                Ваша личная библиотека пока пуста или только начинает заполняться. Вы можете легко добавить любые фильмы с помощью строки поиска выше:
+                                Your personal watchlist is empty or just starting. You can easily add movies using the search bar above:
                             </p>
                             
                             <div style={{
@@ -2802,9 +2802,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 }}>
                                     <span style={{ fontSize: '1.2rem' }}>🔗</span>
                                     <div>
-                                        <h4 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#fff', fontWeight: '600' }}>Глобальный поиск HDRezka</h4>
+                                        <h4 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#fff', fontWeight: '600' }}>Global HDRezka Search</h4>
                                         <p style={{ margin: 0, fontSize: '0.78rem', color: '#aaa', lineHeight: '1.4' }}>
-                                            Просто вставьте **прямую ссылку** на любой фильм или сериал с сайта HDRezka в поисковую строку выше.
+                                            Just paste a **direct link** to any movie or series from HDRezka into the search input above.
                                         </p>
                                     </div>
                                 </div>
@@ -2819,9 +2819,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 }}>
                                     <span style={{ fontSize: '1.2rem' }}>🔮</span>
                                     <div>
-                                        <h4 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#fff', fontWeight: '600' }}>Поиск по локальному кэшу</h4>
+                                        <h4 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#fff', fontWeight: '600' }}>Local Cache Directory Search</h4>
                                         <p style={{ margin: 0, fontSize: '0.78rem', color: '#aaa', lineHeight: '1.4' }}>
-                                            Ищите по названиям, актерам или режиссерам. Наша база кэша постоянно пополняется автоматическим облачным парсером.
+                                            Search by titles, actors, or genres. Our local database is constantly updated by our background crawler.
                                         </p>
                                     </div>
                                 </div>
@@ -2849,7 +2849,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             alignItems: 'center',
                             gap: '6px'
                         }}>
-                            <span>🔮</span> Рекомендации из Базы Кэша (Постоянно обновляется)
+                            <span>🔮</span> Recommendations from Website Cache (Constantly Updating)
                         </span>
                         <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(168, 85, 247, 0.4), transparent)' }}></div>
                     </div>

@@ -249,7 +249,7 @@ function App() {
     // Auto-show Guest Welcome Tooltip for exactly 10 seconds
     useEffect(() => {
         if (user && user.username.startsWith('guest_')) {
-            setGuestTooltipText("👋 Вы зашли как Гость. Войдите или зарегистрируйтесь, чтобы ваши фильмы сохранились навсегда!");
+            setGuestTooltipText("👋 You are browsing as a Guest. Log in or register to save your movies permanently!");
             setShowGuestTooltip(true);
             const timer = setTimeout(() => {
                 setShowGuestTooltip(false);
@@ -264,7 +264,7 @@ function App() {
             setActivityCount(prev => {
                 const next = prev + 1;
                 if (next === 2 || next === 5 || next === 8) {
-                    setGuestTooltipText("🔮 Активно пользуетесь сайтом? Создайте постоянный аккаунт в 1 клик, чтобы не потерять свои данные!");
+                    setGuestTooltipText("🔮 Enjoying the app? Create a permanent account in one click to keep your saved watchlist secure!");
                     setShowGuestTooltip(true);
                 }
                 return next;
@@ -275,7 +275,7 @@ function App() {
     // Selection active usage hook
     useEffect(() => {
         if (user && user.username.startsWith('guest_') && selectedIds.length >= 2) {
-            setGuestTooltipText("💡 Хотите сохранить выбранные фильмы? Войдите или зарегистрируйтесь, чтобы они не потерялись!");
+            setGuestTooltipText("💡 Want to save your selected movies? Sign in or register so they don't get lost!");
             setShowGuestTooltip(true);
         }
     }, [selectedIds.length, user]);
@@ -678,7 +678,7 @@ function App() {
                                     onClick={() => setIsAuthModalOpen(true)}
                                     >
                                         <span className="btn-icon">👤</span>
-                                        <span className="btn-label">Guest Visitor (Войти)</span>
+                                        <span className="btn-label">Guest Visitor (Sign In)</span>
                                     </span>
                                     
                                     {/* Guest Floating Popover Tooltip */}
@@ -725,7 +725,7 @@ function App() {
                                                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
                                                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                             >
-                                                🔑 Войти / Создать аккаунт
+                                                🔑 Sign In / Register
                                             </button>
                                         </div>
                                     )}
