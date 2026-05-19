@@ -349,6 +349,15 @@ const MultiSelectAutocomplete = ({ label, placeholder, options = [], selected = 
     );
 };
 
+const cleanLinkPath = (url) => {
+    if (!url) return '';
+    return url.toLowerCase()
+        .replace(/^https?:\/\/[^\/]+/, '')
+        .replace(/^\/+|\/+$/g, '')
+        .split('?')[0]
+        .split('#')[0];
+};
+
 function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink }) {
     const [sortField, setSortField] = useState('created_at');
     const [sortDir, setSortDir] = useState('desc');
@@ -400,6 +409,42 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     const [backgroundCacheResults, setBackgroundCacheResults] = useState([]);
     const [isBgCacheSearching, setIsBgCacheSearching] = useState(false);
     const [showAutoSwitchToast, setShowAutoSwitchToast] = useState(false);
+
+    const uniqueBackgroundCacheResults = useMemo(() => {
+        if (!backgroundCacheResults.length) return [];
+        const libraryLinks = new Set(movies.map(m => cleanLinkPath(m.link)));
+        return backgroundCacheResults
+            .filter(m => m.link && !libraryLinks.has(cleanLinkPath(m.link)))
+            .map(m => ({ ...m, isFromCache: true }));
+    }, [backgroundCacheResults, movies]);
+
+    const [addingLinks, setAddingLinks] = useState(new Set());
+    const [addedLinks, setAddedLinks] = useState(new Set());
+
+    const handleAddMovieFromCache = async (link) => {
+        setAddingLinks(prev => new Set([...prev, link]));
+        try {
+            const res = await fetch('/api/movies/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: link })
+            });
+            if (res.ok) {
+                setAddedLinks(prev => new Set([...prev, link]));
+                if (onUpdate) {
+                    onUpdate(null);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setAddingLinks(prev => {
+                const next = new Set(prev);
+                next.delete(link);
+                return next;
+            });
+        }
+    };
 
     const handleToggleAutoSwitch = (checked) => {
         setAutoSwitchToCache(checked);
@@ -585,7 +630,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             .map(item => item.movie);
     }, [movies, sortField, sortDir, filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults]);
 
-    // Background cache search when library has few/no results
+    // Background cache search when library has few/no results or integrated cache search is enabled
     useEffect(() => {
         if (searchDb !== 'library') {
             setBackgroundCacheResults([]);
@@ -598,8 +643,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             return;
         }
 
-        // We only trigger background search if library results are sparse (<= 2 results)
-        if (filteredAndSortedMovies.length > 2) {
+        // We trigger background search if autoSwitchToCache is enabled OR if library results are sparse (<= 5 results)
+        const shouldSearchBg = autoSwitchToCache || filteredAndSortedMovies.length <= 5;
+        if (!shouldSearchBg) {
             setBackgroundCacheResults([]);
             return;
         }
@@ -611,13 +657,6 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 .then(data => {
                     const results = data || [];
                     setBackgroundCacheResults(results);
-
-                    // Automatic switch trigger if enabled, library is completely empty, and cache has matches
-                    if (autoSwitchToCache && filteredAndSortedMovies.length === 0 && results.length > 0) {
-                        setSearchDb('cache');
-                        setShowAutoSwitchToast(true);
-                        setTimeout(() => setShowAutoSwitchToast(false), 5000);
-                    }
                 })
                 .catch(err => {
                     console.error("Bg cache search error:", err);
@@ -1277,7 +1316,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     </div>
 
                     {/* Background Search Suggestion Banner */}
-                    {searchDb === 'library' && filterQuery.trim().length >= 3 && backgroundCacheResults.length > 0 && (
+                    {searchDb === 'library' && !autoSwitchToCache && filterQuery.trim().length >= 3 && backgroundCacheResults.length > 0 && (
                         <div style={{
                             display: 'flex',
                             flexWrap: 'wrap',
@@ -2146,6 +2185,200 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             </div>
                         );
                     })}
+
+                    {/* Integrated Cache Results */}
+                    {searchDb === 'library' && autoSwitchToCache && uniqueBackgroundCacheResults.length > 0 && (
+                        <>
+                            <div key="cache-divider" className="cache-divider" style={{
+                                gridColumn: '1 / -1',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '15px',
+                                margin: '40px 0 20px',
+                                width: '100%',
+                                animation: 'fadeIn 0.4s ease'
+                            }}>
+                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(168, 85, 247, 0.4), transparent)' }}></div>
+                                <span style={{
+                                    fontSize: '0.78rem',
+                                    color: '#c084fc',
+                                    fontWeight: 'bold',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    background: 'rgba(168, 85, 247, 0.1)',
+                                    padding: '6px 16px',
+                                    borderRadius: '20px',
+                                    border: '1px solid rgba(168, 85, 247, 0.25)',
+                                    textShadow: '0 0 10px rgba(168, 85, 247, 0.3)',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    🔮 Website Cache Matches (Not in Library)
+                                </span>
+                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(168, 85, 247, 0.4), transparent)' }}></div>
+                            </div>
+
+                            {uniqueBackgroundCacheResults.slice(0, 30).map((movie) => {
+                                return (
+                                    <div
+                                        key={movie.link}
+                                        data-movie-link={movie.link}
+                                        className="glass-panel movie-card"
+                                        style={{
+                                            position: 'relative',
+                                            overflow: 'hidden',
+                                            transition: 'transform 0.3s ease-out',
+                                            border: '2px solid rgba(168, 85, 247, 0.6)',
+                                            boxShadow: '0 0 12px rgba(168, 85, 247, 0.2)',
+                                            aspectRatio: '2/3',
+                                            borderRadius: '8px'
+                                        }}
+                                    >
+                                        <div
+                                            style={{ width: '100%', height: '100%', cursor: 'pointer' }}
+                                            onClick={() => setSelectedMovie(movie)}
+                                        >
+                                            <img
+                                                src={movie.poster_url}
+                                                alt={movie.title}
+                                                style={{
+                                                    width: '100%', height: '100%',
+                                                    objectFit: 'cover'
+                                                }}
+                                            />
+                                            {/* Top Overlay Controls */}
+                                            <div style={{
+                                                position: 'absolute', top: '0', left: '0', width: '100%',
+                                                padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                                                zIndex: 10,
+                                                background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)',
+                                                pointerEvents: 'none'
+                                            }}>
+                                                <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(168, 85, 247, 0.2)', border: '1px solid rgba(168, 85, 247, 0.4)', borderRadius: '50%', width: '22px', height: '22px', fontSize: '0.9rem', boxShadow: '0 0 8px rgba(168, 85, 247, 0.3)' }} title="Website Cache Match">
+                                                    🔮
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end', pointerEvents: 'none' }}>
+                                                    {(movie.genres?.toLowerCase().includes('мульт') || movie.genres?.toLowerCase().includes('анимац') || movie.link?.includes('/cartoons/') || movie.link?.includes('/animation/')) ? (
+                                                        <span className="badge-ui" style={{ background: 'rgba(255, 152, 0, 0.9)' }}>Cartoon</span>
+                                                    ) : movie.genres?.toLowerCase().includes('аниме') ? (
+                                                        <span className="badge-ui" style={{ background: 'rgba(233, 30, 99, 0.9)' }}>Anime</span>
+                                                    ) : (
+                                                        <>
+                                                            {movie.genres?.toLowerCase().includes('триллер') && <span className="badge-ui" style={{ background: 'rgba(183, 28, 28, 0.9)' }}>Thriller</span>}
+                                                            {movie.genres?.toLowerCase().includes('детектив') && <span className="badge-ui" style={{ background: 'rgba(74, 20, 140, 0.9)' }}>Detective</span>}
+                                                            {movie.genres?.toLowerCase().includes('ужас') && <span className="badge-ui" style={{ background: 'rgba(46, 125, 50, 0.9)' }}>Horror</span>}
+                                                            {movie.genres?.toLowerCase().includes('комед') && <span className="badge-ui" style={{ background: 'rgba(251, 192, 45, 0.9)', color: '#000' }}>Comedy</span>}
+                                                            {(movie.genres?.toLowerCase().includes('мелодрам') || movie.genres?.toLowerCase().includes('драма')) && (
+                                                                <span className="badge-ui" style={{ background: 'rgba(194, 24, 91, 0.9)' }}>Drama</span>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                    {movie.type === 'series' && <span className="badge-ui" style={{ background: 'rgba(33, 150, 243, 0.9)' }}>TV</span>}
+                                                    <div style={{
+                                                        background: 'rgba(0,0,0,0.6)', 
+                                                        padding: isMobile ? '1px 4px' : '2px 6px', 
+                                                        borderRadius: isMobile ? '2px' : '4px',
+                                                        fontWeight: 'bold', 
+                                                        color: 'var(--accent-gold)', 
+                                                        fontSize: isMobile ? '0.65rem' : '0.8rem',
+                                                        backdropFilter: 'blur(4px)', 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        gap: '2px'
+                                                    }}>
+                                                        ★ {movie.rating || '-'}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Bottom Info Overlay */}
+                                            <div style={{
+                                                position: 'absolute', bottom: 0, left: 0, width: '100%',
+                                                display: 'flex', flexDirection: 'column', gap: '4px',
+                                                textAlign: 'left',
+                                                zIndex: 5
+                                            }}>
+                                                <div style={{
+                                                    position: 'absolute', inset: 0,
+                                                    background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.8) 60%, transparent 100%)',
+                                                    backdropFilter: 'blur(4px)',
+                                                    WebkitBackdropFilter: 'blur(4px)',
+                                                    maskImage: 'linear-gradient(to bottom, transparent 0%, black 40px)',
+                                                    WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 40px)',
+                                                    zIndex: -1
+                                                }}></div>
+
+                                                <div style={{ padding: '25px 10px 10px' }}>
+                                                    <h3 style={{
+                                                        fontSize: '1rem', lineHeight: '1.2', color: '#fff',
+                                                        margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.8)',
+                                                        display: '-webkit-box',
+                                                        WebkitLineClamp: '2',
+                                                        WebkitBoxOrient: 'vertical',
+                                                        overflow: 'hidden'
+                                                    }}>{movie.title}</h3>
+
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#ccc', marginTop: '2px' }}>
+                                                        <span>{movie.year}</span>
+                                                    </div>
+
+                                                    {movie.genres && (
+                                                        <div style={{
+                                                            fontSize: '0.7rem', color: 'var(--accent-gold)', opacity: 0.8,
+                                                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                                        }}>
+                                                            {movie.genres}
+                                                        </div>
+                                                    )}
+
+                                                    {movie.description && (
+                                                        <div className="movie-desc-anim" style={{
+                                                            fontSize: '0.75rem', color: '#ddd',
+                                                            lineHeight: '1.3',
+                                                            margin: '4px 0 2px'
+                                                        }}>{movie.description}</div>
+                                                    )}
+
+                                                    {/* Quick Actions */}
+                                                    <div style={{ display: 'flex', gap: '5px', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
+                                                        <button
+                                                            className="btn-ghost"
+                                                            title="Add to Library"
+                                                            style={{
+                                                                flex: 1, 
+                                                                padding: isMobile ? '4px 6px' : '6px 8px', 
+                                                                fontSize: isMobile ? '0.7rem' : '0.8rem',
+                                                                borderRadius: '4px', 
+                                                                border: '1px solid', 
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s ease', 
+                                                                fontWeight: 'bold',
+                                                                background: addedLinks.has(movie.link) ? 'rgba(3, 218, 198, 0.15)' : 'rgba(168, 85, 247, 0.15)',
+                                                                borderColor: addedLinks.has(movie.link) ? '#03dac6' : 'rgba(168, 85, 247, 0.4)',
+                                                                color: addedLinks.has(movie.link) ? '#03dac6' : '#c084fc',
+                                                                height: isMobile ? '28px' : 'auto',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}
+                                                            disabled={addingLinks.has(movie.link) || addedLinks.has(movie.link)}
+                                                            onClick={async () => {
+                                                                await handleAddMovieFromCache(movie.link);
+                                                            }}
+                                                        >
+                                                            {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ Added' : '➕ Add to Library'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </>
+                    )}
                     {/* Sentinel for Infinite Scroll (Grid) */}
                     {visibleCount < filteredAndSortedMovies.length && (
                         <div ref={sentinelRef} style={{ height: '50px', width: '100%', gridColumn: '1 / -1' }} />
@@ -2312,6 +2545,145 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     </td>
                                 </tr>
                             ))}
+
+                            {/* Integrated Table Cache Results */}
+                            {searchDb === 'library' && autoSwitchToCache && uniqueBackgroundCacheResults.length > 0 && (
+                                <>
+                                    <tr key="cache-table-divider">
+                                        <td colSpan="6" style={{ padding: '25px 15px 15px', background: 'rgba(168, 85, 247, 0.03)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', width: '100%' }}>
+                                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(168, 85, 247, 0.3), transparent)' }}></div>
+                                                <span style={{
+                                                    fontSize: '0.75rem',
+                                                    color: '#c084fc',
+                                                    fontWeight: 'bold',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '1px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    background: 'rgba(168, 85, 247, 0.1)',
+                                                    padding: '4px 12px',
+                                                    borderRadius: '15px',
+                                                    border: '1px solid rgba(168, 85, 247, 0.2)'
+                                                }}>
+                                                    🔮 Results from Website Cache
+                                                </span>
+                                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(168, 85, 247, 0.3), transparent)' }}></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {uniqueBackgroundCacheResults.slice(0, 30).map((movie) => (
+                                        <tr key={movie.link} style={{
+                                            borderBottom: '1px solid rgba(168, 85, 247, 0.15)',
+                                            background: 'rgba(168, 85, 247, 0.02)',
+                                            transition: 'background 0.2s'
+                                        }}>
+                                            <td style={{ padding: '15px', textAlign: 'center', borderLeft: '3px solid rgba(168, 85, 247, 0.6)' }}>
+                                                <span style={{ fontSize: '0.9rem', opacity: 0.9 }} title="Website Cache Match">🔮</span>
+                                            </td>
+                                            <td style={{ padding: '10px' }}>
+                                                <div className="poster-preview-wrapper">
+                                                    <img
+                                                        src={movie.poster_url}
+                                                        alt=""
+                                                        style={{ width: '40px', borderRadius: '4px', cursor: 'pointer', border: '1px solid rgba(168, 85, 247, 0.4)' }}
+                                                        onClick={() => setSelectedMovie(movie)}
+                                                    />
+                                                    <img
+                                                        src={movie.poster_url}
+                                                        className="poster-preview-large"
+                                                        alt="Preview"
+                                                    />
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '15px' }}>
+                                                <div style={{ width: '290px', whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span
+                                                            style={{ color: '#fff', textDecoration: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+                                                            onClick={() => setSelectedMovie(movie)}
+                                                        >{movie.title}</span>
+                                                        {(() => {
+                                                            const isCartoon = movie.genres?.toLowerCase().includes('мульт') || movie.genres?.toLowerCase().includes('анимац') || movie.link?.includes('/cartoons/') || movie.link?.includes('/animation/');
+                                                            const isAnime = movie.genres?.toLowerCase().includes('аниме');
+
+                                                            if (isCartoon) return <span className="badge-table" style={{ background: 'rgba(255, 152, 0, 0.2)', color: '#ffcc80', borderColor: 'rgba(255,152,0,0.4)' }}>Cartoon</span>;
+                                                            if (isAnime) return <span className="badge-table" style={{ background: 'rgba(233, 30, 99, 0.2)', color: '#f48fb1', borderColor: 'rgba(233,30,99,0.4)' }}>Anime</span>;
+
+                                                            return (
+                                                                <>
+                                                                    {movie.genres?.toLowerCase().includes('триллер') && <span className="badge-table" style={{ background: 'rgba(183, 28, 28, 0.2)', color: '#ef9a9a', borderColor: 'rgba(183,28,28,0.4)' }}>Thriller</span>}
+                                                                    {movie.genres?.toLowerCase().includes('детектив') && <span className="badge-table" style={{ background: 'rgba(74, 20, 140, 0.2)', color: '#ce93d8', borderColor: 'rgba(74,20,140,0.4)' }}>Detective</span>}
+                                                                    {movie.genres?.toLowerCase().includes('ужас') && <span className="badge-table" style={{ background: 'rgba(46, 125, 50, 0.2)', color: '#a5d6a7', borderColor: 'rgba(46,125,50,0.4)' }}>Horror</span>}
+                                                                    {movie.genres?.toLowerCase().includes('комед') && <span className="badge-table" style={{ background: 'rgba(251, 192, 45, 0.2)', color: '#fff59d', borderColor: 'rgba(251,192,45,0.4)' }}>Comedy</span>}
+                                                                    {(movie.genres?.toLowerCase().includes('мелодрам') || movie.genres?.toLowerCase().includes('драма')) && (
+                                                                        <span className="badge-table" style={{ background: 'rgba(194, 24, 91, 0.2)', color: '#f48fb1', borderColor: 'rgba(194,24,91,0.4)' }}>Drama</span>
+                                                                    )}
+                                                                </>
+                                                            );
+                                                        })()}
+                                                        {movie.type === 'series' && <span className="badge-table" style={{ background: 'rgba(33, 150, 243, 0.2)', color: '#90caf9', borderColor: 'rgba(33,150,243,0.4)' }}>TV</span>}
+                                                    </div>
+                                                    <div style={{ color: '#888', fontSize: '0.85rem' }}>{movie.original_title} ({movie.year})</div>
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '15px', fontSize: '0.9rem', color: '#ccc', verticalAlign: 'top' }}>
+                                                <div
+                                                    className={`table-desc-anim ${hoveredDescId === movie.link ? 'active' : ''}`}
+                                                    onMouseEnter={() => setHoveredDescId(movie.link)}
+                                                    onMouseLeave={() => setHoveredDescId(null)}
+                                                    style={{
+                                                        lineHeight: '1.4',
+                                                        whiteSpace: 'normal'
+                                                    }}
+                                                >
+                                                    {movie.description}
+                                                </div>
+                                                <div style={{ fontSize: '0.8rem', color: '#c084fc', marginTop: '4px', opacity: 0.7 }}>
+                                                    {movie.genres}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '15px', color: 'var(--accent-gold)', fontWeight: 'bold' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span>★ {movie.rating || '-'}</span>
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '15px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <button
+                                                        className="btn-ghost"
+                                                        disabled={addingLinks.has(movie.link) || addedLinks.has(movie.link)}
+                                                        onClick={async () => {
+                                                            await handleAddMovieFromCache(movie.link);
+                                                        }}
+                                                        style={{
+                                                            padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem',
+                                                            background: addedLinks.has(movie.link) ? 'rgba(3, 218, 198, 0.15)' : 'rgba(168, 85, 247, 0.15)',
+                                                            border: addedLinks.has(movie.link) ? '1px solid #03dac6' : '1px solid rgba(168, 85, 247, 0.4)',
+                                                            color: addedLinks.has(movie.link) ? '#03dac6' : '#c084fc',
+                                                            whiteSpace: 'nowrap',
+                                                            cursor: 'pointer',
+                                                            fontWeight: 'bold',
+                                                            transition: 'all 0.2s ease',
+                                                            width: '140px',
+                                                            textAlign: 'center'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.transform = 'scale(1.03)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.transform = 'scale(1)';
+                                                        }}
+                                                    >
+                                                        {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ Added' : '➕ Add to Library'}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </>
+                            )}
                         </tbody>
                     </table>
                     {/* Sentinel for Infinite Scroll (Table) */}
