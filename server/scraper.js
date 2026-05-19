@@ -76,7 +76,8 @@ async function requestWithRetry(urlPath, options = {}, retries = 3) {
         const headers = {
             ...BASE_HEADERS,
             'User-Agent': USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)],
-            'Referer': MIRRORS[currentMirrorIndex] + '/'
+            'Referer': MIRRORS[currentMirrorIndex] + '/',
+            ...(options.headers || {}) // Merge custom client spoofed headers if provided!
         };
 
         try {
@@ -137,7 +138,7 @@ function parseMovieList($) {
     return results;
 }
 
-async function searchMovies(query) {
+async function searchMovies(query, customHeaders = {}) {
     const cacheKey = query.trim().toLowerCase();
     const cached = getFromCache(searchCache, cacheKey);
     if (cached) {
@@ -147,7 +148,7 @@ async function searchMovies(query) {
 
     try {
         const searchPath = `/search/?do=search&subaction=search&q=${encodeURIComponent(query)}`;
-        const { data } = await requestWithRetry(searchPath);
+        const { data } = await requestWithRetry(searchPath, { headers: customHeaders });
         const $ = cheerio.load(data);
 
         const results = parseMovieList($);
@@ -175,7 +176,7 @@ async function getCategoryMovies(filter) {
     }
 }
 
-async function getMovieDetails(url) {
+async function getMovieDetails(url, customHeaders = {}) {
     const cached = getFromCache(detailsCache, url);
     if (cached) {
         console.log(`[Scraper] Cache hit for details URL: ${url}`);
@@ -183,7 +184,7 @@ async function getMovieDetails(url) {
     }
 
     try {
-        const { data } = await requestWithRetry(url);
+        const { data } = await requestWithRetry(url, { headers: customHeaders });
         const $ = cheerio.load(data);
 
         const original_title = $('.b-post__origtitle').text().trim();

@@ -547,6 +547,26 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
     }
 });
 
+const getUserHeaders = (req) => {
+    if (!req) return {};
+    const headers = {};
+    if (req.headers['user-agent']) {
+        headers['User-Agent'] = req.headers['user-agent'];
+    }
+    if (req.headers['accept-language']) {
+        headers['Accept-Language'] = req.headers['accept-language'];
+    }
+    if (req.headers['referer']) {
+        headers['Referer'] = req.headers['referer'];
+    }
+    for (const key of Object.keys(req.headers)) {
+        if (key.startsWith('sec-ch-ua')) {
+            headers[key] = req.headers[key];
+        }
+    }
+    return headers;
+};
+
 // Search / Parse Endpoint
 app.post('/api/movies/search', authenticateToken, async (req, res) => {
     try {
@@ -569,7 +589,7 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
 
             // Fallback to real-time scrape
             console.log(`[Search Cache Miss] Scraping HDRezka for: ${query}`);
-            const details = await getMovieDetails(query);
+            const details = await getMovieDetails(query, getUserHeaders(req));
             if (details) {
                 saveToCache(details);
             }
@@ -592,7 +612,7 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
                 // Still trigger HDRezka search in the background to discover any new items or update existing ones
                 (async () => {
                     try {
-                        const results = await searchMovies(query);
+                        const results = await searchMovies(query, getUserHeaders(req));
                         if (results && results.length > 0) {
                             for (const item of results) {
                                 // Save simple search results to cache so they can be discovered next time
@@ -620,7 +640,7 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
 
             // Fallback to real-time search
             console.log(`[Search Cache Miss] Searching HDRezka for: "${query}"`);
-            const results = await searchMovies(query);
+            const results = await searchMovies(query, getUserHeaders(req));
             if (results && results.length > 0) {
                 for (const item of results) {
                     try {
@@ -729,7 +749,7 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
 
             // Not cached — scrape in real time
             send('status', { msg: 'Fetching from HDRezka...' });
-            const details = await getMovieDetails(query);
+            const details = await getMovieDetails(query, getUserHeaders(req));
             if (details) {
                 saveToCache(details);
                 send('result', { type: 'detail', data: details });
@@ -756,7 +776,7 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
             // 2. Fetch from HDRezka (may return new items not in cache)
             send('status', { msg: 'Searching HDRezka...' });
             try {
-                const freshResults = await searchMovies(query);
+                const freshResults = await searchMovies(query, getUserHeaders(req));
                 if (!isDone()) {
                     // Save to cache
                     for (const item of (freshResults || [])) {
@@ -1323,7 +1343,7 @@ app.post('/api/movies/import', authenticateToken, async (req, res) => {
             return res.status(409).json({ error: 'Movie already exists in your list' });
         }
 
-        const details = await getMovieDetails(url);
+        const details = await getMovieDetails(url, getUserHeaders(req));
         if (!details) return res.status(404).json({ error: 'Could not parse movie details' });
 
         // Cache the newly imported details
@@ -1368,7 +1388,7 @@ app.post('/api/movies/refresh', authenticateToken, async (req, res) => {
         for (const movie of movies) {
             if (!movie.link) continue;
             try {
-                const details = await getMovieDetails(movie.link);
+                const details = await getMovieDetails(movie.link, getUserHeaders(req));
                 
                 // Update details cache
                 saveToCache(details);
