@@ -1400,33 +1400,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                     zIndex: 10
                 }}>
                     {!isMobile && <div style={{ flex: '0 0 270px' }} />}
-                    {readOnly ? (
-                                <a
-                                    href={movie.link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="btn"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
-                                        border: 'none',
-                                        color: '#000',
-                                        padding: isMobile ? '10px 20px' : '12px 35px',
-                                        fontSize: isMobile ? '0.88rem' : '1.05rem',
-                                        fontWeight: 'bold',
-                                        boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px',
-                                        borderRadius: '10px',
-                                        textDecoration: 'none',
-                                        transition: 'all 0.2s',
-                                        flex: isMobile ? '1' : 'initial'
-                                    }}
-                                >
-                                    🎬 Watch on HDRezka
-                                </a>
-                            ) : !movie.id ? (
+                    {(!movie.id) ? (
                                 <>
                                     <button
                                         style={{
@@ -1449,7 +1423,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                         onClick={() => handleAddMovieFromCache(movie.link)}
                                         disabled={addingLinks.has(movie.link) || addedLinks.has(movie.link)}
                                     >
-                                        {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ Added' : '➕ Add to Library'}
+                                        {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ In My Library' : '➕ Add to Library'}
                                     </button>
                                     <a
                                         href={movie.link}
@@ -1475,6 +1449,32 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                         🎬 Watch on HDRezka
                                     </a>
                                 </>
+                            ) : readOnly ? (
+                                <a
+                                    href={movie.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
+                                        border: 'none',
+                                        color: '#000',
+                                        padding: isMobile ? '10px 20px' : '12px 35px',
+                                        fontSize: isMobile ? '0.88rem' : '1.05rem',
+                                        fontWeight: 'bold',
+                                        boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        borderRadius: '10px',
+                                        textDecoration: 'none',
+                                        transition: 'all 0.2s',
+                                        flex: isMobile ? '1' : 'initial'
+                                    }}
+                                >
+                                    🎬 Watch on HDRezka
+                                </a>
                             ) : !isTrashMode ? (
                                 <>
                                     <button
@@ -1806,7 +1806,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                     border: '1px solid rgba(3, 218, 198, 0.2)',
                                                     fontWeight: '600'
                                                 }}>
-                                                    ✓ Added
+                                                    ✓ In My Library
                                                 </span>
                                             ) : (
                                                 <button
@@ -1827,7 +1827,7 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                     onMouseEnter={e => { if (!addingLinks.has(item.link)) e.currentTarget.style.transform = 'scale(1.03)'; }}
                                                     onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
                                                 >
-                                                    {addingLinks.has(item.link) ? 'Adding...' : '➕ Add'}
+                                                    {addingLinks.has(item.link) ? '⏳ Adding...' : '➕ Add to Library'}
                                                 </button>
                                             )}
                                         </div>

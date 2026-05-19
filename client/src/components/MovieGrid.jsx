@@ -1001,8 +1001,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     onUpdate={handleUpdateMovie}
                     onDelete={onDelete}
                     isTrashMode={isTrashMode}
-                    isSelected={selectedIds ? selectedIds.includes(selectedMovie.id) : false}
-                    onSelectToggle={selectedIds && onSelect ? () => {
+                    readOnly={!selectedMovie.id || selectedMovie.readOnly}
+                    isSelected={selectedMovie.id ? (selectedIds ? selectedIds.includes(selectedMovie.id) : false) : false}
+                    onSelectToggle={selectedMovie.id && selectedIds && onSelect ? () => {
                         if (selectedIds.includes(selectedMovie.id)) {
                             onSelect(selectedIds.filter(sid => sid !== selectedMovie.id));
                         } else {
@@ -2402,7 +2403,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                                 await handleAddMovieFromCache(movie.link);
                                                             }}
                                                         >
-                                                            {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ Added' : '➕ Add to Library'}
+                                                            {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ In My Library' : '➕ Add to Library'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -2710,7 +2711,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                             e.currentTarget.style.transform = 'scale(1)';
                                                         }}
                                                     >
-                                                        {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ Added' : '➕ Add to Library'}
+                                                        {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ In My Library' : '➕ Add to Library'}
                                                     </button>
                                                 </div>
                                             </td>
@@ -2868,6 +2869,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 <div
                                     key={movie.link || idx}
                                     className="movie-card glass-panel"
+                                    onClick={() => setSelectedMovie({ ...movie, poster_url: movie.poster_url || movie.img, readOnly: true })}
                                     style={{
                                         position: 'relative',
                                         borderRadius: '16px',
@@ -2878,7 +2880,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                         background: 'rgba(255,255,255,0.02)',
                                         display: 'flex',
                                         flexDirection: 'column',
-                                        animation: 'fadeIn 0.4s ease'
+                                        animation: 'fadeIn 0.4s ease',
+                                        cursor: 'pointer'
                                     }}
                                 >
                                     {/* Poster Image */}
@@ -2947,7 +2950,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                             <div style={{ marginTop: '8px' }}>
                                                 <button
                                                     disabled={isAdding || isAdded}
-                                                    onClick={() => handleAddMovieFromCache(movie.link)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleAddMovieFromCache(movie.link);
+                                                    }}
                                                     className="btn"
                                                     style={{
                                                         width: '100%',
@@ -2964,7 +2970,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                         textAlign: 'center'
                                                     }}
                                                 >
-                                                    {isAdding ? '⏳ Добавление...' : isAdded ? '✓ Добавлено' : '➕ Добавить'}
+                                                    {isAdding ? '⏳ Adding...' : isAdded ? '✓ In My Library' : '➕ Add to Library'}
                                                 </button>
                                             </div>
                                         </div>
