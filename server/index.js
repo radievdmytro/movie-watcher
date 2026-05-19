@@ -1360,7 +1360,7 @@ app.delete('/api/trash', authenticateToken, (req, res) => {
 // IMPORT URL Direct (Scrape & Save)
 app.post('/api/movies/import', authenticateToken, async (req, res) => {
     try {
-        const { url, source_collection_name, source_collection_token, source_user_name } = req.body;
+        const { url, source_collection_name, source_collection_token, source_user_name, status } = req.body;
         if (!url || !isHdrezkaUrl(url)) return res.status(400).json({ error: 'Valid HDRezka URL required' });
 
         // Check duplicates for this user
@@ -1369,8 +1369,12 @@ app.post('/api/movies/import', authenticateToken, async (req, res) => {
 
         if (existing) {
             if (existing.deleted_at || existing.hidden_from_library) {
-                db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0 WHERE id = ? AND user_id = ?').run(existing.id, req.user.id);
+                db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0, status = ? WHERE id = ? AND user_id = ?').run(status || 'want_to_watch', existing.id, req.user.id);
                 return res.json({ id: existing.id, restored: true, title: 'Restored to library' });
+            }
+            if (status) {
+                db.prepare('UPDATE movies SET status = ? WHERE id = ? AND user_id = ?').run(status, existing.id, req.user.id);
+                return res.json({ id: existing.id, updatedStatus: true, title: 'Updated status' });
             }
             return res.status(409).json({ error: 'Movie already exists in your list' });
         }
@@ -1382,8 +1386,8 @@ app.post('/api/movies/import', authenticateToken, async (req, res) => {
         saveToCache(details);
 
         const stmt = db.prepare(`
-            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, source_collection_name, source_collection_token, source_user_name, type, user_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, source_collection_name, source_collection_token, source_user_name, type, user_id, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const info = stmt.run(
@@ -1391,7 +1395,7 @@ app.post('/api/movies/import', authenticateToken, async (req, res) => {
             details.description, details.poster_url, details.genres, details.actors, details.director, details.writers,
             details.country, details.duration, details.voice_acting,
             source_collection_name || null, source_collection_token || null, source_user_name || null,
-            details.type || 'movie', req.user.id
+            details.type || 'movie', req.user.id, status || 'want_to_watch'
         );
 
         res.json({ id: info.lastInsertRowid, title: details.title });

@@ -451,42 +451,23 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
     const uniqueBackgroundCacheResults = useMemo(() => {
         if (!backgroundCacheResults.length) return [];
-        const libraryLinks = new Set(movies.map(m => cleanLinkPath(m.link)));
-        return backgroundCacheResults
-            .filter(m => m.link && !libraryLinks.has(cleanLinkPath(m.link)))
-            .map(m => ({ ...m, isFromCache: true }));
-    }, [backgroundCacheResults, movies]);
-
+        return backgroundCacheResults.map(m => ({ ...m, isFromCache: true }));
+    }, [backgroundCacheResults]);
+    const libraryLinks = useMemo(() => {
+        return new Set(movies.map(m => cleanLinkPath(m.link)));
+    }, [movies]);
     const [addingLinks, setAddingLinks] = useState(new Set());
     const [addedLinks, setAddedLinks] = useState(new Set());
-    const [cacheWatchedLinks, setCacheWatchedLinks] = useState(new Set());
+    const [localWatchedLinks, setLocalWatchedLinks] = useState(new Set());
 
-    const handleAddMovieFromCache = async (link, markWatched = false) => {
+    const handleAddMovieFromCache = async (link, status = null) => {
         setAddingLinks(prev => new Set([...prev, link]));
         try {
             const res = await fetch('/api/movies/import', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: link })
+                body: JSON.stringify({ url: link, status })
             });
-            let movieId;
-            if (res.ok) {
-                const data = await res.json();
-                movieId = data.id;
-            } else if (res.status === 409) {
-                const data = await res.json();
-                movieId = data.id;
-            }
-
-            if (movieId && markWatched) {
-                await fetch(`/api/movies/${movieId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'watched' })
-                });
-                setCacheWatchedLinks(prev => new Set([...prev, link]));
-            }
-
             if (res.ok || res.status === 409) {
                 setAddedLinks(prev => new Set([...prev, link]));
                 if (onUpdate) {
@@ -704,10 +685,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             base = merged;
         }
 
-        const libraryLinks = new Set(movies.map(m => cleanLinkPath(m.link)));
 
         return base.filter(movie => {
-            if (movie.link && libraryLinks.has(cleanLinkPath(movie.link))) return false;
 
             // Genre Filter
             if (filterGenres.length > 0) {
@@ -2736,8 +2715,9 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         gap: '25px'
                     }}>
                         {filteredOnboardingCacheMovies.map((movie, idx) => {
-                            const isAdded = addedLinks.has(movie.link);
+                            const isAdded = addedLinks.has(movie.link) || libraryLinks.has(cleanLinkPath(movie.link));
                             const isAdding = addingLinks.has(movie.link);
+                            const isMovieWatched = localWatchedLinks.has(movie.link) || movies.some(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.status === 'watched');
 
                             return (
                                 <div
@@ -2767,8 +2747,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                             height: '100%',
                                             objectFit: 'cover',
                                             pointerEvents: 'none',
-                                            filter: cacheWatchedLinks.has(movie.link) ? 'grayscale(100%) opacity(0.6)' : 'none',
-                                            transition: 'filter 0.5s ease'
+                                            filter: isMovieWatched ? 'grayscale(1)' : 'none',
+                                            transition: 'filter 0.3s ease'
                                         }}
                                         loading="lazy"
                                     />
@@ -2822,39 +2802,13 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                 </div>
                                             )}
 
-                                            {/* Add button */}
-                                            <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
-                                                <button
-                                                    title="Add and mark as watched"
-                                                    disabled={isAdding || isAdded}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleAddMovieFromCache(movie.link, true);
-                                                    }}
-                                                    className="btn"
-                                                    style={{
-                                                        padding: '6px 12px',
-                                                        borderRadius: '8px',
-                                                        fontSize: '1.05rem',
-                                                        fontWeight: 'bold',
-                                                        cursor: (isAdding || isAdded) ? 'default' : 'pointer',
-                                                        border: 'none',
-                                                        background: cacheWatchedLinks.has(movie.link) ? 'rgba(3, 218, 198, 0.4)' : '#03dac6',
-                                                        color: '#000',
-                                                        transition: 'all 0.2s ease',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        flexShrink: 0
-                                                    }}
-                                                >
-                                                    ✓
-                                                </button>
+                                            {/* Action Buttons */}
+                                            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
                                                 <button
                                                     disabled={isAdding || isAdded}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleAddMovieFromCache(movie.link, false);
+                                                        handleAddMovieFromCache(movie.link);
                                                     }}
                                                     className="btn"
                                                     style={{
@@ -2872,7 +2826,51 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                         textAlign: 'center'
                                                     }}
                                                 >
-                                                    {isAdding ? '⏳ Adding...' : cacheWatchedLinks.has(movie.link) ? '✓ Watched' : isAdded ? '✓ In My Library' : '➕ Add to Library'}
+                                                    {isAdding ? '⏳ Adding...' : isAdded ? '✓ In My Library' : '➕ Add to Library'}
+                                                </button>
+
+                                                <button
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        if (isAdding) return;
+                                                        if (isMovieWatched) {
+                                                            // Toggle status to want_to_watch in library
+                                                            const libMovie = movies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                                            if (libMovie) {
+                                                                await onUpdate(libMovie.id, { status: 'want_to_watch' });
+                                                            }
+                                                            // Also remove from local watched state
+                                                            setLocalWatchedLinks(prev => {
+                                                                const next = new Set(prev);
+                                                                next.delete(movie.link);
+                                                                return next;
+                                                            });
+                                                        } else {
+                                                            // Add to library & set status as watched
+                                                            setLocalWatchedLinks(prev => new Set([...prev, movie.link]));
+                                                            await handleAddMovieFromCache(movie.link, 'watched');
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        borderRadius: '8px',
+                                                        background: isMovieWatched ? '#03dac6' : 'rgba(255,255,255,0.05)',
+                                                        borderColor: isMovieWatched ? '#03dac6' : 'rgba(255,255,255,0.1)',
+                                                        color: isMovieWatched ? '#000' : '#fff',
+                                                        border: '1px solid',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.9rem',
+                                                        fontWeight: 'bold',
+                                                        transition: 'all 0.2s ease',
+                                                        flexShrink: 0
+                                                    }}
+                                                    title={isMovieWatched ? "Mark Unwatched" : "Mark Watched & Add to Library"}
+                                                >
+                                                    ✓
                                                 </button>
                                             </div>
                                         </div>
