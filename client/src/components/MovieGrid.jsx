@@ -875,7 +875,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
     // Onboarding Infinite Scroll Observer
     useEffect(() => {
-        if (movies.length >= 5 || isTrashMode || !hasMoreOnboarding || isOnboardingLoading) return;
+        if (isTrashMode || !hasMoreOnboarding || isOnboardingLoading) return;
 
         const observer = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting) {
@@ -2830,7 +2830,17 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             </div>
                         </div>
                     </div>
+                </div>
+            )}
 
+            {!isTrashMode && (movies.length < 5 || visibleCount >= filteredAndSortedMovies.length) && (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '25px',
+                    marginTop: '40px',
+                    animation: 'fadeIn 0.5s ease-out'
+                }}>
                     {/* 2. Purple Divider */}
                     <div className="cache-divider" style={{
                         display: 'flex',
