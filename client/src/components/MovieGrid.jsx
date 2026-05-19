@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
 import { createPortal } from 'react-dom';
 import MovieDetailsModal from './MovieDetailsModal';
 
@@ -395,6 +395,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     const [stackPosition, setStackPosition] = useState(null);
 
     const [filterQuery, setFilterQuery] = useState('');
+    const deferredFilterQuery = useDeferredValue(filterQuery);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [filterGenres, setFilterGenres] = useState([]);
     const [filterRating, setFilterRating] = useState([0, 10]);
@@ -495,35 +496,41 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             return;
         }
 
-        if (!filterQuery.trim()) {
+        if (!deferredFilterQuery.trim()) {
             setCacheMoviesResults([]);
             return;
         }
 
         setIsCacheLoading(true);
         const queryParams = new URLSearchParams();
-        queryParams.append('query', filterQuery);
+        queryParams.append('query', deferredFilterQuery);
         queryParams.append('fields', JSON.stringify(searchFields));
+        const controller = new AbortController();
+
         const delayDebounceFn = setTimeout(() => {
-            fetch(`/api/cache/search?${queryParams.toString()}`)
+            fetch(`/api/cache/search?${queryParams.toString()}`, { signal: controller.signal })
                 .then(res => {
                     if (res.ok) return res.json();
                     throw new Error('Failed to fetch from global cache');
                 })
                 .then(data => {
-                    setCacheMoviesResults(data || []);
+                    setCacheMoviesResults(data.results || data || []);
                 })
                 .catch(err => {
+                    if (err.name === 'AbortError') return;
                     console.error(err);
                     setCacheMoviesResults([]);
                 })
                 .finally(() => {
                     setIsCacheLoading(false);
                 });
-        }, 300); // 300ms debounce
+        }, 50); // 50ms ultra-fast debounce
 
-        return () => clearTimeout(delayDebounceFn);
-    }, [filterQuery, searchDb, searchFields]);
+        return () => {
+            clearTimeout(delayDebounceFn);
+            controller.abort();
+        };
+    }, [deferredFilterQuery, searchDb, searchFields]);
 
     const filteredAndSortedMovies = useMemo(() => {
         if (searchDb === 'cache') {
@@ -532,8 +539,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
         let scored = movies.map(movie => {
             let score = 0;
-            if (filterQuery) {
-                const q = filterQuery.toLowerCase().trim();
+            if (deferredFilterQuery) {
+                const q = deferredFilterQuery.toLowerCase().trim();
 
                 // Importance priority matching weights:
                 // 1. Title match (most important)
@@ -595,7 +602,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 const { movie, score } = item;
 
                 // If filterQuery is active, we only keep items that have a match score > 0
-                if (filterQuery && score === 0) return false;
+                if (deferredFilterQuery && score === 0) return false;
 
                 // Genre Filter
                 if (filterGenres.length > 0) {
@@ -646,7 +653,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             })
             .sort((a, b) => {
                 // If filterQuery is active, sort by relevance score DESC first
-                if (filterQuery && b.score !== a.score) {
+                if (deferredFilterQuery && b.score !== a.score) {
                     return b.score - a.score;
                 }
 
@@ -661,7 +668,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 return 0;
             })
             .map(item => item.movie);
-    }, [movies, sortField, sortDir, filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields]);
+    }, [movies, sortField, sortDir, deferredFilterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields]);
 
     const filteredOnboardingCacheMovies = useMemo(() => {
         let base = onboardingCacheMovies;
@@ -728,8 +735,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             }
 
             // Search query filter (if active)
-            if (filterQuery) {
-                const q = filterQuery.toLowerCase().trim();
+            if (deferredFilterQuery) {
+                const q = deferredFilterQuery.toLowerCase().trim();
                 const titleMatch = searchFields.title && ((movie.title && movie.title.toLowerCase().includes(q)) || (movie.original_title && movie.original_title.toLowerCase().includes(q)));
                 const yearMatch = searchFields.year && movie.year && movie.year.toString().includes(q);
                 const directorMatch = searchFields.director && movie.director && movie.director.toLowerCase().includes(q);
@@ -742,11 +749,11 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
             return true;
         });
-    }, [onboardingCacheMovies, filterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType, searchFields, uniqueBackgroundCacheResults]);
+    }, [onboardingCacheMovies, deferredFilterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType, searchFields, uniqueBackgroundCacheResults]);
 
     const hasActiveFilter = useMemo(() => {
         return !!(
-            filterQuery.trim() ||
+            deferredFilterQuery.trim() ||
             filterGenres.length > 0 ||
             filterType !== 'all' ||
             filterDirectors.length > 0 ||
@@ -756,7 +763,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             filterYear[0] > 1900 ||
             filterYear[1] < new Date().getFullYear() + 2
         );
-    }, [filterQuery, filterGenres, filterType, filterDirectors, filterActors, filterRating, filterYear]);
+    }, [deferredFilterQuery, filterGenres, filterType, filterDirectors, filterActors, filterRating, filterYear]);
 
     // Background cache search when integrated cache search is enabled
     useEffect(() => {
@@ -766,7 +773,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             return;
         }
 
-        const query = filterQuery.trim();
+        const query = deferredFilterQuery.trim();
         if (query.length < 3) {
             setBackgroundCacheResults([]);
             setBackgroundSearchStats(null);
@@ -778,8 +785,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         queryParams.append('query', query);
         queryParams.append('fields', JSON.stringify(searchFields));
         
+        const controller = new AbortController();
+
         const delayDebounceFn = setTimeout(() => {
-            fetch(`/api/cache/search?${queryParams.toString()}`)
+            fetch(`/api/cache/search?${queryParams.toString()}`, { signal: controller.signal })
                 .then(res => res.ok ? res.json() : [])
                 .then(data => {
                     const results = data.results || data || [];
@@ -791,6 +800,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     }
                 })
                 .catch(err => {
+                    if (err.name === 'AbortError') return;
                     console.error("Bg cache search error:", err);
                     setBackgroundCacheResults([]);
                     setBackgroundSearchStats(null);
@@ -798,10 +808,13 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 .finally(() => {
                     setIsBgCacheSearching(false);
                 });
-        }, 150); // Fast 150ms debounce for background search
+        }, 50); // Fast 50ms debounce for background search
 
-        return () => clearTimeout(delayDebounceFn);
-    }, [filterQuery, searchDb, searchFields]);
+        return () => {
+            clearTimeout(delayDebounceFn);
+            controller.abort();
+        };
+    }, [deferredFilterQuery, searchDb, searchFields]);
 
 
     const { minBoundYear, maxBoundYear } = useMemo(() => {
@@ -815,8 +828,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     }, [movies]);
 
     const searchSuggestions = useMemo(() => {
-        if (!filterQuery.trim()) return { movies: [], years: [], genres: [], directors: [], actors: [] };
-        const query = filterQuery.toLowerCase().trim();
+        if (!deferredFilterQuery.trim()) return { movies: [], years: [], genres: [], directors: [], actors: [] };
+        const query = deferredFilterQuery.toLowerCase().trim();
 
         // 1. Movies / Titles
         const activeMoviesSource = searchDb === 'cache' ? cacheMoviesResults : movies;
@@ -853,7 +866,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             directors: matchedDirectors,
             actors: matchedActors
         };
-    }, [filterQuery, availableDirectors, availableActors, availableGenres, movies, searchDb, cacheMoviesResults, searchFields]);
+    }, [deferredFilterQuery, availableDirectors, availableActors, availableGenres, movies, searchDb, cacheMoviesResults, searchFields]);
 
     useEffect(() => {
         setFilterYear([minBoundYear, maxBoundYear]);
@@ -1483,7 +1496,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     </div>
 
                     {/* Background Search Suggestion Banner */}
-                    {searchDb === 'library' && !autoSwitchToCache && filterQuery.trim().length >= 3 && backgroundCacheResults.length > 0 && (
+                    {searchDb === 'library' && !autoSwitchToCache && deferredFilterQuery.trim().length >= 3 && backgroundCacheResults.length > 0 && (
                         <div className="glass-panel" style={{
                             display: 'flex',
                             alignItems: 'center',
