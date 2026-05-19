@@ -11,7 +11,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         if (!propMovie || !propMovie.link) return;
         
         // If it's missing description or other important fields, fetch on the fly!
-        const needsUpdate = (
+        const needsUpdate = propMovie.id && (
             !propMovie.description || propMovie.description.trim() === '' ||
             !propMovie.actors || (Array.isArray(propMovie.actors) ? propMovie.actors.length === 0 : propMovie.actors.trim() === '') ||
             !propMovie.director || propMovie.director.trim() === '' ||
@@ -956,8 +956,28 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         <div style={{ flex: 1, marginBottom: '30px' }}>
                             {activeTab === 'about' && (
                                 <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
+                                    {!movie.id && (
+                                        <div style={{
+                                            background: 'rgba(212, 175, 55, 0.1)',
+                                            border: '1px solid rgba(212, 175, 55, 0.3)',
+                                            color: 'var(--accent-gold)',
+                                            padding: '12px 16px',
+                                            borderRadius: '8px',
+                                            marginBottom: '20px',
+                                            fontSize: '0.9rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '10px'
+                                        }}>
+                                            <span style={{ fontSize: '1.2rem' }}>ℹ️</span>
+                                            <span>
+                                                Detailed information (actors, directors, rating and other data) will be available after adding to your library.
+                                            </span>
+                                        </div>
+                                    )}
+
                                     <h4 style={{ color: '#fff', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.85rem' }}>Synopsis</h4>
-                                    <p style={{ color: '#ccc', lineHeight: '1.65', fontSize: isMobile ? '0.92rem' : '1.05rem', margin: 0, textAlign: 'justify' }}>{movie.description}</p>
+                                    <p style={{ color: '#ccc', lineHeight: '1.65', fontSize: isMobile ? '0.92rem' : '1.05rem', margin: 0, textAlign: 'justify' }}>{movie.description || 'No synopsis available.'}</p>
 
                                     {isMobile && (
                                         <>
