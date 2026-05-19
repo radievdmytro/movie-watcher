@@ -2062,6 +2062,12 @@ async function runCrawlerStep() {
                     } catch (e) {}
                 }
                 console.log(`[Crawler] Catalog page parsed. Discovered ${discovered.length} movies (${newCount} new links added).`);
+                
+                // Trigger Supabase cloud backup sync if we discovered new movies!
+                if (newCount > 0) {
+                    uploadBackup();
+                }
+
                 crawlerSettings.currentStatus = `Discovered ${newCount} new movies. Retrying scrape...`;
                 
                 // Fetch target movie again
@@ -2083,6 +2089,9 @@ async function runCrawlerStep() {
                 saveToCache(details);
                 console.log(`[Crawler] Successfully crawled details for: ${details.title}`);
                 crawlerSettings.currentStatus = `Idle. Crawled: "${details.title}"`;
+                
+                // Trigger Supabase cloud backup sync!
+                uploadBackup();
             } else {
                 crawlerSettings.currentStatus = 'Details page scrape returned empty.';
             }
