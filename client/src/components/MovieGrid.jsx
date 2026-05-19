@@ -643,8 +643,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             return;
         }
 
-        // We trigger background search if autoSwitchToCache is enabled OR if library results are sparse (<= 5 results)
-        const shouldSearchBg = autoSwitchToCache || filteredAndSortedMovies.length <= 5;
+        // We trigger background search if the library results are sparse (< 10 results)
+        const shouldSearchBg = filteredAndSortedMovies.length < 10;
         if (!shouldSearchBg) {
             setBackgroundCacheResults([]);
             return;
@@ -2120,7 +2120,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     })}
 
                     {/* Integrated Cache Results */}
-                    {searchDb === 'library' && autoSwitchToCache && uniqueBackgroundCacheResults.length > 0 && (
+                    {searchDb === 'library' && autoSwitchToCache && filteredAndSortedMovies.length < 10 && uniqueBackgroundCacheResults.length > 0 && (
                         <>
                             <div key="cache-divider" className="cache-divider" style={{
                                 gridColumn: '1 / -1',
@@ -2480,7 +2480,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             ))}
 
                             {/* Integrated Table Cache Results */}
-                            {searchDb === 'library' && autoSwitchToCache && uniqueBackgroundCacheResults.length > 0 && (
+                            {searchDb === 'library' && autoSwitchToCache && filteredAndSortedMovies.length < 10 && uniqueBackgroundCacheResults.length > 0 && (
                                 <>
                                     <tr key="cache-table-divider">
                                         <td colSpan="6" style={{ padding: '25px 15px 15px', background: 'rgba(168, 85, 247, 0.03)' }}>
