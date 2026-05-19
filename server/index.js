@@ -534,9 +534,32 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
             params.push(parseInt(year) || year);
         }
         if (query) {
-            sql += ' AND (title LIKE ? OR original_title LIKE ? OR actors LIKE ? OR director LIKE ? OR year LIKE ?)';
+            let fieldsObj = { title: true, actor: true, director: true, year: true };
+            try { if (req.query.fields) fieldsObj = JSON.parse(req.query.fields); } catch(e) {}
+            
             const q = `%${query.trim()}%`;
-            params.push(q, q, q, q, q);
+            const conditions = [];
+            
+            if (fieldsObj.title !== false) {
+                conditions.push('title LIKE ?', 'original_title LIKE ?');
+                params.push(q, q);
+            }
+            if (fieldsObj.actor !== false) {
+                conditions.push('actors LIKE ?');
+                params.push(q);
+            }
+            if (fieldsObj.director !== false) {
+                conditions.push('director LIKE ?');
+                params.push(q);
+            }
+            if (fieldsObj.year !== false) {
+                conditions.push('year LIKE ?');
+                params.push(q);
+            }
+            
+            if (conditions.length > 0) {
+                sql += ` AND (${conditions.join(' OR ')})`;
+            }
         }
         
         sql += ' ORDER BY updated_at DESC LIMIT 150';
