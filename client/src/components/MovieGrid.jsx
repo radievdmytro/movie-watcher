@@ -1240,76 +1240,57 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         </button>
                     </div>
 
-                    {/* Search DB Toggle and Subtext Note Row */}
+                    {/* Search DB Toggle replaced with a single premium Checkbox */}
                     <div className="search-options-row" style={{
                         display: 'flex',
-                        flexWrap: 'wrap',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '12px',
+                        flexDirection: 'column',
+                        gap: '6px',
                         width: '100%',
-                        padding: '2px 5px',
-                        marginTop: '-4px'
+                        padding: '10px 15px',
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        borderRadius: '12px',
+                        marginTop: '-4px',
+                        boxSizing: 'border-box'
                     }}>
-                        {/* Segmented Toggle Control */}
-                        <div style={{
+                        <label style={{
                             display: 'inline-flex',
-                            background: 'rgba(255,255,255,0.03)',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: '10px',
-                            padding: '3px',
-                            gap: '4px'
+                            alignItems: 'center',
+                            gap: '10px',
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            color: autoSwitchToCache ? '#c084fc' : '#eee',
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            transition: 'color 0.2s ease'
                         }}>
-                            <button
-                                onClick={() => setSearchDb('library')}
+                            <input 
+                                type="checkbox" 
+                                checked={autoSwitchToCache}
+                                onChange={(e) => handleToggleAutoSwitch(e.target.checked)}
                                 style={{
-                                    background: searchDb === 'library' ? 'var(--accent-gold)' : 'transparent',
-                                    border: 'none',
-                                    borderRadius: '7px',
-                                    color: searchDb === 'library' ? '#000' : '#888',
-                                    padding: '5px 12px',
-                                    fontSize: '0.8rem',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    outline: 'none'
+                                    accentColor: '#a855f7',
+                                    width: '16px',
+                                    height: '16px',
+                                    cursor: 'pointer'
                                 }}
-                            >
-                                📂 My Library
-                            </button>
-                            <button
-                                onClick={() => setSearchDb('cache')}
-                                style={{
-                                    background: searchDb === 'cache' ? 'var(--accent-gold)' : 'transparent',
-                                    border: 'none',
-                                    borderRadius: '7px',
-                                    color: searchDb === 'cache' ? '#000' : '#888',
-                                    padding: '5px 12px',
-                                    fontSize: '0.8rem',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    outline: 'none'
-                                }}
-                            >
-                                🌐 Website Cache
-                            </button>
-                        </div>
-
-                        {/* Search Database Subtext/Disclaimer */}
+                            />
+                            <span>Include Website Cache matches in search results</span>
+                        </label>
                         <div style={{
                             fontSize: '0.78rem',
                             color: 'rgba(255, 255, 255, 0.45)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
+                            paddingLeft: '26px',
                             lineHeight: '1.3'
                         }}>
                             <span style={{ fontSize: '0.9rem' }}>ℹ️</span>
                             <span>
-                                {searchDb === 'library' 
-                                    ? 'Searching only within your personal library of saved movies.' 
-                                    : 'Searching local cache only. To search directly on HDRezka, please use the top search bar.'
+                                {autoSwitchToCache 
+                                    ? 'Showing your library results followed by matching cached movies from the site database.' 
+                                    : 'Searching exclusively within your personal saved movie library.'
                                 }
                             </span>
                         </div>
@@ -1329,7 +1310,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             padding: '10px 15px',
                             width: '100%',
                             marginTop: '2px',
-                            animation: 'fadeIn 0.3s ease'
+                            animation: 'fadeIn 0.3s ease',
+                            boxSizing: 'border-box'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#eee' }}>
                                 <span style={{ fontSize: '1rem' }}>💡</span>
@@ -1342,37 +1324,15 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 </span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                                {/* Checkbox to auto-switch */}
-                                <label style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    fontSize: '0.78rem',
-                                    color: 'rgba(255, 255, 255, 0.65)',
-                                    cursor: 'pointer',
-                                    userSelect: 'none'
-                                }}>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={autoSwitchToCache}
-                                        onChange={(e) => handleToggleAutoSwitch(e.target.checked)}
-                                        style={{
-                                            accentColor: 'var(--accent-gold)',
-                                            cursor: 'pointer'
-                                        }}
-                                    />
-                                    Auto-switch when library is empty
-                                </label>
-
-                                {/* Action Button */}
+                                {/* Action Button to include matches */}
                                 <button
-                                    onClick={() => setSearchDb('cache')}
+                                    onClick={() => handleToggleAutoSwitch(true)}
                                     style={{
                                         background: 'var(--accent-gold)',
                                         border: 'none',
                                         borderRadius: '8px',
                                         color: '#000',
-                                        padding: '4px 12px',
+                                        padding: '5px 14px',
                                         fontSize: '0.78rem',
                                         fontWeight: '700',
                                         cursor: 'pointer',
@@ -1383,7 +1343,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
                                     onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
                                 >
-                                    🔎 Switch to Website Cache
+                                    🔮 Show Website Cache Matches
                                 </button>
                             </div>
                         </div>
