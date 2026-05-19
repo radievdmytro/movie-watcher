@@ -637,9 +637,12 @@ function App() {
                 ) : (
                     <>
                         {currentView === 'library' && (
-                            <div className="add-movie-section">
-                                <AddMovie onMovieAdded={fetchMovies} onScrollToMovie={handleScrollToMovie} movies={movies} />
-                            </div>
+                                <AddMovie 
+                                    onMovieAdded={fetchMovies} 
+                                    onScrollToMovie={handleScrollToMovie} 
+                                    movies={movies} 
+                                    selectedLibraryIds={selectedIds}
+                                />
                         )}
 
                         <div className="movie-list-section">

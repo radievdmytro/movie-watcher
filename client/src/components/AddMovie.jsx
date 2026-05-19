@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import MovieComparisonModal from './MovieComparisonModal';
 import MovieDetailsModal from './MovieDetailsModal';
 
-function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
+function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryIds = [] }) {
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [searchStreaming, setSearchStreaming] = useState(false); // SSE in progress
@@ -43,13 +43,21 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
 
     const handleCompareClick = () => {
         const maxLimit = isMobile ? 2 : 3;
-        if (selectedLinks.size > maxLimit) {
-            setLogs([{ msg: `⚠ You can compare at most ${maxLimit} movies at a time`, type: 'error' }]);
+
+        if (totalCompareCount === 0) {
+            setLogs([{ msg: `⚠ Select at least one movie to compare`, type: 'error' }]);
             setIsFadingLogs(false);
             setTimeout(() => setIsFadingLogs(true), 4000);
             return;
         }
-        setCompareLinks(Array.from(selectedLinks));
+
+        if (totalCompareCount > maxLimit) {
+            setLogs([{ msg: `⚠ You can compare at most ${maxLimit} movies at a time (selected ${selectedLinks.size} in search, ${selectedLibraryIds?.length || 0} in library)`, type: 'error' }]);
+            setIsFadingLogs(false);
+            setTimeout(() => setIsFadingLogs(true), 4000);
+            return;
+        }
+        setCompareLinks(combinedCompareLinks);
         setIsCompareOpen(true);
     };
 
@@ -527,6 +535,11 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     const isPanelOpen = fullPageResults && searchResults;
     const inputLines = query.split(/\n/).length;
 
+    const selectedLibMovies = movies.filter(m => selectedLibraryIds?.includes(m.id));
+    const libLinks = selectedLibMovies.map(m => m.link);
+    const combinedCompareLinks = [...new Set([...Array.from(selectedLinks), ...libLinks])];
+    const totalCompareCount = combinedCompareLinks.length;
+
     return (
         <div className="add-movie-root" style={{ marginBottom: isMobile ? '10px' : '12px', position: 'relative', zIndex: isPanelOpen ? 200001 : 200 }} ref={containerRef}>
             {/* Quick Access Menu Row - Placed BEFORE the search bar */}
@@ -946,14 +959,14 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                                     style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap' }}>
                                     ✚ Add Selected ({selectedLinks.size})
                                 </button>
-                                {selectedLinks.size >= 2 && selectedLinks.size <= (isMobile ? 2 : 3) && (
+                                {totalCompareCount >= 2 && totalCompareCount <= (isMobile ? 2 : 3) && (
                                     <button onClick={(e) => { e.stopPropagation(); handleCompareClick(); }}
                                         className="btn btn-ghost"
                                         style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
-                                        ⚖️ Compare Selected
+                                        ⚖️ Compare Selected ({totalCompareCount})
                                     </button>
                                 )}
-                                {selectedLinks.size > (isMobile ? 2 : 3) && (
+                                {totalCompareCount > (isMobile ? 2 : 3) && (
                                     <span style={{ fontSize: '0.72rem', color: '#888', fontStyle: 'italic', display: 'flex', alignItems: 'center' }}>
                                         Compare (max {isMobile ? 2 : 3})
                                     </span>
@@ -1360,28 +1373,30 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                     </div>
 
                     {/* Footer sticky action bar */}
-                    {selectedLinks.size > 0 && (
+                    {totalCompareCount > 0 && (
                         <div style={{
                             padding: '14px 28px', borderTop: '1px solid rgba(255,255,255,0.08)',
                             display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                             background: 'rgba(18,18,18,0.95)', flexShrink: 0
                         }}>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                {selectedLinks.size >= 2 && selectedLinks.size <= (isMobile ? 2 : 3) && (
+                                {totalCompareCount >= 2 && totalCompareCount <= (isMobile ? 2 : 3) && (
                                     <button onClick={handleCompareClick} className="btn btn-ghost" style={{
                                         padding: '8px 20px', borderRadius: '20px',
                                         border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem'
-                                    }}>⚖️ Compare ({selectedLinks.size})</button>
+                                    }}>⚖️ Compare ({totalCompareCount})</button>
                                 )}
-                                {selectedLinks.size > (isMobile ? 2 : 3) && (
+                                {totalCompareCount > (isMobile ? 2 : 3) && (
                                     <span style={{ fontSize: '0.85rem', color: '#888', fontStyle: 'italic', padding: '8px 0' }}>
                                         Compare (max {isMobile ? 2 : 3})
                                     </span>
                                 )}
-                                <button onClick={handleAddSelected} className="btn btn-primary" style={{
-                                    padding: '8px 28px', borderRadius: '20px',
-                                    boxShadow: '0 2px 15px rgba(212,175,55,0.35)', fontSize: '0.9rem'
-                                }}>✚ Add {selectedLinks.size} to Library</button>
+                                {selectedLinks.size > 0 && (
+                                    <button onClick={handleAddSelected} className="btn btn-primary" style={{
+                                        padding: '8px 28px', borderRadius: '20px',
+                                        boxShadow: '0 2px 15px rgba(212,175,55,0.35)', fontSize: '0.9rem'
+                                    }}>✚ Add {selectedLinks.size} to Library</button>
+                                )}
                             </div>
                         </div>
                     )}
