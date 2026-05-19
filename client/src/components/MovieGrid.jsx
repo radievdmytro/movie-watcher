@@ -2717,7 +2717,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 >
                                     {/* Poster Image */}
                                     <img
-                                        src={movie.img}
+                                        src={movie.poster_url || movie.img}
                                         alt={movie.title}
                                         style={{
                                             width: '100%',
