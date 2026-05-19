@@ -47,6 +47,51 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
     const [hdrezkaLoadingMore, setHdrezkaLoadingMore] = useState(false);
     const hdrezkaScrollRef = useState(null);
 
+    // Global cache search state
+    const [cacheSearch, setCacheSearch] = useState(null); // { type, value, movies: [], loading: false, error: null }
+    const [addingLinks, setAddingLinks] = useState(new Set());
+    const [addedLinks, setAddedLinks] = useState(new Set());
+
+    const handleCacheSearchClick = async (type, value) => {
+        setCacheSearch({ type, value, movies: [], loading: true });
+        try {
+            const res = await fetch(`/api/cache/search?${type}=${encodeURIComponent(value)}`);
+            if (res.ok) {
+                const data = await res.json();
+                setCacheSearch({ type, value, movies: data, loading: false });
+            } else {
+                setCacheSearch({ type, value, movies: [], loading: false, error: 'Failed to fetch movies from global cache.' });
+            }
+        } catch (err) {
+            setCacheSearch({ type, value, movies: [], loading: false, error: 'Failed to fetch movies from global cache.' });
+        }
+    };
+
+    const handleAddMovieFromCache = async (link) => {
+        setAddingLinks(prev => new Set([...prev, link]));
+        try {
+            const res = await fetch('/api/movies/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: link })
+            });
+            if (res.ok) {
+                setAddedLinks(prev => new Set([...prev, link]));
+                if (onUpdate) {
+                    onUpdate(null, { refreshLibrary: true });
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setAddingLinks(prev => {
+                const next = new Set(prev);
+                next.delete(link);
+                return next;
+            });
+        }
+    };
+
     // Inline feedback states
     const [notesFeedback, setNotesFeedback] = useState({ type: '', message: '' });
     const [reviewFeedback, setReviewFeedback] = useState({ type: '', message: '' });
@@ -507,7 +552,21 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                 {movie.director && (
                                     <div>
                                         <div style={{ color: '#666', marginBottom: '3px', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Director</div>
-                                        <div style={{ color: '#fff', lineHeight: '1.4' }}>{movie.director}</div>
+                                        <div style={{ color: '#fff', lineHeight: '1.4' }}>
+                                            {movie.director.split(',').map((d, idx) => {
+                                                const trimmed = d.trim();
+                                                if (!trimmed) return null;
+                                                return (
+                                                    <span 
+                                                        key={idx}
+                                                        onClick={() => handleCacheSearchClick('director', trimmed)}
+                                                        style={{ cursor: 'pointer', color: 'var(--accent-gold)', textDecoration: 'underline', marginRight: '8px', display: 'inline-block' }}
+                                                    >
+                                                        {trimmed}
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 )}
                                 {movie.writers && (
@@ -519,7 +578,33 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                 {movie.actors && (
                                     <div>
                                         <div style={{ color: '#666', marginBottom: '3px', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Starring</div>
-                                        <div style={{ color: '#fff', lineHeight: '1.4' }}>{movie.actors}</div>
+                                        <div style={{ color: '#fff', lineHeight: '1.4' }}>
+                                            {movie.actors.split(',').map((a, idx) => {
+                                                const trimmed = a.trim();
+                                                if (!trimmed) return null;
+                                                return (
+                                                    <span 
+                                                        key={idx}
+                                                        onClick={() => handleCacheSearchClick('actor', trimmed)}
+                                                        style={{
+                                                            cursor: 'pointer',
+                                                            color: '#eee',
+                                                            background: 'rgba(255, 255, 255, 0.08)',
+                                                            padding: '2px 6px',
+                                                            borderRadius: '4px',
+                                                            marginRight: '6px',
+                                                            marginBottom: '6px',
+                                                            display: 'inline-block',
+                                                            transition: 'background 0.2s'
+                                                        }}
+                                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
+                                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
+                                                    >
+                                                        {trimmed}
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 
@@ -641,10 +726,30 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                 👤 ★ {movie.user_rating}
                                             </span>
                                         )}
-                                        <span style={{ color: '#aaa', fontSize: '0.75rem' }}>{movie.year}</span>
+                                        <span onClick={() => handleCacheSearchClick('year', movie.year)} style={{ color: '#aaa', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}>{movie.year}</span>
                                     </div>
-                                    <div style={{ color: 'var(--accent-gold)', fontSize: '0.75rem', fontWeight: 500, lineHeight: 1.3 }}>
-                                        {movie.genres}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '2px' }}>
+{movie.genres ? movie.genres.split(',').map((g, idx) => {
+                                             const trimmed = g.trim();
+                                             if (!trimmed) return null;
+                                             return (
+                                                 <span 
+                                                     key={idx}
+                                                     onClick={() => handleCacheSearchClick('genre', trimmed)}
+                                                     style={{
+                                                         color: 'var(--accent-gold)',
+                                                         background: 'rgba(212, 175, 55, 0.1)',
+                                                         padding: '1px 6px',
+                                                         borderRadius: '4px',
+                                                         cursor: 'pointer',
+                                                         fontSize: '0.72rem',
+                                                         fontWeight: 500
+                                                     }}
+                                                 >
+                                                     {trimmed}
+                                                 </span>
+                                             );
+                                         }) : null}
                                     </div>
 
                                     {/* Mobile inline Select & Share Actions Row */}
@@ -720,9 +825,38 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                             👤 My rating: ★ {movie.user_rating}
                                         </span>
                                     )}
-                                    <span style={{ color: '#aaa' }}>{movie.year}</span>
+                                    <span 
+                                        onClick={() => handleCacheSearchClick('year', movie.year)}
+                                        style={{ color: '#aaa', cursor: 'pointer', textDecoration: 'underline' }}
+                                    >
+                                        {movie.year}
+                                    </span>
                                     <div style={{ width: '1px', height: '15px', background: '#444' }}></div>
-                                    <span style={{ color: 'var(--accent-gold)', fontSize: '0.9rem' }}>{movie.genres}</span>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                                        {movie.genres ? movie.genres.split(',').map((g, idx) => {
+                                            const trimmed = g.trim();
+                                            if (!trimmed) return null;
+                                            return (
+                                                <span 
+                                                    key={idx}
+                                                    onClick={() => handleCacheSearchClick('genre', trimmed)}
+                                                    style={{
+                                                        color: 'var(--accent-gold)',
+                                                        background: 'rgba(212, 175, 55, 0.1)',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '4px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.9rem',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.2)'}
+                                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)'}
+                                                >
+                                                    {trimmed}
+                                                </span>
+                                            );
+                                        }) : null}
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -778,7 +912,19 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                 {movie.director && (
                                                     <div>
                                                         <span style={{ color: '#888', fontWeight: 600 }}>Director: </span>
-                                                        <span style={{ color: '#fff' }}>{movie.director}</span>
+                                                        {movie.director.split(',').map((d, idx) => {
+                                                            const trimmed = d.trim();
+                                                            if (!trimmed) return null;
+                                                            return (
+                                                                <span 
+                                                                    key={idx}
+                                                                    onClick={() => handleCacheSearchClick('director', trimmed)}
+                                                                    style={{ cursor: 'pointer', color: 'var(--accent-gold)', textDecoration: 'underline', marginRight: '8px' }}
+                                                                >
+                                                                    {trimmed}
+                                                                </span>
+                                                            );
+                                                        })}
                                                     </div>
                                                 )}
                                                 {movie.writers && (
@@ -788,9 +934,28 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                                     </div>
                                                 )}
                                                 {movie.actors && (
-                                                    <div>
-                                                        <span style={{ color: '#888', fontWeight: 600 }}>Starring: </span>
-                                                        <span style={{ color: '#eee' }}>{movie.actors}</span>
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px' }}>
+                                                        <span style={{ color: '#888', fontWeight: 600, marginRight: '4px' }}>Starring: </span>
+                                                        {movie.actors.split(',').map((a, idx) => {
+                                                            const trimmed = a.trim();
+                                                            if (!trimmed) return null;
+                                                            return (
+                                                                <span 
+                                                                    key={idx}
+                                                                    onClick={() => handleCacheSearchClick('actor', trimmed)}
+                                                                    style={{
+                                                                        cursor: 'pointer',
+                                                                        color: '#eee',
+                                                                        background: 'rgba(255, 255, 255, 0.08)',
+                                                                        padding: '2px 6px',
+                                                                        borderRadius: '4px',
+                                                                        fontSize: '0.78rem'
+                                                                    }}
+                                                                >
+                                                                    {trimmed}
+                                                                </span>
+                                                            );
+                                                        })}
                                                     </div>
                                                 )}
                                             </div>
@@ -1261,6 +1426,55 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                                 >
                                     🎬 Watch on HDRezka
                                 </a>
+                            ) : !movie.id ? (
+                                <>
+                                    <button
+                                        style={{
+                                            background: addedLinks.has(movie.link) ? 'rgba(3, 218, 198, 0.1)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
+                                            border: addedLinks.has(movie.link) ? '1px solid rgba(3, 218, 198, 0.2)' : 'none',
+                                            color: addedLinks.has(movie.link) ? '#03dac6' : '#000',
+                                            padding: isMobile ? '8px 15px' : '12px 28px',
+                                            fontSize: isMobile ? '0.82rem' : '0.95rem',
+                                            fontWeight: '700',
+                                            borderRadius: '10px',
+                                            cursor: 'pointer',
+                                            boxShadow: addedLinks.has(movie.link) ? 'none' : '0 4px 15px rgba(212, 175, 55, 0.25)',
+                                            transition: 'all 0.2s',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            flex: isMobile ? '1' : 'initial'
+                                        }}
+                                        onClick={() => handleAddMovieFromCache(movie.link)}
+                                        disabled={addingLinks.has(movie.link) || addedLinks.has(movie.link)}
+                                    >
+                                        {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ Added' : '➕ Add to Library'}
+                                    </button>
+                                    <a
+                                        href={movie.link}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{
+                                            background: 'rgba(255,255,255,0.03)',
+                                            border: '1px solid rgba(255,255,255,0.08)',
+                                            color: '#fff',
+                                            padding: isMobile ? '8px 10px' : '12px 28px',
+                                            fontSize: isMobile ? '0.82rem' : '0.95rem',
+                                            fontWeight: '600',
+                                            borderRadius: '10px',
+                                            textDecoration: 'none',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                                    >
+                                        🎬 Watch on HDRezka
+                                    </a>
+                                </>
                             ) : !isTrashMode ? (
                                 <>
                                     <button
@@ -1427,10 +1641,237 @@ function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, re
                 </div>
             )}
 
+            {/* Global Cache Search Sub-Modal */}
+            {cacheSearch && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.85)',
+                        backdropFilter: 'blur(8px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 13000,
+                        animation: 'fadeIn 0.2s ease-out'
+                    }}
+                >
+                    <div
+                        style={{
+                            width: '90%',
+                            maxWidth: '650px',
+                            maxHeight: '80vh',
+                            background: 'rgba(22, 22, 22, 0.95)',
+                            backdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: '16px',
+                            boxShadow: '0 24px 60px rgba(0,0,0,0.8), 0 0 30px rgba(212,175,55,0.05)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            animation: 'scaleIn 0.25s cubic-bezier(0.165, 0.84, 0.44, 1)'
+                        }}
+                    >
+                        {/* Sub-modal Header */}
+                        <div style={{
+                            padding: '16px 20px',
+                            borderBottom: '1px solid rgba(255,255,255,0.06)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: 'rgba(255,255,255,0.01)'
+                        }}>
+                            <div>
+                                <h3 style={{ margin: 0, color: '#fff', fontSize: '1.15rem', fontWeight: 700 }}>
+                                    🔍 Global Cache Search
+                                </h3>
+                                <div style={{ fontSize: '0.82rem', color: '#888', marginTop: '2px' }}>
+                                    Matching movies for {cacheSearch.type}: <span style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>{cacheSearch.value}</span>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setCacheSearch(null)}
+                                style={{
+                                    background: 'rgba(255,255,255,0.04)',
+                                    border: 'none',
+                                    color: '#aaa',
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '1rem',
+                                    fontWeight: 'bold',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#aaa'; }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Sub-modal Content */}
+                        <div style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            padding: '20px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '15px'
+                        }}>
+                            {cacheSearch.loading ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: '15px' }}>
+                                    <div style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        border: '3px solid rgba(212, 175, 55, 0.1)',
+                                        borderTop: '3px solid var(--accent-gold)',
+                                        borderRadius: '50%',
+                                        animation: 'spin 1s linear infinite'
+                                    }}></div>
+                                    <span style={{ color: '#aaa', fontSize: '0.9rem' }}>Searching cache database...</span>
+                                </div>
+                            ) : cacheSearch.error ? (
+                                <div style={{ color: 'var(--danger)', textAlign: 'center', padding: '20px' }}>
+                                    ⚠️ {cacheSearch.error}
+                                </div>
+                            ) : cacheSearch.movies.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#666' }}>
+                                    <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>🎬</div>
+                                    <div>No other movies found in global cache for this search.</div>
+                                </div>
+                            ) : (
+                                cacheSearch.movies.map((item, idx) => (
+                                    <div
+                                        key={idx}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '15px',
+                                            padding: '12px',
+                                            background: 'rgba(255,255,255,0.02)',
+                                            border: '1px solid rgba(255,255,255,0.04)',
+                                            borderRadius: '10px',
+                                            transition: 'transform 0.2s, background-color 0.2s'
+                                        }}
+                                    >
+                                        {/* Poster */}
+                                        <img
+                                            src={item.poster_url || '/placeholder-poster.png'}
+                                            alt={item.title}
+                                            style={{
+                                                width: '50px',
+                                                height: '75px',
+                                                borderRadius: '6px',
+                                                objectFit: 'cover',
+                                                background: '#111',
+                                                border: '1px solid rgba(255,255,255,0.08)'
+                                            }}
+                                            onError={e => { e.target.src = 'https://placehold.co/100x150/111/aaa?text=No+Poster'; }}
+                                        />
+
+                                        {/* Info */}
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <h4 style={{ margin: 0, color: '#fff', fontSize: '0.95rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {item.title}
+                                            </h4>
+                                            {item.original_title && (
+                                                <div style={{ color: '#888', fontSize: '0.78rem', fontStyle: 'italic', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                    {item.original_title}
+                                                </div>
+                                            )}
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px', fontSize: '0.75rem', flexWrap: 'wrap' }}>
+                                                <span style={{ color: '#aaa' }}>{item.year}</span>
+                                                <span style={{ color: '#555' }}>|</span>
+                                                <span style={{ color: 'var(--accent-gold)' }}>★ {item.rating || 'N/A'}</span>
+                                                <span style={{ color: '#555' }}>|</span>
+                                                <span style={{ color: '#aaa', maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.genres}>
+                                                    {item.genres}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div>
+                                            {addedLinks.has(item.link) ? (
+                                                <span style={{
+                                                    fontSize: '0.82rem',
+                                                    color: '#03dac6',
+                                                    background: 'rgba(3, 218, 198, 0.1)',
+                                                    padding: '6px 12px',
+                                                    borderRadius: '6px',
+                                                    border: '1px solid rgba(3, 218, 198, 0.2)',
+                                                    fontWeight: '600'
+                                                }}>
+                                                    ✓ Added
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleAddMovieFromCache(item.link)}
+                                                    disabled={addingLinks.has(item.link)}
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
+                                                        border: 'none',
+                                                        color: '#000',
+                                                        padding: '6px 12px',
+                                                        fontSize: '0.82rem',
+                                                        fontWeight: '700',
+                                                        borderRadius: '6px',
+                                                        cursor: addingLinks.has(item.link) ? 'not-allowed' : 'pointer',
+                                                        boxShadow: '0 2px 8px rgba(212, 175, 55, 0.2)',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={e => { if (!addingLinks.has(item.link)) e.currentTarget.style.transform = 'scale(1.03)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                                >
+                                                    {addingLinks.has(item.link) ? 'Adding...' : '➕ Add'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Sub-modal Footer */}
+                        <div style={{
+                            padding: '12px 20px',
+                            borderTop: '1px solid rgba(255,255,255,0.06)',
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            background: 'rgba(255,255,255,0.01)'
+                        }}>
+                            <button
+                                onClick={() => setCacheSearch(null)}
+                                style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    color: '#fff',
+                                    padding: '6px 16px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: '600',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style>{`
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes scaleIn { from { transform: scale(0.9) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
                 @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
             `}</style>
         </div>,
         document.body

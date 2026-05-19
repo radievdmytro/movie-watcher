@@ -332,6 +332,45 @@ const triggerBackgroundUpdate = (url) => {
     })();
 };
 
+// Global cache search endpoint
+app.get('/api/cache/search', authenticateToken, (req, res) => {
+    try {
+        const { actor, director, genre, year, query } = req.query;
+        let sql = 'SELECT * FROM scraped_movies_cache WHERE 1=1';
+        const params = [];
+        
+        if (actor) {
+            sql += ' AND actors LIKE ?';
+            params.push(`%${actor.trim()}%`);
+        }
+        if (director) {
+            sql += ' AND director LIKE ?';
+            params.push(`%${director.trim()}%`);
+        }
+        if (genre) {
+            sql += ' AND genres LIKE ?';
+            params.push(`%${genre.trim()}%`);
+        }
+        if (year) {
+            sql += ' AND year = ?';
+            params.push(parseInt(year) || year);
+        }
+        if (query) {
+            sql += ' AND (title LIKE ? OR original_title LIKE ? OR description LIKE ?)';
+            params.push(`%${query.trim()}%`, `%${query.trim()}%`, `%${query.trim()}%`);
+        }
+        
+        sql += ' ORDER BY updated_at DESC LIMIT 150';
+        
+        const stmt = db.prepare(sql);
+        const results = stmt.all(...params);
+        res.json(results);
+    } catch (err) {
+        console.error('Cache search failed:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Search / Parse Endpoint
 app.post('/api/movies/search', authenticateToken, async (req, res) => {
     try {
@@ -431,6 +470,44 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch data' });
+    }
+});
+
+// ==========================================
+// GLOBAL CACHE SEARCH ENDPOINT
+// ==========================================
+app.get('/api/cache/search', authenticateToken, (req, res) => {
+    const { actor, director, genre, year } = req.query;
+
+    let queryStr = 'SELECT * FROM scraped_movies_cache WHERE 1=1';
+    const params = [];
+
+    if (actor) {
+        queryStr += ' AND cyrillic_like(actors, ?)';
+        params.push(`%${actor}%`);
+    }
+    if (director) {
+        queryStr += ' AND cyrillic_like(director, ?)';
+        params.push(`%${director}%`);
+    }
+    if (genre) {
+        queryStr += ' AND cyrillic_like(genres, ?)';
+        params.push(`%${genre}%`);
+    }
+    if (year) {
+        queryStr += ' AND year = ?';
+        params.push(parseInt(year, 10));
+    }
+
+    // Limit to 50 results to keep it super performant
+    queryStr += ' ORDER BY year DESC, rating DESC LIMIT 50';
+
+    try {
+        const movies = db.prepare(queryStr).all(...params);
+        res.json(movies);
+    } catch (err) {
+        console.error('Cache search failed:', err);
+        res.status(500).json({ error: 'Cache search failed' });
     }
 });
 

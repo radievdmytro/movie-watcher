@@ -390,6 +390,44 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     const [availableDirectors, setAvailableDirectors] = useState([]);
     const [availableActors, setAvailableActors] = useState([]);
 
+    const [searchDb, setSearchDb] = useState('library'); // 'library' or 'cache'
+    const [cacheMoviesResults, setCacheMoviesResults] = useState([]);
+    const [isCacheLoading, setIsCacheLoading] = useState(false);
+
+    useEffect(() => {
+        if (searchDb !== 'cache') {
+            setCacheMoviesResults([]);
+            return;
+        }
+
+        if (!filterQuery.trim()) {
+            setCacheMoviesResults([]);
+            return;
+        }
+
+        setIsCacheLoading(true);
+        const delayDebounceFn = setTimeout(() => {
+            fetch(`/api/cache/search?query=${encodeURIComponent(filterQuery)}`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error('Failed to fetch from global cache');
+                })
+                .then(data => {
+                    setCacheMoviesResults(data || []);
+                })
+                .catch(err => {
+                    console.error(err);
+                    setCacheMoviesResults([]);
+                })
+                .finally(() => {
+                    setIsCacheLoading(false);
+                });
+        }, 300); // 300ms debounce
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [filterQuery, searchDb]);
+
+
     const { minBoundYear, maxBoundYear } = useMemo(() => {
         if (!movies.length) return { minBoundYear: 1900, maxBoundYear: new Date().getFullYear() + 2 };
         const years = movies.map(m => m.year).filter(y => y && !isNaN(y));
@@ -401,31 +439,45 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     }, [movies]);
 
     const searchSuggestions = useMemo(() => {
-        if (!filterQuery.trim()) return { directors: [], actors: [], years: [] };
+        if (!filterQuery.trim()) return { movies: [], years: [], genres: [], directors: [], actors: [] };
         const query = filterQuery.toLowerCase().trim();
 
-        // 1. Directors
-        const matchedDirectors = availableDirectors.filter(d => 
-            d && d.name && d.name.toLowerCase().includes(query)
+        // 1. Movies / Titles (ак названия)
+        const activeMoviesSource = searchDb === 'cache' ? cacheMoviesResults : movies;
+        const matchedMovies = activeMoviesSource.filter(m => 
+            (m.title && m.title.toLowerCase().includes(query)) ||
+            (m.original_title && m.original_title.toLowerCase().includes(query))
         ).slice(0, 5);
 
-        // 2. Actors
-        const matchedActors = availableActors.filter(a => 
-            a && a.name && a.name.toLowerCase().includes(query)
-        ).slice(0, 5);
-
-        // 3. Years
+        // 2. Years
         const uniqueYears = Array.from(new Set(movies.map(m => m.year).filter(y => y)));
         const matchedYears = uniqueYears.filter(y => 
             y.toString().includes(query)
         ).sort((a, b) => b - a).slice(0, 5);
 
+        // 3. Genres
+        const matchedGenres = availableGenres.filter(g => 
+            g && g.toLowerCase().includes(query)
+        ).slice(0, 5);
+
+        // 4. Directors
+        const matchedDirectors = availableDirectors.filter(d => 
+            d && d.name && d.name.toLowerCase().includes(query)
+        ).slice(0, 5);
+
+        // 5. Actors
+        const matchedActors = availableActors.filter(a => 
+            a && a.name && a.name.toLowerCase().includes(query)
+        ).slice(0, 5);
+
         return {
+            movies: matchedMovies,
+            years: matchedYears,
+            genres: matchedGenres,
             directors: matchedDirectors,
-            actors: matchedActors,
-            years: matchedYears
+            actors: matchedActors
         };
-    }, [filterQuery, availableDirectors, availableActors, movies]);
+    }, [filterQuery, availableDirectors, availableActors, availableGenres, movies, searchDb, cacheMoviesResults]);
 
     useEffect(() => {
         setFilterYear([minBoundYear, maxBoundYear]);
@@ -520,6 +572,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     };
 
     const filteredAndSortedMovies = useMemo(() => {
+        if (searchDb === 'cache') {
+            return cacheMoviesResults;
+        }
+
         let scored = movies.map(movie => {
             let score = 0;
             if (filterQuery) {
@@ -659,12 +715,12 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 return 0;
             })
             .map(item => item.movie);
-    }, [movies, sortField, sortDir, filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched]);
+    }, [movies, sortField, sortDir, filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults]);
 
     // Reset visible count when filters change
     useEffect(() => {
         setVisibleCount(30);
-    }, [filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, sortField, sortDir, hideWatched]);
+    }, [filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, sortField, sortDir, hideWatched, searchDb]);
 
     // Infinite Scroll Observer
     useEffect(() => {
@@ -773,7 +829,13 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 >&times;</button>
                             )}
 
-                            {isSearchFocused && (searchSuggestions.directors.length > 0 || searchSuggestions.actors.length > 0 || searchSuggestions.years.length > 0) && (
+                            {isSearchFocused && (
+                                searchSuggestions.movies.length > 0 ||
+                                searchSuggestions.years.length > 0 ||
+                                searchSuggestions.genres.length > 0 ||
+                                searchSuggestions.directors.length > 0 ||
+                                searchSuggestions.actors.length > 0
+                            ) && (
                                 <div
                                     style={{
                                         position: 'absolute',
@@ -786,12 +848,148 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                         zIndex: 2000,
                                         boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
                                         overflow: 'hidden',
-                                        padding: '5px 0'
+                                        padding: '5px 0',
+                                        maxHeight: '400px',
+                                        overflowY: 'auto'
                                     }}
                                 >
-                                    {/* Directors Section */}
-                                    {searchSuggestions.directors.length > 0 && (
+                                    {/* 1. Movies / Titles Section */}
+                                    {searchSuggestions.movies.length > 0 && (
                                         <div>
+                                            <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 'bold', padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', letterSpacing: '1px' }}>
+                                                MOVIES ({searchSuggestions.movies.length})
+                                            </div>
+                                            {searchSuggestions.movies.map(item => (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => {
+                                                        setSelectedMovie(item);
+                                                        setFilterQuery('');
+                                                    }}
+                                                    style={{
+                                                        padding: '8px 15px',
+                                                        fontSize: '0.85rem',
+                                                        color: '#ccc',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        transition: 'background 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                                        e.currentTarget.style.color = '#fff';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'transparent';
+                                                        e.currentTarget.style.color = '#ccc';
+                                                    }}
+                                                >
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                                        <span style={{ color: 'var(--accent-gold)' }}>🎬</span>
+                                                        <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                                            {item.title}
+                                                        </span>
+                                                    </span>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-gold)', opacity: 0.8, flexShrink: 0, marginLeft: '8px' }}>
+                                                        ★ {item.rating || 'N/A'} ({item.year})
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* 2. Years Section */}
+                                    {searchSuggestions.years.length > 0 && (
+                                        <div style={{ marginTop: '5px' }}>
+                                            <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 'bold', padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', letterSpacing: '1px' }}>
+                                                YEARS ({searchSuggestions.years.length})
+                                            </div>
+                                            {searchSuggestions.years.map(yr => (
+                                                <div
+                                                    key={yr}
+                                                    onClick={() => {
+                                                        setFilterYear([yr, yr]);
+                                                        setFilterQuery('');
+                                                    }}
+                                                    style={{
+                                                        padding: '8px 15px',
+                                                        fontSize: '0.85rem',
+                                                        color: '#ccc',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        transition: 'background 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                                        e.currentTarget.style.color = '#fff';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'transparent';
+                                                        e.currentTarget.style.color = '#ccc';
+                                                    }}
+                                                >
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ color: 'var(--accent-gold)' }}>📅</span> Year: {yr}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-gold)', opacity: 0.8 }}>
+                                                        Show movies from {yr}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* 3. Genres Section */}
+                                    {searchSuggestions.genres.length > 0 && (
+                                        <div style={{ marginTop: '5px' }}>
+                                            <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 'bold', padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', letterSpacing: '1px' }}>
+                                                GENRES ({searchSuggestions.genres.length})
+                                            </div>
+                                            {searchSuggestions.genres.map(genre => (
+                                                <div
+                                                    key={genre}
+                                                    onClick={() => {
+                                                        if (!filterGenres.includes(genre)) {
+                                                            setFilterGenres([...filterGenres, genre]);
+                                                        }
+                                                        setFilterQuery('');
+                                                    }}
+                                                    style={{
+                                                        padding: '8px 15px',
+                                                        fontSize: '0.85rem',
+                                                        color: '#ccc',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        transition: 'background 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                                        e.currentTarget.style.color = '#fff';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'transparent';
+                                                        e.currentTarget.style.color = '#ccc';
+                                                    }}
+                                                >
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ color: 'var(--accent-gold)' }}>🏷️</span> {genre}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-gold)', opacity: 0.8 }}>
+                                                        Filter by genre
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* 4. Directors Section */}
+                                    {searchSuggestions.directors.length > 0 && (
+                                        <div style={{ marginTop: '5px' }}>
                                             <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 'bold', padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', letterSpacing: '1px' }}>
                                                 DIRECTORS ({searchSuggestions.directors.length})
                                             </div>
@@ -824,7 +1022,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                     }}
                                                 >
                                                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        <span style={{ color: 'var(--accent-gold)' }}>🎬</span> {dir.name}
+                                                        <span style={{ color: 'var(--accent-gold)' }}>👤</span> {dir.name}
                                                     </span>
                                                     <span style={{ fontSize: '0.75rem', color: 'var(--accent-gold)', opacity: 0.8 }}>
                                                         {dir.count} {dir.count === 1 ? 'movie' : 'movies'}
@@ -834,7 +1032,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                         </div>
                                     )}
 
-                                    {/* Actors Section */}
+                                    {/* 5. Actors Section */}
                                     {searchSuggestions.actors.length > 0 && (
                                         <div style={{ marginTop: '5px' }}>
                                             <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 'bold', padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', letterSpacing: '1px' }}>
@@ -878,49 +1076,6 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                             ))}
                                         </div>
                                     )}
-
-                                    {/* Years Section */}
-                                    {searchSuggestions.years.length > 0 && (
-                                        <div style={{ marginTop: '5px' }}>
-                                            <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 'bold', padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', letterSpacing: '1px' }}>
-                                                YEARS ({searchSuggestions.years.length})
-                                            </div>
-                                            {searchSuggestions.years.map(yr => (
-                                                <div
-                                                    key={yr}
-                                                    onClick={() => {
-                                                        setFilterYear([yr, yr]);
-                                                        setFilterQuery('');
-                                                    }}
-                                                    style={{
-                                                        padding: '8px 15px',
-                                                        fontSize: '0.85rem',
-                                                        color: '#ccc',
-                                                        cursor: 'pointer',
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'center',
-                                                        transition: 'background 0.2s'
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                                                        e.currentTarget.style.color = '#fff';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.background = 'transparent';
-                                                        e.currentTarget.style.color = '#ccc';
-                                                    }}
-                                                >
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        <span style={{ color: 'var(--accent-gold)' }}>📅</span> Year: {yr}
-                                                    </span>
-                                                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-gold)', opacity: 0.8 }}>
-                                                        Show movies from {yr}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
                                 </div>
                             )}
                         </div>
@@ -946,6 +1101,78 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 </span>
                             )}
                         </button>
+                    </div>
+
+                    {/* Search DB Toggle and Subtext Note Row */}
+                    <div className="search-options-row" style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '12px',
+                        width: '100%',
+                        padding: '2px 5px',
+                        marginTop: '-4px'
+                    }}>
+                        {/* Segmented Toggle Control */}
+                        <div style={{
+                            display: 'inline-flex',
+                            background: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: '10px',
+                            padding: '3px',
+                            gap: '4px'
+                        }}>
+                            <button
+                                onClick={() => setSearchDb('library')}
+                                style={{
+                                    background: searchDb === 'library' ? 'var(--accent-gold)' : 'transparent',
+                                    border: 'none',
+                                    borderRadius: '7px',
+                                    color: searchDb === 'library' ? '#000' : '#888',
+                                    padding: '5px 12px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    outline: 'none'
+                                }}
+                            >
+                                📂 Своя библиотека
+                            </button>
+                            <button
+                                onClick={() => setSearchDb('cache')}
+                                style={{
+                                    background: searchDb === 'cache' ? 'var(--accent-gold)' : 'transparent',
+                                    border: 'none',
+                                    borderRadius: '7px',
+                                    color: searchDb === 'cache' ? '#000' : '#888',
+                                    padding: '5px 12px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    outline: 'none'
+                                }}
+                            >
+                                🌐 База сайта (кэш)
+                            </button>
+                        </div>
+
+                        {/* Search Database Subtext/Disclaimer */}
+                        <div style={{
+                            fontSize: '0.78rem',
+                            color: 'rgba(255, 255, 255, 0.45)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            lineHeight: '1.3'
+                        }}>
+                            <span style={{ fontSize: '0.9rem' }}>ℹ️</span>
+                            <span>
+                                Это только локальный поиск (по библиотеке/кэшу). Чтобы искать на HDRezka напрямую, воспользуйтесь другой строкой поиска (вверху страницы).
+                            </span>
+                        </div>
                     </div>
 
                     {/* Row 2: Super Compact Controls (Type switch, View Mode, Hide Watched) */}

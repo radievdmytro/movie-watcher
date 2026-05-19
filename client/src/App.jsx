@@ -250,7 +250,11 @@ function App() {
         fetchMovies();
     }, [currentView, user]);
 
-    const handleUpdate = async (id, updates) => {
+     const handleUpdate = async (id, updates) => {
+        if (id === null) {
+            fetchMovies();
+            return;
+        }
         try {
             await fetch(`/api/movies/${id}`, {
                 method: 'PATCH',
