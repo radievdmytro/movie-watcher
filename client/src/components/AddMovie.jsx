@@ -506,10 +506,22 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
             
             // Tie-breaker 2: Rating (higher first)
             const ratingA = parseFloat(a.rating) || 0;
-            const ratingB = parseFloat(b.rating) || 0;
             return ratingB - ratingA;
         });
     }
+
+    useEffect(() => {
+        const hasManyResults = filteredSearchResults && filteredSearchResults.length > 2;
+        const shouldHide = fullPageResults && hasManyResults && isMobile;
+        if (shouldHide) {
+            document.body.classList.add('hide-header-search');
+        } else {
+            document.body.classList.remove('hide-header-search');
+        }
+        return () => {
+            document.body.classList.remove('hide-header-search');
+        };
+    }, [fullPageResults, filteredSearchResults.length, isMobile]);
 
     const inputLines = query.split(/\n/).length;
 
@@ -1094,60 +1106,128 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                     <div style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         padding: isMobile ? '10px 45px 10px 14px' : '18px 70px 18px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)',
-                        flexShrink: 0, flexWrap: 'wrap', gap: isMobile ? '8px' : '12px'
+                        flexShrink: 0, flexWrap: 'wrap', gap: isMobile ? '8px' : '12px', width: '100%', boxSizing: 'border-box'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <h3 style={{ margin: 0, color: 'var(--accent-gold)', fontSize: isMobile ? '1rem' : '1.15rem', display: 'flex', alignItems: 'center' }}>
-                                    🎬 Results
-                                    <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '6px' }}>
-                                        ({filteredSearchResults.length} found)
-                                    </span>
-                                </h3>
-                                {selectedLinks.size > 0 && (
-                                    <span style={{ fontSize: '0.75rem', color: '#888' }}>
-                                        <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>{selectedLinks.size}</span> film{selectedLinks.size > 1 ? 's' : ''} selected
-                                    </span>
-                                )}
-                            </div>
-                            {/* View toggle */}
-                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: '20px', padding: '2px' }}>
-                                {[['grid','⊞ Grid'],['table','☰ List']].map(([mode, label]) => (
-                                    <button key={mode} onClick={() => setViewMode(mode)} style={{
-                                        padding: isMobile ? '3px 8px' : '5px 14px', borderRadius: '16px', border: 'none', cursor: 'pointer',
-                                        fontSize: isMobile ? '0.7rem' : '0.78rem', fontWeight: 600,
-                                        background: viewMode === mode ? 'var(--accent-gold)' : 'transparent',
-                                        color: viewMode === mode ? '#000' : '#888', transition: 'all 0.2s'
-                                    }}>{label}</button>
-                                ))}
-                            </div>
+                        {isMobile ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '10px' }}>
+                                {/* Row 1: Title and View Toggle */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                    <h3 style={{ margin: 0, color: 'var(--accent-gold)', fontSize: '1rem', display: 'flex', alignItems: 'center' }}>
+                                        🎬 Results
+                                        <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '6px' }}>
+                                            ({filteredSearchResults.length} found)
+                                        </span>
+                                    </h3>
+                                    
+                                    {/* View toggle */}
+                                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: '20px', padding: '2px' }}>
+                                        {[['grid','⊞ Grid'],['table','☰ List']].map(([mode, label]) => (
+                                            <button key={mode} onClick={() => setViewMode(mode)} style={{
+                                                padding: '3px 8px', borderRadius: '16px', border: 'none', cursor: 'pointer',
+                                                fontSize: '0.7rem', fontWeight: 600,
+                                                background: viewMode === mode ? 'var(--accent-gold)' : 'transparent',
+                                                color: viewMode === mode ? '#000' : '#888', transition: 'all 0.2s'
+                                            }}>{label}</button>
+                                        ))}
+                                    </div>
+                                </div>
 
-                            {selectedLinks.size > 0 && (
-                                <button onClick={() => setSelectedLinks(new Set())} style={{
-                                    background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
-                                    color: '#aaa', borderRadius: '16px', padding: isMobile ? '3px 10px' : '5px 14px',
-                                    fontSize: isMobile ? '0.7rem' : '0.78rem', cursor: 'pointer'
-                                }}>
-                                    Clear
-                                </button>
-                            )}
+                                {/* Row 2: Select All & Clear (under Results) and Counter */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', minHeight: '28px' }}>
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        {filteredSearchResults.length > 1 && (
+                                            <button onClick={() => {
+                                                if (selectedLinks.size === filteredSearchResults.length) {
+                                                    setSelectedLinks(new Set());
+                                                } else {
+                                                    setSelectedLinks(new Set(filteredSearchResults.map(i => i.link)));
+                                                }
+                                            }} style={{
+                                                background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                                                color: '#aaa', borderRadius: '16px', padding: '3px 10px',
+                                                fontSize: '0.7rem', cursor: 'pointer'
+                                            }}>
+                                                {selectedLinks.size === filteredSearchResults.length ? 'Deselect All' : 'Select All'}
+                                            </button>
+                                        )}
+                                        
+                                        {selectedLinks.size > 0 && (
+                                            <button onClick={() => setSelectedLinks(new Set())} style={{
+                                                background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                                                color: '#aaa', borderRadius: '16px', padding: '3px 10px',
+                                                fontSize: '0.7rem', cursor: 'pointer'
+                                            }}>
+                                                Clear
+                                            </button>
+                                        )}
+                                    </div>
 
-                            {filteredSearchResults.length > 1 && (
-                                <button onClick={() => {
-                                    if (selectedLinks.size === filteredSearchResults.length) {
-                                        setSelectedLinks(new Set());
-                                    } else {
-                                        setSelectedLinks(new Set(filteredSearchResults.map(i => i.link)));
-                                    }
-                                }} style={{
-                                    background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
-                                    color: '#aaa', borderRadius: '16px', padding: isMobile ? '3px 10px' : '5px 14px',
-                                    fontSize: isMobile ? '0.7rem' : '0.78rem', cursor: 'pointer'
-                                }}>
-                                    {selectedLinks.size === filteredSearchResults.length ? 'Deselect All' : 'Select All'}
-                                </button>
-                            )}
-                        </div>
+                                    {/* Selected label container - has fixed minimum size to prevent shifting layout */}
+                                    <div style={{ minWidth: '90px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                        {selectedLinks.size > 0 && (
+                                            <span style={{ fontSize: '0.75rem', color: '#888', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                                                <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>{selectedLinks.size}</span> selected
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', width: '100%', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                        <h3 style={{ margin: 0, color: 'var(--accent-gold)', fontSize: '1.15rem', display: 'flex', alignItems: 'center' }}>
+                                            🎬 Results
+                                            <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '6px' }}>
+                                                ({filteredSearchResults.length} found)
+                                            </span>
+                                        </h3>
+                                        {selectedLinks.size > 0 && (
+                                            <span style={{ fontSize: '0.75rem', color: '#888' }}>
+                                                <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>{selectedLinks.size}</span> film{selectedLinks.size > 1 ? 's' : ''} selected
+                                            </span>
+                                        )}
+                                    </div>
+                                    {/* View toggle */}
+                                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: '20px', padding: '2px' }}>
+                                        {[['grid','⊞ Grid'],['table','☰ List']].map(([mode, label]) => (
+                                            <button key={mode} onClick={() => setViewMode(mode)} style={{
+                                                padding: '5px 14px', borderRadius: '16px', border: 'none', cursor: 'pointer',
+                                                fontSize: '0.78rem', fontWeight: 600,
+                                                background: viewMode === mode ? 'var(--accent-gold)' : 'transparent',
+                                                color: viewMode === mode ? '#000' : '#888', transition: 'all 0.2s'
+                                            }}>{label}</button>
+                                        ))}
+                                    </div>
+
+                                    {selectedLinks.size > 0 && (
+                                        <button onClick={() => setSelectedLinks(new Set())} style={{
+                                            background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                                            color: '#aaa', borderRadius: '16px', padding: '5px 14px',
+                                            fontSize: '0.78rem', cursor: 'pointer'
+                                        }}>
+                                            Clear
+                                        </button>
+                                    )}
+
+                                    {filteredSearchResults.length > 1 && (
+                                        <button onClick={() => {
+                                            if (selectedLinks.size === filteredSearchResults.length) {
+                                                setSelectedLinks(new Set());
+                                            } else {
+                                                setSelectedLinks(new Set(filteredSearchResults.map(i => i.link)));
+                                            }
+                                        }} style={{
+                                            background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                                            color: '#aaa', borderRadius: '16px', padding: '5px 14px',
+                                            fontSize: '0.78rem', cursor: 'pointer'
+                                        }}>
+                                            {selectedLinks.size === filteredSearchResults.length ? 'Deselect All' : 'Select All'}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Results Body */}
