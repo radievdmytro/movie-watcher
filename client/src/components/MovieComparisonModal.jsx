@@ -86,14 +86,15 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
     return (
         <div style={{
             position: 'fixed', 
-            top: isMobile ? 'var(--header-h, 90px)' : 0, 
-            left: 0, right: 0, bottom: 0,
+            top: 0, 
+            left: 0, right: 0,
+            height: isMobile ? '100svh' : '100vh',
             background: 'rgba(0, 0, 0, 0.85)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)',
             zIndex: 300000,
             display: 'flex', 
-            alignItems: isMobile ? 'flex-start' : 'center', 
+            alignItems: 'center', 
             justifyContent: 'center',
             padding: isMobile ? '12px' : '20px',
             animation: 'fadeIn 0.3s ease-out'
@@ -104,7 +105,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                     position: 'relative',
                     width: isMobile ? '94%' : '100%',
                     maxWidth: panelMaxWidth,
-                    maxHeight: isMobile ? 'calc(100vh - var(--header-h, 90px) - 24px)' : '92vh',
+                    maxHeight: isMobile ? 'calc(100svh - 24px)' : '92vh',
                     display: 'flex',
                     flexDirection: 'column',
                     animation: 'scaleIn 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)',
