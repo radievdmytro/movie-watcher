@@ -17,7 +17,8 @@ export default function MovieComparisonModal({
     isOwned, 
     getOwnedMovie, 
     onOpenMovie,
-    libraryMovies = []
+    libraryMovies = [],
+    onRemoveLink
 }) {
     const [loading, setLoading] = useState(true);
     const [moviesData, setMoviesData] = useState([]);
@@ -235,7 +236,9 @@ export default function MovieComparisonModal({
                                         {/* Remove button */}
                                         <button 
                                             onClick={() => {
+                                                const linkToRemove = activeLinks[idx];
                                                 setActiveLinks(prev => prev.filter((_, i) => i !== idx));
+                                                onRemoveLink?.(linkToRemove);
                                             }}
                                             style={{
                                                 position: 'absolute', top: isMobile ? '14px' : '22px', right: isMobile ? '14px' : '22px',

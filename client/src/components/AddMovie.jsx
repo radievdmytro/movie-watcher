@@ -1523,6 +1523,14 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                 getOwnedMovie={getOwnedMovie}
                 onOpenMovie={setCompareDetailsMovie}
                 libraryMovies={movies}
+                onRemoveLink={(link) => {
+                    setSelectedLinks(prev => {
+                        const next = new Set(prev);
+                        next.delete(link);
+                        return next;
+                    });
+                    setCompareLinks(prev => prev.filter(l => l !== link));
+                }}
             />
 
             <style>{`
