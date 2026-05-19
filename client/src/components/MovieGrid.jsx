@@ -1240,112 +1240,85 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         </button>
                     </div>
 
-                    {/* Search DB Toggle replaced with a single premium Checkbox */}
-                    <div className="search-options-row" style={{
+                    {/* Search DB Toggle replaced with a single premium, compact Checkbox */}
+                    <div style={{
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '6px',
                         width: '100%',
-                        padding: '10px 15px',
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(255,255,255,0.06)',
-                        borderRadius: '12px',
+                        padding: '2px 5px',
                         marginTop: '-4px',
                         boxSizing: 'border-box'
                     }}>
                         <label style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '10px',
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
-                            color: autoSwitchToCache ? '#c084fc' : '#eee',
+                            gap: '8px',
+                            fontSize: '0.82rem',
+                            color: autoSwitchToCache ? '#c084fc' : '#888',
                             cursor: 'pointer',
                             userSelect: 'none',
-                            transition: 'color 0.2s ease'
-                        }}>
+                            transition: 'all 0.2s ease'
+                        }}
+                            onMouseEnter={(e) => { if (!autoSwitchToCache) e.currentTarget.style.color = '#ccc'; }}
+                            onMouseLeave={(e) => { if (!autoSwitchToCache) e.currentTarget.style.color = '#888'; }}
+                        >
                             <input 
                                 type="checkbox" 
                                 checked={autoSwitchToCache}
                                 onChange={(e) => handleToggleAutoSwitch(e.target.checked)}
                                 style={{
                                     accentColor: '#a855f7',
-                                    width: '16px',
-                                    height: '16px',
+                                    width: '14px',
+                                    height: '14px',
                                     cursor: 'pointer'
                                 }}
                             />
                             <span>Include Website Cache matches in search results</span>
                         </label>
-                        <div style={{
-                            fontSize: '0.78rem',
-                            color: 'rgba(255, 255, 255, 0.45)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            paddingLeft: '26px',
-                            lineHeight: '1.3'
-                        }}>
-                            <span style={{ fontSize: '0.9rem' }}>ℹ️</span>
-                            <span>
-                                {autoSwitchToCache 
-                                    ? 'Showing your library results followed by matching cached movies from the site database.' 
-                                    : 'Searching exclusively within your personal saved movie library.'
-                                }
-                            </span>
-                        </div>
                     </div>
 
                     {/* Background Search Suggestion Banner */}
                     {searchDb === 'library' && !autoSwitchToCache && filterQuery.trim().length >= 3 && backgroundCacheResults.length > 0 && (
                         <div style={{
                             display: 'flex',
-                            flexWrap: 'wrap',
-                            justifyContent: 'space-between',
                             alignItems: 'center',
-                            gap: '10px',
-                            background: 'rgba(212, 175, 55, 0.08)',
-                            border: '1px solid rgba(212, 175, 55, 0.2)',
-                            borderRadius: '12px',
-                            padding: '10px 15px',
+                            justifyContent: 'space-between',
                             width: '100%',
+                            padding: '2px 5px',
                             marginTop: '2px',
+                            fontSize: '0.8rem',
+                            color: 'rgba(255, 255, 255, 0.45)',
                             animation: 'fadeIn 0.3s ease',
                             boxSizing: 'border-box'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#eee' }}>
-                                <span style={{ fontSize: '1rem' }}>💡</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>💡</span>
                                 <span>
                                     {filteredAndSortedMovies.length === 0 
-                                        ? `No results in My Library. ` 
-                                        : `Only ${filteredAndSortedMovies.length} results in My Library. `
+                                        ? `No matches in your library. ` 
+                                        : `Only ${filteredAndSortedMovies.length} library matches. `
                                     }
-                                    We found <strong style={{ color: 'var(--accent-gold)' }}>{backgroundCacheResults.length}</strong> matching movies in Website Cache!
+                                    Found <strong style={{ color: '#c084fc' }}>{backgroundCacheResults.length}</strong> in Website Cache.
                                 </span>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                                {/* Action Button to include matches */}
-                                <button
-                                    onClick={() => handleToggleAutoSwitch(true)}
-                                    style={{
-                                        background: 'var(--accent-gold)',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        color: '#000',
-                                        padding: '5px 14px',
-                                        fontSize: '0.78rem',
-                                        fontWeight: '700',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        outline: 'none',
-                                        boxShadow: '0 2px 8px rgba(212, 175, 55, 0.2)'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
-                                >
-                                    🔮 Show Website Cache Matches
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => handleToggleAutoSwitch(true)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--accent-gold)',
+                                    cursor: 'pointer',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '600',
+                                    textDecoration: 'underline',
+                                    padding: 0,
+                                    outline: 'none',
+                                    transition: 'opacity 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                            >
+                                Include Website Cache Matches
+                            </button>
                         </div>
                     )}
 
