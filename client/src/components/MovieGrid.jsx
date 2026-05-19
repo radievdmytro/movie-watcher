@@ -1353,46 +1353,67 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
                     {/* Background Search Suggestion Banner */}
                     {searchDb === 'library' && !autoSwitchToCache && filterQuery.trim().length >= 3 && backgroundCacheResults.length > 0 && (
-                        <div style={{
+                        <div className="glass-panel" style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             width: '100%',
-                            padding: '2px 5px',
-                            marginTop: '2px',
-                            fontSize: '0.8rem',
-                            color: 'rgba(255, 255, 255, 0.45)',
-                            animation: 'fadeIn 0.3s ease',
-                            boxSizing: 'border-box'
+                            padding: '12px 18px',
+                            marginTop: '8px',
+                            marginBottom: '8px',
+                            borderRadius: '14px',
+                            border: '1px solid rgba(168, 85, 247, 0.3)',
+                            background: 'linear-gradient(90deg, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0.03) 100%)',
+                            boxShadow: '0 4px 20px rgba(168, 85, 247, 0.08), inset 0 0 10px rgba(168, 85, 247, 0.05)',
+                            animation: 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                            boxSizing: 'border-box',
+                            flexWrap: 'wrap',
+                            gap: '12px'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span>💡</span>
-                                <span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{
+                                    fontSize: '1.2rem',
+                                    animation: 'pulse 1.8s infinite ease-in-out',
+                                    filter: 'drop-shadow(0 0 4px rgba(251, 191, 36, 0.6))'
+                                }}>💡</span>
+                                <span style={{
+                                    fontSize: '0.88rem',
+                                    color: '#e2e8f0',
+                                    lineHeight: '1.4'
+                                }}>
                                     {filteredAndSortedMovies.length === 0 
-                                        ? `No matches in your library. ` 
-                                        : `Only ${filteredAndSortedMovies.length} library matches. `
+                                        ? <>Нет совпадений в вашей библиотеке. </> 
+                                        : <>Найдено всего <strong style={{ color: '#fff', textShadow: '0 0 8px rgba(255,255,255,0.2)' }}>{filteredAndSortedMovies.length}</strong> в библиотеке. </>
                                     }
-                                    Found <strong style={{ color: '#c084fc' }}>{backgroundCacheResults.length}</strong> in Website Cache.
+                                    Найдено <strong style={{ color: '#c084fc', textShadow: '0 0 8px rgba(192, 132, 252, 0.3)' }}>{backgroundCacheResults.length}</strong> фильмов в Website Cache!
                                 </span>
                             </div>
                             <button
                                 onClick={() => handleToggleAutoSwitch(true)}
                                 style={{
-                                    background: 'none',
+                                    background: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)',
                                     border: 'none',
-                                    color: 'var(--accent-gold)',
+                                    color: '#fff',
                                     cursor: 'pointer',
                                     fontSize: '0.8rem',
-                                    fontWeight: '600',
-                                    textDecoration: 'underline',
-                                    padding: 0,
+                                    fontWeight: '700',
+                                    padding: '6px 14px',
+                                    borderRadius: '30px',
                                     outline: 'none',
-                                    transition: 'opacity 0.2s'
+                                    boxShadow: '0 3px 10px rgba(168, 85, 247, 0.3)',
+                                    transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                                    whiteSpace: 'nowrap'
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-                                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1.04)';
+                                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(168, 85, 247, 0.45)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.boxShadow = '0 3px 10px rgba(168, 85, 247, 0.3)';
+                                }}
                             >
-                                Include Website Cache Matches
+                                🔮 Include Website Cache Matches
                             </button>
                         </div>
                     )}
