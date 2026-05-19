@@ -2510,8 +2510,17 @@ app.post('/api/admin/fast-crawler/stop', authenticateToken, requireAdmin, (req, 
 
 app.get('/api/admin/recent-scraped', authenticateToken, requireAdmin, (req, res) => {
     try {
-        const limit = Math.min(100, parseInt(req.query.limit) || 20);
-        const rows = db.prepare('SELECT title, original_title, year, link, poster_url, rating, type, updated_at, description FROM scraped_movies_cache ORDER BY updated_at DESC LIMIT ?').all(limit);
+        const limit = Math.min(100, parseInt(req.query.limit) || 10);
+        const type = req.query.type; // 'fast' or 'detailed'
+        
+        let condition = '';
+        if (type === 'fast') {
+            condition = "WHERE description IS NULL OR description = ''";
+        } else if (type === 'detailed') {
+            condition = "WHERE description IS NOT NULL AND description != ''";
+        }
+
+        const rows = db.prepare(`SELECT title, original_title, year, link, poster_url, rating, type, updated_at, description FROM scraped_movies_cache ${condition} ORDER BY updated_at DESC LIMIT ?`).all(limit);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -34,20 +34,29 @@ function AdminDashboard({ onBack }) {
     const [fcDelay, setFcDelay] = useState(5000);
     const [startingFC, setStartingFC] = useState(false);
 
-    // Recently Scraped Movies State
-    const [recentScraped, setRecentScraped] = useState([]);
+    // Recently Scraped Movies States
+    const [recentFastScraped, setRecentFastScraped] = useState([]);
+    const [fastScrapedLimit, setFastScrapedLimit] = useState(10);
+    const [recentDetailedScraped, setRecentDetailedScraped] = useState([]);
+    const [detailedScrapedLimit, setDetailedScrapedLimit] = useState(10);
 
     const fetchRecentScraped = async () => {
         try {
-            const res = await fetch('/api/admin/recent-scraped?limit=30');
-            if (res.ok) {
-                const data = await res.json();
-                setRecentScraped(data);
-            }
+            const [fastRes, detailedRes] = await Promise.all([
+                fetch(`/api/admin/recent-scraped?type=fast&limit=${fastScrapedLimit}`),
+                fetch(`/api/admin/recent-scraped?type=detailed&limit=${detailedScrapedLimit}`)
+            ]);
+            if (fastRes.ok) setRecentFastScraped(await fastRes.json());
+            if (detailedRes.ok) setRecentDetailedScraped(await detailedRes.json());
         } catch (err) {
             console.error('Failed to fetch recent scraped movies:', err);
         }
     };
+
+    // Re-fetch when limits change
+    useEffect(() => {
+        if (stats) fetchRecentScraped(); // Only run if mounted/authenticated
+    }, [fastScrapedLimit, detailedScrapedLimit, stats]);
 
     // Inline Admin Operations State (No native popups!)
     const [confirmDeleteUserId, setConfirmDeleteUserId] = useState(null);
@@ -850,7 +859,7 @@ function AdminDashboard({ onBack }) {
                         </div>
                     </div>
 
-                    {/* Recently Scraped Movies Card */}
+                    {/* Recently Scraped Movies Card - Fast Parser */}
                     <div className="glass-panel animate-fade-in" style={{
                         borderRadius: '15px',
                         padding: '20px',
@@ -860,17 +869,29 @@ function AdminDashboard({ onBack }) {
                         flexDirection: 'column',
                         gap: '15px'
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                             <h3 style={{ margin: 0, color: '#fff', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                🎬 Recently Scraped Movies
+                                🚀 Fast Crawler Results <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>(Basic Info Only)</span>
                             </h3>
-                            <button 
-                                onClick={fetchRecentScraped}
-                                className="btn"
-                                style={{ fontSize: '0.8rem', color: '#c084fc', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.25)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}
-                            >
-                                🔄 Refresh List
-                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
+                                    <input 
+                                        type="number" 
+                                        min="1" max="100"
+                                        value={fastScrapedLimit} 
+                                        onChange={e => setFastScrapedLimit(parseInt(e.target.value) || 10)} 
+                                        style={{ width: '60px', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff' }}
+                                    />
+                                </div>
+                                <button 
+                                    onClick={fetchRecentScraped}
+                                    className="btn"
+                                    style={{ fontSize: '0.8rem', color: '#34d399', background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.25)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}
+                                >
+                                    🔄 Refresh
+                                </button>
+                            </div>
                         </div>
                         
                         <div style={{ overflowX: 'auto' }}>
@@ -881,62 +902,129 @@ function AdminDashboard({ onBack }) {
                                         <th style={{ padding: '10px' }}>Title</th>
                                         <th style={{ padding: '10px' }}>Year / Type</th>
                                         <th style={{ padding: '10px' }}>Rating</th>
-                                        <th style={{ padding: '10px' }}>Data Level</th>
                                         <th style={{ padding: '10px', textAlign: 'right' }}>Scraped Time</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {recentScraped.map((m, idx) => {
-                                        const hasDesc = m.description && m.description.trim().length > 0;
-                                        return (
-                                            <tr key={m.link || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                                                <td style={{ padding: '8px 10px' }}>
-                                                    <img 
-                                                        src={m.poster_url} 
-                                                        alt={m.title}
-                                                        style={{ width: '40px', height: '58px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }} 
-                                                        onError={(e) => { e.target.src = 'placeholder.jpg'; }}
-                                                    />
-                                                </td>
-                                                <td style={{ padding: '10px' }}>
-                                                    <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>{m.title}</div>
-                                                    <div style={{ color: '#666', fontSize: '0.78rem' }}>{m.original_title || '—'}</div>
-                                                </td>
-                                                <td style={{ padding: '10px', fontSize: '0.85rem', color: '#aaa' }}>
-                                                    <div>{m.year}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'capitalize' }}>
-                                                        {m.type === 'movie' ? '🎥 Movie' : '📺 Series'}
-                                                    </div>
-                                                </td>
-                                                <td style={{ padding: '10px', fontSize: '0.85rem', color: '#e5c158', fontWeight: 'bold' }}>
-                                                    ⭐ {m.rating ? m.rating.toFixed(1) : '—'}
-                                                </td>
-                                                <td style={{ padding: '10px' }}>
-                                                    <span style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '4px',
-                                                        fontSize: '0.75rem',
-                                                        padding: '4px 8px',
-                                                        borderRadius: '12px',
-                                                        fontWeight: 600,
-                                                        background: hasDesc ? 'rgba(52, 211, 153, 0.1)' : 'rgba(239, 68, 68, 0.08)',
-                                                        color: hasDesc ? '#34d399' : '#f87171',
-                                                        border: hasDesc ? '1px solid rgba(52, 211, 153, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)'
-                                                    }}>
-                                                        {hasDesc ? '✅ Detailed Description' : '⏳ Basic Info Only'}
-                                                    </span>
-                                                </td>
-                                                <td style={{ padding: '10px', textAlign: 'right', fontSize: '0.8rem', color: '#888' }}>
-                                                    {new Date(m.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                    {recentScraped.length === 0 && (
+                                    {recentFastScraped.map((m, idx) => (
+                                        <tr key={m.link || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                                            <td style={{ padding: '8px 10px' }}>
+                                                <img 
+                                                    src={m.poster_url} 
+                                                    alt={m.title}
+                                                    style={{ width: '40px', height: '58px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }} 
+                                                    onError={(e) => { e.target.src = 'placeholder.jpg'; }}
+                                                />
+                                            </td>
+                                            <td style={{ padding: '10px' }}>
+                                                <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>{m.title}</div>
+                                                <div style={{ color: '#666', fontSize: '0.78rem' }}>{m.original_title || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '10px', fontSize: '0.85rem', color: '#aaa' }}>
+                                                <div>{m.year}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'capitalize' }}>
+                                                    {m.type === 'movie' ? '🎥 Movie' : '📺 Series'}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '10px', fontSize: '0.85rem', color: '#e5c158', fontWeight: 'bold' }}>
+                                                ⭐ {m.rating ? m.rating.toFixed(1) : '—'}
+                                            </td>
+                                            <td style={{ padding: '10px', textAlign: 'right', fontSize: '0.8rem', color: '#888' }}>
+                                                {new Date(m.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {recentFastScraped.length === 0 && (
                                         <tr>
-                                            <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#555', fontStyle: 'italic' }}>
-                                                No recently scraped movies found.
+                                            <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#555', fontStyle: 'italic' }}>
+                                                No recently scraped movies found by fast parser.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Recently Scraped Movies Card - Detailed Parser */}
+                    <div className="glass-panel animate-fade-in" style={{
+                        borderRadius: '15px',
+                        padding: '20px',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        background: 'rgba(255, 255, 255, 0.01)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '15px'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                            <h3 style={{ margin: 0, color: '#fff', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                🔍 Detailed Parser Results <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>(Full Info)</span>
+                            </h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
+                                    <input 
+                                        type="number" 
+                                        min="1" max="100"
+                                        value={detailedScrapedLimit} 
+                                        onChange={e => setDetailedScrapedLimit(parseInt(e.target.value) || 10)} 
+                                        style={{ width: '60px', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff' }}
+                                    />
+                                </div>
+                                <button 
+                                    onClick={fetchRecentScraped}
+                                    className="btn"
+                                    style={{ fontSize: '0.8rem', color: '#c084fc', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.25)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}
+                                >
+                                    🔄 Refresh
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#888', fontSize: '0.85rem' }}>
+                                        <th style={{ padding: '10px' }}>Poster</th>
+                                        <th style={{ padding: '10px' }}>Title</th>
+                                        <th style={{ padding: '10px' }}>Year / Type</th>
+                                        <th style={{ padding: '10px' }}>Rating</th>
+                                        <th style={{ padding: '10px', textAlign: 'right' }}>Scraped Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {recentDetailedScraped.map((m, idx) => (
+                                        <tr key={m.link || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                                            <td style={{ padding: '8px 10px' }}>
+                                                <img 
+                                                    src={m.poster_url} 
+                                                    alt={m.title}
+                                                    style={{ width: '40px', height: '58px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }} 
+                                                    onError={(e) => { e.target.src = 'placeholder.jpg'; }}
+                                                />
+                                            </td>
+                                            <td style={{ padding: '10px' }}>
+                                                <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>{m.title}</div>
+                                                <div style={{ color: '#666', fontSize: '0.78rem' }}>{m.original_title || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '10px', fontSize: '0.85rem', color: '#aaa' }}>
+                                                <div>{m.year}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'capitalize' }}>
+                                                    {m.type === 'movie' ? '🎥 Movie' : '📺 Series'}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '10px', fontSize: '0.85rem', color: '#e5c158', fontWeight: 'bold' }}>
+                                                ⭐ {m.rating ? m.rating.toFixed(1) : '—'}
+                                            </td>
+                                            <td style={{ padding: '10px', textAlign: 'right', fontSize: '0.8rem', color: '#888' }}>
+                                                {new Date(m.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {recentDetailedScraped.length === 0 && (
+                                        <tr>
+                                            <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#555', fontStyle: 'italic' }}>
+                                                No recently scraped movies found by detailed parser.
                                             </td>
                                         </tr>
                                     )}
