@@ -361,8 +361,21 @@ function App() {
     };
 
     // Single Item Delete (Context dependent)
-    const handleDelete = async (id) => {
+    const handleDelete = async (id, forceNoConfirm = false) => {
         const isLibrary = currentView === 'library';
+
+        if (forceNoConfirm) {
+            try {
+                const endpoint = isLibrary ? `/api/movies/${id}` : `/api/trash/${id}`;
+                await fetch(endpoint, { method: 'DELETE' });
+                setMovies(prev => prev.filter(m => m.id !== id));
+                setSelectedIds(prev => prev.filter(sid => sid !== id));
+                if (selectedIds.length <= 1) setSelectionAnchor(null);
+            } catch (error) {
+                console.error('Delete failed:', error);
+            }
+            return;
+        }
 
         let inCollections = false;
         let collectionNames = [];

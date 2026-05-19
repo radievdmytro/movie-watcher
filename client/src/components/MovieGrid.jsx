@@ -2819,7 +2819,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                         if (isAdded) {
                                                             const libMovie = movies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
                                                             if (libMovie) {
-                                                                onDelete(libMovie.id);
+                                                                onDelete(libMovie.id, true);
                                                                 setAddedLinks(prev => {
                                                                     const next = new Set(prev);
                                                                     next.delete(movie.link);
