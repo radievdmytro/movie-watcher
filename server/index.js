@@ -564,9 +564,13 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
         
         sql += ' ORDER BY updated_at DESC LIMIT 150';
         
+        const start = performance.now();
         const stmt = db.prepare(sql);
         const results = stmt.all(...params);
-        res.json(results);
+        const { total } = db.prepare('SELECT count(*) as total FROM scraped_movies_cache').get();
+        const timeMs = (performance.now() - start).toFixed(1);
+        
+        res.json({ results, total, timeMs });
     } catch (err) {
         console.error('Cache search failed:', err);
         res.status(500).json({ error: err.message });
