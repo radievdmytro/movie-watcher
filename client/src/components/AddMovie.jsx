@@ -525,6 +525,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
     }, [fullPageResults, filteredSearchResults.length, isMobile]);
 
     const isPanelOpen = fullPageResults && searchResults;
+    const inputLines = query.split(/\n/).length;
 
     return (
         <div className="add-movie-root" style={{ marginBottom: isMobile ? '10px' : '12px', position: 'relative', zIndex: isPanelOpen ? 200001 : 200 }} ref={containerRef}>
