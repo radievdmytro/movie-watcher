@@ -31,7 +31,7 @@ function AdminDashboard({ onBack }) {
     });
     const [fcPages, setFcPages] = useState(5);
     const [fcCategories, setFcCategories] = useState(['films', 'series', 'cartoons', 'animation']);
-    const [fcDelay, setFcDelay] = useState(1500);
+    const [fcDelay, setFcDelay] = useState(5000);
     const [startingFC, setStartingFC] = useState(false);
 
     // Inline Admin Operations State (No native popups!)
@@ -752,10 +752,10 @@ function AdminDashboard({ onBack }) {
                                             cursor: 'pointer'
                                         }}
                                     >
-                                        <option value="1000">1.0 second (Aggressive)</option>
-                                        <option value="1500">1.5 seconds (Balanced - Safe)</option>
-                                        <option value="3000">3.0 seconds (Polite - Very Safe)</option>
-                                        <option value="5000">5.0 seconds (Conservative)</option>
+                                        <option value="3000">3.0 seconds (Fast - Risk of rate limit)</option>
+                                        <option value="5000">5.0 seconds (Balanced - Safe without Proxy)</option>
+                                        <option value="8000">8.0 seconds (Polite - Recommended)</option>
+                                        <option value="12000">12.0 seconds (Ultra Safe - Conservative)</option>
                                     </select>
                                 </div>
                             </div>
