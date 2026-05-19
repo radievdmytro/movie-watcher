@@ -1138,7 +1138,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     outline: 'none'
                                 }}
                             >
-                                📂 Своя библиотека
+                                📂 My Library
                             </button>
                             <button
                                 onClick={() => setSearchDb('cache')}
@@ -1155,7 +1155,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     outline: 'none'
                                 }}
                             >
-                                🌐 База сайта (кэш)
+                                🌐 Website Cache
                             </button>
                         </div>
 
@@ -1170,7 +1170,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         }}>
                             <span style={{ fontSize: '0.9rem' }}>ℹ️</span>
                             <span>
-                                Это только локальный поиск (по библиотеке/кэшу). Чтобы искать на HDRezka напрямую, воспользуйтесь другой строкой поиска (вверху страницы).
+                                {searchDb === 'library' 
+                                    ? 'Searching only within your personal library of saved movies.' 
+                                    : 'Searching local cache only. To search directly on HDRezka, please use the top search bar.'
+                                }
                             </span>
                         </div>
                     </div>
