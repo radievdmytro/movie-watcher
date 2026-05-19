@@ -9,6 +9,8 @@ const axios = require('axios');
 const sharp = require('sharp');
 const { searchMovies, getMovieDetails, getCategoryMovies, getHdrezkaComments, scrapeCatalogPage } = require('./scraper');
 
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 const app = express();
 const PORT = 3000;
 
