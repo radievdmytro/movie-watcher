@@ -512,17 +512,11 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 if (movie.year && movie.year.toString() === q) score += 600;
                 else if (movie.year && movie.year.toString().includes(q)) score += 300;
 
-                // 3. Genre match
-                if (movie.genres && movie.genres.toLowerCase().includes(q)) score += 400;
-
                 // 4. Director match
                 if (movie.director && movie.director.toLowerCase().includes(q)) score += 200;
 
                 // 5. Actor match
                 if (movie.actors && movie.actors.toLowerCase().includes(q)) score += 100;
-
-                // Description match
-                if (movie.description && movie.description.toLowerCase().includes(q)) score += 50;
 
                 // Word-by-word matches (for multi-word search queries)
                 const words = q.split(/\s+/).filter(w => w.length > 1);
@@ -531,10 +525,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         if (movie.title && movie.title.toLowerCase().includes(word)) score += 100;
                         if (movie.original_title && movie.original_title.toLowerCase().includes(word)) score += 80;
                         if (movie.year && movie.year.toString().includes(word)) score += 60;
-                        if (movie.genres && movie.genres.toLowerCase().includes(word)) score += 40;
                         if (movie.director && movie.director.toLowerCase().includes(word)) score += 20;
                         if (movie.actors && movie.actors.toLowerCase().includes(word)) score += 10;
-                        if (movie.description && movie.description.toLowerCase().includes(word)) score += 5;
                     });
                 }
 
@@ -691,12 +683,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 const titleMatch = movie.title && movie.title.toLowerCase().includes(q);
                 const origTitleMatch = movie.original_title && movie.original_title.toLowerCase().includes(q);
                 const yearMatch = movie.year && movie.year.toString().includes(q);
-                const genreMatch = (movie.genres || movie.misc || '').toLowerCase().includes(q);
                 const directorMatch = movie.director && movie.director.toLowerCase().includes(q);
                 const actorMatch = movie.actors && movie.actors.toLowerCase().includes(q);
-                const descMatch = movie.description && movie.description.toLowerCase().includes(q);
 
-                if (!titleMatch && !origTitleMatch && !yearMatch && !genreMatch && !directorMatch && !actorMatch && !descMatch) {
+                if (!titleMatch && !origTitleMatch && !yearMatch && !directorMatch && !actorMatch) {
                     return false;
                 }
             }

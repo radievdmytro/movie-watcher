@@ -534,8 +534,9 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
             params.push(parseInt(year) || year);
         }
         if (query) {
-            sql += ' AND (title LIKE ? OR original_title LIKE ? OR description LIKE ?)';
-            params.push(`%${query.trim()}%`, `%${query.trim()}%`, `%${query.trim()}%`);
+            sql += ' AND (title LIKE ? OR original_title LIKE ? OR actors LIKE ? OR director LIKE ? OR year LIKE ?)';
+            const q = `%${query.trim()}%`;
+            params.push(q, q, q, q, q);
         }
         
         sql += ' ORDER BY updated_at DESC LIMIT 150';
@@ -605,8 +606,9 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
                 SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type
                 FROM scraped_movies_cache
                 WHERE cyrillic_like(title, ?) OR cyrillic_like(original_title, ?)
+                   OR actors LIKE ? OR director LIKE ? OR year LIKE ?
                 LIMIT 150
-            `).all(query.trim(), query.trim());
+            `).all(query.trim(), query.trim(), searchLike, searchLike, searchLike);
 
             if (localResults.length > 0) {
                 console.log(`[Search Cache Hit] Instantly returning ${localResults.length} text search results for: "${query}"`);
@@ -767,9 +769,10 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
                 SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type
                 FROM scraped_movies_cache
                 WHERE cyrillic_like(title, ?) OR cyrillic_like(original_title, ?)
+                   OR actors LIKE ? OR director LIKE ? OR year LIKE ?
                 ORDER BY updated_at DESC
                 LIMIT 150
-            `).all(qTrimmed, qTrimmed);
+            `).all(qTrimmed, qTrimmed, `%${qTrimmed}%`, `%${qTrimmed}%`, `%${qTrimmed}%`);
 
             if (localResults.length > 0) {
                 send('results', { items: localResults, fromCache: true });
