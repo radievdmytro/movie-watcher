@@ -205,6 +205,81 @@ function authenticateToken(req, res, next) {
     });
 }
 
+const getClientIp = (req) => {
+    return req.headers['x-forwarded-for'] || 
+           req.headers['x-real-ip'] || 
+           req.socket.remoteAddress || 
+           '127.0.0.1';
+};
+
+const updateTelemetry = async (userId, req) => {
+    const ip = getClientIp(req);
+    const userAgent = req.headers['user-agent'] || '';
+    
+    // Parse OS, Browser, Device from User-Agent
+    let os = 'Unknown OS';
+    if (userAgent.includes('Windows')) os = 'Windows';
+    else if (userAgent.includes('Macintosh') || userAgent.includes('Mac OS')) os = 'macOS';
+    else if (userAgent.includes('iPhone')) os = 'iOS (iPhone)';
+    else if (userAgent.includes('iPad')) os = 'iOS (iPad)';
+    else if (userAgent.includes('Android')) os = 'Android';
+    else if (userAgent.includes('Linux')) os = 'Linux';
+
+    let browser = 'Unknown Browser';
+    if (userAgent.includes('Firefox')) browser = 'Firefox';
+    else if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) browser = 'Chrome';
+    else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) browser = 'Safari';
+    else if (userAgent.includes('Edg')) browser = 'Edge';
+    else if (userAgent.includes('Opera') || userAgent.includes('OPR')) browser = 'Opera';
+
+    let device = 'Desktop';
+    if (/Mobile|Android|iPhone|iPad|Tablet/i.test(userAgent)) {
+        device = userAgent.includes('iPad') || userAgent.includes('Tablet') ? 'Tablet' : 'Mobile';
+    }
+
+    // Quick local checks
+    let country = 'Unknown';
+    const cleanIp = ip.replace(/^::ffff:/, '');
+    if (cleanIp === '127.0.0.1' || cleanIp === '::1') {
+        country = '🖥 Localhost';
+    } else if (cleanIp.startsWith('192.168.') || cleanIp.startsWith('10.') || cleanIp.startsWith('172.16.') || cleanIp.startsWith('172.31.')) {
+        country = '🏠 LAN';
+    }
+
+    // Update database immediately with local telemetry
+    try {
+        db.prepare(`
+            UPDATE users 
+            SET last_ip = ?, last_device = ?, last_os = ?, last_browser = ?, last_login_at = datetime('now')
+            WHERE id = ?
+        `).run(cleanIp, device, os, browser, userId);
+    } catch (e) {
+        console.error('Failed to update basic user telemetry:', e);
+    }
+
+    // Non-blocking background IP geolocator if external public IP
+    if (country === 'Unknown') {
+        axios.get(`http://ip-api.com/json/${cleanIp}?fields=status,country,countryCode`).then(res => {
+            if (res.data && res.data.status === 'success') {
+                const geoCountry = `${res.data.countryCode === 'UA' ? '🇺🇦' : res.data.countryCode === 'RU' ? '🇷🇺' : res.data.countryCode === 'KZ' ? '🇰🇿' : res.data.countryCode === 'US' ? '🇺🇸' : '🌐'} ${res.data.country}`;
+                db.prepare('UPDATE users SET last_country = ? WHERE id = ?').run(geoCountry, userId);
+                console.log(`🌐 Geolocated user ${userId} to: ${geoCountry}`);
+            } else {
+                db.prepare('UPDATE users SET last_country = ? WHERE id = ?').run('🌐 Global User', userId);
+            }
+        }).catch(err => {
+            console.log(`⚠️ Geolocation failed for IP ${cleanIp}: ${err.message}`);
+            db.prepare('UPDATE users SET last_country = ? WHERE id = ?').run('🌐 Global User', userId);
+        });
+    } else {
+        try {
+            db.prepare('UPDATE users SET last_country = ? WHERE id = ?').run(country, userId);
+        } catch (e) {
+            console.error('Failed to update country in database:', e);
+        }
+    }
+};
+
 // Register
 app.post('/api/auth/register', async (req, res) => {
     try {
@@ -232,6 +307,7 @@ app.post('/api/auth/register', async (req, res) => {
             console.error('Migration update failed:', e);
         }
 
+        updateTelemetry(userId, req);
         const token = jwt.sign({ id: userId, username: trimmedUser }, JWT_SECRET, { expiresIn: '30d' });
         res.json({ token, user: { id: userId, username: trimmedUser } });
     } catch (err) {
@@ -252,6 +328,7 @@ app.post('/api/auth/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) return res.status(401).json({ error: 'Invalid username or password' });
 
+        updateTelemetry(user.id, req);
         const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
         res.json({ token, user: { id: user.id, username: user.username } });
     } catch (err) {
@@ -272,6 +349,7 @@ app.post('/api/auth/guest', async (req, res) => {
         const result = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(username, hash);
         const userId = result.lastInsertRowid;
         
+        updateTelemetry(userId, req);
         const token = jwt.sign({ id: userId, username: username }, JWT_SECRET, { expiresIn: '30d' });
         res.json({ token, user: { id: userId, username: username } });
     } catch (err) {
@@ -1997,8 +2075,15 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, (req, res) => {
                 u.id, 
                 u.username, 
                 u.created_at,
+                u.last_ip,
+                u.last_country,
+                u.last_device,
+                u.last_os,
+                u.last_browser,
+                u.last_login_at,
                 (SELECT COUNT(*) FROM movies m WHERE m.user_id = u.id AND m.deleted_at IS NULL) as movie_count,
-                (SELECT COUNT(*) FROM collections c WHERE c.user_id = u.id) as collection_count
+                (SELECT COUNT(*) FROM collections c WHERE c.user_id = u.id) as collection_count,
+                (SELECT COUNT(*) FROM movie_reviews r WHERE r.user_id = u.id) as comment_count
             FROM users u
             ORDER BY u.created_at DESC
         `).all();

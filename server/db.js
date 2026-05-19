@@ -154,6 +154,14 @@ const initDb = () => {
     db.exec("ALTER TABLE movies ADD COLUMN user_id INTEGER");
   } catch (e) { }
 
+  // Migrations for User Telemetry Metadata
+  try { db.exec("ALTER TABLE users ADD COLUMN last_ip TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE users ADD COLUMN last_country TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE users ADD COLUMN last_device TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE users ADD COLUMN last_os TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE users ADD COLUMN last_browser TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE users ADD COLUMN last_login_at DATETIME DEFAULT NULL"); } catch (e) { }
+
   // Migration for user_id in collections
   try {
     db.exec("ALTER TABLE collections ADD COLUMN user_id INTEGER");

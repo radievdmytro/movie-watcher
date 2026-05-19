@@ -842,29 +842,63 @@ function AdminDashboard({ onBack }) {
                                 <thead>
                                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#888', fontSize: '0.85rem' }}>
                                         <th style={{ padding: '12px 15px' }}>Username</th>
-                                        <th style={{ padding: '12px 15px' }}>Registration Date</th>
-                                        <th style={{ padding: '12px 15px', textAlign: 'center' }}>Movies</th>
-                                        <th style={{ padding: '12px 15px', textAlign: 'center' }}>Collections</th>
+                                        <th style={{ padding: '12px 15px' }}>Registration</th>
+                                        <th style={{ padding: '12px 15px' }}>Last Location & Login</th>
+                                        <th style={{ padding: '12px 15px' }}>Device Telemetry</th>
+                                        <th style={{ padding: '12px 15px', textAlign: 'center' }}>Stats</th>
                                         <th style={{ padding: '12px 15px', textAlign: 'right' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {users.map(u => (
                                         <tr key={u.id} className="admin-user-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                                            <td style={{ padding: '15px', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <td style={{ padding: '15px', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px', minWidth: '180px' }}>
                                                 <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9rem' }}>
                                                     {u.username[0].toUpperCase()}
                                                 </div>
-                                                @{u.username}
+                                                <span style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span>@{u.username}</span>
+                                                    <span style={{ fontSize: '0.72rem', color: u.username.toLowerCase() === 'radev' ? 'var(--accent-gold)' : '#888', fontWeight: 'normal' }}>
+                                                        {u.username.toLowerCase() === 'radev' ? '🛡 Owner/Admin' : u.username.startsWith('guest_') ? '👤 Guest Account' : '👤 Registered User'}
+                                                    </span>
+                                                </span>
                                             </td>
-                                            <td style={{ padding: '15px', color: '#aaa', fontSize: '0.9rem' }}>
-                                                {new Date(u.created_at).toLocaleDateString()} {new Date(u.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            <td style={{ padding: '15px', color: '#aaa', fontSize: '0.85rem' }}>
+                                                <div>{new Date(u.created_at).toLocaleDateString()}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#666' }}>{new Date(u.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                             </td>
-                                            <td style={{ padding: '15px', color: '#fff', textAlign: 'center', fontWeight: 600 }}>
-                                                {u.movie_count}
+                                            <td style={{ padding: '15px', color: '#fff', fontSize: '0.85rem' }}>
+                                                <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    {u.last_country || 'Never logged in'}
+                                                </div>
+                                                <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '2px' }}>
+                                                    {u.last_login_at ? (
+                                                        <>
+                                                            📅 {new Date(u.last_login_at).toLocaleDateString()} {new Date(u.last_login_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </>
+                                                    ) : (
+                                                        '—'
+                                                    )}
+                                                </div>
                                             </td>
-                                            <td style={{ padding: '15px', color: '#fff', textAlign: 'center', fontWeight: 600 }}>
-                                                {u.collection_count}
+                                            <td style={{ padding: '15px', color: '#fff', fontSize: '0.85rem' }}>
+                                                <div style={{ fontFamily: 'monospace', color: '#38bdf8' }}>
+                                                    📍 {u.last_ip || 'No IP data'}
+                                                </div>
+                                                <div style={{ fontSize: '0.75rem', color: '#aaa', marginTop: '2px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                    <span>{u.last_device === 'Mobile' ? '📱 Mobile' : u.last_device === 'Tablet' ? '📟 Tablet' : '🖥 Desktop'}</span>
+                                                    <span style={{ color: '#555' }}>|</span>
+                                                    <span>{u.last_os || 'Unknown OS'}</span>
+                                                    <span style={{ color: '#555' }}>|</span>
+                                                    <span>{u.last_browser || 'Unknown Browser'}</span>
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', fontSize: '0.8rem' }}>
+                                                    <span style={{ color: '#fff', whiteSpace: 'nowrap' }}>🎬 <strong>{u.movie_count}</strong> movies</span>
+                                                    <span style={{ color: '#c084fc', whiteSpace: 'nowrap' }}>📁 <strong>{u.collection_count}</strong> lists</span>
+                                                    <span style={{ color: '#03dac6', whiteSpace: 'nowrap' }}>💬 <strong>{u.comment_count || 0}</strong> comments</span>
+                                                </div>
                                             </td>
                                             <td style={{ padding: '15px', textAlign: 'right' }}>
                                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
