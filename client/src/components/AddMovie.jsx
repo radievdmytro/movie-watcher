@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import MovieComparisonModal from './MovieComparisonModal';
 import MovieDetailsModal from './MovieDetailsModal';
+import BulkImportModal from './BulkImportModal';
 
 function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryIds = [] }) {
+    const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [searchStreaming, setSearchStreaming] = useState(false); // SSE in progress
@@ -584,6 +586,31 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                         <span>{cat.label}</span>
                     </button>
                 ))}
+                <button
+                    onClick={() => setIsBulkImportOpen(true)}
+                    disabled={loading}
+                    className="btn-ghost"
+                    style={{
+                        padding: '6px 14px',
+                        borderRadius: '20px',
+                        fontSize: '0.78rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: 'rgba(192, 132, 252, 0.08)',
+                        border: '1px solid rgba(192, 132, 252, 0.25)',
+                        color: '#c084fc',
+                        transition: 'all 0.2s',
+                        cursor: loading ? 'wait' : 'pointer',
+                        whiteSpace: 'nowrap',
+                        fontWeight: '600'
+                    }}
+                    onMouseOver={(e) => !loading && (e.currentTarget.style.background = 'rgba(192, 132, 252, 0.15)')}
+                    onMouseOut={(e) => !loading && (e.currentTarget.style.background = 'rgba(192, 132, 252, 0.08)')}
+                >
+                    <span>📝</span>
+                    <span>Bulk Import</span>
+                </button>
             </div>
 
             {/* Search Bar Container - High Z-Index to stay on top */}
@@ -1546,6 +1573,12 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     });
                     setCompareLinks(prev => prev.filter(l => l !== link));
                 }}
+            />
+
+            <BulkImportModal
+                isOpen={isBulkImportOpen}
+                onClose={() => setIsBulkImportOpen(false)}
+                onMovieAdded={onMovieAdded}
             />
 
             <style>{`
