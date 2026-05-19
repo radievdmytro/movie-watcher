@@ -66,6 +66,7 @@ function AdminDashboard({ onBack }) {
                     setFastCrawler(data);
                     if (data.isRunning && stats) {
                         setStats(prev => ({ ...prev, totalCached: data.totalCached || prev.totalCached }));
+                        setCrawlerSettings(prev => ({ ...prev, totalCached: data.totalCached || prev.totalCached }));
                         fetchRecentScraped();
                     }
                 }

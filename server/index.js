@@ -2475,7 +2475,15 @@ async function runFastCrawlerProcess({ pages, categories, pageDelay }) {
 
 // Fast Crawler endpoints (admin-only)
 app.get('/api/admin/fast-crawler/status', authenticateToken, requireAdmin, (req, res) => {
-    res.json(fastCrawlerState);
+    try {
+        const totalCached = db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count;
+        res.json({
+            ...fastCrawlerState,
+            totalCached
+        });
+    } catch (err) {
+        res.json(fastCrawlerState);
+    }
 });
 
 app.post('/api/admin/fast-crawler/start', authenticateToken, requireAdmin, (req, res) => {
