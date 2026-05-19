@@ -480,6 +480,12 @@ function AdminDashboard({ onBack }) {
                                     <span style={{ color: '#e5c158', fontWeight: 'bold' }}>🎬 {crawlerSettings.totalCached || 0} movies</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                                    <span style={{ color: '#888' }}>Without Description:</span>
+                                    <span style={{ color: crawlerSettings.partiallyScraped > 0 ? '#ff6b6b' : '#03dac6', fontWeight: 'bold' }}>
+                                        ⚠️ {crawlerSettings.partiallyScraped ?? 0} movies
+                                    </span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
                                     <span style={{ color: '#888' }}>Average delay:</span>
                                     <span style={{ color: '#aaa' }}>{((3600 / crawlerSettings.ratePerHour)).toFixed(0)} seconds</span>
                                 </div>

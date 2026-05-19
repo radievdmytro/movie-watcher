@@ -2139,7 +2139,8 @@ app.get('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, re
             enabled: crawlerSettings.enabled,
             ratePerHour: crawlerSettings.ratePerHour,
             currentStatus: crawlerSettings.currentStatus,
-            totalCached: db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count
+            totalCached: db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count,
+            partiallyScraped: db.prepare("SELECT COUNT(*) as count FROM scraped_movies_cache WHERE description IS NULL OR description = ''").get().count
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -2173,7 +2174,8 @@ app.post('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, r
             enabled: crawlerSettings.enabled,
             ratePerHour: crawlerSettings.ratePerHour,
             currentStatus: crawlerSettings.currentStatus,
-            totalCached: db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count
+            totalCached: db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count,
+            partiallyScraped: db.prepare("SELECT COUNT(*) as count FROM scraped_movies_cache WHERE description IS NULL OR description = ''").get().count
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
