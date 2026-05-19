@@ -2723,7 +2723,14 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 <div
                                     key={movie.link || idx}
                                     className="movie-card glass-panel"
-                                    onClick={() => setSelectedMovie({ ...movie, poster_url: movie.poster_url || movie.img, readOnly: true })}
+                                    onClick={() => {
+                                        const libMovie = movies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                        if (libMovie) {
+                                            setSelectedMovie(libMovie);
+                                        } else {
+                                            setSelectedMovie({ ...movie, poster_url: movie.poster_url || movie.img, readOnly: true });
+                                        }
+                                    }}
                                     style={{
                                         position: 'relative',
                                         borderRadius: '16px',
@@ -2805,10 +2812,28 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                             {/* Action Buttons */}
                                             <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
                                                 <button
-                                                    disabled={isAdding || isAdded}
+                                                    disabled={isAdding}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleAddMovieFromCache(movie.link);
+                                                        if (isAdding) return;
+                                                        if (isAdded) {
+                                                            const libMovie = movies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                                            if (libMovie) {
+                                                                onDelete(libMovie.id);
+                                                                setAddedLinks(prev => {
+                                                                    const next = new Set(prev);
+                                                                    next.delete(movie.link);
+                                                                    return next;
+                                                                });
+                                                                setLocalWatchedLinks(prev => {
+                                                                    const next = new Set(prev);
+                                                                    next.delete(movie.link);
+                                                                    return next;
+                                                                });
+                                                            }
+                                                        } else {
+                                                            handleAddMovieFromCache(movie.link);
+                                                        }
                                                     }}
                                                     className="btn"
                                                     style={{
@@ -2817,13 +2842,30 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                         borderRadius: '8px',
                                                         fontSize: '0.78rem',
                                                         fontWeight: 'bold',
-                                                        cursor: (isAdding || isAdded) ? 'default' : 'pointer',
+                                                        cursor: isAdding ? 'default' : 'pointer',
                                                         border: '1px solid',
                                                         background: isAdded ? 'rgba(3, 218, 198, 0.15)' : 'rgba(168, 85, 247, 0.15)',
                                                         borderColor: isAdded ? '#03dac6' : 'rgba(168, 85, 247, 0.4)',
                                                         color: isAdded ? '#03dac6' : '#c084fc',
                                                         transition: 'all 0.2s ease',
                                                         textAlign: 'center'
+                                                    }}
+                                                    title={isAdded ? "Remove from Library" : "Add to Library"}
+                                                    onMouseEnter={(e) => {
+                                                        if (isAdded) {
+                                                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                                                            e.currentTarget.style.borderColor = '#ef4444';
+                                                            e.currentTarget.style.color = '#ef4444';
+                                                            e.currentTarget.innerText = '❌ Remove?';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        if (isAdded) {
+                                                            e.currentTarget.style.background = 'rgba(3, 218, 198, 0.15)';
+                                                            e.currentTarget.style.borderColor = '#03dac6';
+                                                            e.currentTarget.style.color = '#03dac6';
+                                                            e.currentTarget.innerText = '✓ In My Library';
+                                                        }
                                                     }}
                                                 >
                                                     {isAdding ? '⏳ Adding...' : isAdded ? '✓ In My Library' : '➕ Add to Library'}
