@@ -362,19 +362,69 @@ app.get('/api/cache/stats', authenticateToken, (req, res) => {
     }
 });
 
+// Seedable random number generator (Mulberry32)
+function seedRandom(seedStr) {
+    let h = 1779033703 ^ seedStr.length;
+    for (let i = 0; i < seedStr.length; i++) {
+        h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353);
+        h = h << 13 | h >>> 19;
+    }
+    return function() {
+        h = Math.imul(h ^ h >>> 16, 2246822507);
+        h = Math.imul(h ^ h >>> 13, 3266489909);
+        return ((h ^= h >>> 16) >>> 0) / 4294967296;
+    }
+}
+
+// Seedable array shuffle
+function seedShuffle(array, seed) {
+    const rnd = seedRandom(seed);
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(rnd() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
 // Get paginated cache directory for sparse library view
 app.get('/api/cache/directory', authenticateToken, (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 50;
         const offset = parseInt(req.query.offset) || 0;
+        const seed = req.query.seed || 'default_seed';
+
+        // 1. Fetch all eligible cached movies
         const rows = db.prepare(`
             SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
             FROM scraped_movies_cache
             WHERE poster_url IS NOT NULL AND title IS NOT NULL
-            ORDER BY year DESC, rating DESC, updated_at DESC
-            LIMIT ? OFFSET ?
-        `).all(limit, offset);
-        res.json(rows);
+        `).all();
+
+        // 2. Separate movies into: high rating (rating >= 7.0) and others
+        const highRating = [];
+        const others = [];
+
+        for (const row of rows) {
+            const r = parseFloat(row.rating) || 0;
+            if (r >= 7.0) {
+                highRating.push(row);
+            } else {
+                others.push(row);
+            }
+        }
+
+        // 3. Seeded shuffle both partitions
+        const shuffledHigh = seedShuffle(highRating, seed + '_high');
+        const shuffledOthers = seedShuffle(others, seed + '_others');
+
+        // 4. Combine them (high rating first)
+        const combined = [...shuffledHigh, ...shuffledOthers];
+
+        // 5. Slice according to limit and offset
+        const sliced = combined.slice(offset, offset + limit);
+
+        res.json(sliced);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

@@ -412,6 +412,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
     // Custom Onboarding / Cache Directory for sparse libraries
     const [onboardingCacheMovies, setOnboardingCacheMovies] = useState([]);
+    const [onboardingSeed] = useState(() => Math.random().toString(36).substring(2, 15));
     const [onboardingCacheStats, setOnboardingCacheStats] = useState({ totalCached: 0 });
     const [onboardingOffset, setOnboardingOffset] = useState(0);
     const [isOnboardingLoading, setIsOnboardingLoading] = useState(false);
@@ -858,7 +859,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
         // Fetch first page of cached movies
         setIsOnboardingLoading(true);
-        fetch('/api/cache/directory?limit=50&offset=0', {
+        fetch(`/api/cache/directory?limit=50&offset=0&seed=${onboardingSeed}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
         .then(res => res.ok ? res.json() : [])
@@ -870,7 +871,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         .catch(err => console.error("Error fetching onboarding cache:", err))
         .finally(() => setIsOnboardingLoading(false));
 
-    }, [movies.length, isTrashMode]);
+    }, [movies.length, isTrashMode, onboardingSeed]);
 
     // Onboarding Infinite Scroll Observer
     useEffect(() => {
@@ -880,7 +881,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             if (entries[0].isIntersecting) {
                 setIsOnboardingLoading(true);
                 const token = localStorage.getItem('token');
-                fetch(`/api/cache/directory?limit=50&offset=${onboardingOffset}`, {
+                fetch(`/api/cache/directory?limit=50&offset=${onboardingOffset}&seed=${onboardingSeed}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
                 .then(res => res.ok ? res.json() : [])
