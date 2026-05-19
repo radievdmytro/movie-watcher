@@ -49,6 +49,31 @@ function App() {
     const [guestTooltipText, setGuestTooltipText] = useState('');
     const [activityCount, setActivityCount] = useState(0);
 
+    const [globalCacheCount, setGlobalCacheCount] = useState(0);
+
+    useEffect(() => {
+        if (!user) return;
+        const fetchStats = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const res = await fetch('/api/cache/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setGlobalCacheCount(data.totalCached);
+                }
+            } catch (err) {
+                console.error('Failed to fetch cache stats:', err);
+            }
+        };
+
+        fetchStats();
+        const interval = setInterval(fetchStats, 5000); // Poll every 5 seconds
+        return () => clearInterval(interval);
+    }, [user]);
+
     useEffect(() => {
         let isTouching = false;
         let scrollTimeout;
@@ -573,6 +598,16 @@ function App() {
 
     return (
         <div className="app">
+            <style>{`
+                @keyframes blink {
+                    0%, 100% { opacity: 0.4; transform: scale(0.9); }
+                    50% { opacity: 1; transform: scale(1.1); }
+                }
+                @keyframes pulse {
+                    0% { box-shadow: 0 0 4px rgba(168, 85, 247, 0.1); }
+                    100% { box-shadow: 0 0 12px rgba(168, 85, 247, 0.25); }
+                }
+            `}</style>
             <header className={`header glass-panel app-header${headerScrolled ? ' header-scrolled' : ''}`}>
                 <div className="container header-content">
                     <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -666,6 +701,43 @@ function App() {
                                 <span className="btn-icon">🗑️</span>
                                 <span className="btn-label">Trash</span>
                             </button>
+                            {globalCacheCount > 0 && (
+                                <div 
+                                    className="global-cache-badge glass-panel" 
+                                    style={{
+                                        fontSize: '0.8rem',
+                                        color: '#c084fc',
+                                        background: 'rgba(168, 85, 247, 0.08)',
+                                        border: '1px solid rgba(168, 85, 247, 0.25)',
+                                        padding: '6px 14px',
+                                        borderRadius: '20px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        fontWeight: 'bold',
+                                        boxShadow: '0 0 10px rgba(168, 85, 247, 0.05)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        animation: 'pulse 3s infinite alternate'
+                                    }}
+                                    onClick={() => { if (user?.username?.toLowerCase() === 'radev') setCurrentView('admin'); }}
+                                    title="Global Database Movie Count (Updates in real-time)"
+                                >
+                                    <span 
+                                        className="live-pulse"
+                                        style={{ 
+                                            width: '6px', 
+                                            height: '6px', 
+                                            background: '#c084fc', 
+                                            borderRadius: '50%',
+                                            display: 'inline-block',
+                                            boxShadow: '0 0 8px #c084fc',
+                                            animation: 'blink 1.5s infinite'
+                                        }} 
+                                    />
+                                    <span>🎬 {globalCacheCount.toLocaleString()} in DB</span>
+                                </div>
+                            )}
                             <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '24px', margin: '0 5px' }}></div>
                             {user.username.startsWith('guest_') ? (
                                 <div style={{ position: 'relative', display: 'inline-block' }}>
