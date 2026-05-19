@@ -388,6 +388,22 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     const [filterRating, setFilterRating] = useState([0, 10]);
     const [filterYear, setFilterYear] = useState([1900, new Date().getFullYear() + 2]);
     const [filterType, setFilterType] = useState('all'); // 'all' | 'movie' | 'series'
+    const [searchFields, setSearchFields] = useState(() => {
+        try {
+            const saved = localStorage.getItem('searchFields');
+            if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return { title: true, actor: true, director: true, year: true };
+    });
+
+    const toggleSearchField = (field) => {
+        setSearchFields(prev => {
+            const next = { ...prev, [field]: !prev[field] };
+            localStorage.setItem('searchFields', JSON.stringify(next));
+            return next;
+        });
+    };
+
     const [showFilters, setShowFilters] = useState(false);
     const [showAllGenres, setShowAllGenres] = useState(false);
     const [visibleCount, setVisibleCount] = useState(30);
@@ -472,8 +488,11 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         }
 
         setIsCacheLoading(true);
+        const queryParams = new URLSearchParams();
+        queryParams.append('query', filterQuery);
+        queryParams.append('fields', JSON.stringify(searchFields));
         const delayDebounceFn = setTimeout(() => {
-            fetch(`/api/cache/search?query=${encodeURIComponent(filterQuery)}`)
+            fetch(`/api/cache/search?${queryParams.toString()}`)
                 .then(res => {
                     if (res.ok) return res.json();
                     throw new Error('Failed to fetch from global cache');
@@ -491,7 +510,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         }, 300); // 300ms debounce
 
         return () => clearTimeout(delayDebounceFn);
-    }, [filterQuery, searchDb]);
+    }, [filterQuery, searchDb, searchFields]);
 
     const filteredAndSortedMovies = useMemo(() => {
         if (searchDb === 'cache') {
@@ -505,28 +524,28 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
                 // Importance priority matching weights:
                 // 1. Title match (most important)
-                if (movie.title && movie.title.toLowerCase().includes(q)) score += 1000;
-                if (movie.original_title && movie.original_title.toLowerCase().includes(q)) score += 800;
+                if (searchFields.title && movie.title && movie.title.toLowerCase().includes(q)) score += 1000;
+                if (searchFields.title && movie.original_title && movie.original_title.toLowerCase().includes(q)) score += 800;
 
                 // 2. Year match
-                if (movie.year && movie.year.toString() === q) score += 600;
-                else if (movie.year && movie.year.toString().includes(q)) score += 300;
+                if (searchFields.year && movie.year && movie.year.toString() === q) score += 600;
+                else if (searchFields.year && movie.year && movie.year.toString().includes(q)) score += 300;
 
                 // 4. Director match
-                if (movie.director && movie.director.toLowerCase().includes(q)) score += 200;
+                if (searchFields.director && movie.director && movie.director.toLowerCase().includes(q)) score += 200;
 
                 // 5. Actor match
-                if (movie.actors && movie.actors.toLowerCase().includes(q)) score += 100;
+                if (searchFields.actor && movie.actors && movie.actors.toLowerCase().includes(q)) score += 100;
 
                 // Word-by-word matches (for multi-word search queries)
                 const words = q.split(/\s+/).filter(w => w.length > 1);
                 if (words.length > 1) {
                     words.forEach(word => {
-                        if (movie.title && movie.title.toLowerCase().includes(word)) score += 100;
-                        if (movie.original_title && movie.original_title.toLowerCase().includes(word)) score += 80;
-                        if (movie.year && movie.year.toString().includes(word)) score += 60;
-                        if (movie.director && movie.director.toLowerCase().includes(word)) score += 20;
-                        if (movie.actors && movie.actors.toLowerCase().includes(word)) score += 10;
+                        if (searchFields.title && movie.title && movie.title.toLowerCase().includes(word)) score += 100;
+                        if (searchFields.title && movie.original_title && movie.original_title.toLowerCase().includes(word)) score += 80;
+                        if (searchFields.year && movie.year && movie.year.toString().includes(word)) score += 60;
+                        if (searchFields.director && movie.director && movie.director.toLowerCase().includes(word)) score += 20;
+                        if (searchFields.actor && movie.actors && movie.actors.toLowerCase().includes(word)) score += 10;
                     });
                 }
 
@@ -629,7 +648,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 return 0;
             })
             .map(item => item.movie);
-    }, [movies, sortField, sortDir, filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults]);
+    }, [movies, sortField, sortDir, filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields]);
 
     const filteredOnboardingCacheMovies = useMemo(() => {
         return onboardingCacheMovies.filter(movie => {
@@ -680,20 +699,19 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             // Search query filter (if active)
             if (filterQuery) {
                 const q = filterQuery.toLowerCase().trim();
-                const titleMatch = movie.title && movie.title.toLowerCase().includes(q);
-                const origTitleMatch = movie.original_title && movie.original_title.toLowerCase().includes(q);
-                const yearMatch = movie.year && movie.year.toString().includes(q);
-                const directorMatch = movie.director && movie.director.toLowerCase().includes(q);
-                const actorMatch = movie.actors && movie.actors.toLowerCase().includes(q);
+                const titleMatch = searchFields.title && ((movie.title && movie.title.toLowerCase().includes(q)) || (movie.original_title && movie.original_title.toLowerCase().includes(q)));
+                const yearMatch = searchFields.year && movie.year && movie.year.toString().includes(q);
+                const directorMatch = searchFields.director && movie.director && movie.director.toLowerCase().includes(q);
+                const actorMatch = searchFields.actor && movie.actors && movie.actors.toLowerCase().includes(q);
 
-                if (!titleMatch && !origTitleMatch && !yearMatch && !directorMatch && !actorMatch) {
+                if (!titleMatch && !yearMatch && !directorMatch && !actorMatch) {
                     return false;
                 }
             }
 
             return true;
         });
-    }, [onboardingCacheMovies, filterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType]);
+    }, [onboardingCacheMovies, filterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType, searchFields]);
 
     const hasActiveFilter = useMemo(() => {
         return !!(
@@ -730,8 +748,12 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         }
 
         setIsBgCacheSearching(true);
+        const queryParams = new URLSearchParams();
+        queryParams.append('query', query);
+        queryParams.append('fields', JSON.stringify(searchFields));
+        
         const delayDebounceFn = setTimeout(() => {
-            fetch(`/api/cache/search?query=${encodeURIComponent(query)}`)
+            fetch(`/api/cache/search?${queryParams.toString()}`)
                 .then(res => res.ok ? res.json() : [])
                 .then(data => {
                     const results = data || [];
@@ -747,7 +769,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         }, 400); // 400ms debounce for background search
 
         return () => clearTimeout(delayDebounceFn);
-    }, [filterQuery, searchDb, filteredAndSortedMovies.length, autoSwitchToCache]);
+    }, [filterQuery, searchDb, filteredAndSortedMovies.length, autoSwitchToCache, searchFields]);
 
 
     const { minBoundYear, maxBoundYear } = useMemo(() => {
@@ -764,18 +786,18 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         if (!filterQuery.trim()) return { movies: [], years: [], genres: [], directors: [], actors: [] };
         const query = filterQuery.toLowerCase().trim();
 
-        // 1. Movies / Titles (ак названия)
+        // 1. Movies / Titles
         const activeMoviesSource = searchDb === 'cache' ? cacheMoviesResults : movies;
-        const matchedMovies = activeMoviesSource.filter(m =>
+        const matchedMovies = searchFields.title ? activeMoviesSource.filter(m =>
             (m.title && m.title.toLowerCase().includes(query)) ||
             (m.original_title && m.original_title.toLowerCase().includes(query))
-        ).slice(0, 5);
+        ).slice(0, 5) : [];
 
         // 2. Years
         const uniqueYears = Array.from(new Set(movies.map(m => m.year).filter(y => y)));
-        const matchedYears = uniqueYears.filter(y =>
+        const matchedYears = searchFields.year ? uniqueYears.filter(y =>
             y.toString().includes(query)
-        ).sort((a, b) => b - a).slice(0, 5);
+        ).sort((a, b) => b - a).slice(0, 5) : [];
 
         // 3. Genres
         const matchedGenres = availableGenres.filter(g =>
@@ -783,14 +805,14 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         ).slice(0, 5);
 
         // 4. Directors
-        const matchedDirectors = availableDirectors.filter(d =>
+        const matchedDirectors = searchFields.director ? availableDirectors.filter(d =>
             d && d.name && d.name.toLowerCase().includes(query)
-        ).slice(0, 5);
+        ).slice(0, 5) : [];
 
         // 5. Actors
-        const matchedActors = availableActors.filter(a =>
+        const matchedActors = searchFields.actor ? availableActors.filter(a =>
             a && a.name && a.name.toLowerCase().includes(query)
-        ).slice(0, 5);
+        ).slice(0, 5) : [];
 
         return {
             movies: matchedMovies,
@@ -799,7 +821,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             directors: matchedDirectors,
             actors: matchedActors
         };
-    }, [filterQuery, availableDirectors, availableActors, availableGenres, movies, searchDb, cacheMoviesResults]);
+    }, [filterQuery, availableDirectors, availableActors, availableGenres, movies, searchDb, cacheMoviesResults, searchFields]);
 
     useEffect(() => {
         setFilterYear([minBoundYear, maxBoundYear]);
@@ -1529,6 +1551,37 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     }}
                                 >
                                     {type.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Search Fields Switcher */}
+                        <div className="desktop-genres-row" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            {[
+                                { id: 'title', label: 'Title' },
+                                { id: 'actor', label: 'Actor' },
+                                { id: 'director', label: 'Director' },
+                                { id: 'year', label: 'Year' }
+                            ].map(field => (
+                                <button
+                                    key={field.id}
+                                    onClick={() => toggleSearchField(field.id)}
+                                    style={{
+                                        padding: '4px 10px',
+                                        borderRadius: '13px',
+                                        fontSize: '0.75rem',
+                                        cursor: 'pointer',
+                                        border: '1px solid transparent',
+                                        background: searchFields[field.id] ? 'rgba(168, 85, 247, 0.2)' : 'transparent',
+                                        color: searchFields[field.id] ? '#c084fc' : '#888',
+                                        fontWeight: searchFields[field.id] ? '600' : '500',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'nowrap',
+                                        borderColor: searchFields[field.id] ? 'rgba(168, 85, 247, 0.4)' : 'transparent'
+                                    }}
+                                    title={`Toggle search by ${field.label}`}
+                                >
+                                    {field.label}
                                 </button>
                             ))}
                         </div>
