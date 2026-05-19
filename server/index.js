@@ -332,6 +332,34 @@ const triggerBackgroundUpdate = (url) => {
     })();
 };
 
+// Get total stats of global website cache
+app.get('/api/cache/stats', authenticateToken, (req, res) => {
+    try {
+        const row = db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get();
+        res.json({ totalCached: row.count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get paginated cache directory for sparse library view
+app.get('/api/cache/directory', authenticateToken, (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = parseInt(req.query.offset) || 0;
+        const rows = db.prepare(`
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+            ORDER BY year DESC, rating DESC, updated_at DESC
+            LIMIT ? OFFSET ?
+        `).all(limit, offset);
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Global cache search endpoint
 app.get('/api/cache/search', authenticateToken, (req, res) => {
     try {

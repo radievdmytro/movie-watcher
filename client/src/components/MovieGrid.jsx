@@ -410,6 +410,14 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     const [isBgCacheSearching, setIsBgCacheSearching] = useState(false);
     const [showAutoSwitchToast, setShowAutoSwitchToast] = useState(false);
 
+    // Custom Onboarding / Cache Directory for sparse libraries
+    const [onboardingCacheMovies, setOnboardingCacheMovies] = useState([]);
+    const [onboardingCacheStats, setOnboardingCacheStats] = useState({ totalCached: 0 });
+    const [onboardingOffset, setOnboardingOffset] = useState(0);
+    const [isOnboardingLoading, setIsOnboardingLoading] = useState(false);
+    const [hasMoreOnboarding, setHasMoreOnboarding] = useState(true);
+    const onboardingSentinelRef = useRef(null);
+
     const uniqueBackgroundCacheResults = useMemo(() => {
         if (!backgroundCacheResults.length) return [];
         const libraryLinks = new Set(movies.map(m => cleanLinkPath(m.link)));
@@ -833,6 +841,73 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
         return () => observer.disconnect();
     }, [filteredAndSortedMovies.length]); // Now this is safe
+
+    // Fetch Stats and Onboarding Cache Movies
+    useEffect(() => {
+        if (movies.length >= 5 || isTrashMode) return;
+
+        const token = localStorage.getItem('token');
+
+        // Fetch cache stats
+        fetch('/api/cache/stats', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.ok ? res.json() : { totalCached: 2500 })
+        .then(data => setOnboardingCacheStats(data))
+        .catch(err => console.error("Error fetching cache stats:", err));
+
+        // Fetch first page of cached movies
+        setIsOnboardingLoading(true);
+        fetch('/api/cache/directory?limit=50&offset=0', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.ok ? res.json() : [])
+        .then(data => {
+            setOnboardingCacheMovies(data);
+            setOnboardingOffset(50);
+            if (data.length < 50) setHasMoreOnboarding(false);
+        })
+        .catch(err => console.error("Error fetching onboarding cache:", err))
+        .finally(() => setIsOnboardingLoading(false));
+
+    }, [movies.length, isTrashMode]);
+
+    // Onboarding Infinite Scroll Observer
+    useEffect(() => {
+        if (movies.length >= 5 || isTrashMode || !hasMoreOnboarding || isOnboardingLoading) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                setIsOnboardingLoading(true);
+                const token = localStorage.getItem('token');
+                fetch(`/api/cache/directory?limit=50&offset=${onboardingOffset}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(res => res.ok ? res.json() : [])
+                .then(data => {
+                    if (data.length > 0) {
+                        setOnboardingCacheMovies(prev => {
+                            const existingLinks = new Set(prev.map(m => m.link));
+                            const newMovies = data.filter(m => !existingLinks.has(m.link));
+                            return [...prev, ...newMovies];
+                        });
+                        setOnboardingOffset(prev => prev + 50);
+                    }
+                    if (data.length < 50) {
+                        setHasMoreOnboarding(false);
+                    }
+                })
+                .catch(err => console.error("Error loading more onboarding cache:", err))
+                .finally(() => setIsOnboardingLoading(false));
+            }
+        }, { threshold: 0.1 });
+
+        if (onboardingSentinelRef.current) {
+            observer.observe(onboardingSentinelRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, [movies.length, isTrashMode, onboardingOffset, hasMoreOnboarding, isOnboardingLoading]);
 
     const handleSort = (field, forceDir) => {
         if (forceDir) {
@@ -2622,6 +2697,276 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     {/* Sentinel for Infinite Scroll (Table) */}
                     {visibleCount < filteredAndSortedMovies.length && (
                         <div ref={sentinelRef} style={{ height: '50px', width: '100%' }} />
+                    )}
+                </div>
+            )}
+
+            {movies.length < 5 && !isTrashMode && (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '25px',
+                    marginTop: '40px',
+                    animation: 'fadeIn 0.5s ease-out'
+                }}>
+                    {/* 1. Onboarding Glassmorphic Info Banner */}
+                    <div className="glass-panel" style={{
+                        padding: '24px 30px',
+                        borderRadius: '20px',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+                    }}>
+                        {/* Soft ambient background glow */}
+                        <div style={{
+                            position: 'absolute', top: '-10%', right: '-10%', width: '180px', height: '180px',
+                            background: 'radial-gradient(circle, rgba(192, 132, 252, 0.15) 0%, transparent 70%)',
+                            pointerEvents: 'none', zIndex: 1
+                        }} />
+                        
+                        <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <span style={{ fontSize: '1.8rem' }}>👋</span>
+                                    <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '700', color: '#fff' }}>
+                                        Добро пожаловать в вашу Синематеку!
+                                    </h2>
+                                </div>
+                                
+                                {/* Live Counter Badge */}
+                                <div style={{
+                                    background: 'rgba(168, 85, 247, 0.12)',
+                                    border: '1px solid rgba(168, 85, 247, 0.35)',
+                                    color: '#c084fc',
+                                    padding: '8px 16px',
+                                    borderRadius: '30px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: '700',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    boxShadow: '0 0 15px rgba(168, 85, 247, 0.15)',
+                                    animation: 'pulse 2s infinite ease-in-out'
+                                }}>
+                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#c084fc', display: 'inline-block', boxShadow: '0 0 8px #c084fc' }}></span>
+                                    <span>В базе кэша: <strong style={{ color: '#fff' }}>{onboardingCacheStats.totalCached.toLocaleString() || '2,500+'}</strong> фильмов</span>
+                                </div>
+                            </div>
+                            
+                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#ccc', lineHeight: '1.6' }}>
+                                Ваша личная библиотека пока пуста или только начинает заполняться. Вы можете легко добавить любые фильмы с помощью строки поиска выше:
+                            </p>
+                            
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+                                gap: '15px',
+                                marginTop: '5px'
+                            }}>
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.02)',
+                                    border: '1px solid rgba(255,255,255,0.04)',
+                                    borderRadius: '12px',
+                                    padding: '12px 15px',
+                                    display: 'flex',
+                                    gap: '12px',
+                                    alignItems: 'flex-start'
+                                }}>
+                                    <span style={{ fontSize: '1.2rem' }}>🔗</span>
+                                    <div>
+                                        <h4 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#fff', fontWeight: '600' }}>Глобальный поиск HDRezka</h4>
+                                        <p style={{ margin: 0, fontSize: '0.78rem', color: '#aaa', lineHeight: '1.4' }}>
+                                            Просто вставьте **прямую ссылку** на любой фильм или сериал с сайта HDRezka в поисковую строку выше.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.02)',
+                                    border: '1px solid rgba(255,255,255,0.04)',
+                                    borderRadius: '12px',
+                                    padding: '12px 15px',
+                                    display: 'flex',
+                                    gap: '12px',
+                                    alignItems: 'flex-start'
+                                }}>
+                                    <span style={{ fontSize: '1.2rem' }}>🔮</span>
+                                    <div>
+                                        <h4 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#fff', fontWeight: '600' }}>Поиск по локальному кэшу</h4>
+                                        <p style={{ margin: 0, fontSize: '0.78rem', color: '#aaa', lineHeight: '1.4' }}>
+                                            Ищите по названиям, актерам или режиссерам. Наша база кэша постоянно пополняется автоматическим облачным парсером.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 2. Purple Divider */}
+                    <div className="cache-divider" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '15px',
+                        margin: '20px 0 10px',
+                        width: '100%'
+                    }}>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(168, 85, 247, 0.4), transparent)' }}></div>
+                        <span style={{
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            color: '#c084fc',
+                            textTransform: 'uppercase',
+                            letterSpacing: '1px',
+                            whiteSpace: 'nowrap',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                        }}>
+                            <span>🔮</span> Рекомендации из Базы Кэша (Постоянно обновляется)
+                        </span>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(168, 85, 247, 0.4), transparent)' }}></div>
+                    </div>
+
+                    {/* 3. Infinite Scrolling Grid */}
+                    <div className="movie-grid-container" style={{
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
+                        gap: '25px'
+                    }}>
+                        {onboardingCacheMovies.map((movie, idx) => {
+                            const isAdded = addedLinks.has(movie.link);
+                            const isAdding = addingLinks.has(movie.link);
+
+                            return (
+                                <div
+                                    key={movie.link || idx}
+                                    className="movie-card glass-panel"
+                                    style={{
+                                        position: 'relative',
+                                        borderRadius: '16px',
+                                        overflow: 'hidden',
+                                        aspectRatio: '2/3',
+                                        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                                        border: '1px solid rgba(255,255,255,0.06)',
+                                        background: 'rgba(255,255,255,0.02)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        animation: 'fadeIn 0.4s ease'
+                                    }}
+                                >
+                                    {/* Poster Image */}
+                                    <img
+                                        src={movie.img}
+                                        alt={movie.title}
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            pointerEvents: 'none'
+                                        }}
+                                        loading="lazy"
+                                    />
+
+                                    {/* Ambient Hover overlay */}
+                                    <div className="hover-overlay" style={{
+                                        position: 'absolute', inset: 0,
+                                        background: 'rgba(0, 0, 0, 0.4)',
+                                        opacity: 0, transition: 'opacity 0.25s ease'
+                                    }} />
+
+                                    {/* Bottom Details panel */}
+                                    <div style={{
+                                        position: 'absolute', bottom: 0, left: 0, width: '100%',
+                                        display: 'flex', flexDirection: 'column', gap: '4px',
+                                        textAlign: 'left', zIndex: 5
+                                    }}>
+                                        {/* Smooth mask background */}
+                                        <div style={{
+                                            position: 'absolute', inset: 0,
+                                            background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.85) 60%, transparent 100%)',
+                                            backdropFilter: 'blur(3px)',
+                                            WebkitBackdropFilter: 'blur(3px)',
+                                            maskImage: 'linear-gradient(to bottom, transparent 0%, black 40px)',
+                                            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 40px)',
+                                            zIndex: -1
+                                        }} />
+
+                                        <div style={{ padding: '25px 10px 10px' }}>
+                                            <h3 style={{
+                                                fontSize: '0.95rem', lineHeight: '1.2', color: '#fff',
+                                                margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.8)',
+                                                display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical',
+                                                overflow: 'hidden'
+                                            }}>{movie.title}</h3>
+
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#ccc', marginTop: '3px' }}>
+                                                <span>{movie.year}</span>
+                                                {movie.rating && (
+                                                    <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>★ {movie.rating}</span>
+                                                )}
+                                            </div>
+
+                                            {movie.misc && (
+                                                <div style={{
+                                                    fontSize: '0.7rem', color: '#aaa',
+                                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                                    marginTop: '2px'
+                                                }}>
+                                                    {movie.misc}
+                                                </div>
+                                            )}
+
+                                            {/* Add button */}
+                                            <div style={{ marginTop: '8px' }}>
+                                                <button
+                                                    disabled={isAdding || isAdded}
+                                                    onClick={() => handleAddMovieFromCache(movie.link)}
+                                                    className="btn"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '6px 10px',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.78rem',
+                                                        fontWeight: 'bold',
+                                                        cursor: (isAdding || isAdded) ? 'default' : 'pointer',
+                                                        border: '1px solid',
+                                                        background: isAdded ? 'rgba(3, 218, 198, 0.15)' : 'rgba(168, 85, 247, 0.15)',
+                                                        borderColor: isAdded ? '#03dac6' : 'rgba(168, 85, 247, 0.4)',
+                                                        color: isAdded ? '#03dac6' : '#c084fc',
+                                                        transition: 'all 0.2s ease',
+                                                        textAlign: 'center'
+                                                    }}
+                                                >
+                                                    {isAdding ? '⏳ Добавление...' : isAdded ? '✓ Добавлено' : '➕ Добавить'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Onboarding Infinite Scroll Sentinel */}
+                    {hasMoreOnboarding && (
+                        <div ref={onboardingSentinelRef} style={{
+                            gridColumn: '1 / -1',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            padding: '20px 0',
+                            height: '60px'
+                        }}>
+                            {isOnboardingLoading && (
+                                <div style={{
+                                    width: '30px', height: '30px',
+                                    border: '3px solid rgba(168, 85, 247, 0.1)',
+                                    borderTopColor: '#c084fc',
+                                    borderRadius: '50%',
+                                    animation: 'spin 1s linear infinite'
+                                }} />
+                            )}
+                        </div>
                     )}
                 </div>
             )}

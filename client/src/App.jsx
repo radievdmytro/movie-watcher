@@ -672,7 +672,7 @@ function App() {
                             )}
                             {!loading && movies.length === 0 && (
                                 <div style={{ textAlign: 'center', color: '#666', marginTop: '50px' }}>
-                                    {currentView === 'library' ? 'No movies yet.' : 'Trash is empty.'}
+                                    {currentView === 'library' ? '' : 'Trash is empty.'}
                                 </div>
                             )}
                         </div>
