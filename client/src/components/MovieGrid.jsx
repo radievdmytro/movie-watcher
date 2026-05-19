@@ -757,7 +757,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         );
     }, [filterQuery, filterGenres, filterType, filterDirectors, filterActors, filterRating, filterYear]);
 
-    // Background cache search when library has few/no results or integrated cache search is enabled
+    // Background cache search when integrated cache search is enabled
     useEffect(() => {
         if (searchDb !== 'library') {
             setBackgroundCacheResults([]);
@@ -766,13 +766,6 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
         const query = filterQuery.trim();
         if (query.length < 3) {
-            setBackgroundCacheResults([]);
-            return;
-        }
-
-        // We trigger background search if the library results are sparse (< 10 results)
-        const shouldSearchBg = filteredAndSortedMovies.length < 10;
-        if (!shouldSearchBg) {
             setBackgroundCacheResults([]);
             return;
         }
@@ -796,10 +789,10 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 .finally(() => {
                     setIsBgCacheSearching(false);
                 });
-        }, 400); // 400ms debounce for background search
+        }, 150); // Fast 150ms debounce for background search
 
         return () => clearTimeout(delayDebounceFn);
-    }, [filterQuery, searchDb, filteredAndSortedMovies.length, autoSwitchToCache, searchFields]);
+    }, [filterQuery, searchDb, searchFields]);
 
 
     const { minBoundYear, maxBoundYear } = useMemo(() => {
