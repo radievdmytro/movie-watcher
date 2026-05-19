@@ -401,28 +401,28 @@ app.get('/api/cache/directory', authenticateToken, (req, res) => {
             WHERE poster_url IS NOT NULL AND title IS NOT NULL
         `).all();
 
-        // 2. Separate movies into: high rating (rating >= 7.0) and others
-        const highRating = [];
-        const others = [];
+        // 2. Initialize seedable random generator
+        const rnd = seedRandom(seed);
 
-        for (const row of rows) {
-            const r = parseFloat(row.rating) || 0;
-            if (r >= 7.0) {
-                highRating.push(row);
-            } else {
-                others.push(row);
-            }
-        }
+        // 3. Map each movie to a score with a seedable random offset
+        // Higher rated movies will naturally have higher scores, but random offset up to 6.0 introduces beautiful variety
+        const scoredMovies = rows.map(row => {
+            const r = parseFloat(row.rating) || 5.5; // fallback rating for unrated movies
+            const randomOffset = rnd() * 6.0;
+            return {
+                movie: row,
+                score: r + randomOffset
+            };
+        });
 
-        // 3. Seeded shuffle both partitions
-        const shuffledHigh = seedShuffle(highRating, seed + '_high');
-        const shuffledOthers = seedShuffle(others, seed + '_others');
+        // 4. Sort by score in descending order
+        scoredMovies.sort((a, b) => b.score - a.score);
 
-        // 4. Combine them (high rating first)
-        const combined = [...shuffledHigh, ...shuffledOthers];
+        // 5. Extract sorted movies
+        const sorted = scoredMovies.map(item => item.movie);
 
-        // 5. Slice according to limit and offset
-        const sliced = combined.slice(offset, offset + limit);
+        // 6. Slice according to limit and offset
+        const sliced = sorted.slice(offset, offset + limit);
 
         res.json(sliced);
     } catch (error) {
