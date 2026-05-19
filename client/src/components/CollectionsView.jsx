@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import MovieDetailsModal from './MovieDetailsModal';
 import MovieComparisonModal from './MovieComparisonModal';
 
-function EditableField({ value, onSave, style, type = 'text', placeholder, ...props }) {
+function EditableField({ value, onSave, style, type = 'text', placeholder, isMobile, ...props }) {
     const [localValue, setLocalValue] = useState(value || '');
     const [isEditing, setIsEditing] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
@@ -80,6 +80,56 @@ function EditableField({ value, onSave, style, type = 'text', placeholder, ...pr
 
     const displayValue = value || placeholder;
     const isPlaceholder = !value;
+
+    if (isMobile) {
+        return (
+            <div 
+                style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    maxWidth: '100%'
+                }}
+            >
+                <span 
+                    style={{ 
+                        ...style, 
+                        borderBottom: '1px dashed transparent',
+                        color: isPlaceholder ? '#555' : style.color || '#fff',
+                        fontStyle: isPlaceholder ? 'italic' : 'normal',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word'
+                    }}
+                >
+                    {displayValue}
+                </span>
+                
+                <span 
+                    onClick={e => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setIsEditing(true);
+                    }}
+                    onMouseDown={e => e.stopPropagation()}
+                    onMouseUp={e => e.stopPropagation()}
+                    style={{ 
+                        fontSize: '1rem', 
+                        color: 'var(--accent-gold)', 
+                        padding: '4px 8px',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        flexShrink: 0,
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}
+                    title="Click to edit"
+                >
+                    ✏️
+                </span>
+            </div>
+        );
+    }
 
     return (
         <div 
@@ -790,6 +840,7 @@ function CollectionsView({ onBack }) {
                                                     <EditableField
                                                         value={c.title}
                                                         placeholder="Collection Title"
+                                                        isMobile={isMobile}
                                                         style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: 'var(--accent-gold)', fontWeight: 'bold' }}
                                                         onSave={(newVal) => {
                                                             if (newVal.trim() && newVal !== c.title) {
@@ -803,6 +854,7 @@ function CollectionsView({ onBack }) {
                                                         type="textarea"
                                                         value={c.description || ''}
                                                         placeholder="No description provided. Click to add."
+                                                        isMobile={isMobile}
                                                         style={{ margin: 0, color: '#aaa', fontSize: '0.9rem', width: '100%' }}
                                                         onSave={(newVal) => {
                                                             if (newVal !== (c.description || '')) {
