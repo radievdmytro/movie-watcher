@@ -1044,7 +1044,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                     border: '1px solid rgba(255,255,255,0.2)'
                 }}>
                     <span style={{ fontSize: '1.2rem' }}>⚡</span>
-                    <span>Automatically switched to Website Cache (found {backgroundCacheResults.length} matches)!</span>
+                    <span>Automatically switched to Global Search (found {backgroundCacheResults.length} matches)!</span>
                     <button
                         onClick={() => setShowAutoSwitchToast(false)}
                         style={{
@@ -1424,7 +1424,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     cursor: 'pointer'
                                 }}
                             />
-                            <span>Include Website Cache matches in search results</span>
+                            <span>Include Global Database matches in search results</span>
                         </label>
                     </div>
 
@@ -1462,7 +1462,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                         ? <>No matches in your library. </>
                                         : <>Only <strong style={{ color: '#fff', textShadow: '0 0 8px rgba(255,255,255,0.2)' }}>{filteredAndSortedMovies.length}</strong> library matches. </>
                                     }
-                                    Found <strong style={{ color: '#c084fc', textShadow: '0 0 8px rgba(192, 132, 252, 0.3)' }}>{backgroundCacheResults.length}</strong> movies in Website Cache!
+                                    Found <strong style={{ color: '#c084fc', textShadow: '0 0 8px rgba(192, 132, 252, 0.3)' }}>{backgroundCacheResults.length}</strong> movies in Global Database!
                                 </span>
                             </div>
                             <button
@@ -1490,7 +1490,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     e.currentTarget.style.boxShadow = '0 3px 10px rgba(168, 85, 247, 0.3)';
                                 }}
                             >
-                                🔮 Include Website Cache Matches
+                                🔮 Include Global Database Matches
                             </button>
                         </div>
                     )}
@@ -2321,7 +2321,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                     textShadow: '0 0 10px rgba(168, 85, 247, 0.3)',
                                     whiteSpace: 'nowrap'
                                 }}>
-                                    🔮 Website Cache Matches (Not in Library)
+                                    🔮 Global Search Results (Not in Library)
                                 </span>
                                 <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(168, 85, 247, 0.4), transparent)' }}></div>
                             </div>
@@ -2362,7 +2362,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                 background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)',
                                                 pointerEvents: 'none'
                                             }}>
-                                                <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(168, 85, 247, 0.2)', border: '1px solid rgba(168, 85, 247, 0.4)', borderRadius: '50%', width: '22px', height: '22px', fontSize: '0.9rem', boxShadow: '0 0 8px rgba(168, 85, 247, 0.3)' }} title="Website Cache Match">
+                                                <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(168, 85, 247, 0.2)', border: '1px solid rgba(168, 85, 247, 0.4)', borderRadius: '50%', width: '22px', height: '22px', fontSize: '0.9rem', boxShadow: '0 0 8px rgba(168, 85, 247, 0.3)' }} title="Global Search Match">
                                                     🔮
                                                 </div>
                                                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end', pointerEvents: 'none' }}>
@@ -2673,7 +2673,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                     borderRadius: '15px',
                                                     border: '1px solid rgba(168, 85, 247, 0.2)'
                                                 }}>
-                                                    🔮 Results from Website Cache
+                                                    🔮 Results from Global Database
                                                 </span>
                                                 <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(168, 85, 247, 0.3), transparent)' }}></div>
                                             </div>
@@ -2686,7 +2686,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                             transition: 'background 0.2s'
                                         }}>
                                             <td style={{ padding: '15px', textAlign: 'center', borderLeft: '3px solid rgba(168, 85, 247, 0.6)' }}>
-                                                <span style={{ fontSize: '0.9rem', opacity: 0.9 }} title="Website Cache Match">🔮</span>
+                                                <span style={{ fontSize: '0.9rem', opacity: 0.9 }} title="Global Database Match">🔮</span>
                                             </td>
                                             <td style={{ padding: '10px' }}>
                                                 <div className="poster-preview-wrapper">
@@ -2931,7 +2931,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             alignItems: 'center',
                             gap: '6px'
                         }}>
-                            <span>🔮</span> Website Cache (Constantly Updating)
+                            <span>🔮</span> Recommended (Global Database)
                         </span>
                         <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(168, 85, 247, 0.4), transparent)' }}></div>
                     </div>
