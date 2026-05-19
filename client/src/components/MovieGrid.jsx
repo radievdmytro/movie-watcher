@@ -359,9 +359,12 @@ const cleanLinkPath = (url) => {
 };
 
 function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink, onGuestActivity }) {
-    const [sortField, setSortField] = useState('created_at');
-    const [sortDir, setSortDir] = useState('desc');
-    const [hideWatched, setHideWatched] = useState(false);
+    const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
+    const [sortDir, setSortDir] = useState(() => localStorage.getItem('movieGrid_sortDir') || 'desc');
+    const [hideWatched, setHideWatched] = useState(() => {
+        const stored = localStorage.getItem('movieGrid_hideWatched');
+        return stored !== null ? JSON.parse(stored) : false;
+    });
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
     useEffect(() => {
@@ -369,7 +372,16 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
-    const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
+    
+    const [viewMode, setViewMode] = useState(() => localStorage.getItem('movieGrid_viewMode') || 'grid'); // 'grid' | 'table'
+
+    useEffect(() => {
+        localStorage.setItem('movieGrid_sortField', sortField);
+        localStorage.setItem('movieGrid_sortDir', sortDir);
+        localStorage.setItem('movieGrid_hideWatched', JSON.stringify(hideWatched));
+        localStorage.setItem('movieGrid_viewMode', viewMode);
+    }, [sortField, sortDir, hideWatched, viewMode]);
+
     const [posterSize, setPosterSize] = useState(() => {
         return parseInt(localStorage.getItem('posterSize')) || 220;
     });
