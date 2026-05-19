@@ -520,42 +520,80 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     };
 
     const filteredAndSortedMovies = useMemo(() => {
-        return [...movies]
-            .filter(movie => {
-                // Text Search
-                if (filterQuery) {
-                    const q = filterQuery.toLowerCase().trim();
-                    const searchStr = `${movie.title} ${movie.original_title} ${movie.description}`.toLowerCase();
-                    let matches = searchStr.includes(q);
+        let scored = movies.map(movie => {
+            let score = 0;
+            if (filterQuery) {
+                const q = filterQuery.toLowerCase().trim();
+                
+                // Importance priority matching weights:
+                // 1. Title match (most important)
+                if (movie.title && movie.title.toLowerCase().includes(q)) score += 1000;
+                if (movie.original_title && movie.original_title.toLowerCase().includes(q)) score += 800;
+                
+                // 2. Year match
+                if (movie.year && movie.year.toString() === q) score += 600;
+                else if (movie.year && movie.year.toString().includes(q)) score += 300;
+                
+                // 3. Genre match
+                if (movie.genres && movie.genres.toLowerCase().includes(q)) score += 400;
+                
+                // 4. Director match
+                if (movie.director && movie.director.toLowerCase().includes(q)) score += 200;
+                
+                // 5. Actor match
+                if (movie.actors && movie.actors.toLowerCase().includes(q)) score += 100;
+                
+                // Description match
+                if (movie.description && movie.description.toLowerCase().includes(q)) score += 50;
 
-                    if (!matches && movie.link) {
-                        const cleanUrl = (url) => {
-                            if (!url) return '';
-                            return url
-                                .toLowerCase()
-                                .replace(/^https?:\/\/[^\/]+/, '') // strip domain and protocol
-                                .replace(/^\/+|\/+$/g, '')         // strip leading/trailing slashes
-                                .split('?')[0]                     // strip query params
-                                .split('#')[0];                    // strip hash
-                        };
-
-                        const cleanQ = cleanUrl(q);
-                        const cleanM = cleanUrl(movie.link);
-
-                        if (cleanQ && cleanM && (cleanM.includes(cleanQ) || cleanQ.includes(cleanM))) {
-                            matches = true;
-                        } else {
-                            // Match by numeric ID (e.g. 799863)
-                            const queryId = q.match(/\b\d{4,9}\b/)?.[0] || q.match(/(?:film|series|movie)\/(\d+)/)?.[1];
-                            const movieLinkId = movie.link.toLowerCase().match(/\b\d{4,9}\b/)?.[0] || movie.link.toLowerCase().match(/(?:film|series|movie)\/(\d+)/)?.[1];
-                            if (queryId && movieLinkId && queryId === movieLinkId) {
-                                matches = true;
-                            }
-                        }
-                    }
-
-                    if (!matches) return false;
+                // Word-by-word matches (for multi-word search queries)
+                const words = q.split(/\s+/).filter(w => w.length > 1);
+                if (words.length > 1) {
+                    words.forEach(word => {
+                        if (movie.title && movie.title.toLowerCase().includes(word)) score += 100;
+                        if (movie.original_title && movie.original_title.toLowerCase().includes(word)) score += 80;
+                        if (movie.year && movie.year.toString().includes(word)) score += 60;
+                        if (movie.genres && movie.genres.toLowerCase().includes(word)) score += 40;
+                        if (movie.director && movie.director.toLowerCase().includes(word)) score += 20;
+                        if (movie.actors && movie.actors.toLowerCase().includes(word)) score += 10;
+                        if (movie.description && movie.description.toLowerCase().includes(word)) score += 5;
+                    });
                 }
+
+                // Link/ID match
+                if (movie.link) {
+                    const cleanUrl = (url) => {
+                        if (!url) return '';
+                        return url
+                            .toLowerCase()
+                            .replace(/^https?:\/\/[^\/]+/, '')
+                            .replace(/^\/+|\/+$/g, '')
+                            .split('?')[0]
+                            .split('#')[0];
+                    };
+                    const cleanQ = cleanUrl(q);
+                    const cleanM = cleanUrl(movie.link);
+                    if (cleanQ && cleanM && (cleanM.includes(cleanQ) || cleanQ.includes(cleanM))) {
+                        score += 50;
+                    }
+                    const queryId = q.match(/\b\d{4,9}\b/)?.[0] || q.match(/(?:film|series|movie)\/(\d+)/)?.[1];
+                    const movieLinkId = movie.link.toLowerCase().match(/\b\d{4,9}\b/)?.[0] || movie.link.toLowerCase().match(/(?:film|series|movie)\/(\d+)/)?.[1];
+                    if (queryId && movieLinkId && queryId === movieLinkId) {
+                        score += 1500;
+                    }
+                }
+            } else {
+                score = 1; // Neutral score when not searching
+            }
+            return { movie, score };
+        });
+
+        return scored
+            .filter(item => {
+                const { movie, score } = item;
+                
+                // If filterQuery is active, we only keep items that have a match score > 0
+                if (filterQuery && score === 0) return false;
 
                 // Genre Filter
                 if (filterGenres.length > 0) {
@@ -605,16 +643,22 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 return true;
             })
             .sort((a, b) => {
-                let valA = a[sortField];
-                let valB = b[sortField];
+                // If filterQuery is active, sort by relevance score DESC first
+                if (filterQuery && b.score !== a.score) {
+                    return b.score - a.score;
+                }
 
-                if (valA === null) valA = '';
-                if (valB === null) valB = '';
+                let valA = a.movie[sortField];
+                let valB = b.movie[sortField];
+
+                if (valA === null || valA === undefined) valA = '';
+                if (valB === null || valB === undefined) valB = '';
 
                 if (valA < valB) return sortDir === 'asc' ? -1 : 1;
                 if (valA > valB) return sortDir === 'asc' ? 1 : -1;
                 return 0;
-            });
+            })
+            .map(item => item.movie);
     }, [movies, sortField, sortDir, filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched]);
 
     // Reset visible count when filters change
