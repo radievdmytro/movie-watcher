@@ -311,10 +311,10 @@ function App() {
         setCurrentView(user ? getInitialView() : 'auth');
     };
 
-    const fetchMovies = async () => {
+    const fetchMovies = async (silent = false) => {
         if (currentView !== 'library' && currentView !== 'trash') return;
         if (!user) return; // Do not fetch movies if not authenticated
-        setLoading(true);
+        if (!silent) setLoading(true);
         try {
             const endpoint = currentView === 'library' ? '/api/movies' : '/api/trash';
             const res = await fetch(endpoint);
@@ -335,7 +335,7 @@ function App() {
 
      const handleUpdate = async (id, updates) => {
         if (id === null) {
-            fetchMovies();
+            fetchMovies(true);
             return;
         }
         try {
@@ -839,7 +839,7 @@ function App() {
                     <>
                         {currentView === 'library' && (
                                 <AddMovie 
-                                    onMovieAdded={fetchMovies} 
+                                    onMovieAdded={() => fetchMovies(true)} 
                                     onScrollToMovie={handleScrollToMovie} 
                                     movies={movies} 
                                     selectedLibraryIds={selectedIds}
