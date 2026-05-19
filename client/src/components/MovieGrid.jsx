@@ -845,7 +845,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
     // Fetch Stats and Onboarding Cache Movies
     useEffect(() => {
-        if (movies.length >= 5 || isTrashMode) return;
+        if (isTrashMode) return;
 
         const token = localStorage.getItem('token');
 
