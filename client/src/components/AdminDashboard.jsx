@@ -518,12 +518,11 @@ function AdminDashboard({ onBack }) {
                                             cursor: 'pointer'
                                         }}
                                     >
-                                        <option value="15">15 movies / hour (~4 min delay)</option>
-                                        <option value="30">30 movies / hour (~2 min delay)</option>
-                                        <option value="60">60 movies / hour (~60 sec delay - Safe)</option>
-                                        <option value="120">120 movies / hour (~30 sec delay)</option>
-                                        <option value="240">240 movies / hour (~15 sec delay - Fast)</option>
-                                        <option value="360">360 movies / hour (~10 sec delay)</option>
+                                        <option value="15">15 movies / hour (~4 min delay - Ultra Safe)</option>
+                                        <option value="30">30 movies / hour (~2 min delay - Recommended without Proxy)</option>
+                                        <option value="45">45 movies / hour (~80 sec delay - Safe)</option>
+                                        <option value="60">60 movies / hour (~60 sec delay - Moderate Risk)</option>
+                                        <option value="120">120 movies / hour (~30 sec delay - Unsafe without Proxy)</option>
                                     </select>
                                 </div>
 
