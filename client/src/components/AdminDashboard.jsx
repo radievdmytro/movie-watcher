@@ -4,6 +4,7 @@ import MovieDetailsModal from './MovieDetailsModal';
 function AdminDashboard({ onBack }) {
     const [stats, setStats] = useState(null);
     const [users, setUsers] = useState([]);
+    const [guestsLimit, setGuestsLimit] = useState(10);
     const [loading, setLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null); // The user object being inspected
     const [userData, setUserData] = useState({ movies: [], collections: [] });
@@ -1033,278 +1034,302 @@ function AdminDashboard({ onBack }) {
                         </div>
                     </div>
 
-                    {/* Users list */}
-                    <div className="glass-panel animate-fade-in" style={{ borderRadius: '15px', overflow: 'hidden', padding: '20px' }}>
-                        <h3 style={{ margin: '0 0 20px 0', color: '#fff', fontSize: '1.2rem' }}>Registered Users</h3>
-                        
-                        <div className="admin-users-table-view" style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
-                                <thead>
-                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#888', fontSize: '0.85rem' }}>
-                                        <th style={{ padding: '12px 15px' }}>Username</th>
-                                        <th style={{ padding: '12px 15px' }}>Registration</th>
-                                        <th style={{ padding: '12px 15px' }}>Last Location & Login</th>
-                                        <th style={{ padding: '12px 15px' }}>Device Telemetry</th>
-                                        <th style={{ padding: '12px 15px', textAlign: 'center' }}>Stats</th>
-                                        <th style={{ padding: '12px 15px', textAlign: 'right' }}>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {users.map(u => (
-                                        <tr key={u.id} className="admin-user-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                                            <td style={{ padding: '15px', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px', minWidth: '180px' }}>
-                                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                                                    {u.username[0].toUpperCase()}
-                                                </div>
-                                                <span style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <span>@{u.username}</span>
-                                                    <span style={{ fontSize: '0.72rem', color: u.username.toLowerCase() === 'radev' ? 'var(--accent-gold)' : '#888', fontWeight: 'normal' }}>
-                                                        {u.username.toLowerCase() === 'radev' ? '🛡 Owner/Admin' : u.username.startsWith('guest_') ? '👤 Guest Account' : '👤 Registered User'}
-                                                    </span>
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '15px', color: '#aaa', fontSize: '0.85rem' }}>
-                                                <div>{new Date(u.created_at).toLocaleDateString()}</div>
-                                                <div style={{ fontSize: '0.75rem', color: '#666' }}>{new Date(u.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                            </td>
-                                            <td style={{ padding: '15px', color: '#fff', fontSize: '0.85rem' }}>
-                                                <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    {u.last_country || 'Never logged in'}
-                                                </div>
-                                                <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '2px' }}>
-                                                    {u.last_login_at ? (
-                                                        <>
-                                                            📅 {new Date(u.last_login_at).toLocaleDateString()} {new Date(u.last_login_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </>
-                                                    ) : (
-                                                        '—'
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '15px', color: '#fff', fontSize: '0.85rem' }}>
-                                                <div style={{ fontFamily: 'monospace', color: '#38bdf8' }}>
-                                                    📍 {u.last_ip || 'No IP data'}
-                                                </div>
-                                                <div style={{ fontSize: '0.75rem', color: '#aaa', marginTop: '2px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                                    <span>{u.last_device === 'Mobile' ? '📱 Mobile' : u.last_device === 'Tablet' ? '📟 Tablet' : '🖥 Desktop'}</span>
-                                                    <span style={{ color: '#555' }}>|</span>
-                                                    <span>{u.last_os || 'Unknown OS'}</span>
-                                                    <span style={{ color: '#555' }}>|</span>
-                                                    <span>{u.last_browser || 'Unknown Browser'}</span>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '15px', textAlign: 'center' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', fontSize: '0.8rem' }}>
-                                                    <span style={{ color: '#fff', whiteSpace: 'nowrap' }}>🎬 <strong>{u.movie_count}</strong> movies</span>
-                                                    <span style={{ color: '#c084fc', whiteSpace: 'nowrap' }}>📁 <strong>{u.collection_count}</strong> lists</span>
-                                                    <span style={{ color: '#03dac6', whiteSpace: 'nowrap' }}>💬 <strong>{u.comment_count || 0}</strong> comments</span>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '15px', textAlign: 'right' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => handleInspectUser(u)}
-                                                        className="btn btn-ghost"
-                                                        style={{ border: '1px solid rgba(255,255,255,0.1)', padding: '6px 12px', fontSize: '0.85rem', borderRadius: '8px' }}
-                                                    >
-                                                        🔍 Inspect
-                                                    </button>
-                                                    {adminFeedback.id === u.id && adminFeedback.message && (
-                                                        <span style={{
-                                                            fontSize: '0.8rem',
-                                                            color: adminFeedback.type === 'success' ? '#03dac6' : 'var(--danger)',
-                                                            fontWeight: 'bold',
-                                                            marginRight: '8px'
-                                                        }}>
-                                                            {adminFeedback.message}
-                                                        </span>
-                                                    )}
-                                                    {u.username.toLowerCase() !== 'radev' && (
-                                                        <>
-                                                            {resetPasswordUserId === u.id ? (
-                                                                <div style={{ display: 'flex', gap: '5px', alignItems: 'center', background: 'rgba(212,175,55,0.05)', padding: '4px', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.2)' }}>
-                                                                    <input
-                                                                        type="text"
-                                                                        placeholder="New password (blank for Reset123!)"
-                                                                        value={newPasswordVal}
-                                                                        onChange={e => setNewPasswordVal(e.target.value)}
-                                                                        style={{
-                                                                            background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
-                                                                            color: '#fff', borderRadius: '4px', padding: '4px 8px', fontSize: '0.78rem',
-                                                                            width: '180px', outline: 'none'
-                                                                        }}
-                                                                    />
-                                                                    <button
-                                                                        onClick={() => handleResetPassword(u)}
-                                                                        style={{ background: 'var(--accent-gold)', color: '#000', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
-                                                                    >Save</button>
-                                                                    <button
-                                                                        onClick={() => { setResetPasswordUserId(null); setNewPasswordVal(''); }}
-                                                                        style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
-                                                                    >Cancel</button>
-                                                                </div>
-                                                            ) : confirmDeleteUserId === u.id ? (
-                                                                <span style={{ display: 'flex', gap: '5px', alignItems: 'center', background: 'rgba(239,68,68,0.08)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)' }}>
-                                                                    <span style={{ fontSize: '0.78rem', color: '#ff6b6b', fontWeight: 'bold' }}>Delete user?</span>
-                                                                    <button
-                                                                        onClick={() => handleDeleteUser(u)}
-                                                                        style={{ background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
-                                                                    >Yes</button>
-                                                                    <button
-                                                                        onClick={() => setConfirmDeleteUserId(null)}
-                                                                        style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
-                                                                    >No</button>
-                                                                </span>
-                                                            ) : (
-                                                                <>
-                                                                    <button
-                                                                        onClick={() => setResetPasswordUserId(u.id)}
-                                                                        className="btn"
-                                                                        style={{
-                                                                            background: 'rgba(212, 175, 55, 0.1)',
-                                                                            color: 'var(--accent-gold)',
-                                                                            border: '1px solid rgba(212, 175, 55, 0.2)',
-                                                                            padding: '6px 12px',
-                                                                            fontSize: '0.85rem',
-                                                                            borderRadius: '8px',
-                                                                            fontWeight: 500
-                                                                        }}
-                                                                    >
-                                                                        🔑 Reset
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => setConfirmDeleteUserId(u.id)}
-                                                                        className="btn btn-ghost"
-                                                                        style={{
-                                                                            color: 'var(--danger)',
-                                                                            border: '1px solid rgba(239, 68, 68, 0.1)',
-                                                                            padding: '6px 10px',
-                                                                            fontSize: '0.85rem',
-                                                                            borderRadius: '8px'
-                                                                        }}
-                                                                        title="Delete User"
-                                                                    >
-                                                                        🗑
-                                                                    </button>
-                                                                </>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                    {/* Users list: Registered */}
+                    {(() => {
+                        const registeredUsers = users.filter(u => !u.username.startsWith('guest_'));
+                        const guestUsers = users.filter(u => u.username.startsWith('guest_'));
 
-                        {/* Mobile Cards View */}
-                        <div className="admin-users-cards-view" style={{ display: 'none', flexDirection: 'column', gap: '15px' }}>
-                            {users.map(u => (
-                                <div key={u.id} className="glass-panel animate-fade-in" style={{ padding: '15px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                                                {u.username[0].toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <div style={{ color: '#fff', fontWeight: 600 }}>@{u.username}</div>
-                                                <div style={{ color: '#666', fontSize: '0.75rem' }}>Joined: {new Date(u.created_at).toLocaleDateString()}</div>
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '15px', fontSize: '0.8rem' }}>
-                                            <div>🎬 <span style={{ color: '#fff', fontWeight: 600 }}>{u.movie_count}</span></div>
-                                            <div>📁 <span style={{ color: '#fff', fontWeight: 600 }}>{u.collection_count}</span></div>
-                                        </div>
-                                    </div>
-                                    {adminFeedback.id === u.id && adminFeedback.message && (
-                                        <div style={{
-                                            fontSize: '0.8rem',
-                                            color: adminFeedback.type === 'success' ? '#03dac6' : 'var(--danger)',
-                                            fontWeight: 'bold',
-                                            textAlign: 'center',
-                                            background: 'rgba(255,255,255,0.02)',
-                                            padding: '6px',
-                                            borderRadius: '6px'
-                                        }}>
-                                            {adminFeedback.message}
+                        const renderUserTable = (title, userList, isGuestList) => (
+                            <div className="glass-panel animate-fade-in" style={{ borderRadius: '15px', overflow: 'hidden', padding: '20px', marginBottom: '20px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '1.2rem' }}>{title} ({userList.length})</h3>
+                                    {isGuestList && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
+                                            <input 
+                                                type="number" 
+                                                min="1" max="1000"
+                                                value={guestsLimit} 
+                                                onChange={e => setGuestsLimit(parseInt(e.target.value) || 10)} 
+                                                style={{ width: '60px', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff' }}
+                                            />
                                         </div>
                                     )}
-                                    <div style={{ display: 'flex', gap: '8px', width: '100%', flexDirection: 'column' }}>
-                                        <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                                            <button
-                                                onClick={() => handleInspectUser(u)}
-                                                className="btn btn-ghost"
-                                                style={{ flex: 1, border: '1px solid rgba(255,255,255,0.1)', padding: '8px', fontSize: '0.8rem', borderRadius: '8px' }}
-                                            >
-                                                🔍 Inspect
-                                            </button>
-                                            {u.username.toLowerCase() !== 'radev' && resetPasswordUserId !== u.id && confirmDeleteUserId !== u.id && (
-                                                <>
-                                                    <button
-                                                        onClick={() => setResetPasswordUserId(u.id)}
-                                                        className="btn"
-                                                        style={{ flex: 1, background: 'rgba(212, 175, 55, 0.1)', color: 'var(--accent-gold)', border: '1px solid rgba(212, 175, 55, 0.2)', padding: '8px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: 500 }}
-                                                    >
-                                                        🔑 Reset
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setConfirmDeleteUserId(u.id)}
-                                                        className="btn btn-ghost"
-                                                        style={{ color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.1)', padding: '8px 12px', fontSize: '0.8rem', borderRadius: '8px' }}
-                                                    >
-                                                        🗑
-                                                    </button>
-                                                </>
+                                </div>
+                                
+                                <div className="admin-users-table-view" style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+                                        <thead>
+                                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#888', fontSize: '0.85rem' }}>
+                                                <th style={{ padding: '12px 15px' }}>Username</th>
+                                                <th style={{ padding: '12px 15px' }}>Registration</th>
+                                                <th style={{ padding: '12px 15px' }}>Last Location & Login</th>
+                                                <th style={{ padding: '12px 15px' }}>Device Telemetry</th>
+                                                <th style={{ padding: '12px 15px', textAlign: 'center' }}>Stats</th>
+                                                <th style={{ padding: '12px 15px', textAlign: 'right' }}>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {userList.map(u => (
+                                                <tr key={u.id} className="admin-user-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                                                    <td style={{ padding: '15px', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px', minWidth: '180px' }}>
+                                                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                                                            {u.username[0].toUpperCase()}
+                                                        </div>
+                                                        <span style={{ display: 'flex', flexDirection: 'column' }}>
+                                                            <span>@{u.username}</span>
+                                                            <span style={{ fontSize: '0.72rem', color: u.username.toLowerCase() === 'radev' ? 'var(--accent-gold)' : '#888', fontWeight: 'normal' }}>
+                                                                {u.username.toLowerCase() === 'radev' ? '🛡 Owner/Admin' : u.username.startsWith('guest_') ? '👤 Guest Account' : '👤 Registered User'}
+                                                            </span>
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '15px', color: '#aaa', fontSize: '0.85rem' }}>
+                                                        <div>{new Date(u.created_at).toLocaleDateString()}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: '#666' }}>{new Date(u.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                    </td>
+                                                    <td style={{ padding: '15px', color: '#fff', fontSize: '0.85rem' }}>
+                                                        <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            {u.last_country || 'Never logged in'}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '2px' }}>
+                                                            {u.last_login_at ? (
+                                                                <>
+                                                                    📅 {new Date(u.last_login_at).toLocaleDateString()} {new Date(u.last_login_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </>
+                                                            ) : (
+                                                                '—'
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ padding: '15px', color: '#fff', fontSize: '0.85rem' }}>
+                                                        <div style={{ fontFamily: 'monospace', color: '#38bdf8' }}>
+                                                            📍 {u.last_ip || 'No IP data'}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: '#aaa', marginTop: '2px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                            <span>{u.last_device === 'Mobile' ? '📱 Mobile' : u.last_device === 'Tablet' ? '📟 Tablet' : '🖥 Desktop'}</span>
+                                                            <span style={{ color: '#555' }}>|</span>
+                                                            <span>{u.last_os || 'Unknown OS'}</span>
+                                                            <span style={{ color: '#555' }}>|</span>
+                                                            <span>{u.last_browser || 'Unknown Browser'}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', fontSize: '0.8rem' }}>
+                                                            <span style={{ color: '#fff', whiteSpace: 'nowrap' }}>🎬 <strong>{u.movie_count}</strong> movies</span>
+                                                            <span style={{ color: '#c084fc', whiteSpace: 'nowrap' }}>📁 <strong>{u.collection_count}</strong> lists</span>
+                                                            <span style={{ color: '#03dac6', whiteSpace: 'nowrap' }}>💬 <strong>{u.comment_count || 0}</strong> comments</span>
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ padding: '15px', textAlign: 'right' }}>
+                                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                            <button
+                                                                onClick={() => handleInspectUser(u)}
+                                                                className="btn btn-ghost"
+                                                                style={{ border: '1px solid rgba(255,255,255,0.1)', padding: '6px 12px', fontSize: '0.85rem', borderRadius: '8px' }}
+                                                            >
+                                                                🔍 Inspect
+                                                            </button>
+                                                            {adminFeedback.id === u.id && adminFeedback.message && (
+                                                                <span style={{
+                                                                    fontSize: '0.8rem',
+                                                                    color: adminFeedback.type === 'success' ? '#03dac6' : 'var(--danger)',
+                                                                    fontWeight: 'bold',
+                                                                    marginRight: '8px'
+                                                                }}>
+                                                                    {adminFeedback.message}
+                                                                </span>
+                                                            )}
+                                                            {u.username.toLowerCase() !== 'radev' && (
+                                                                <>
+                                                                    {resetPasswordUserId === u.id ? (
+                                                                        <div style={{ display: 'flex', gap: '5px', alignItems: 'center', background: 'rgba(212,175,55,0.05)', padding: '4px', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.2)' }}>
+                                                                            <input
+                                                                                type="text"
+                                                                                placeholder="New password (blank for Reset123!)"
+                                                                                value={newPasswordVal}
+                                                                                onChange={e => setNewPasswordVal(e.target.value)}
+                                                                                style={{
+                                                                                    background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                                                                                    color: '#fff', borderRadius: '4px', padding: '4px 8px', fontSize: '0.78rem',
+                                                                                    width: '180px', outline: 'none'
+                                                                                }}
+                                                                            />
+                                                                            <button
+                                                                                onClick={() => handleResetPassword(u)}
+                                                                                style={{ background: 'var(--accent-gold)', color: '#000', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                                                            >Save</button>
+                                                                            <button
+                                                                                onClick={() => { setResetPasswordUserId(null); setNewPasswordVal(''); }}
+                                                                                style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                                                            >Cancel</button>
+                                                                        </div>
+                                                                    ) : confirmDeleteUserId === u.id ? (
+                                                                        <span style={{ display: 'flex', gap: '5px', alignItems: 'center', background: 'rgba(239,68,68,0.08)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)' }}>
+                                                                            <span style={{ fontSize: '0.78rem', color: '#ff6b6b', fontWeight: 'bold' }}>Delete user?</span>
+                                                                            <button
+                                                                                onClick={() => handleDeleteUser(u)}
+                                                                                style={{ background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                                                            >Yes</button>
+                                                                            <button
+                                                                                onClick={() => setConfirmDeleteUserId(null)}
+                                                                                style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                                                            >No</button>
+                                                                        </span>
+                                                                    ) : (
+                                                                        <>
+                                                                            <button
+                                                                                onClick={() => setResetPasswordUserId(u.id)}
+                                                                                className="btn"
+                                                                                style={{
+                                                                                    background: 'rgba(212, 175, 55, 0.1)',
+                                                                                    color: 'var(--accent-gold)',
+                                                                                    border: '1px solid rgba(212, 175, 55, 0.2)',
+                                                                                    padding: '6px 12px',
+                                                                                    fontSize: '0.85rem',
+                                                                                    borderRadius: '8px',
+                                                                                    fontWeight: 500
+                                                                                }}
+                                                                            >
+                                                                                🔑 Reset
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => setConfirmDeleteUserId(u.id)}
+                                                                                className="btn btn-ghost"
+                                                                                style={{
+                                                                                    color: 'var(--danger)',
+                                                                                    border: '1px solid rgba(239, 68, 68, 0.1)',
+                                                                                    padding: '6px 10px',
+                                                                                    fontSize: '0.85rem',
+                                                                                    borderRadius: '8px'
+                                                                                }}
+                                                                                title="Delete User"
+                                                                            >
+                                                                                🗑
+                                                                            </button>
+                                                                        </>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile Cards View */}
+                                <div className="admin-users-cards-view" style={{ display: 'none', flexDirection: 'column', gap: '15px' }}>
+                                    {userList.map(u => (
+                                        <div key={u.id} className="glass-panel animate-fade-in" style={{ padding: '15px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                                                        {u.username[0].toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ color: '#fff', fontWeight: 600, fontSize: '1rem' }}>@{u.username}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: u.username.toLowerCase() === 'radev' ? 'var(--accent-gold)' : '#888' }}>
+                                                            {u.username.toLowerCase() === 'radev' ? '🛡 Owner/Admin' : u.username.startsWith('guest_') ? '👤 Guest Account' : '👤 Registered User'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleInspectUser(u)}
+                                                    className="btn btn-ghost"
+                                                    style={{ border: '1px solid rgba(255,255,255,0.1)', padding: '6px 10px', fontSize: '0.8rem', borderRadius: '6px' }}
+                                                >
+                                                    🔍 Inspect
+                                                </button>
+                                            </div>
+
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.85rem' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ color: '#666', fontSize: '0.75rem' }}>Registration</span>
+                                                    <span style={{ color: '#aaa' }}>{new Date(u.created_at).toLocaleDateString()}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ color: '#666', fontSize: '0.75rem' }}>Last Login</span>
+                                                    <span style={{ color: '#aaa' }}>{u.last_login_at ? new Date(u.last_login_at).toLocaleDateString() : '—'}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ color: '#666', fontSize: '0.75rem' }}>Location</span>
+                                                    <span style={{ color: '#fff' }}>{u.last_country || 'Unknown'}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ color: '#666', fontSize: '0.75rem' }}>Device</span>
+                                                    <span style={{ color: '#38bdf8', fontFamily: 'monospace' }}>{u.last_device || 'Unknown'}</span>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', justifyContent: 'space-around', padding: '10px 0', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                <span style={{ color: '#fff', fontSize: '0.85rem' }}>🎬 <strong>{u.movie_count}</strong></span>
+                                                <span style={{ color: '#c084fc', fontSize: '0.85rem' }}>📁 <strong>{u.collection_count}</strong></span>
+                                                <span style={{ color: '#03dac6', fontSize: '0.85rem' }}>💬 <strong>{u.comment_count || 0}</strong></span>
+                                            </div>
+
+                                            {u.username.toLowerCase() !== 'radev' && (
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    {resetPasswordUserId === u.id ? (
+                                                        <div style={{ display: 'flex', flex: 1, gap: '5px', background: 'rgba(212,175,55,0.05)', padding: '6px', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.2)' }}>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="New pw (blank=Reset123!)"
+                                                                value={newPasswordVal}
+                                                                onChange={e => setNewPasswordVal(e.target.value)}
+                                                                style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px', padding: '4px 6px', fontSize: '0.78rem', width: '100%', outline: 'none' }}
+                                                            />
+                                                            <button onClick={() => handleResetPassword(u)} style={{ background: 'var(--accent-gold)', color: '#000', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem', fontWeight: 'bold' }}>Save</button>
+                                                            <button onClick={() => { setResetPasswordUserId(null); setNewPasswordVal(''); }} style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '0.75rem' }}>✕</button>
+                                                        </div>
+                                                    ) : confirmDeleteUserId === u.id ? (
+                                                        <div style={{ display: 'flex', flex: 1, justifyContent: 'space-between', alignItems: 'center', background: 'rgba(239,68,68,0.08)', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)' }}>
+                                                            <span style={{ fontSize: '0.78rem', color: '#ff6b6b', fontWeight: 'bold' }}>Delete?</span>
+                                                            <div style={{ display: 'flex', gap: '6px' }}>
+                                                                <button onClick={() => handleDeleteUser(u)} style={{ background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold' }}>Yes</button>
+                                                                <button onClick={() => setConfirmDeleteUserId(null)} style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem' }}>No</button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            {adminFeedback.id === u.id && adminFeedback.message ? (
+                                                                <span style={{ fontSize: '0.8rem', color: adminFeedback.type === 'success' ? '#03dac6' : 'var(--danger)', fontWeight: 'bold' }}>
+                                                                    {adminFeedback.message}
+                                                                </span>
+                                                            ) : <div />}
+                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <button
+                                                                    onClick={() => setResetPasswordUserId(u.id)}
+                                                                    className="btn"
+                                                                    style={{ background: 'rgba(212, 175, 55, 0.1)', color: 'var(--accent-gold)', border: '1px solid rgba(212, 175, 55, 0.2)', padding: '5px 10px', fontSize: '0.8rem', borderRadius: '6px', fontWeight: 500 }}
+                                                                >
+                                                                    🔑 Reset
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setConfirmDeleteUserId(u.id)}
+                                                                    className="btn btn-ghost"
+                                                                    style={{ color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.1)', padding: '5px 10px', fontSize: '0.8rem', borderRadius: '6px' }}
+                                                                >
+                                                                    🗑 Delete
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
-
-                                        {u.username.toLowerCase() !== 'radev' && resetPasswordUserId === u.id && (
-                                            <div style={{ display: 'flex', gap: '5px', flexDirection: 'column', background: 'rgba(212,175,55,0.05)', padding: '8px', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.2)' }}>
-                                                <input
-                                                    type="text"
-                                                    placeholder="New password (blank for Reset123!)"
-                                                    value={newPasswordVal}
-                                                    onChange={e => setNewPasswordVal(e.target.value)}
-                                                    style={{
-                                                        background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
-                                                        color: '#fff', borderRadius: '4px', padding: '6px 8px', fontSize: '0.8rem',
-                                                        width: '100%', boxSizing: 'border-box', outline: 'none'
-                                                    }}
-                                                />
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
-                                                    <button
-                                                        onClick={() => { setResetPasswordUserId(null); setNewPasswordVal(''); }}
-                                                        style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa', border: 'none', borderRadius: '4px', padding: '4px 12px', fontSize: '0.78rem', cursor: 'pointer' }}
-                                                    >Cancel</button>
-                                                    <button
-                                                        onClick={() => handleResetPassword(u)}
-                                                        style={{ background: 'var(--accent-gold)', color: '#000', border: 'none', borderRadius: '4px', padding: '4px 15px', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 'bold' }}
-                                                    >Save</button>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {u.username.toLowerCase() !== 'radev' && confirmDeleteUserId === u.id && (
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(239,68,68,0.08)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)' }}>
-                                                <span style={{ fontSize: '0.8rem', color: '#ff6b6b', fontWeight: 'bold' }}>Delete user?</span>
-                                                <div style={{ display: 'flex', gap: '8px' }}>
-                                                    <button
-                                                        onClick={() => setConfirmDeleteUserId(null)}
-                                                        style={{ background: 'rgba(255,255,255,0.08)', color: '#aaa', border: 'none', borderRadius: '4px', padding: '4px 12px', fontSize: '0.78rem', cursor: 'pointer' }}
-                                                    >No</button>
-                                                    <button
-                                                        onClick={() => handleDeleteUser(u)}
-                                                        style={{ background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 15px', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 'bold' }}
-                                                    >Yes</button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            </div>
+                        );
+
+                        return (
+                            <>
+                                {renderUserTable('Registered Users', registeredUsers, false)}
+                                {renderUserTable('Guest Users', guestUsers.slice(0, guestsLimit), true)}
+                            </>
+                        );
+                    })()}
                 </div>
             ) : (
                 // VIEW 2: Inspecting Specific User Data

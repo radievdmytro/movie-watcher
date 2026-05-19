@@ -11,7 +11,14 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         if (!propMovie || !propMovie.link) return;
         
         // If it's missing description or other important fields, fetch on the fly!
-        if (!propMovie.description || propMovie.description.trim() === '') {
+        const needsUpdate = (
+            !propMovie.description || propMovie.description.trim() === '' ||
+            !propMovie.actors || (Array.isArray(propMovie.actors) ? propMovie.actors.length === 0 : propMovie.actors.trim() === '') ||
+            !propMovie.director || propMovie.director.trim() === '' ||
+            !propMovie.year ||
+            !propMovie.rating
+        );
+        if (needsUpdate) {
             setIsLoadingDetails(true);
             const token = localStorage.getItem('token');
             fetch(`/api/cache/search?query=${encodeURIComponent(propMovie.link)}`, {
