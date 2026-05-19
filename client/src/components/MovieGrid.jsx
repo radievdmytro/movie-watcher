@@ -435,6 +435,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         return localStorage.getItem('autoSwitchToCache') === 'true';
     });
     const [backgroundCacheResults, setBackgroundCacheResults] = useState([]);
+    const [backgroundSearchStats, setBackgroundSearchStats] = useState(null);
     const [isBgCacheSearching, setIsBgCacheSearching] = useState(false);
     const [showAutoSwitchToast, setShowAutoSwitchToast] = useState(false);
 
@@ -761,12 +762,14 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     useEffect(() => {
         if (searchDb !== 'library') {
             setBackgroundCacheResults([]);
+            setBackgroundSearchStats(null);
             return;
         }
 
         const query = filterQuery.trim();
         if (query.length < 3) {
             setBackgroundCacheResults([]);
+            setBackgroundSearchStats(null);
             return;
         }
 
@@ -779,12 +782,18 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             fetch(`/api/cache/search?${queryParams.toString()}`)
                 .then(res => res.ok ? res.json() : [])
                 .then(data => {
-                    const results = data || [];
+                    const results = data.results || data || [];
                     setBackgroundCacheResults(results);
+                    if (data.timeMs) {
+                        setBackgroundSearchStats({ total: data.total, timeMs: data.timeMs });
+                    } else {
+                        setBackgroundSearchStats(null);
+                    }
                 })
                 .catch(err => {
                     console.error("Bg cache search error:", err);
                     setBackgroundCacheResults([]);
+                    setBackgroundSearchStats(null);
                 })
                 .finally(() => {
                     setIsBgCacheSearching(false);
@@ -1508,6 +1517,11 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                         : <>Only <strong style={{ color: '#fff', textShadow: '0 0 8px rgba(255,255,255,0.2)' }}>{filteredAndSortedMovies.length}</strong> library matches. </>
                                     }
                                     Found <strong style={{ color: '#c084fc', textShadow: '0 0 8px rgba(192, 132, 252, 0.3)' }}>{backgroundCacheResults.length}</strong> movies in Global Database!
+                                    {backgroundSearchStats && (
+                                        <span style={{ fontSize: '0.75rem', opacity: 0.6, marginLeft: '8px', fontStyle: 'italic' }}>
+                                            (out of {backgroundSearchStats.total.toLocaleString()} in {backgroundSearchStats.timeMs}ms)
+                                        </span>
+                                    )}
                                 </span>
                             </div>
                             <button
