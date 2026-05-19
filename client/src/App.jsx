@@ -43,6 +43,12 @@ function App() {
     const [highlightedMovieLink, setHighlightedMovieLink] = useState(null);
     const [headerScrolled, setHeaderScrolled] = useState(false);
 
+    // Guest Experience Tooltips and Modal States
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [showGuestTooltip, setShowGuestTooltip] = useState(false);
+    const [guestTooltipText, setGuestTooltipText] = useState('');
+    const [activityCount, setActivityCount] = useState(0);
+
     useEffect(() => {
         let isTouching = false;
         let scrollTimeout;
@@ -197,12 +203,23 @@ function App() {
         }
     }, []);
 
-    // Verify token on startup
+    // Verify token on startup (with automatic guest account creation if unauthenticated)
     useEffect(() => {
         const verifyToken = async () => {
             const token = localStorage.getItem('token');
             if (!token) {
-                setCheckingAuth(false);
+                try {
+                    const guestRes = await fetch('/api/auth/guest', { method: 'POST' });
+                    if (guestRes.ok) {
+                        const guestData = await guestRes.json();
+                        localStorage.setItem('token', guestData.token);
+                        setUser(guestData.user);
+                    }
+                } catch (guestErr) {
+                    console.error('Failed to create guest session:', guestErr);
+                } finally {
+                    setCheckingAuth(false);
+                }
                 return;
             }
             try {
@@ -212,6 +229,13 @@ function App() {
                     setUser(data.user);
                 } else {
                     localStorage.removeItem('token');
+                    // Automatically get guest session instead of showing login screen
+                    const guestRes = await fetch('/api/auth/guest', { method: 'POST' });
+                    if (guestRes.ok) {
+                        const guestData = await guestRes.json();
+                        localStorage.setItem('token', guestData.token);
+                        setUser(guestData.user);
+                    }
                 }
             } catch (err) {
                 console.error('Failed to verify token:', err);
@@ -221,6 +245,40 @@ function App() {
         };
         verifyToken();
     }, []);
+
+    // Auto-show Guest Welcome Tooltip for exactly 10 seconds
+    useEffect(() => {
+        if (user && user.username.startsWith('guest_')) {
+            setGuestTooltipText("👋 Вы зашли как Гость. Войдите или зарегистрируйтесь, чтобы ваши фильмы сохранились навсегда!");
+            setShowGuestTooltip(true);
+            const timer = setTimeout(() => {
+                setShowGuestTooltip(false);
+            }, 10000); // 10 seconds popover!
+            return () => clearTimeout(timer);
+        }
+    }, [user]);
+
+    // Active Usage Trigger
+    const triggerGuestActivity = () => {
+        if (user && user.username.startsWith('guest_')) {
+            setActivityCount(prev => {
+                const next = prev + 1;
+                if (next === 2 || next === 5 || next === 8) {
+                    setGuestTooltipText("🔮 Активно пользуетесь сайтом? Создайте постоянный аккаунт в 1 клик, чтобы не потерять свои данные!");
+                    setShowGuestTooltip(true);
+                }
+                return next;
+            });
+        }
+    };
+
+    // Selection active usage hook
+    useEffect(() => {
+        if (user && user.username.startsWith('guest_') && selectedIds.length >= 2) {
+            setGuestTooltipText("💡 Хотите сохранить выбранные фильмы? Войдите или зарегистрируйтесь, чтобы они не потерялись!");
+            setShowGuestTooltip(true);
+        }
+    }, [selectedIds.length, user]);
 
     const handleExitSharedView = () => {
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -609,14 +667,81 @@ function App() {
                                 <span className="btn-label">Trash</span>
                             </button>
                             <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '24px', margin: '0 5px' }}></div>
-                            <span className="header-username" style={{ fontSize: '0.9rem', color: '#aaa', fontWeight: 500 }}>
-                                <span className="btn-icon">👤</span>
-                                <span className="btn-label"> {user.username}</span>
-                            </span>
-                            <button onClick={handleLogout} className="btn btn-ghost header-btn-logout" title="Logout" style={{ fontSize: '0.85rem', color: '#ff6b6b' }}>
-                                <span className="btn-icon">⏻</span>
-                                <span className="btn-label">Logout</span>
-                            </button>
+                            {user.username.startsWith('guest_') ? (
+                                <div style={{ position: 'relative', display: 'inline-block' }}>
+                                    <span className="header-username" style={{
+                                        fontSize: '0.9rem', color: 'var(--accent-gold)', fontWeight: 'bold',
+                                        background: 'rgba(212, 175, 55, 0.1)', border: '1px solid rgba(212, 175, 55, 0.25)',
+                                        padding: '6px 14px', borderRadius: '20px', cursor: 'pointer',
+                                        transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px'
+                                    }}
+                                    onClick={() => setIsAuthModalOpen(true)}
+                                    >
+                                        <span className="btn-icon">👤</span>
+                                        <span className="btn-label">Guest Visitor (Войти)</span>
+                                    </span>
+                                    
+                                    {/* Guest Floating Popover Tooltip */}
+                                    {showGuestTooltip && (
+                                        <div className="glass-panel" style={{
+                                            position: 'absolute', top: '100%', right: 0, marginTop: '12px',
+                                            width: '280px', padding: '16px', borderRadius: '16px',
+                                            border: '1px solid rgba(168, 85, 247, 0.4)',
+                                            background: 'linear-gradient(135deg, rgba(20, 10, 35, 0.96) 0%, rgba(10, 5, 20, 0.98) 100%)',
+                                            boxShadow: '0 8px 32px rgba(168, 85, 247, 0.25), 0 0 20px rgba(168, 85, 247, 0.1)',
+                                            color: '#fff', fontSize: '0.85rem', zIndex: 1000,
+                                            display: 'flex', flexDirection: 'column', gap: '10px',
+                                            animation: 'fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: '8px' }}>
+                                                <span style={{ fontSize: '1.1rem' }}>💡</span>
+                                                <span style={{ flex: 1, lineHeight: '1.4', color: '#e2e8f0', textAlign: 'left' }}>
+                                                    {guestTooltipText}
+                                                </span>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setShowGuestTooltip(false);
+                                                    }}
+                                                    style={{
+                                                        background: 'none', border: 'none', color: '#888',
+                                                        cursor: 'pointer', padding: 0, fontSize: '0.85rem'
+                                                    }}
+                                                >✕</button>
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setIsAuthModalOpen(true);
+                                                    setShowGuestTooltip(false);
+                                                }}
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)',
+                                                    border: 'none', color: '#fff', padding: '8px 12px',
+                                                    borderRadius: '8px', fontWeight: 'bold', fontSize: '0.8rem',
+                                                    cursor: 'pointer', boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
+                                                    textAlign: 'center', transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                            >
+                                                🔑 Войти / Создать аккаунт
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <>
+                                    <span className="header-username" style={{ fontSize: '0.9rem', color: '#aaa', fontWeight: 500 }}>
+                                        <span className="btn-icon">👤</span>
+                                        <span className="btn-label"> {user.username}</span>
+                                    </span>
+                                    <button onClick={handleLogout} className="btn btn-ghost header-btn-logout" title="Logout" style={{ fontSize: '0.85rem', color: '#ff6b6b' }}>
+                                        <span className="btn-icon">⏻</span>
+                                        <span className="btn-label">Logout</span>
+                                    </button>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
@@ -646,6 +771,7 @@ function App() {
                                     onScrollToMovie={handleScrollToMovie} 
                                     movies={movies} 
                                     selectedLibraryIds={selectedIds}
+                                    onGuestActivity={triggerGuestActivity}
                                 />
                         )}
 
@@ -668,6 +794,7 @@ function App() {
                                     trashButtonRef={trashButtonRef}
                                     isTrashMode={currentView === 'trash'}
                                     highlightedLink={highlightedMovieLink}
+                                    onGuestActivity={triggerGuestActivity}
                                 />
                             )}
                             {!loading && movies.length === 0 && (
@@ -753,6 +880,40 @@ function App() {
                     }
                     onOpenMovie={setCompareDetailsMovie}
                 />
+            )}
+
+            {isAuthModalOpen && (
+                <div style={{
+                    position: 'fixed', inset: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center',
+                    zIndex: 2000,
+                    animation: 'fadeIn 0.3s ease-out'
+                }}>
+                    <div style={{ position: 'relative', width: '100%', maxWidth: '420px', padding: '10px' }}>
+                        <button
+                            onClick={() => setIsAuthModalOpen(false)}
+                            style={{
+                                position: 'absolute', top: '25px', right: '25px',
+                                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '50%', width: '32px', height: '32px',
+                                color: '#ccc', fontSize: '1rem', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'all 0.2s', zIndex: 10
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                        >
+                            ✕
+                        </button>
+                        <AuthScreen onAuthSuccess={(newUser) => {
+                            setUser(newUser);
+                            setIsAuthModalOpen(false);
+                        }} />
+                    </div>
+                </div>
             )}
         </div>
     );

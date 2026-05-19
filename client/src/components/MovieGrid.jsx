@@ -358,7 +358,7 @@ const cleanLinkPath = (url) => {
         .split('#')[0];
 };
 
-function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink }) {
+function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink, onGuestActivity }) {
     const [sortField, setSortField] = useState('created_at');
     const [sortDir, setSortDir] = useState('desc');
     const [hideWatched, setHideWatched] = useState(false);
@@ -1021,7 +1021,12 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                 type="text"
                                 placeholder="Search library..."
                                 value={filterQuery}
-                                onChange={(e) => setFilterQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setFilterQuery(e.target.value);
+                                    if (e.target.value.trim().length >= 3 && onGuestActivity) {
+                                        onGuestActivity();
+                                    }
+                                }}
                                 onFocus={() => setIsSearchFocused(true)}
                                 onBlur={() => setTimeout(() => setIsSearchFocused(false), 250)}
                                 style={{

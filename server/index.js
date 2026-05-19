@@ -259,6 +259,26 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+// Guest Auto-Login
+app.post('/api/auth/guest', async (req, res) => {
+    try {
+        const randomId = Math.random().toString(36).substring(2, 9);
+        const username = `guest_${randomId}`;
+        const password = Math.random().toString(36).substring(2, 15);
+        
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+        
+        const result = db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(username, hash);
+        const userId = result.lastInsertRowid;
+        
+        const token = jwt.sign({ id: userId, username: username }, JWT_SECRET, { expiresIn: '30d' });
+        res.json({ token, user: { id: userId, username: username } });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get Current User (Me)
 app.get('/api/auth/me', authenticateToken, (req, res) => {
     res.json({ user: req.user });

@@ -3,7 +3,7 @@ import MovieComparisonModal from './MovieComparisonModal';
 import MovieDetailsModal from './MovieDetailsModal';
 import BulkImportModal from './BulkImportModal';
 
-function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryIds = [] }) {
+function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryIds = [], onGuestActivity }) {
     const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
@@ -123,6 +123,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
             setSearchResults(null);
             setLogs([]);
             setIsFadingLogs(false);
+            if (onGuestActivity) onGuestActivity();
         }
 
         if (urls.length > 1) {
