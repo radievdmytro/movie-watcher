@@ -1,7 +1,64 @@
 import { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 
-function MovieDetailsModal({ movie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle }) {
+function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle }) {
+    const [liveDetails, setLiveDetails] = useState(null);
+    const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+    const movie = propMovie ? { ...propMovie, ...liveDetails } : null;
+
+    useEffect(() => {
+        if (!propMovie || !propMovie.link) return;
+        
+        // If it's missing description or other important fields, fetch on the fly!
+        if (!propMovie.description || propMovie.description.trim() === '') {
+            setIsLoadingDetails(true);
+            const token = localStorage.getItem('token');
+            fetch(`/api/cache/search?query=${encodeURIComponent(propMovie.link)}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.data) {
+                    const details = data.data;
+                    setLiveDetails(details);
+                    
+                    // If it's in the user's library, update it permanently!
+                    if (propMovie.id) {
+                        fetch(`/api/movies/${propMovie.id}`, {
+                            method: 'PATCH',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                title: details.title,
+                                original_title: details.original_title,
+                                year: details.year,
+                                rating: details.rating,
+                                description: details.description,
+                                poster_url: details.poster_url,
+                                genres: details.genres,
+                                actors: details.actors,
+                                director: details.director,
+                                writers: details.writers,
+                                country: details.country,
+                                duration: details.duration,
+                                type: details.type
+                            })
+                        }).then(() => {
+                            if (onUpdate) onUpdate(propMovie.id, details);
+                        }).catch(err => console.error('Auto-update failed', err));
+                    }
+                }
+            })
+            .catch(err => console.error('On-the-fly fetch failed:', err))
+            .finally(() => setIsLoadingDetails(false));
+        } else {
+            setLiveDetails(null);
+        }
+    }, [propMovie]);
+
     if (!movie) return null;
 
     const [activeTab, setActiveTab] = useState(openWithWatchedPrompt ? 'reviews' : 'about');
