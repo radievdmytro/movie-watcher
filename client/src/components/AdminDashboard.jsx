@@ -19,11 +19,86 @@ function AdminDashboard({ onBack }) {
     const [crawlerSettings, setCrawlerSettings] = useState({ enabled: false, ratePerHour: 60, currentStatus: 'Idle', totalCached: 0 });
     const [updatingCrawler, setUpdatingCrawler] = useState(false);
 
+    // Fast Crawler States
+    const [fastCrawler, setFastCrawler] = useState({
+        isRunning: false,
+        pagesCrawled: 0,
+        totalPages: 0,
+        totalImported: 0,
+        logs: [],
+        currentCategory: '',
+        shouldStop: false
+    });
+    const [fcPages, setFcPages] = useState(5);
+    const [fcCategories, setFcCategories] = useState(['films', 'series', 'cartoons', 'animation']);
+    const [fcDelay, setFcDelay] = useState(1500);
+    const [startingFC, setStartingFC] = useState(false);
+
     // Inline Admin Operations State (No native popups!)
     const [confirmDeleteUserId, setConfirmDeleteUserId] = useState(null);
     const [resetPasswordUserId, setResetPasswordUserId] = useState(null);
     const [newPasswordVal, setNewPasswordVal] = useState('');
     const [adminFeedback, setAdminFeedback] = useState({ id: null, type: '', message: '' });
+
+    // Poll Fast Crawler status
+    useEffect(() => {
+        let fcInterval = null;
+        const fetchStatus = async () => {
+            try {
+                const res = await fetch('/api/admin/fast-crawler/status');
+                if (res.ok) {
+                    const data = await res.json();
+                    setFastCrawler(data);
+                    if (data.isRunning && stats) {
+                        setStats(prev => ({ ...prev, totalCached: data.totalCached || prev.totalCached }));
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to poll fast crawler status:', e);
+            }
+        };
+
+        fetchStatus(); // fetch immediately on mount
+        if (fastCrawler.isRunning) {
+            fcInterval = setInterval(fetchStatus, 1500);
+        } else {
+            fcInterval = setInterval(fetchStatus, 5000); // slower polling when idle
+        }
+
+        return () => {
+            if (fcInterval) clearInterval(fcInterval);
+        };
+    }, [fastCrawler.isRunning, stats]);
+
+    const handleStartFastCrawler = async () => {
+        setStartingFC(true);
+        try {
+            const res = await fetch('/api/admin/fast-crawler/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pages: fcPages,
+                    categories: fcCategories,
+                    pageDelay: fcDelay
+                })
+            });
+            if (res.ok) {
+                setFastCrawler(prev => ({ ...prev, isRunning: true, logs: ['[System] Initiating crawler...'] }));
+            }
+        } catch (err) {
+            console.error('Failed to start fast crawler:', err);
+        } finally {
+            setStartingFC(false);
+        }
+    };
+
+    const handleStopFastCrawler = async () => {
+        try {
+            await fetch('/api/admin/fast-crawler/stop', { method: 'POST' });
+        } catch (err) {
+            console.error('Failed to stop fast crawler:', err);
+        }
+    };
 
     const fetchAdminData = async () => {
         setLoading(true);
@@ -505,6 +580,253 @@ function AdminDashboard({ onBack }) {
                                         whiteSpace: 'nowrap'
                                     }} title={crawlerSettings.currentStatus}>
                                         {crawlerSettings.currentStatus}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bulk Fast Crawler Card */}
+                    <div className="glass-panel animate-fade-in" style={{
+                        borderRadius: '15px',
+                        padding: '25px',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        background: 'rgba(255, 255, 255, 0.01)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '20px'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontSize: '1.8rem' }}>⚡</span>
+                                <div>
+                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        Bulk Fast Crawler
+                                        <span className="crawler-status-indicator" style={{
+                                            display: 'inline-block',
+                                            width: '8px',
+                                            height: '8px',
+                                            borderRadius: '50%',
+                                            background: fastCrawler.isRunning ? '#03dac6' : 'rgba(255,255,255,0.2)',
+                                            boxShadow: fastCrawler.isRunning ? '0 0 10px #03dac6' : 'none'
+                                        }}></span>
+                                    </h3>
+                                    <p style={{ margin: '3px 0 0 0', color: '#888', fontSize: '0.85rem' }}>
+                                        Index entire catalog pages of 36 movies at a time (36x faster) to instantly fill your database
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                {fastCrawler.isRunning ? (
+                                    <button
+                                        onClick={handleStopFastCrawler}
+                                        className="btn"
+                                        style={{
+                                            padding: '8px 20px',
+                                            borderRadius: '8px',
+                                            fontWeight: 600,
+                                            fontSize: '0.85rem',
+                                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                                            color: '#f87171',
+                                            background: 'rgba(239, 68, 68, 0.08)',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        🛑 Stop Crawler
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleStartFastCrawler}
+                                        disabled={startingFC || fcCategories.length === 0}
+                                        className="btn btn-gold"
+                                        style={{
+                                            padding: '8px 20px',
+                                            borderRadius: '8px',
+                                            fontWeight: 600,
+                                            fontSize: '0.85rem',
+                                            background: 'var(--accent-gold)',
+                                            color: '#000',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        {startingFC ? 'Starting...' : '🚀 Launch Fast Crawler'}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                            gap: '20px',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                            paddingTop: '20px'
+                        }}>
+                            {/* Left Settings Control */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                <div>
+                                    <label style={{ color: '#ccc', fontSize: '0.9rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+                                        Pages to Crawl (per category):
+                                    </label>
+                                    <select
+                                        value={fcPages}
+                                        onChange={(e) => setFcPages(parseInt(e.target.value))}
+                                        disabled={fastCrawler.isRunning}
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            background: 'rgba(0, 0, 0, 0.4)',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            color: '#fff',
+                                            borderRadius: '8px',
+                                            fontSize: '0.9rem',
+                                            outline: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <option value="1">1 page (~36 movies)</option>
+                                        <option value="2">2 pages (~72 movies)</option>
+                                        <option value="5">5 pages (~180 movies)</option>
+                                        <option value="10">10 pages (~360 movies)</option>
+                                        <option value="25">25 pages (~900 movies)</option>
+                                        <option value="50">50 pages (~1,800 movies)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label style={{ color: '#ccc', fontSize: '0.9rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+                                        Target Categories:
+                                    </label>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                        {['films', 'series', 'cartoons', 'animation'].map(cat => {
+                                            const labelMap = { films: 'Films', series: 'Series', cartoons: 'Cartoons', animation: 'Anime' };
+                                            const isSelected = fcCategories.includes(cat);
+                                            return (
+                                                <button
+                                                    key={cat}
+                                                    disabled={fastCrawler.isRunning}
+                                                    onClick={() => {
+                                                        if (isSelected) {
+                                                            setFcCategories(prev => prev.filter(c => c !== cat));
+                                                        } else {
+                                                            setFcCategories(prev => [...prev, cat]);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        padding: '8px 10px',
+                                                        borderRadius: '6px',
+                                                        border: isSelected ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.06)',
+                                                        background: isSelected ? 'rgba(212,175,55,0.1)' : 'rgba(0,0,0,0.2)',
+                                                        color: isSelected ? 'var(--accent-gold)' : '#aaa',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: 600,
+                                                        cursor: 'pointer',
+                                                        textAlign: 'center'
+                                                    }}
+                                                >
+                                                    {labelMap[cat]}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style={{ color: '#ccc', fontSize: '0.9rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+                                        Delay Between Pages:
+                                    </label>
+                                    <select
+                                        value={fcDelay}
+                                        onChange={(e) => setFcDelay(parseInt(e.target.value))}
+                                        disabled={fastCrawler.isRunning}
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            background: 'rgba(0, 0, 0, 0.4)',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            color: '#fff',
+                                            borderRadius: '8px',
+                                            fontSize: '0.9rem',
+                                            outline: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <option value="1000">1.0 second (Aggressive)</option>
+                                        <option value="1500">1.5 seconds (Balanced - Safe)</option>
+                                        <option value="3000">3.0 seconds (Polite - Very Safe)</option>
+                                        <option value="5000">5.0 seconds (Conservative)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Right Telemetry & Console Log */}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px',
+                                background: 'rgba(0, 0, 0, 0.25)',
+                                padding: '15px 20px',
+                                borderRadius: '10px',
+                                border: '1px solid rgba(255, 255, 255, 0.03)',
+                                overflow: 'hidden'
+                            }}>
+                                {/* Progress bar */}
+                                {fastCrawler.isRunning && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#aaa' }}>
+                                            <span>Progress:</span>
+                                            <span>{fastCrawler.pagesCrawled} / {fastCrawler.totalPages} pages ({Math.round((fastCrawler.pagesCrawled / fastCrawler.totalPages) * 100) || 0}%)</span>
+                                        </div>
+                                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                                            <div style={{
+                                                width: `${((fastCrawler.pagesCrawled / fastCrawler.totalPages) * 100) || 0}%`,
+                                                height: '100%',
+                                                background: 'var(--accent-gold)',
+                                                borderRadius: '3px',
+                                                transition: 'width 0.4s ease'
+                                            }} />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                                    <span style={{ color: '#888' }}>Status:</span>
+                                    <span style={{ color: fastCrawler.isRunning ? '#03dac6' : '#888', fontWeight: 'bold' }}>
+                                        {fastCrawler.isRunning ? `Crawling ${fastCrawler.currentCategory}...` : 'Idle'}
+                                    </span>
+                                </div>
+                                
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                                    <span style={{ color: '#888' }}>Total Imported This Run:</span>
+                                    <span style={{ color: '#e5c158', fontWeight: 'bold' }}>🎬 {fastCrawler.totalImported || 0} movies</span>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flexGrow: 1 }}>
+                                    <span style={{ color: '#888', fontSize: '0.8rem', fontWeight: 600 }}>Live Terminal Console:</span>
+                                    <div style={{
+                                        background: '#09090b',
+                                        padding: '10px 12px',
+                                        borderRadius: '8px',
+                                        fontFamily: 'monospace',
+                                        fontSize: '0.78rem',
+                                        color: '#38bdf8',
+                                        border: '1px solid rgba(255,255,255,0.03)',
+                                        height: '100px',
+                                        overflowY: 'auto',
+                                        display: 'flex',
+                                        flexDirection: 'column-reverse',
+                                        gap: '4px',
+                                        lineHeight: '1.4'
+                                    }}>
+                                        {[...fastCrawler.logs].reverse().map((log, idx) => (
+                                            <div key={idx} style={{
+                                                color: log.includes('✅') ? '#03dac6' : log.includes('❌') ? '#f87171' : log.includes('🚀') ? 'var(--accent-gold)' : '#38bdf8'
+                                            }}>{log}</div>
+                                        ))}
+                                        {fastCrawler.logs.length === 0 && (
+                                            <div style={{ color: '#555', fontStyle: 'italic' }}>Console output is empty. Launch the crawler to start streaming.</div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

@@ -2230,6 +2230,169 @@ function scheduleNextCrawlerStep() {
     }, delayMs);
 }
 
+// Global Fast Crawler State
+let fastCrawlerState = {
+    isRunning: false,
+    pagesCrawled: 0,
+    totalPages: 0,
+    totalImported: 0,
+    logs: [],
+    currentCategory: '',
+    shouldStop: false
+};
+
+function addFastCrawlerLog(message) {
+    const timestamp = new Date().toLocaleTimeString();
+    const formatted = `[${timestamp}] ${message}`;
+    console.log(`[FastCrawler] ${message}`);
+    fastCrawlerState.logs.push(formatted);
+    if (fastCrawlerState.logs.length > 100) {
+        fastCrawlerState.logs.shift(); // keep last 100 logs
+    }
+}
+
+// Fast Crawler Async loop
+async function runFastCrawlerProcess({ pages, categories, pageDelay }) {
+    fastCrawlerState.isRunning = true;
+    fastCrawlerState.pagesCrawled = 0;
+    fastCrawlerState.totalImported = 0;
+    fastCrawlerState.totalPages = categories.length * pages;
+    fastCrawlerState.shouldStop = false;
+    fastCrawlerState.logs = [];
+
+    addFastCrawlerLog(`🚀 Fast Crawler started. Target: ${pages} pages across ${categories.length} categories.`);
+
+    const categoryMap = {
+        'films': { path: '/films/', type: 'movie', label: 'Films' },
+        'series': { path: '/series/', type: 'series', label: 'Series' },
+        'cartoons': { path: '/cartoons/', type: 'movie', label: 'Cartoons' },
+        'animation': { path: '/animation/', type: 'series', label: 'Anime' }
+    };
+
+    try {
+        for (const catKey of categories) {
+            if (fastCrawlerState.shouldStop) break;
+
+            const cat = categoryMap[catKey];
+            if (!cat) continue;
+
+            fastCrawlerState.currentCategory = cat.label;
+            addFastCrawlerLog(`📂 Crawling category: ${cat.label} (${cat.path})...`);
+
+            for (let page = 1; page <= pages; page++) {
+                if (fastCrawlerState.shouldStop) {
+                    addFastCrawlerLog('🛑 Stop signal received. Terminating crawl...');
+                    break;
+                }
+
+                const pagePath = page === 1 ? cat.path : `${cat.path}page/${page}/`;
+                addFastCrawlerLog(`📖 Fetching page ${page}/${pages}: ${pagePath}`);
+
+                try {
+                    const discovered = await scrapeCatalogPage(pagePath);
+                    if (!discovered || discovered.length === 0) {
+                        addFastCrawlerLog(`⚠️ No movies found on page ${page}, skipping.`);
+                        continue;
+                    }
+
+                    addFastCrawlerLog(`📦 Found ${discovered.length} movies on catalog page. Inserting/updating...`);
+
+                    const insertStmt = db.prepare(`
+                        INSERT INTO scraped_movies_cache 
+                        (title, original_title, year, link, rating, poster_url, genres, type, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                        ON CONFLICT(link) DO UPDATE SET
+                            rating = EXCLUDED.rating,
+                            poster_url = EXCLUDED.poster_url,
+                            genres = EXCLUDED.genres,
+                            updated_at = CURRENT_TIMESTAMP
+                    `);
+
+                    const insertTx = db.transaction((list) => {
+                        let count = 0;
+                        for (const m of list) {
+                            try {
+                                const parsedRating = m.rating ? parseFloat(m.rating) : null;
+                                const info = insertStmt.run(
+                                    m.title,
+                                    m.original_title || '',
+                                    m.year,
+                                    m.link,
+                                    parsedRating,
+                                    m.img,
+                                    m.misc,
+                                    m.type || cat.type
+                                );
+                                if (info.changes > 0) count++;
+                            } catch (err) {
+                                // ignore duplicates
+                            }
+                        }
+                        return count;
+                    });
+
+                    const insertedCount = insertTx(discovered);
+                    fastCrawlerState.totalImported += insertedCount;
+                    fastCrawlerState.pagesCrawled++;
+                    addFastCrawlerLog(`✅ Successfully cached ${insertedCount} movies from page ${page}.`);
+
+                    // Trigger cloud backup if new movies were imported
+                    if (insertedCount > 0) {
+                        uploadBackup();
+                    }
+
+                    // Polite delay between requests
+                    if (page < pages || categories.indexOf(catKey) < categories.length - 1) {
+                        const delayTime = pageDelay + (Math.random() * 500);
+                        await delay(delayTime);
+                    }
+                } catch (err) {
+                    addFastCrawlerLog(`❌ Error on page ${pagePath}: ${err.message}`);
+                    await delay(3000);
+                }
+            }
+        }
+
+        if (fastCrawlerState.shouldStop) {
+            addFastCrawlerLog('🛑 Fast Crawler stopped by user.');
+        } else {
+            addFastCrawlerLog(`🎉 Fast Crawler completed successfully! Total imported/updated: ${fastCrawlerState.totalImported} movies.`);
+        }
+    } catch (e) {
+        addFastCrawlerLog(`❌ Critical crawler exception: ${e.message}`);
+    } finally {
+        fastCrawlerState.isRunning = false;
+        fastCrawlerState.currentCategory = '';
+    }
+}
+
+// Fast Crawler endpoints (admin-only)
+app.get('/api/admin/fast-crawler/status', authenticateToken, requireAdmin, (req, res) => {
+    res.json(fastCrawlerState);
+});
+
+app.post('/api/admin/fast-crawler/start', authenticateToken, requireAdmin, (req, res) => {
+    if (fastCrawlerState.isRunning) {
+        return res.status(400).json({ error: 'Fast crawler is already running.' });
+    }
+    const pages = parseInt(req.body.pages) || 5;
+    const categories = req.body.categories || ['films', 'series', 'cartoons', 'animation'];
+    const pageDelay = parseInt(req.body.pageDelay) || 1500;
+
+    // Run crawler asynchronously in background
+    runFastCrawlerProcess({ pages, categories, pageDelay });
+
+    res.json({ success: true, message: 'Fast crawler started successfully.' });
+});
+
+app.post('/api/admin/fast-crawler/stop', authenticateToken, requireAdmin, (req, res) => {
+    if (!fastCrawlerState.isRunning) {
+        return res.status(400).json({ error: 'Fast crawler is not running.' });
+    }
+    fastCrawlerState.shouldStop = true;
+    res.json({ success: true, message: 'Termination signal sent to crawler.' });
+});
+
 // Crawler settings endpoints (admin-only)
 app.get('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, res) => {
     try {
