@@ -394,6 +394,18 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
     const [cacheMoviesResults, setCacheMoviesResults] = useState([]);
     const [isCacheLoading, setIsCacheLoading] = useState(false);
 
+    const [autoSwitchToCache, setAutoSwitchToCache] = useState(() => {
+        return localStorage.getItem('autoSwitchToCache') === 'true';
+    });
+    const [backgroundCacheResults, setBackgroundCacheResults] = useState([]);
+    const [isBgCacheSearching, setIsBgCacheSearching] = useState(false);
+    const [showAutoSwitchToast, setShowAutoSwitchToast] = useState(false);
+
+    const handleToggleAutoSwitch = (checked) => {
+        setAutoSwitchToCache(checked);
+        localStorage.setItem('autoSwitchToCache', checked ? 'true' : 'false');
+    };
+
     useEffect(() => {
         if (searchDb !== 'cache') {
             setCacheMoviesResults([]);
@@ -426,6 +438,52 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
         return () => clearTimeout(delayDebounceFn);
     }, [filterQuery, searchDb]);
+
+    // Background cache search when library has few/no results
+    useEffect(() => {
+        if (searchDb !== 'library') {
+            setBackgroundCacheResults([]);
+            return;
+        }
+
+        const query = filterQuery.trim();
+        if (query.length < 3) {
+            setBackgroundCacheResults([]);
+            return;
+        }
+
+        // We only trigger background search if library results are sparse (<= 2 results)
+        if (filteredAndSortedMovies.length > 2) {
+            setBackgroundCacheResults([]);
+            return;
+        }
+
+        setIsBgCacheSearching(true);
+        const delayDebounceFn = setTimeout(() => {
+            fetch(`/api/cache/search?query=${encodeURIComponent(query)}`)
+                .then(res => res.ok ? res.json() : [])
+                .then(data => {
+                    const results = data || [];
+                    setBackgroundCacheResults(results);
+
+                    // Automatic switch trigger if enabled, library is completely empty, and cache has matches
+                    if (autoSwitchToCache && filteredAndSortedMovies.length === 0 && results.length > 0) {
+                        setSearchDb('cache');
+                        setShowAutoSwitchToast(true);
+                        setTimeout(() => setShowAutoSwitchToast(false), 5000);
+                    }
+                })
+                .catch(err => {
+                    console.error("Bg cache search error:", err);
+                    setBackgroundCacheResults([]);
+                })
+                .finally(() => {
+                    setIsBgCacheSearching(false);
+                });
+        }, 400); // 400ms debounce for background search
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [filterQuery, searchDb, filteredAndSortedMovies.length, autoSwitchToCache]);
 
 
     const { minBoundYear, maxBoundYear } = useMemo(() => {
@@ -780,6 +838,46 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
 
     return (
         <div>
+            {/* Auto Switch Toast */}
+            {showAutoSwitchToast && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    right: '24px',
+                    background: 'rgba(212, 175, 55, 0.95)',
+                    color: '#000',
+                    padding: '14px 24px',
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+                    zIndex: 99999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
+                    animation: 'slideUp 0.3s ease-out',
+                    border: '1px solid rgba(255,255,255,0.2)'
+                }}>
+                    <span style={{ fontSize: '1.2rem' }}>⚡</span>
+                    <span>Automatically switched to Website Cache (found {backgroundCacheResults.length} matches)!</span>
+                    <button 
+                        onClick={() => setShowAutoSwitchToast(false)}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#000',
+                            fontSize: '1.1rem',
+                            cursor: 'pointer',
+                            padding: '0 5px',
+                            fontWeight: 'bold',
+                            outline: 'none'
+                        }}
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
+
             {/* Modal for Details ... */}
             {selectedMovie && (
                 <MovieDetailsModal
@@ -1177,6 +1275,80 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                             </span>
                         </div>
                     </div>
+
+                    {/* Background Search Suggestion Banner */}
+                    {searchDb === 'library' && filterQuery.trim().length >= 3 && backgroundCacheResults.length > 0 && (
+                        <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '10px',
+                            background: 'rgba(212, 175, 55, 0.08)',
+                            border: '1px solid rgba(212, 175, 55, 0.2)',
+                            borderRadius: '12px',
+                            padding: '10px 15px',
+                            width: '100%',
+                            marginTop: '2px',
+                            animation: 'fadeIn 0.3s ease'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#eee' }}>
+                                <span style={{ fontSize: '1rem' }}>💡</span>
+                                <span>
+                                    {filteredAndSortedMovies.length === 0 
+                                        ? `No results in My Library. ` 
+                                        : `Only ${filteredAndSortedMovies.length} results in My Library. `
+                                    }
+                                    We found <strong style={{ color: 'var(--accent-gold)' }}>{backgroundCacheResults.length}</strong> matching movies in Website Cache!
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                                {/* Checkbox to auto-switch */}
+                                <label style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    fontSize: '0.78rem',
+                                    color: 'rgba(255, 255, 255, 0.65)',
+                                    cursor: 'pointer',
+                                    userSelect: 'none'
+                                }}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={autoSwitchToCache}
+                                        onChange={(e) => handleToggleAutoSwitch(e.target.checked)}
+                                        style={{
+                                            accentColor: 'var(--accent-gold)',
+                                            cursor: 'pointer'
+                                        }}
+                                    />
+                                    Auto-switch when library is empty
+                                </label>
+
+                                {/* Action Button */}
+                                <button
+                                    onClick={() => setSearchDb('cache')}
+                                    style={{
+                                        background: 'var(--accent-gold)',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        color: '#000',
+                                        padding: '4px 12px',
+                                        fontSize: '0.78rem',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        outline: 'none',
+                                        boxShadow: '0 2px 8px rgba(212, 175, 55, 0.2)'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
+                                >
+                                    🔎 Switch to Website Cache
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Row 2: Super Compact Controls (Type switch, View Mode, Hide Watched) */}
                     <div className="compact-controls-row" style={{
