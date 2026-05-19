@@ -1484,7 +1484,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     zIndex: 10
                 }}>
                     {!isMobile && <div style={{ flex: '0 0 270px' }} />}
-                    {(!movie.id) ? (
+                    {(!movie.id || readOnly) ? (
                                 <>
                                     <button
                                         style={{
@@ -1533,32 +1533,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         🎬 Watch on HDRezka
                                     </a>
                                 </>
-                            ) : readOnly ? (
-                                <a
-                                    href={movie.link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="btn"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
-                                        border: 'none',
-                                        color: '#000',
-                                        padding: isMobile ? '10px 20px' : '12px 35px',
-                                        fontSize: isMobile ? '0.88rem' : '1.05rem',
-                                        fontWeight: 'bold',
-                                        boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px',
-                                        borderRadius: '10px',
-                                        textDecoration: 'none',
-                                        transition: 'all 0.2s',
-                                        flex: isMobile ? '1' : 'initial'
-                                    }}
-                                >
-                                    🎬 Watch on HDRezka
-                                </a>
                             ) : !isTrashMode ? (
                                 <>
                                     <button

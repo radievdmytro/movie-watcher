@@ -1219,7 +1219,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                     <div
                                                         key={item.id}
                                                         onClick={() => {
-                                                            setSelectedMovie(item);
+                                                            setSelectedMovie(searchDb === 'cache' ? { ...item, poster_url: item.poster_url || item.img, readOnly: true } : item);
                                                             setFilterQuery('');
                                                         }}
                                                         style={{
