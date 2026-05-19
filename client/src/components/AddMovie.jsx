@@ -1039,12 +1039,12 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                     onClick={() => { setFullPageResults(false); setShowResultsPanel(false); setSelectedLinks(new Set()); }}
                     style={{
                         position: 'fixed',
-                        top: 0,
+                        top: isMobile ? 'var(--header-h, 90px)' : 0,
                         left: 0, right: 0, bottom: 0,
                         background: 'rgba(0,0,0,0.7)',
                         backdropFilter: 'blur(10px)', zIndex: 200000,
                         display: 'flex',
-                        alignItems: 'center',
+                        alignItems: isMobile ? 'flex-start' : 'center',
                         justifyContent: 'center',
                         animation: 'fadeIn 0.25s ease', padding: isMobile ? '10px' : '20px'
                     }}
@@ -1053,7 +1053,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                         onClick={(e) => e.stopPropagation()}
                         style={{
                             width: '100%', maxWidth: '840px',
-                            maxHeight: isMobile ? 'calc(100vh - 20px)' : '88vh',
+                            maxHeight: isMobile ? 'calc(100vh - var(--header-h, 90px) - 20px)' : '88vh',
                             background: 'rgba(18,18,18,0.99)', borderRadius: isMobile ? '12px' : '16px',
                             border: isMobile ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.09)',
                             boxShadow: isMobile ? '0 0 25px rgba(212, 175, 55, 0.4)' : '0 24px 60px rgba(0,0,0,0.8)',
