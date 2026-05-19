@@ -1007,18 +1007,18 @@ app.post('/api/movies', authenticateToken, (req, res) => {
     try {
         const { title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type } = req.body;
 
-        // Check if exists for this user (restore if soft-deleted)
-        const checkStmt = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
+        // Check if exists for this user (restore if soft-deleted or hidden)
+        const checkStmt = db.prepare('SELECT id, deleted_at, hidden_from_library FROM movies WHERE link = ? AND user_id = ?');
         const existing = checkStmt.get(link, req.user.id);
         if (existing) {
-            if (existing.deleted_at) {
+            if (existing.deleted_at || existing.hidden_from_library) {
                 // Restore the soft-deleted row and sync back any saved history
                 const history = db.prepare('SELECT user_rating, notes, notes_public FROM user_movie_history WHERE user_id = ? AND movie_link = ?').get(req.user.id, link);
                 if (history) {
-                    db.prepare('UPDATE movies SET deleted_at = NULL, user_rating = ?, notes = ?, notes_public = ? WHERE id = ? AND user_id = ?')
+                    db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0, user_rating = ?, notes = ?, notes_public = ? WHERE id = ? AND user_id = ?')
                         .run(history.user_rating, history.notes, history.notes_public, existing.id, req.user.id);
                 } else {
-                    db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ? AND user_id = ?').run(existing.id, req.user.id);
+                    db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0 WHERE id = ? AND user_id = ?').run(existing.id, req.user.id);
                 }
                 return res.json({ id: existing.id, restored: true });
             }
@@ -1360,13 +1360,13 @@ app.post('/api/movies/import', authenticateToken, async (req, res) => {
         if (!url || !isHdrezkaUrl(url)) return res.status(400).json({ error: 'Valid HDRezka URL required' });
 
         // Check duplicates for this user
-        const checkStmt = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
+        const checkStmt = db.prepare('SELECT id, deleted_at, hidden_from_library FROM movies WHERE link = ? AND user_id = ?');
         const existing = checkStmt.get(url, req.user.id);
 
         if (existing) {
-            if (existing.deleted_at) {
-                db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ? AND user_id = ?').run(existing.id, req.user.id);
-                return res.json({ id: existing.id, restored: true, title: 'Restored from trash' });
+            if (existing.deleted_at || existing.hidden_from_library) {
+                db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0 WHERE id = ? AND user_id = ?').run(existing.id, req.user.id);
+                return res.json({ id: existing.id, restored: true, title: 'Restored to library' });
             }
             return res.status(409).json({ error: 'Movie already exists in your list' });
         }
@@ -1804,8 +1804,8 @@ app.post('/api/collections/copy-move-movie', authenticateToken, async (req, res)
         if (!targetColl) return res.status(403).json({ error: 'Target collection not found or access denied' });
 
         const checkMovie = db.prepare('SELECT * FROM movies WHERE id = ?');
-        const checkExistingOwn = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
-        const restoreMovie = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?');
+        const checkExistingOwn = db.prepare('SELECT id, deleted_at, hidden_from_library FROM movies WHERE link = ? AND user_id = ?');
+        const restoreMovie = db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0 WHERE id = ?');
         const insertMovie = db.prepare(`
             INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, source_collection_name, source_collection_token, source_user_name, type, user_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1828,7 +1828,7 @@ app.post('/api/collections/copy-move-movie', authenticateToken, async (req, res)
                 const existingOwnMovie = checkExistingOwn.get(movie.link, req.user.id);
                 if (existingOwnMovie) {
                     myMovieId = existingOwnMovie.id;
-                    if (existingOwnMovie.deleted_at) {
+                    if (existingOwnMovie.deleted_at || existingOwnMovie.hidden_from_library) {
                         restoreMovie.run(existingOwnMovie.id);
                     }
                 } else {
@@ -1976,8 +1976,8 @@ app.post('/api/collections/:id/clone', authenticateToken, (req, res) => {
             INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, type, user_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
-        const checkMovie = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
-        const restoreMovie = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?');
+        const checkMovie = db.prepare('SELECT id, deleted_at, hidden_from_library FROM movies WHERE link = ? AND user_id = ?');
+        const restoreMovie = db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0 WHERE id = ?');
         const insertCollMovie = db.prepare('INSERT OR IGNORE INTO collection_movies (collection_id, movie_id) VALUES (?, ?)');
 
         const runCloneTransaction = db.transaction(() => {
@@ -1991,7 +1991,7 @@ app.post('/api/collections/:id/clone', authenticateToken, (req, res) => {
                 // Check if recipient already has this movie by link
                 const existing = checkMovie.get(m.link, req.user.id);
                 if (existing) {
-                    if (existing.deleted_at) {
+                    if (existing.deleted_at || existing.hidden_from_library) {
                         restoreMovie.run(existing.id);
                     }
                     targetMovieId = existing.id;
@@ -2048,8 +2048,8 @@ app.post('/api/collections/:id/import-movies', authenticateToken, (req, res) => 
 
         const moviesToImport = db.prepare(query).all(...params);
 
-        const checkMovie = db.prepare('SELECT id, deleted_at FROM movies WHERE link = ? AND user_id = ?');
-        const restoreMovie = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ?');
+        const checkMovie = db.prepare('SELECT id, deleted_at, hidden_from_library FROM movies WHERE link = ? AND user_id = ?');
+        const restoreMovie = db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0 WHERE id = ?');
         const insertMovie = db.prepare(`
             INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, source_collection_name, source_collection_token, source_user_name, type, user_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -2062,7 +2062,7 @@ app.post('/api/collections/:id/import-movies', authenticateToken, (req, res) => 
             for (const m of moviesToImport) {
                 const existing = checkMovie.get(m.link, req.user.id);
                 if (existing) {
-                    if (existing.deleted_at) {
+                    if (existing.deleted_at || existing.hidden_from_library) {
                         restoreMovie.run(existing.id);
                         importedCount++;
                     } else {

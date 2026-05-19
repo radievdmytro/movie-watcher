@@ -466,7 +466,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: link })
             });
-            if (res.ok) {
+            if (res.ok || res.status === 409) {
                 setAddedLinks(prev => new Set([...prev, link]));
                 if (onUpdate) {
                     onUpdate(null);
@@ -677,7 +677,11 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
             base = merged;
         }
 
+        const libraryLinks = new Set(movies.map(m => cleanLinkPath(m.link)));
+
         return base.filter(movie => {
+            if (movie.link && libraryLinks.has(cleanLinkPath(movie.link))) return false;
+
             // Genre Filter
             if (filterGenres.length > 0) {
                 const movieGenres = (movie.genres || movie.misc || '').split(',').map(g => g.trim());

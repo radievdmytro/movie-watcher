@@ -139,7 +139,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: link })
             });
-            if (res.ok) {
+            if (res.ok || res.status === 409) {
                 setAddedLinks(prev => new Set([...prev, link]));
                 if (onUpdate) {
                     onUpdate(null, { refreshLibrary: true });
