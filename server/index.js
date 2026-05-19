@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const sharp = require('sharp');
-const { searchMovies, getMovieDetails, getCategoryMovies, getHdrezkaComments } = require('./scraper');
+const { searchMovies, getMovieDetails, getCategoryMovies, getHdrezkaComments, scrapeCatalogPage } = require('./scraper');
 
 const app = express();
 const PORT = 3000;
@@ -1984,6 +1984,194 @@ app.delete('/api/admin/users/:userId', authenticateToken, requireAdmin, (req, re
 });
 
 // ==========================================
+// BACKGROUND MOVIE CRAWLER PIPELINE
+// ==========================================
+const SETTINGS_FILE = path.join(__dirname, 'crawler_settings.json');
+
+let crawlerSettings = {
+    enabled: false,
+    ratePerHour: 60,
+    currentPage: 1,
+    currentStatus: 'Idle'
+};
+
+// Load settings
+try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+        const fileData = fs.readFileSync(SETTINGS_FILE, 'utf8');
+        const parsed = JSON.parse(fileData);
+        crawlerSettings = { ...crawlerSettings, ...parsed };
+    }
+} catch (e) {
+    console.error('[Crawler] Failed to load settings:', e.message);
+}
+
+let crawlerTimeoutId = null;
+
+const saveCrawlerSettings = () => {
+    try {
+        fs.writeFileSync(SETTINGS_FILE, JSON.stringify({
+            enabled: crawlerSettings.enabled,
+            ratePerHour: crawlerSettings.ratePerHour,
+            currentPage: crawlerSettings.currentPage
+        }, null, 2), 'utf8');
+    } catch (e) {
+        console.error('[Crawler] Failed to save settings:', e.message);
+    }
+};
+
+async function runCrawlerStep() {
+    if (!crawlerSettings.enabled) {
+        crawlerSettings.currentStatus = 'Idle (Disabled)';
+        return;
+    }
+
+    try {
+        crawlerSettings.currentStatus = 'Checking database...';
+        
+        // 1. Check if we have partially scraped movies (description is null or empty)
+        let targetMovie = db.prepare(`
+            SELECT link, title FROM scraped_movies_cache 
+            WHERE description IS NULL OR description = '' 
+            ORDER BY RANDOM() LIMIT 1
+        `).get();
+
+        // 2. If no target movie is found, discover new ones!
+        if (!targetMovie) {
+            crawlerSettings.currentStatus = 'Discovering new movies...';
+            console.log('[Crawler] No unscraped movies in cache. Triggering page discovery...');
+            
+            const categories = ['films', 'series', 'cartoons', 'animation'];
+            const category = categories[Math.floor(Math.random() * categories.length)];
+            const pageNum = Math.floor(Math.random() * 500) + 1;
+            const targetPath = `/${category}/page/${pageNum}/`;
+            
+            console.log(`[Crawler] Scraping catalog page: ${targetPath}`);
+            const discovered = await scrapeCatalogPage(targetPath);
+            
+            if (discovered && discovered.length > 0) {
+                let newCount = 0;
+                for (const item of discovered) {
+                    try {
+                        const info = db.prepare(`
+                            INSERT INTO scraped_movies_cache (title, year, link, poster_url, genres, rating, type, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                            ON CONFLICT(link) DO NOTHING
+                        `).run(item.title, item.year, item.link, item.img, item.misc, item.rating, item.type);
+                        if (info.changes > 0) newCount++;
+                    } catch (e) {}
+                }
+                console.log(`[Crawler] Catalog page parsed. Discovered ${discovered.length} movies (${newCount} new links added).`);
+                crawlerSettings.currentStatus = `Discovered ${newCount} new movies. Retrying scrape...`;
+                
+                // Fetch target movie again
+                targetMovie = db.prepare(`
+                    SELECT link, title FROM scraped_movies_cache 
+                    WHERE description IS NULL OR description = '' 
+                    ORDER BY RANDOM() LIMIT 1
+                `).get();
+            }
+        }
+
+        // 3. Scrape the full details for the target movie
+        if (targetMovie) {
+            crawlerSettings.currentStatus = `Scraping "${targetMovie.title}"...`;
+            console.log(`[Crawler] Scraping details for: ${targetMovie.title} (${targetMovie.link})`);
+            
+            const details = await getMovieDetails(targetMovie.link);
+            if (details) {
+                saveToCache(details);
+                console.log(`[Crawler] Successfully crawled details for: ${details.title}`);
+                crawlerSettings.currentStatus = `Idle. Crawled: "${details.title}"`;
+            } else {
+                crawlerSettings.currentStatus = 'Details page scrape returned empty.';
+            }
+        } else {
+            crawlerSettings.currentStatus = 'Idle. No new movies discovered.';
+        }
+
+    } catch (err) {
+        console.error('[Crawler Loop Error]', err.message);
+        crawlerSettings.currentStatus = `Error: ${err.message}`;
+    }
+
+    // Schedule next run
+    scheduleNextCrawlerStep();
+}
+
+function scheduleNextCrawlerStep() {
+    if (crawlerTimeoutId) {
+        clearTimeout(crawlerTimeoutId);
+        crawlerTimeoutId = null;
+    }
+
+    if (!crawlerSettings.enabled) {
+        crawlerSettings.currentStatus = 'Idle (Disabled)';
+        return;
+    }
+
+    // Interval math
+    const baseIntervalMs = (3600 / crawlerSettings.ratePerHour) * 1000;
+    // Jitter: +/- 25% random variation to mimic human browsing and prevent scraping patterns
+    const jitterFactor = Math.random() * 0.5 - 0.25;
+    const delayMs = Math.max(5000, Math.floor(baseIntervalMs + baseIntervalMs * jitterFactor));
+
+    console.log(`[Crawler] Next request scheduled in ${(delayMs / 1000).toFixed(1)} seconds.`);
+    
+    crawlerTimeoutId = setTimeout(() => {
+        runCrawlerStep();
+    }, delayMs);
+}
+
+// Crawler settings endpoints (admin-only)
+app.get('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, res) => {
+    try {
+        res.json({
+            enabled: crawlerSettings.enabled,
+            ratePerHour: crawlerSettings.ratePerHour,
+            currentStatus: crawlerSettings.currentStatus,
+            totalCached: db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, res) => {
+    try {
+        const { enabled, ratePerHour } = req.body;
+        if (enabled !== undefined) crawlerSettings.enabled = !!enabled;
+        if (ratePerHour !== undefined) {
+            crawlerSettings.ratePerHour = Math.max(1, Math.min(600, parseInt(ratePerHour) || 60));
+        }
+
+        saveCrawlerSettings();
+
+        if (crawlerSettings.enabled) {
+            console.log('[Crawler] Settings updated: Enabled background crawler.');
+            runCrawlerStep();
+        } else {
+            console.log('[Crawler] Settings updated: Disabled background crawler.');
+            if (crawlerTimeoutId) {
+                clearTimeout(crawlerTimeoutId);
+                crawlerTimeoutId = null;
+            }
+            crawlerSettings.currentStatus = 'Idle (Disabled)';
+        }
+
+        res.json({
+            success: true,
+            enabled: crawlerSettings.enabled,
+            ratePerHour: crawlerSettings.ratePerHour,
+            currentStatus: crawlerSettings.currentStatus,
+            totalCached: db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
 // LIFECYCLE & SERVER START
 // ==========================================
 
@@ -2026,6 +2214,12 @@ async function startApp() {
 
     app.listen(PORT, () => {
         console.log(`Server running on http://localhost:${PORT}`);
+        
+        // Start background crawler if enabled on server start
+        if (crawlerSettings.enabled) {
+            console.log('[Crawler] Background crawler is ENABLED on server start.');
+            runCrawlerStep();
+        }
     });
 }
 

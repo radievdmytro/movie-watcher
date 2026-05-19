@@ -15,6 +15,10 @@ function AdminDashboard({ onBack }) {
     const [syncStatus, setSyncStatus] = useState(null);
     const [error, setError] = useState(null);
 
+    // Crawler States
+    const [crawlerSettings, setCrawlerSettings] = useState({ enabled: false, ratePerHour: 60, currentStatus: 'Idle', totalCached: 0 });
+    const [updatingCrawler, setUpdatingCrawler] = useState(false);
+
     // Inline Admin Operations State (No native popups!)
     const [confirmDeleteUserId, setConfirmDeleteUserId] = useState(null);
     const [resetPasswordUserId, setResetPasswordUserId] = useState(null);
@@ -25,10 +29,11 @@ function AdminDashboard({ onBack }) {
         setLoading(true);
         setError(null);
         try {
-            const [statsRes, usersRes, syncRes] = await Promise.all([
+            const [statsRes, usersRes, syncRes, crawlerRes] = await Promise.all([
                 fetch('/api/admin/stats'),
                 fetch('/api/admin/users'),
-                fetch('/api/admin/sync-status')
+                fetch('/api/admin/sync-status'),
+                fetch('/api/admin/crawler-settings')
             ]);
             
             if (!statsRes.ok) {
@@ -46,6 +51,9 @@ function AdminDashboard({ onBack }) {
             if (syncRes.ok) {
                 setSyncStatus(await syncRes.json());
             }
+            if (crawlerRes.ok) {
+                setCrawlerSettings(await crawlerRes.json());
+            }
         } catch (err) {
             console.error('Failed to fetch admin stats:', err);
             setError(err.message);
@@ -57,6 +65,53 @@ function AdminDashboard({ onBack }) {
     useEffect(() => {
         fetchAdminData();
     }, []);
+
+    // Live update loop for crawler status when enabled
+    useEffect(() => {
+        let intervalId = null;
+        if (crawlerSettings.enabled && !selectedUser) {
+            intervalId = setInterval(async () => {
+                try {
+                    const res = await fetch('/api/admin/crawler-settings');
+                    if (res.ok) {
+                        const data = await res.json();
+                        setCrawlerSettings(data);
+                    }
+                } catch (e) {
+                    console.error('Failed to poll crawler settings:', e);
+                }
+            }, 3000);
+        }
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [crawlerSettings.enabled, selectedUser]);
+
+    const handleUpdateCrawler = async (updatedFields) => {
+        setUpdatingCrawler(true);
+        try {
+            const body = {
+                enabled: updatedFields.enabled !== undefined ? updatedFields.enabled : crawlerSettings.enabled,
+                ratePerHour: updatedFields.ratePerHour !== undefined ? updatedFields.ratePerHour : crawlerSettings.ratePerHour
+            };
+            const res = await fetch('/api/admin/crawler-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setCrawlerSettings(data);
+                if (stats) {
+                    setStats(prev => ({ ...prev, totalCached: data.totalCached }));
+                }
+            }
+        } catch (err) {
+            console.error('Failed to update background crawler settings:', err);
+        } finally {
+            setUpdatingCrawler(false);
+        }
+    };
 
     const handleInspectUser = async (user) => {
         setSelectedUser(user);
@@ -307,6 +362,148 @@ function AdminDashboard({ onBack }) {
                             </div>
                         </div>
                     )}
+
+                    {/* Background Crawler Control Card */}
+                    <div className="glass-panel animate-fade-in" style={{
+                        borderRadius: '15px',
+                        padding: '25px',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        background: 'rgba(255, 255, 255, 0.01)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '20px'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontSize: '1.8rem' }}>🤖</span>
+                                <div>
+                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        Background Movie Crawler
+                                        <span className="crawler-status-indicator" style={{
+                                            display: 'inline-block',
+                                            width: '8px',
+                                            height: '8px',
+                                            borderRadius: '50%',
+                                            background: crawlerSettings.enabled ? '#03dac6' : 'rgba(255,255,255,0.2)',
+                                            boxShadow: crawlerSettings.enabled ? '0 0 10px #03dac6' : 'none'
+                                        }}></span>
+                                    </h3>
+                                    <p style={{ margin: '3px 0 0 0', color: '#888', fontSize: '0.85rem' }}>
+                                        Automatically index random movies from HDRezka into the global site cache in the background
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <button
+                                    onClick={() => handleUpdateCrawler({ enabled: !crawlerSettings.enabled })}
+                                    disabled={updatingCrawler}
+                                    className={`btn ${crawlerSettings.enabled ? 'btn-ghost' : 'btn-gold'}`}
+                                    style={{
+                                        padding: '8px 20px',
+                                        borderRadius: '8px',
+                                        fontWeight: 600,
+                                        fontSize: '0.85rem',
+                                        border: crawlerSettings.enabled ? '1px solid rgba(239, 68, 68, 0.4)' : 'none',
+                                        color: crawlerSettings.enabled ? '#f87171' : '#000',
+                                        background: crawlerSettings.enabled ? 'rgba(239, 68, 68, 0.05)' : 'var(--accent-gold)'
+                                    }}
+                                >
+                                    {updatingCrawler ? 'Updating...' : crawlerSettings.enabled ? '🔴 Stop Crawler' : '🟢 Start Crawler'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                            gap: '20px',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                            paddingTop: '20px'
+                        }}>
+                            {/* Left Settings Control */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                <div>
+                                    <label style={{ color: '#ccc', fontSize: '0.9rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+                                        Scraping Speed (Requests Limit):
+                                    </label>
+                                    <select
+                                        value={crawlerSettings.ratePerHour}
+                                        onChange={(e) => handleUpdateCrawler({ ratePerHour: parseInt(e.target.value) })}
+                                        disabled={updatingCrawler}
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            background: 'rgba(0, 0, 0, 0.4)',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            color: '#fff',
+                                            borderRadius: '8px',
+                                            fontSize: '0.9rem',
+                                            outline: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <option value="15">15 movies / hour (~4 min delay)</option>
+                                        <option value="30">30 movies / hour (~2 min delay)</option>
+                                        <option value="60">60 movies / hour (~60 sec delay - Safe)</option>
+                                        <option value="120">120 movies / hour (~30 sec delay)</option>
+                                        <option value="240">240 movies / hour (~15 sec delay - Fast)</option>
+                                        <option value="360">360 movies / hour (~10 sec delay)</option>
+                                    </select>
+                                </div>
+
+                                <div style={{
+                                    fontSize: '0.8rem',
+                                    color: '#888',
+                                    lineHeight: '1.5',
+                                    background: 'rgba(255, 255, 255, 0.01)',
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(255, 255, 255, 0.02)'
+                                }}>
+                                    💡 <strong>Smart Safety Measures:</strong> The crawler automatically injects a random <strong>±25% variation (jitter)</strong> between requests to randomize crawl timing, mimicking human browser interactions to bypass HDRezka mirroring restrictions.
+                                </div>
+                            </div>
+
+                            {/* Right Status Panel */}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px',
+                                background: 'rgba(0, 0, 0, 0.25)',
+                                padding: '15px 20px',
+                                borderRadius: '10px',
+                                border: '1px solid rgba(255, 255, 255, 0.03)'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                                    <span style={{ color: '#888' }}>Total Global Cache:</span>
+                                    <span style={{ color: '#e5c158', fontWeight: 'bold' }}>🎬 {crawlerSettings.totalCached || 0} movies</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                                    <span style={{ color: '#888' }}>Average delay:</span>
+                                    <span style={{ color: '#aaa' }}>{((3600 / crawlerSettings.ratePerHour)).toFixed(0)} seconds</span>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '5px' }}>
+                                    <span style={{ color: '#888', fontSize: '0.8rem', fontWeight: 600 }}>Live Crawler Status:</span>
+                                    <div style={{
+                                        background: 'rgba(0,0,0,0.3)',
+                                        padding: '8px 12px',
+                                        borderRadius: '6px',
+                                        fontFamily: 'monospace',
+                                        fontSize: '0.82rem',
+                                        color: crawlerSettings.enabled ? '#03dac6' : '#888',
+                                        borderLeft: crawlerSettings.enabled ? '3px solid #03dac6' : '3px solid #555',
+                                        wordBreak: 'break-all',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
+                                    }} title={crawlerSettings.currentStatus}>
+                                        {crawlerSettings.currentStatus}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Users list */}
                     <div className="glass-panel animate-fade-in" style={{ borderRadius: '15px', overflow: 'hidden', padding: '20px' }}>
@@ -768,6 +965,14 @@ function AdminDashboard({ onBack }) {
                 }
                 .admin-user-row:hover {
                     background: rgba(255, 255, 255, 0.015);
+                }
+                .crawler-status-indicator {
+                    animation: pulse 2.5s infinite;
+                }
+                @keyframes pulse {
+                    0% { transform: scale(1); opacity: 0.7; box-shadow: 0 0 0 0 rgba(3, 218, 198, 0.5); }
+                    70% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 0 8px rgba(3, 218, 198, 0); }
+                    100% { transform: scale(1); opacity: 0.7; box-shadow: 0 0 0 0 rgba(3, 218, 198, 0); }
                 }
             `}</style>
         </div>

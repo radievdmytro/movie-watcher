@@ -358,4 +358,15 @@ async function getHdrezkaComments(url, page = 1) {
     }
 }
 
-module.exports = { searchMovies, getMovieDetails, getCategoryMovies, getHdrezkaComments };
+async function scrapeCatalogPage(path) {
+    try {
+        const { data } = await requestWithRetry(path);
+        const $ = cheerio.load(data);
+        return parseMovieList($);
+    } catch (error) {
+        console.error(`Catalog Page Scrape Error (${path}):`, error.message);
+        return [];
+    }
+}
+
+module.exports = { searchMovies, getMovieDetails, getCategoryMovies, getHdrezkaComments, scrapeCatalogPage };
