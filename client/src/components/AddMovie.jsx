@@ -1522,6 +1522,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
                 isOwned={isOwned}
                 getOwnedMovie={getOwnedMovie}
                 onOpenMovie={setCompareDetailsMovie}
+                libraryMovies={movies}
             />
 
             <style>{`

@@ -1,10 +1,29 @@
 import React, { useState, useEffect } from 'react';
 
-export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAddMovie, isOwned, getOwnedMovie, onOpenMovie }) {
+// Domain-agnostic path extractor for library ownership check
+const cleanLinkPath = (url) => {
+    if (!url) return '';
+    return url.toLowerCase()
+        .replace(/^https?:\/\/[^/]+/, '')
+        .replace(/^\/+|\/+$/g, '')
+        .split('?')[0].split('#')[0];
+};
+
+export default function MovieComparisonModal({ 
+    isOpen, 
+    onClose, 
+    movieLinks = [], 
+    onAddMovie, 
+    isOwned, 
+    getOwnedMovie, 
+    onOpenMovie,
+    libraryMovies = []
+}) {
     const [loading, setLoading] = useState(true);
     const [moviesData, setMoviesData] = useState([]);
     const [error, setError] = useState('');
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [activeLinks, setActiveLinks] = useState([]);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -16,19 +35,22 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
         if (isOpen) {
             document.body.style.overflow = 'hidden';
             document.documentElement.style.overflow = 'hidden';
+            setActiveLinks(movieLinks || []);
         } else {
             document.body.style.overflow = '';
             document.documentElement.style.overflow = '';
+            setActiveLinks([]);
         }
         return () => {
             document.body.style.overflow = '';
             document.documentElement.style.overflow = '';
         };
-    }, [isOpen]);
+    }, [isOpen, movieLinks]);
 
     useEffect(() => {
-        if (!isOpen || !movieLinks || movieLinks.length === 0) {
+        if (!isOpen || !activeLinks || activeLinks.length === 0) {
             setMoviesData([]);
+            setLoading(false);
             return;
         }
 
@@ -37,7 +59,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
             setError('');
             try {
                 const token = localStorage.getItem('token');
-                const promises = movieLinks.map(async (link) => {
+                const promises = activeLinks.map(async (link) => {
                     const res = await fetch('/api/movies/search', {
                         method: 'POST',
                         headers: {
@@ -61,7 +83,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
         };
 
         fetchDetails();
-    }, [isOpen, movieLinks]);
+    }, [isOpen, activeLinks]);
 
     if (!isOpen) return null;
 
@@ -81,7 +103,11 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
     };
 
     const highestRatingIdx = getHighestRatingIdx();
-    const panelMaxWidth = movieLinks.length <= 2 ? '900px' : movieLinks.length === 3 ? '1300px' : '1600px';
+    const maxLimit = isMobile ? 2 : 3;
+    const showAddSlot = activeLinks.length < maxLimit;
+    const totalColumns = moviesData.length + (showAddSlot ? 1 : 0);
+
+    const panelMaxWidth = totalColumns <= 2 ? '900px' : totalColumns === 3 ? '1300px' : '1600px';
 
     return (
         <div style={{
@@ -174,13 +200,13 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <span style={{ fontSize: '1.4rem' }}>⚖️</span>
                         <h3 style={{ margin: 0, fontSize: isMobile ? '1.05rem' : '1.25rem', fontWeight: 600, color: '#fff' }}>
-                            Compare Movies ({movieLinks.length})
+                            Compare Movies ({activeLinks.length})
                         </h3>
                     </div>
                 </div>
 
                 <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px' : '24px' }}>
-                    {loading ? (
+                    {loading && moviesData.length === 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '15px' }}>
                             <div style={{ width: '40px', height: '40px', border: '3px solid rgba(212,175,55,0.1)', borderTopColor: 'var(--accent-gold)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
                             <div style={{ color: '#aaa', fontSize: '0.9rem' }}>Loading comparison details...</div>
@@ -190,7 +216,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                     ) : (
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: isMobile ? `repeat(${moviesData.length}, 1fr)` : `130px repeat(${moviesData.length}, 1fr)`,
+                            gridTemplateColumns: isMobile ? `repeat(${totalColumns}, 1fr)` : `130px repeat(${totalColumns}, 1fr)`,
                             gap: isMobile ? '10px' : '16px',
                             alignItems: 'stretch'
                         }}>
@@ -206,6 +232,24 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                         background: 'rgba(255,255,255,0.02)', padding: isMobile ? '10px' : '16px', borderRadius: '16px',
                                         border: '1px solid rgba(255,255,255,0.04)', position: 'relative'
                                     }}>
+                                        {/* Remove button */}
+                                        <button 
+                                            onClick={() => {
+                                                setActiveLinks(prev => prev.filter((_, i) => i !== idx));
+                                            }}
+                                            style={{
+                                                position: 'absolute', top: isMobile ? '14px' : '22px', right: isMobile ? '14px' : '22px',
+                                                width: '24px', height: '24px', borderRadius: '50%',
+                                                background: 'rgba(255,77,77,0.9)', color: '#fff', border: 'none',
+                                                fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                                                transition: 'all 0.2s', fontWeight: 'bold'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+                                            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                            title="Remove from comparison"
+                                        >✕</button>
+
                                         <img src={movie.poster_url} alt={movie.title} style={{
                                             width: '100%', height: isMobile ? '150px' : '240px', objectFit: 'cover', borderRadius: '12px',
                                             boxShadow: '0 8px 20px rgba(0,0,0,0.4)'
@@ -266,6 +310,44 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                 );
                             })}
 
+                            {/* Add Movie Column Slot */}
+                            {showAddSlot && (
+                                <div style={{
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                    background: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.12)',
+                                    borderRadius: '16px', padding: isMobile ? '12px' : '20px', minHeight: isMobile ? '150px' : '360px',
+                                    gap: '12px', boxSizing: 'border-box', textAlign: 'center'
+                                }}>
+                                    <span style={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>⚖️</span>
+                                    <span style={{ fontSize: isMobile ? '0.75rem' : '0.82rem', color: '#888', lineHeight: 1.3 }}>
+                                        Compare with library
+                                    </span>
+                                    
+                                    <select 
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (val) {
+                                                setActiveLinks(prev => [...prev, val]);
+                                            }
+                                        }}
+                                        value=""
+                                        style={{
+                                            background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)',
+                                            color: '#fff', padding: '8px 12px', borderRadius: '8px', fontSize: '0.78rem',
+                                            outline: 'none', maxWidth: '100%', cursor: 'pointer'
+                                        }}
+                                    >
+                                        <option value="" disabled>✚ Add Movie</option>
+                                        {libraryMovies
+                                            .filter(m => !m.deleted_at && !activeLinks.some(link => cleanLinkPath(link) === cleanLinkPath(m.link)))
+                                            .map(m => (
+                                                <option key={m.id} value={m.link}>{m.title} ({m.year})</option>
+                                            ))
+                                        }
+                                    </select>
+                                </div>
+                            )}
+
                             {/* Year Row */}
                             {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Year</div>}
                             {moviesData.map((movie, idx) => (
@@ -273,6 +355,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                     📆 {movie.year}
                                 </div>
                             ))}
+                            {showAddSlot && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }} />}
 
                             {/* Rating Row */}
                             {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Rating</div>}
@@ -288,6 +371,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                     </div>
                                 );
                             })}
+                            {showAddSlot && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }} />}
 
                             {/* Country Row */}
                             {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Country</div>}
@@ -296,6 +380,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                     🌍 {movie.country || 'N/A'}
                                 </div>
                             ))}
+                            {showAddSlot && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }} />}
 
                             {/* Genres Row */}
                             {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Genres</div>}
@@ -304,6 +389,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                     🎭 {movie.genres || movie.misc || 'N/A'}
                                 </div>
                             ))}
+                            {showAddSlot && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }} />}
 
                             {/* Director Row */}
                             {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Director</div>}
@@ -312,6 +398,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                     🎬 {movie.director || 'N/A'}
                                 </div>
                             ))}
+                            {showAddSlot && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }} />}
 
                             {/* Duration Row */}
                             {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Duration</div>}
@@ -320,6 +407,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                     ⏱️ {movie.duration || 'N/A'}
                                 </div>
                             ))}
+                            {showAddSlot && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }} />}
 
                             {/* Voice Acting Row */}
                             {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Voice / Translation</div>}
@@ -328,6 +416,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                     🗣️ {movie.voice_acting || 'N/A'}
                                 </div>
                             ))}
+                            {showAddSlot && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }} />}
 
                             {/* Actors Row */}
                             {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Actors</div>}
@@ -336,6 +425,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                     👥 {movie.actors || 'N/A'}
                                 </div>
                             ))}
+                            {showAddSlot && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }} />}
 
                             {/* Description Row */}
                             {!isMobile && <div style={{ color: '#888', fontSize: '0.85rem', display: 'flex', alignItems: 'flex-start', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}>Description</div>}
@@ -347,6 +437,7 @@ export default function MovieComparisonModal({ isOpen, onClose, movieLinks, onAd
                                     📖 {movie.description || 'No description available.'}
                                 </div>
                             ))}
+                            {showAddSlot && <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }} />}
                         </div>
                     )}
                 </div>
