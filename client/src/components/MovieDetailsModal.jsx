@@ -11,18 +11,22 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         if (!propMovie || !propMovie.link) return;
         
         // If it's missing description or other important fields, fetch on the fly!
-        const needsUpdate = propMovie.id && (
-            !propMovie.description || propMovie.description.trim() === '' ||
+        const needsUpdate = !propMovie.description || propMovie.description.trim() === '' ||
             !propMovie.actors || (Array.isArray(propMovie.actors) ? propMovie.actors.length === 0 : propMovie.actors.trim() === '') ||
             !propMovie.director || propMovie.director.trim() === '' ||
             !propMovie.year ||
-            !propMovie.rating
-        );
+            !propMovie.rating;
+
         if (needsUpdate) {
             setIsLoadingDetails(true);
             const token = localStorage.getItem('token');
-            fetch(`/api/cache/search?query=${encodeURIComponent(propMovie.link)}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+            fetch('/api/movies/search', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ query: propMovie.link })
             })
             .then(res => res.json())
             .then(data => {
@@ -956,7 +960,33 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         <div style={{ flex: 1, marginBottom: '30px' }}>
                             {activeTab === 'about' && (
                                 <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
-                                    {!movie.id && (
+                                    {isLoadingDetails && (
+                                        <div style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            padding: '30px 20px',
+                                            gap: '12px',
+                                            color: '#aaa',
+                                            background: 'rgba(255,255,255,0.02)',
+                                            borderRadius: '12px',
+                                            border: '1px solid rgba(255,255,255,0.05)',
+                                            marginBottom: '20px'
+                                        }}>
+                                            <div style={{
+                                                border: '3px solid rgba(255,255,255,0.1)',
+                                                borderTop: '3px solid var(--accent-gold)',
+                                                borderRadius: '50%',
+                                                width: '28px',
+                                                height: '28px',
+                                                animation: 'spin 1s linear infinite'
+                                            }} />
+                                            <span style={{ fontSize: '0.85rem', fontWeight: '500' }}>Fetching rich movie details...</span>
+                                        </div>
+                                    )}
+
+                                    {!movie.id && !isLoadingDetails && (!movie.description || movie.description.trim() === '') && (
                                         <div style={{
                                             background: 'rgba(212, 175, 55, 0.1)',
                                             border: '1px solid rgba(212, 175, 55, 0.3)',
