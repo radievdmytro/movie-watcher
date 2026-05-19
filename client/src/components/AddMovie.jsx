@@ -506,6 +506,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [] }) {
             
             // Tie-breaker 2: Rating (higher first)
             const ratingA = parseFloat(a.rating) || 0;
+            const ratingB = parseFloat(b.rating) || 0;
             return ratingB - ratingA;
         });
     }
