@@ -358,9 +358,105 @@ const cleanLinkPath = (url) => {
         .split('#')[0];
 };
 
+const CardRatingButton = ({ movie, onUpdateRating }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const [hoverRating, setHoverRating] = useState(0);
+    const currentRating = movie.user_rating;
+
+    return (
+        <div
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => {
+                setIsHovered(false);
+                setHoverRating(0);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+                position: 'relative',
+                width: '100%',
+                marginBottom: '6px',
+                zIndex: 10
+            }}
+        >
+            <button
+                className="btn"
+                style={{
+                    width: '100%',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    border: '1px solid',
+                    background: currentRating 
+                        ? 'rgba(212, 175, 55, 0.15)' 
+                        : 'linear-gradient(135deg, rgba(255, 223, 115, 0.12) 0%, rgba(212, 175, 55, 0.12) 100%)',
+                    borderColor: currentRating ? 'rgba(212, 175, 55, 0.7)' : 'rgba(212, 175, 55, 0.3)',
+                    color: currentRating ? '#ffd700' : '#ffdf73',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                    minHeight: '28px',
+                    boxShadow: currentRating ? '0 0 10px rgba(212, 175, 55, 0.2)' : 'none'
+                }}
+            >
+                {isHovered ? (
+                    <div 
+                        style={{ 
+                            display: 'flex', 
+                            gap: '3px', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            width: '100%',
+                            height: '18px'
+                        }}
+                    >
+                        {[...Array(10)].map((_, i) => {
+                            const starValue = i + 1;
+                            const isLit = hoverRating ? starValue <= hoverRating : starValue <= (currentRating || 0);
+                            return (
+                                <span
+                                    key={starValue}
+                                    onMouseEnter={(e) => {
+                                        e.stopPropagation();
+                                        setHoverRating(starValue);
+                                    }}
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+                                        await onUpdateRating(starValue);
+                                    }}
+                                    style={{
+                                        cursor: 'pointer',
+                                        fontSize: '0.95rem',
+                                        color: isLit ? '#ffd700' : 'rgba(255,255,255,0.2)',
+                                        textShadow: isLit ? '0 0 6px rgba(212,175,55,0.6)' : 'none',
+                                        transition: 'transform 0.1s ease',
+                                        transform: hoverRating === starValue ? 'scale(1.25)' : 'scale(1)'
+                                    }}
+                                >
+                                    ★
+                                </span>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <>
+                        <span style={{ fontSize: '0.85rem' }}>★</span>
+                        <span>{currentRating ? `Оценено: ${currentRating}/10` : 'Оценить фильм'}</span>
+                    </>
+                )}
+            </button>
+        </div>
+    );
+};
+
 function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, highlightedLink, onGuestActivity }) {
     const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
     const [sortDir, setSortDir] = useState(() => localStorage.getItem('movieGrid_sortDir') || 'desc');
+    const [localRatings, setLocalRatings] = useState({});
     const [hideWatched, setHideWatched] = useState(() => {
         const stored = localStorage.getItem('movieGrid_hideWatched');
         return stored !== null ? JSON.parse(stored) : false;
@@ -2357,6 +2453,15 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 </div>
                                             )}
 
+                                            {movie.status === 'watched' && (
+                                                <CardRatingButton
+                                                    movie={movie}
+                                                    onUpdateRating={async (ratingVal) => {
+                                                        await onUpdate(movie.id || null, { user_rating: ratingVal, link: movie.link });
+                                                    }}
+                                                />
+                                            )}
+
                                             {/* Quick Actions (Mini) */}
                                             <div style={{ display: 'flex', gap: '5px', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
                                                 <button
@@ -2861,6 +2966,21 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 }}>
                                                     {movie.misc}
                                                 </div>
+                                            )}
+
+                                            {isMovieWatched && (
+                                                <CardRatingButton
+                                                    movie={allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link)) || { ...movie, user_rating: localRatings[movie.link] }}
+                                                    onUpdateRating={async (ratingVal) => {
+                                                        const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                                        setLocalRatings(prev => ({ ...prev, [movie.link]: ratingVal }));
+                                                        if (libMovie) {
+                                                            await onUpdate(libMovie.id, { user_rating: ratingVal, link: movie.link });
+                                                        } else {
+                                                            await onUpdate(null, { user_rating: ratingVal, link: movie.link });
+                                                        }
+                                                    }}
+                                                />
                                             )}
 
                                             {/* Action Buttons */}
