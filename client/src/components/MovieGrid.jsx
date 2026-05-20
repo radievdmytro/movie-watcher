@@ -1393,6 +1393,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             }
                         } catch (e) { console.error(e); }
                     }}
+                    onHideMovie={handleHideGlobalMovie}
                     isSelected={selectedMovie.id ? (selectedIds ? selectedIds.includes(selectedMovie.id) : false) : false}
                     onSelectToggle={selectedMovie.id && selectedIds && onSelect ? () => {
                         if (selectedIds.includes(selectedMovie.id)) {

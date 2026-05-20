@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 
-function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched, onRemoveMovie }) {
+function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched, onRemoveMovie, onHideMovie }) {
     const [liveDetails, setLiveDetails] = useState(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
@@ -446,6 +446,36 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             console.error(err);
             setLocalStatus(previousStatus);
         }
+    };
+
+    const renderHideButton = () => {
+        if (!isMobile || isAdded || isTrashMode || readOnly) return null;
+        return (
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (onHideMovie) onHideMovie(movie.link || movie.movie_link);
+                    if (onClose) onClose();
+                }}
+                style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    color: '#fff',
+                    padding: '8px',
+                    fontSize: '1.2rem',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: '0 0 auto',
+                    transition: 'all 0.2s'
+                }}
+                title="Hide from global search"
+            >
+                🚫
+            </button>
+        );
     };
 
     const renderLibraryButton = () => {
@@ -1616,6 +1646,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 </>
                             ) : !isTrashMode ? (
                                 <>
+                                    {renderHideButton()}
                                     {isMobile && renderLibraryButton()}
                                     <button
                                         style={{
