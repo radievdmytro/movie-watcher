@@ -1375,6 +1375,24 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             setTimeout(() => setJustUnwatchedLink(null), 450);
                         }
                     }}
+                    onRemoveMovie={async (id, link) => {
+                        setAddedLinks(prev => {
+                            const next = new Set(prev);
+                            next.delete(link);
+                            return next;
+                        });
+                        setLocalDeletedLinks(prev => new Set([...prev, cleanLinkPath(link)]));
+                        if (currentView === 'library') {
+                            // If in library, visually remove the movie right away
+                            setMovies(prev => prev.filter(m => m.id !== id));
+                        }
+                        try {
+                            const res = await fetch(`/api/trash/${id}`, { method: 'DELETE' });
+                            if (res.ok && typeof onUpdate === 'function') {
+                                onUpdate(null);
+                            }
+                        } catch (e) { console.error(e); }
+                    }}
                     isSelected={selectedMovie.id ? (selectedIds ? selectedIds.includes(selectedMovie.id) : false) : false}
                     onSelectToggle={selectedMovie.id && selectedIds && onSelect ? () => {
                         if (selectedIds.includes(selectedMovie.id)) {

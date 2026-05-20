@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 
-function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched }) {
+function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched, onRemoveMovie }) {
     const [liveDetails, setLiveDetails] = useState(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
@@ -83,6 +83,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     }, [isWatched, movie.status]);
 
     const [hoverRating, setHoverRating] = useState(0);
+    const [isLibraryBtnHovered, setIsLibraryBtnHovered] = useState(false);
     const [savingNotes, setSavingNotes] = useState(false);
     const [savedToastVisible, setSavedToastVisible] = useState(false);
     const [showWatchedPrompt, setShowWatchedPrompt] = useState(openWithWatchedPrompt);
@@ -449,17 +450,29 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
     const renderLibraryButton = () => {
         if (isAdded) {
+            const showRemove = isMobile || isLibraryBtnHovered;
             return (
                 <button
+                    onMouseEnter={() => setIsLibraryBtnHovered(true)}
+                    onMouseLeave={() => setIsLibraryBtnHovered(false)}
+                    onClick={() => {
+                        const actualId = movie.id || libMovieId;
+                        if (actualId && onRemoveMovie) {
+                            onRemoveMovie(actualId, movie.link || movie.movie_link);
+                            if (typeof onClose === 'function') {
+                                onClose();
+                            }
+                        }
+                    }}
                     style={{
-                        background: 'rgba(3, 218, 198, 0.1)',
-                        border: '1px solid rgba(3, 218, 198, 0.2)',
-                        color: '#03dac6',
+                        background: showRemove ? 'rgba(239, 68, 68, 0.2)' : 'rgba(3, 218, 198, 0.1)',
+                        border: showRemove ? '1px solid #ef4444' : '1px solid rgba(3, 218, 198, 0.2)',
+                        color: showRemove ? '#ef4444' : '#03dac6',
                         padding: isMobile ? '8px 10px' : '12px 28px',
                         fontSize: isMobile ? '0.82rem' : '0.95rem',
                         fontWeight: '700',
                         borderRadius: '10px',
-                        cursor: 'default',
+                        cursor: 'pointer',
                         boxShadow: 'none',
                         transition: 'all 0.2s',
                         display: 'inline-flex',
@@ -469,7 +482,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         flex: isMobile ? '1 1 auto' : '0 0 auto'
                     }}
                 >
-                    ✓ In My Library
+                    {showRemove ? '🗑 Remove' : '✓ In My Library'}
                 </button>
             );
         }
