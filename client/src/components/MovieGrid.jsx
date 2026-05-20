@@ -2534,7 +2534,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     })()}
                                                 </button>
                                                 <button
-                                                    className="btn-ghost"
+                                                    className="btn-ghost btn-trash-hover"
                                                     title="Delete"
                                                     style={{
                                                         padding: isMobile ? '4px 6px' : '4px 8px',
@@ -2718,9 +2718,20 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             </button>
 
                                             <button
-                                                className="btn-ghost"
+                                                className="btn-ghost btn-trash-hover"
                                                 title="Delete"
-                                                style={{ color: 'var(--danger)', fontSize: '1.2rem', padding: '4px', lineHeight: 1 }}
+                                                style={{
+                                                    color: 'var(--danger)',
+                                                    fontSize: '1.2rem',
+                                                    padding: '4px',
+                                                    lineHeight: 1,
+                                                    borderRadius: '4px',
+                                                    width: '28px',
+                                                    height: '28px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
                                                 onClick={() => onDelete(movie.id)}
                                             >
                                                 🗑
