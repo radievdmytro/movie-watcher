@@ -609,6 +609,23 @@ function App() {
         }
     };
 
+    // Bulk Mark Watched
+    const handleBulkMarkWatched = async () => {
+        if (!selectedIds.length) return;
+        try {
+            await fetch('/api/movies/bulk-watched', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: selectedIds })
+            });
+            fetchMovies();
+            setSelectedIds([]);
+            setSelectionAnchor(null);
+        } catch (error) {
+            console.error('Bulk mark watched failed', error);
+        }
+    };
+
     const handleBulkCompare = () => {
         const compareMax = window.innerWidth <= 768 ? 3 : 4;
         const links = movies
@@ -965,6 +982,7 @@ function App() {
                     onDelete={handleBulkDelete}
                     onRefresh={handleBulkRefresh}
                     onRestore={handleBulkRestore}
+                    onMarkWatched={handleBulkMarkWatched}
                     onAddToCollection={() => setShowAddToCollection(true)}
                     onCompare={(currentView === 'library' || currentView === 'watched') ? handleBulkCompare : undefined}
                     onCancelSelection={() => {

@@ -71,7 +71,7 @@ function CollapsingCompareSlot({ visible, isMobile, onCompare }) {
     );
 }
 
-function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToCollection, onCompare, onCancelSelection, isTrashMode, anchor }) {
+function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWatched, onAddToCollection, onCompare, onCancelSelection, isTrashMode, anchor }) {
     const [isVisible, setIsVisible] = useState(false);
     const [lastAnchor, setLastAnchor] = useState(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -261,6 +261,18 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
                         >
                             ⟳
                         </button>
+                        {onMarkWatched && (
+                            <button
+                                onClick={onMarkWatched}
+                                style={{
+                                    background: 'none', border: 'none', color: '#03dac6',
+                                    padding: '4px', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
+                                }}
+                                title="Mark Watched"
+                            >
+                                👁️
+                            </button>
+                        )}
                         <button
                             onClick={onAddToCollection}
                             style={{
@@ -345,6 +357,18 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onAddToC
                         >
                             ⟳ Refresh
                         </button>
+                        {onMarkWatched && (
+                            <>
+                                <div style={{ height: '16px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+                                <button
+                                    onClick={onMarkWatched}
+                                    className="btn-ghost"
+                                    style={{ color: '#03dac6', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '4px 8px' }}
+                                >
+                                    👁️ Watched
+                                </button>
+                            </>
+                        )}
                         <div style={{ height: '16px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
                         <button
                             onClick={onAddToCollection}
