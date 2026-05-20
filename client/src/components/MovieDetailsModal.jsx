@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 
-function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie }) {
+function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched }) {
     const [liveDetails, setLiveDetails] = useState(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
@@ -76,7 +76,12 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     const [notes, setNotes] = useState(movie.notes || '');
     const [isPublic, setIsPublic] = useState(movie.notes_public === 1 || movie.notes_public === true);
     const [userRating, setUserRating] = useState(movie.user_rating || 0);
-    const [localStatus, setLocalStatus] = useState(movie.status || 'want_to_watch');
+    const [localStatus, setLocalStatus] = useState(isWatched ? 'watched' : (movie.status || 'want_to_watch'));
+
+    useEffect(() => {
+        setLocalStatus(isWatched ? 'watched' : (movie.status || 'want_to_watch'));
+    }, [isWatched, movie.status]);
+
     const [hoverRating, setHoverRating] = useState(0);
     const [savingNotes, setSavingNotes] = useState(false);
     const [savedToastVisible, setSavedToastVisible] = useState(false);
@@ -426,6 +431,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             const actualId = movie.id || libMovieId;
             if (onUpdate) {
                 await onUpdate(actualId, { status: newStatus, link: movie.link || movie.movie_link });
+            }
+            if (onToggleWatched) {
+                onToggleWatched(movie.link || movie.movie_link, newStatus);
             }
             if (newStatus === 'watched') {
                 setActiveTab('reviews');

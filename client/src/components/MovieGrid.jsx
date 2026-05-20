@@ -1357,8 +1357,24 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     isTrashMode={isTrashMode}
                     readOnly={selectedMovie.readOnly}
                     isAdded={selectedMovie ? (addedLinks.has(selectedMovie.link) || libraryLinks.has(cleanLinkPath(selectedMovie.link))) : false}
+                    isWatched={selectedMovie ? (localWatchedLinks.has(selectedMovie.link) ? true : (selectedMovie.status === 'watched' || historyList.some(h => cleanLinkPath(h.movie_link) === cleanLinkPath(selectedMovie.link) && h.is_watched))) : false}
                     libMovieId={selectedMovie ? (allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(selectedMovie.link) && m.id !== null)?.id || null) : null}
                     onAddMovie={handleAddMovieFromCache}
+                    onToggleWatched={(link, newStatus) => {
+                        if (newStatus === 'watched') {
+                            setLocalWatchedLinks(prev => new Set([...prev, link]));
+                            setJustWatchedLink(link);
+                            setTimeout(() => setJustWatchedLink(null), 450);
+                        } else {
+                            setLocalWatchedLinks(prev => {
+                                const next = new Set(prev);
+                                next.delete(link);
+                                return next;
+                            });
+                            setJustUnwatchedLink(link);
+                            setTimeout(() => setJustUnwatchedLink(null), 450);
+                        }
+                    }}
                     isSelected={selectedMovie.id ? (selectedIds ? selectedIds.includes(selectedMovie.id) : false) : false}
                     onSelectToggle={selectedMovie.id && selectedIds && onSelect ? () => {
                         if (selectedIds.includes(selectedMovie.id)) {
