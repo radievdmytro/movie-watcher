@@ -424,20 +424,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         setLocalStatus(newStatus);
         try {
             const actualId = movie.id || libMovieId;
-            if (isAdded && actualId) {
-                if (onUpdate) {
-                    await onUpdate(actualId, { status: newStatus, link: movie.link || movie.movie_link });
-                }
-            } else if (isAdded && !actualId) {
-                if (onUpdate) {
-                    await onUpdate(null, { status: newStatus, link: movie.link || movie.movie_link });
-                }
-            } else {
-                if (onAddMovie) {
-                    await onAddMovie(movie.link || movie.movie_link, newStatus);
-                } else if (onUpdate) {
-                    await onUpdate(null, { status: newStatus, link: movie.link || movie.movie_link });
-                }
+            if (onUpdate) {
+                await onUpdate(actualId, { status: newStatus, link: movie.link || movie.movie_link });
             }
             if (newStatus === 'watched') {
                 setActiveTab('reviews');
