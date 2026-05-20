@@ -417,6 +417,7 @@ const CardRatingButton = ({ movie, onUpdateRating }) => {
                         {[...Array(10)].map((_, i) => {
                             const starValue = i + 1;
                             const isLit = hoverRating ? starValue <= hoverRating : starValue <= (currentRating || 0);
+                            const isSelectingNewRating = hoverRating > 0;
                             return (
                                 <span
                                     key={starValue}
@@ -431,9 +432,11 @@ const CardRatingButton = ({ movie, onUpdateRating }) => {
                                     style={{
                                         cursor: 'pointer',
                                         fontSize: '0.95rem',
-                                        color: isLit ? '#ffd700' : 'rgba(255,255,255,0.2)',
-                                        textShadow: isLit ? '0 0 6px rgba(212,175,55,0.6)' : 'none',
-                                        transition: 'transform 0.1s ease',
+                                        color: isLit
+                                            ? (isSelectingNewRating ? '#ffd700' : 'rgba(212, 175, 55, 0.75)')
+                                            : 'rgba(255,255,255,0.2)',
+                                        textShadow: isLit && isSelectingNewRating ? '0 0 6px rgba(212,175,55,0.6)' : 'none',
+                                        transition: 'all 0.15s ease',
                                         transform: hoverRating === starValue ? 'scale(1.25)' : 'scale(1)'
                                     }}
                                 >
