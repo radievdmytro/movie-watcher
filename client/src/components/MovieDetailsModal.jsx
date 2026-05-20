@@ -76,11 +76,15 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     const [notes, setNotes] = useState(movie.notes || '');
     const [isPublic, setIsPublic] = useState(movie.notes_public === 1 || movie.notes_public === true);
     const [userRating, setUserRating] = useState(movie.user_rating || 0);
-    const [localStatus, setLocalStatus] = useState(isWatched ? 'watched' : (movie.status || 'want_to_watch'));
+    const [localStatus, setLocalStatus] = useState(() => isWatched ? 'watched' : (movie.status || 'want_to_watch'));
+    const [initialMount, setInitialMount] = useState(true);
 
     useEffect(() => {
-        setLocalStatus(isWatched ? 'watched' : (movie.status || 'want_to_watch'));
-    }, [isWatched, movie.status]);
+        if (initialMount) { setInitialMount(false); return; }
+        // Only sync when isWatched prop changes (driven by parent's localWatchedLinks)
+        setLocalStatus(isWatched ? 'watched' : 'want_to_watch');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isWatched]);
 
     const [hoverRating, setHoverRating] = useState(0);
     const [isLibraryBtnHovered, setIsLibraryBtnHovered] = useState(false);
