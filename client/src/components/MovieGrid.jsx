@@ -557,9 +557,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         if (!backgroundCacheResults.length) return [];
         return backgroundCacheResults.map(m => ({ ...m, isFromCache: true }));
     }, [backgroundCacheResults]);
+    const [localDeletedLinks, setLocalDeletedLinks] = useState(new Set());
     const libraryLinks = useMemo(() => {
-        return new Set(allMovies.filter(m => m.id !== null).map(m => cleanLinkPath(m.link)));
-    }, [allMovies]);
+        return new Set(allMovies.filter(m => m.id !== null && !localDeletedLinks.has(cleanLinkPath(m.link))).map(m => cleanLinkPath(m.link)));
+    }, [allMovies, localDeletedLinks]);
     const [addingLinks, setAddingLinks] = useState(new Set());
     const [addedLinks, setAddedLinks] = useState(new Set());
     const [localWatchedLinks, setLocalWatchedLinks] = useState(new Set());
@@ -3102,21 +3103,29 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                              disabled={isAdding}
                                                              onMouseEnter={() => setHoveredButtonLink(movie.link)}
                                                              onMouseLeave={() => setHoveredButtonLink(null)}
-                                                             onClick={(e) => {
+                                                             onClick={async (e) => {
                                                                  e.stopPropagation();
                                                                  if (isAdding) return;
                                                                  if (isAdded) {
                                                                      const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
                                                                      if (libMovie) {
-                                                                         const token = localStorage.getItem('token');
-                                                                         fetch(`/api/trash/${libMovie.id}`, {
-                                                                             method: 'DELETE',
-                                                                             headers: { 'Authorization': `Bearer ${token}` }
-                                                                         }).then(res => {
+                                                                         // Optimistic UI update
+                                                                         setAddedLinks(prev => {
+                                                                             const next = new Set(prev);
+                                                                             next.delete(movie.link);
+                                                                             return next;
+                                                                         });
+                                                                         setLocalDeletedLinks(prev => new Set([...prev, cleanLinkPath(movie.link)]));
+                                                                         
+                                                                         // Fire and forget fetch
+                                                                         try {
+                                                                             const res = await fetch(`/api/trash/${libMovie.id}`, { method: 'DELETE' });
                                                                              if (res.ok && typeof onUpdate === 'function') {
                                                                                  onUpdate(null);
                                                                              }
-                                                                         }).catch(console.error);
+                                                                         } catch (error) {
+                                                                             console.error(error);
+                                                                         }
                                                                      }
                                                                  } else {
                                                                      handleAddMovieFromCache(movie.link);
