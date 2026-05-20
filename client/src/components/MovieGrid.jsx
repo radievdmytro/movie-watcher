@@ -3184,6 +3184,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 </button>
 
                                                 <button
+                                                    className="btn-checkmark"
                                                     onMouseEnter={() => setHoveredCheckmarkLink(movie.link)}
                                                     onMouseLeave={() => setHoveredCheckmarkLink(null)}
                                                     onClick={async (e) => {
