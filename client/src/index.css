@@ -146,7 +146,8 @@ input {
   background: #03dac6 !important;
   color: #000000 !important;
   border-color: #03dac6 !important;
-  box-shadow: 0 0 15px rgba(3, 218, 198, 0.8) !important;
+  box-shadow: none !important;
+  transform: scale(1) !important;
 }
 
 .btn-checkmark:active svg {
