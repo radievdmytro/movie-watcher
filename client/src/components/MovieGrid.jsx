@@ -389,9 +389,9 @@ const CardRatingButton = ({ movie, onUpdateRating }) => {
                     cursor: 'pointer',
                     border: '1px solid',
                     background: currentRating 
-                        ? 'rgba(212, 175, 55, 0.15)' 
-                        : 'linear-gradient(135deg, rgba(255, 223, 115, 0.12) 0%, rgba(212, 175, 55, 0.12) 100%)',
-                    borderColor: currentRating ? 'rgba(212, 175, 55, 0.7)' : 'rgba(212, 175, 55, 0.3)',
+                        ? 'linear-gradient(135deg, rgba(255, 223, 115, 0.3) 0%, rgba(212, 175, 55, 0.2) 100%)' 
+                        : 'linear-gradient(135deg, rgba(255, 223, 115, 0.08) 0%, rgba(212, 175, 55, 0.08) 100%)',
+                    borderColor: currentRating ? '#d4af37' : 'rgba(212, 175, 55, 0.35)',
                     color: currentRating ? '#ffd700' : '#ffdf73',
                     transition: 'all 0.2s ease',
                     textAlign: 'center',
@@ -2453,7 +2453,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 </div>
                                             )}
 
-                                            {movie.status === 'watched' && !movie.user_rating && (
+                                            {movie.status === 'watched' && (
                                                 <CardRatingButton
                                                     movie={movie}
                                                     onUpdateRating={async (ratingVal) => {
@@ -2968,11 +2968,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 </div>
                                             )}
 
-                                            {(() => {
-                                                const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
-                                                const rating = libMovie?.user_rating || localRatings[movie.link];
-                                                return isMovieWatched && !rating;
-                                            })() && (
+                                            {isMovieWatched && (
                                                 <CardRatingButton
                                                     movie={allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link)) || { ...movie, user_rating: localRatings[movie.link] }}
                                                     onUpdateRating={async (ratingVal) => {
