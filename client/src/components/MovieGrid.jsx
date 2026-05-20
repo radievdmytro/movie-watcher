@@ -487,6 +487,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [hoveredCardLink, setHoveredCardLink] = useState(null);
     const [hoveredButtonLink, setHoveredButtonLink] = useState(null);
     const [hoveredCheckmarkLink, setHoveredCheckmarkLink] = useState(null);
+    const [clickedCheckmarkLink, setClickedCheckmarkLink] = useState(null);
     const [hoveredDeleteLink, setHoveredDeleteLink] = useState(null);
 
     // Animation state
@@ -2930,6 +2931,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             const isMovieWatched = localWatchedLinks.has(movie.link) || 
                                                    allMovies.some(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.status === 'watched') ||
                                                    historyList.some(h => cleanLinkPath(h.movie_link) === cleanLinkPath(movie.link) && h.is_watched === 1);
+                            const isCheckmarkHovered = hoveredCheckmarkLink === movie.link && clickedCheckmarkLink !== movie.link;
                             const userRating = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link))?.user_rating ||
                                                historyList.find(h => cleanLinkPath(h.movie_link) === cleanLinkPath(movie.link))?.user_rating;
 
@@ -2958,6 +2960,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         setHoveredCardLink(null);
                                         setHoveredButtonLink(null);
                                         setHoveredCheckmarkLink(null);
+                                        setClickedCheckmarkLink(null);
                                     }}
                                     style={{
                                         position: 'relative',
@@ -3251,11 +3254,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                      >
                                                          <path
                                                              d="M3 7.5L5.5 10L11 3.5"
-                                                             className={hoveredCheckmarkLink === movie.link ? 'draw-checkmark-path' : ''}
+                                                             className={isCheckmarkHovered ? 'draw-checkmark-path' : ''}
                                                              style={{
-                                                                 strokeDashoffset: hoveredCheckmarkLink === movie.link ? undefined : 0,
+                                                                 strokeDashoffset: isCheckmarkHovered ? undefined : 0,
                                                                  strokeDasharray: 15,
-                                                                 opacity: hoveredCheckmarkLink === movie.link ? 1 : (isMovieWatched ? 1 : 0.35),
+                                                                 opacity: isCheckmarkHovered ? 1 : (isMovieWatched ? 1 : 0.35),
                                                                  transition: 'opacity 0.25s ease-in-out'
                                                              }}
                                                          />
