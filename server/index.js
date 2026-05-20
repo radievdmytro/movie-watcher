@@ -894,23 +894,49 @@ app.get('/api/hdrezka-comments', async (req, res) => {
 app.get('/api/movies', authenticateToken, (req, res) => {
     try {
         const stmt = db.prepare(`
-            SELECT m.*, 
-                   (
-                     -- Community rating: average from movies table (active/deleted) + history table, excluding current user
-                     SELECT ROUND(AVG(r), 1) FROM (
-                       SELECT m2.user_rating AS r FROM movies m2
-                         WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
-                       UNION ALL
-                       SELECT h.user_rating AS r FROM user_movie_history h
-                         WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
-                         AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
-                     )
-                   ) AS community_rating
-            FROM movies m 
-            WHERE m.user_id = ? AND m.deleted_at IS NULL AND m.hidden_from_library = 0
-            ORDER BY m.created_at DESC
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = ? AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = ? AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = ? AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
         `);
-        const movies = stmt.all(req.user.id);
+        const movies = stmt.all(req.user.id, req.user.id, req.user.id);
         res.json(movies);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1089,22 +1115,78 @@ app.patch('/api/movies/:id', authenticateToken, (req, res) => {
         
         if (result.changes === 0) return res.status(404).json({ error: 'Movie not found or unauthorized' });
 
-        // --- Persist rating/notes to history table (survives movie deletion) ---
-        if (user_rating !== undefined || notes !== undefined || notes_public !== undefined) {
-            const movie = db.prepare('SELECT link, user_rating, notes, notes_public FROM movies WHERE id = ? AND user_id = ?').get(id, req.user.id);
+        // --- Persist rating/notes/watched to history table (survives movie deletion) ---
+        if (user_rating !== undefined || notes !== undefined || notes_public !== undefined || status !== undefined) {
+            const movie = db.prepare('SELECT link, user_rating, notes, notes_public, status FROM movies WHERE id = ? AND user_id = ?').get(id, req.user.id);
             if (movie && movie.link) {
+                const isWatched = movie.status === 'watched' ? 1 : 0;
                 db.prepare(`
-                    INSERT INTO user_movie_history (user_id, movie_link, user_rating, notes, notes_public, updated_at)
-                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    INSERT INTO user_movie_history (user_id, movie_link, user_rating, notes, notes_public, is_watched, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                     ON CONFLICT(user_id, movie_link) DO UPDATE SET
-                        user_rating = COALESCE(excluded.user_rating, user_movie_history.user_rating),
-                        notes = COALESCE(excluded.notes, user_movie_history.notes),
+                        user_rating = excluded.user_rating,
+                        notes = excluded.notes,
                         notes_public = excluded.notes_public,
+                        is_watched = excluded.is_watched,
                         updated_at = CURRENT_TIMESTAMP
-                `).run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public);
+                `).run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public, isWatched);
             }
         }
 
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET user movie history
+app.get('/api/movies/history', authenticateToken, (req, res) => {
+    try {
+        const stmt = db.prepare('SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = ?');
+        const history = stmt.all(req.user.id);
+        res.json(history);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST update user movie history directly
+app.post('/api/movies/history', authenticateToken, (req, res) => {
+    try {
+        const { link, user_rating, notes, notes_public, is_watched } = req.body;
+        if (!link) return res.status(400).json({ error: 'link required' });
+
+        const existing = db.prepare('SELECT id FROM user_movie_history WHERE user_id = ? AND movie_link = ?').get(req.user.id, link);
+        if (existing) {
+            const fields = [];
+            const values = [];
+            if (req.body.hasOwnProperty('user_rating')) {
+                fields.push('user_rating = ?');
+                values.push(user_rating);
+            }
+            if (req.body.hasOwnProperty('notes')) {
+                fields.push('notes = ?');
+                values.push(notes);
+            }
+            if (req.body.hasOwnProperty('notes_public')) {
+                fields.push('notes_public = ?');
+                values.push(notes_public ? 1 : 0);
+            }
+            if (req.body.hasOwnProperty('is_watched')) {
+                fields.push('is_watched = ?');
+                values.push(is_watched ? 1 : 0);
+            }
+            if (fields.length > 0) {
+                fields.push('updated_at = CURRENT_TIMESTAMP');
+                values.push(req.user.id, link);
+                db.prepare(`UPDATE user_movie_history SET ${fields.join(', ')} WHERE user_id = ? AND movie_link = ?`).run(...values);
+            }
+        } else {
+            db.prepare(`
+                INSERT INTO user_movie_history (user_id, movie_link, user_rating, notes, notes_public, is_watched, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            `).run(req.user.id, link, user_rating, notes, notes_public ? 1 : 0, is_watched ? 1 : 0);
+        }
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1294,17 +1376,19 @@ app.delete('/api/trash/:id', authenticateToken, (req, res) => {
     try {
         const { id } = req.params;
         // Save rating/notes to history before permanent deletion
-        const movie = db.prepare('SELECT link, user_rating, notes, notes_public FROM movies WHERE id = ? AND user_id = ?').get(id, req.user.id);
-        if (movie && movie.link && (movie.user_rating !== null || movie.notes)) {
+        const movie = db.prepare('SELECT link, user_rating, notes, notes_public, status FROM movies WHERE id = ? AND user_id = ?').get(id, req.user.id);
+        if (movie && movie.link) {
+            const isWatched = movie.status === 'watched' ? 1 : 0;
             db.prepare(`
-                INSERT INTO user_movie_history (user_id, movie_link, user_rating, notes, notes_public, updated_at)
-                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                INSERT INTO user_movie_history (user_id, movie_link, user_rating, notes, notes_public, is_watched, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(user_id, movie_link) DO UPDATE SET
                     user_rating = COALESCE(excluded.user_rating, user_movie_history.user_rating),
                     notes = COALESCE(excluded.notes, user_movie_history.notes),
                     notes_public = excluded.notes_public,
+                    is_watched = COALESCE(excluded.is_watched, user_movie_history.is_watched),
                     updated_at = CURRENT_TIMESTAMP
-            `).run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public);
+            `).run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public, isWatched);
         }
         const result = db.prepare('DELETE FROM movies WHERE id = ? AND user_id = ?').run(id, req.user.id);
         if (result.changes === 0) return res.status(404).json({ error: 'Movie not found or unauthorized' });
@@ -1319,20 +1403,22 @@ app.delete('/api/trash', authenticateToken, (req, res) => {
     try {
         const ids = req.body?.ids;
         const backfillStmt = db.prepare(`
-            INSERT INTO user_movie_history (user_id, movie_link, user_rating, notes, notes_public, updated_at)
-            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            INSERT INTO user_movie_history (user_id, movie_link, user_rating, notes, notes_public, is_watched, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(user_id, movie_link) DO UPDATE SET
                 user_rating = COALESCE(excluded.user_rating, user_movie_history.user_rating),
                 notes = COALESCE(excluded.notes, user_movie_history.notes),
                 notes_public = excluded.notes_public,
+                is_watched = COALESCE(excluded.is_watched, user_movie_history.is_watched),
                 updated_at = CURRENT_TIMESTAMP
         `);
         if (ids && Array.isArray(ids)) {
             const transaction = db.transaction((ids) => {
                 for (const id of ids) {
-                    const movie = db.prepare('SELECT link, user_rating, notes, notes_public FROM movies WHERE id = ? AND user_id = ?').get(id, req.user.id);
-                    if (movie && movie.link && (movie.user_rating !== null || movie.notes)) {
-                        backfillStmt.run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public);
+                    const movie = db.prepare('SELECT link, user_rating, notes, notes_public, status FROM movies WHERE id = ? AND user_id = ?').get(id, req.user.id);
+                    if (movie && movie.link) {
+                        const isWatched = movie.status === 'watched' ? 1 : 0;
+                        backfillStmt.run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public, isWatched);
                     }
                     db.prepare('DELETE FROM movies WHERE id = ? AND user_id = ?').run(id, req.user.id);
                 }
@@ -1340,11 +1426,12 @@ app.delete('/api/trash', authenticateToken, (req, res) => {
             transaction(ids);
         } else {
             // Empty all trash — backfill all
-            const trashedMovies = db.prepare('SELECT link, user_rating, notes, notes_public FROM movies WHERE deleted_at IS NOT NULL AND user_id = ?').all(req.user.id);
+            const trashedMovies = db.prepare('SELECT link, user_rating, notes, notes_public, status FROM movies WHERE deleted_at IS NOT NULL AND user_id = ?').all(req.user.id);
             const transaction = db.transaction(() => {
                 for (const movie of trashedMovies) {
-                    if (movie.link && (movie.user_rating !== null || movie.notes)) {
-                        backfillStmt.run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public);
+                    if (movie.link) {
+                        const isWatched = movie.status === 'watched' ? 1 : 0;
+                        backfillStmt.run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public, isWatched);
                     }
                 }
                 db.prepare('DELETE FROM movies WHERE deleted_at IS NOT NULL AND user_id = ?').run(req.user.id);
@@ -1385,17 +1472,25 @@ app.post('/api/movies/import', authenticateToken, async (req, res) => {
         // Cache the newly imported details
         saveToCache(details);
 
+        // Check if user has history for this movie link (previously rated/noted before permanent delete)
+        const history = db.prepare('SELECT user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = ? AND movie_link = ?').get(req.user.id, url);
+
         const stmt = db.prepare(`
-            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, source_collection_name, source_collection_token, source_user_name, type, user_id, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, source_collection_name, source_collection_token, source_user_name, type, user_id, status, user_rating, notes, notes_public)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
+
+        const defaultStatus = status || (history?.is_watched ? 'watched' : 'want_to_watch');
 
         const info = stmt.run(
             details.title, details.original_title, details.year, url, details.rating,
             details.description, details.poster_url, details.genres, details.actors, details.director, details.writers,
             details.country, details.duration, details.voice_acting,
             source_collection_name || null, source_collection_token || null, source_user_name || null,
-            details.type || 'movie', req.user.id, status || 'want_to_watch'
+            details.type || 'movie', req.user.id, defaultStatus,
+            history?.user_rating ?? null,
+            history?.notes ?? null,
+            history?.notes_public ?? 0
         );
 
         res.json({ id: info.lastInsertRowid, title: details.title });

@@ -115,6 +115,7 @@ const initDb = () => {
       user_rating REAL DEFAULT NULL,
       notes TEXT DEFAULT NULL,
       notes_public INTEGER DEFAULT 0,
+      is_watched INTEGER DEFAULT 0,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(user_id, movie_link),
       FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -189,6 +190,10 @@ const initDb = () => {
 
   try {
     db.exec("ALTER TABLE movies ADD COLUMN hidden_from_library INTEGER DEFAULT 0");
+  } catch (e) { }
+
+  try {
+    db.exec("ALTER TABLE user_movie_history ADD COLUMN is_watched INTEGER DEFAULT 0");
   } catch (e) { }
 
   // Cryptographically backfill share_token for any existing collections lacking one

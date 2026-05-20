@@ -307,13 +307,17 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 setShowWatchedPrompt(true);
                 setActiveTab('reviews');
             }
-            const res = await fetch(`/api/movies/${movie.id}`, {
-                method: 'PATCH',
+            const url = movie.id ? `/api/movies/${movie.id}` : '/api/movies/history';
+            const method = movie.id ? 'PATCH' : 'POST';
+            const body = movie.id ? updates : { link: movie.link, user_rating: ratingVal || null, is_watched: ratingVal > 0 ? 1 : undefined };
+            
+            const res = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates)
+                body: JSON.stringify(body)
             });
             if (res.ok) {
-                if (onUpdate) onUpdate(movie.id, updates);
+                if (onUpdate) onUpdate(movie.id || null, { ...updates, link: movie.link || movie.movie_link });
             }
         } catch (e) {
             console.error('Failed to autosave rating:', e);
@@ -332,13 +336,17 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 updates.status = 'watched';
                 setShowWatchedPrompt(true);
             }
-            const res = await fetch(`/api/movies/${movie.id}`, {
-                method: 'PATCH',
+            const url = movie.id ? `/api/movies/${movie.id}` : '/api/movies/history';
+            const method = movie.id ? 'PATCH' : 'POST';
+            const body = movie.id ? updates : { link: movie.link, notes: notes.trim() === '' ? null : notes, notes_public: isPublic, is_watched: movie.status === 'watched' || updates.status === 'watched' ? 1 : undefined };
+
+            const res = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates)
+                body: JSON.stringify(body)
             });
             if (res.ok) {
-                if (onUpdate) onUpdate(movie.id, updates);
+                if (onUpdate) onUpdate(movie.id || null, { ...updates, link: movie.link || movie.movie_link });
                 setNotesFeedback({ type: 'success', message: '✔ Notes saved successfully!' });
                 setShowWatchedPrompt(false);
                 setTimeout(() => setNotesFeedback({ type: '', message: '' }), 3000);
@@ -435,7 +443,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         const newStatus = movie.status === 'watched' ? 'want_to_watch' : 'watched';
         try {
             if (onUpdate) {
-                await onUpdate(movie.id, { status: newStatus });
+                await onUpdate(movie.id || null, { status: newStatus, link: movie.link || movie.movie_link });
                 if (newStatus === 'watched') {
                     setActiveTab('reviews');
                     setShowWatchedPrompt(true);

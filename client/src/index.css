@@ -999,3 +999,93 @@ body.hide-header-search .app-header {
     grid-template-columns: repeat(3, 1fr) !important;
   }
 }
+
+/* ==========================================
+   NAVIGATION TAB STYLES & HIGHLIGHTS
+   ========================================== */
+.header-nav .btn, .header-btn-trash {
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: none;
+}
+
+.header-nav .btn:hover, .header-btn-trash:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Active states for tabs */
+.header-nav .btn.active-library {
+  background: rgba(212, 175, 55, 0.15);
+  color: #ffdf73;
+  border: 1.5px solid rgba(212, 175, 55, 0.6);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+  font-weight: 700;
+}
+.header-nav .btn.active-library:hover {
+  background: rgba(212, 175, 55, 0.22);
+  color: #fff;
+  border-color: rgba(212, 175, 55, 0.8);
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.45);
+}
+
+.header-nav .btn.active-watched {
+  background: rgba(3, 218, 198, 0.15);
+  color: #03dac6;
+  border: 1.5px solid rgba(3, 218, 198, 0.7);
+  box-shadow: 0 0 12px rgba(3, 218, 198, 0.3);
+  font-weight: 700;
+}
+.header-nav .btn.active-watched:hover {
+  background: rgba(3, 218, 198, 0.22);
+  color: #fff;
+  border-color: rgba(3, 218, 198, 0.9);
+  box-shadow: 0 0 16px rgba(3, 218, 198, 0.45);
+}
+
+.header-nav .btn.active-collections {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1.5px solid rgba(168, 85, 247, 0.6);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
+  font-weight: 700;
+}
+.header-nav .btn.active-collections:hover {
+  background: rgba(168, 85, 247, 0.22);
+  color: #fff;
+  border-color: rgba(168, 85, 247, 0.8);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
+}
+
+.header-nav .btn.active-admin {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+  border: 1.5px solid rgba(251, 146, 60, 0.6);
+  box-shadow: 0 0 12px rgba(251, 146, 60, 0.3);
+  font-weight: 700;
+}
+.header-nav .btn.active-admin:hover {
+  background: rgba(251, 146, 60, 0.22);
+  color: #fff;
+  border-color: rgba(251, 146, 60, 0.8);
+  box-shadow: 0 0 16px rgba(251, 146, 60, 0.45);
+}
+
+.header-btn-trash.active-trash {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1.5px solid rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+  font-weight: 700;
+}
+.header-btn-trash.active-trash:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fff;
+  border-color: rgba(239, 68, 68, 0.8);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.45);
+}

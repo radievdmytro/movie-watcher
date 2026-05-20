@@ -23,6 +23,7 @@ const cleanLinkPath = (url) => {
 
 function App() {
     const [movies, setMovies] = useState([]);
+    const [historyList, setHistoryList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
     const [checkingAuth, setCheckingAuth] = useState(true);
@@ -314,6 +315,17 @@ function App() {
         setCurrentView(user ? getInitialView() : 'auth');
     };
 
+    const fetchHistoryList = async () => {
+        if (!user) return;
+        try {
+            const res = await fetch('/api/movies/history');
+            const data = await res.json();
+            setHistoryList(data);
+        } catch (error) {
+            console.error('Failed to fetch history:', error);
+        }
+    };
+
     const fetchMovies = async (silent = false) => {
         if (currentView !== 'library' && currentView !== 'trash' && currentView !== 'watched') return;
         if (!user) return; // Do not fetch movies if not authenticated
@@ -334,11 +346,36 @@ function App() {
 
     useEffect(() => {
         fetchMovies();
+        fetchHistoryList();
     }, [currentView, user]);
 
      const handleUpdate = async (id, updates) => {
         if (id === null) {
+            if (updates && updates.link) {
+                try {
+                    const historyBody = {
+                        link: updates.link,
+                        user_rating: updates.user_rating,
+                        notes: updates.notes,
+                        notes_public: updates.notes_public,
+                        is_watched: updates.status === 'watched' ? 1 : (updates.status === 'want_to_watch' ? 0 : undefined)
+                    };
+                    // Strip undefined fields
+                    Object.keys(historyBody).forEach(key => {
+                        if (historyBody[key] === undefined) delete historyBody[key];
+                    });
+                    
+                    await fetch('/api/movies/history', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(historyBody)
+                    });
+                } catch (e) {
+                    console.error('Failed to update history in handleUpdate:', e);
+                }
+            }
             fetchMovies(true);
+            fetchHistoryList();
             return;
         }
         try {
@@ -348,6 +385,7 @@ function App() {
                 body: JSON.stringify(updates)
             });
             setMovies(movies.map(m => m.id === id ? { ...m, ...updates } : m));
+            fetchHistoryList();
         } catch (error) {
             console.error('Update failed:', error);
         }
@@ -666,52 +704,26 @@ function App() {
                             <div className="header-nav" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <button
                                     onClick={() => setCurrentView('library')}
-                                    className="btn"
-                                    style={{
-                                        background: currentView === 'library' ? 'var(--bg-card)' : 'rgba(255,255,255,0.05)',
-                                        color: currentView === 'library' ? '#fff' : '#888',
-                                        borderRadius: '8px'
-                                    }}
+                                    className={`btn ${currentView === 'library' ? 'active-library' : ''}`}
                                 >
                                     Library
                                 </button>
                                 <button
                                     onClick={() => setCurrentView('watched')}
-                                    className="btn"
-                                    style={{
-                                        background: currentView === 'watched' ? 'rgba(3, 218, 198, 0.12)' : 'rgba(20, 20, 20, 0.65)',
-                                        color: '#03dac6',
-                                        border: '1.5px solid #03dac6',
-                                        boxShadow: currentView === 'watched' ? '0 0 10px rgba(3, 218, 198, 0.3)' : 'none',
-                                        borderRadius: '8px',
-                                        fontWeight: 'bold',
-                                        transition: 'all 0.2s ease'
-                                    }}
+                                    className={`btn ${currentView === 'watched' ? 'active-watched' : ''}`}
                                 >
                                     Watched
                                 </button>
                                 <button
                                     onClick={() => setCurrentView('collections')}
-                                    className="btn"
-                                    style={{
-                                        background: currentView === 'collections' ? 'var(--bg-card)' : 'rgba(255,255,255,0.05)',
-                                        color: currentView === 'collections' ? 'var(--accent-gold)' : '#888',
-                                        borderRadius: '8px'
-                                    }}
+                                    className={`btn ${currentView === 'collections' ? 'active-collections' : ''}`}
                                 >
                                     📁 Collections
                                 </button>
                                 {user.username.toLowerCase() === 'radev' && (
                                     <button
                                         onClick={() => setCurrentView('admin')}
-                                        className="btn"
-                                        style={{
-                                            background: currentView === 'admin' ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                                            color: currentView === 'admin' ? '#fff' : 'var(--accent-gold)',
-                                            border: '1px solid rgba(212, 175, 55, 0.3)',
-                                            borderRadius: '8px',
-                                            fontWeight: 'bold'
-                                        }}
+                                        className={`btn ${currentView === 'admin' ? 'active-admin' : ''}`}
                                     >
                                         👑 Admin Panel
                                     </button>
@@ -730,14 +742,8 @@ function App() {
                             <button
                                 ref={trashButtonRef}
                                 onClick={() => setCurrentView('trash')}
-                                className="btn header-btn-trash"
+                                className={`btn header-btn-trash ${currentView === 'trash' ? 'active-trash' : ''}`}
                                 title="Trash"
-                                style={{
-                                    background: currentView === 'trash' ? 'var(--bg-card)' : 'rgba(255,255,255,0.05)',
-                                    color: currentView === 'trash' ? 'var(--accent-gold)' : '#888',
-                                    border: currentView === 'trash' ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.05)',
-                                    borderRadius: '8px'
-                                }}
                             >
                                 <span className="btn-icon">🗑️</span>
                                 <span className="btn-label">Trash</span>
@@ -895,6 +901,8 @@ function App() {
                                 <MovieGrid
                                     movies={displayedMovies}
                                     allMovies={movies}
+                                    historyList={historyList}
+                                    onFetchHistory={fetchHistoryList}
                                     onUpdate={handleUpdate}
                                     onDelete={handleDelete}
                                     selectedIds={selectedIds}

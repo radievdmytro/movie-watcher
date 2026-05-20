@@ -358,7 +358,7 @@ const cleanLinkPath = (url) => {
         .split('#')[0];
 };
 
-function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink, onGuestActivity }) {
+function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink, onGuestActivity }) {
     const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
     const [sortDir, setSortDir] = useState(() => localStorage.getItem('movieGrid_sortDir') || 'desc');
     const [hideWatched, setHideWatched] = useState(() => {
@@ -454,7 +454,7 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
         return backgroundCacheResults.map(m => ({ ...m, isFromCache: true }));
     }, [backgroundCacheResults]);
     const libraryLinks = useMemo(() => {
-        return new Set(allMovies.map(m => cleanLinkPath(m.link)));
+        return new Set(allMovies.filter(m => m.id !== null).map(m => cleanLinkPath(m.link)));
     }, [allMovies]);
     const [addingLinks, setAddingLinks] = useState(new Set());
     const [addedLinks, setAddedLinks] = useState(new Set());
@@ -489,6 +489,15 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
         setAutoSwitchToCache(checked);
         localStorage.setItem('autoSwitchToCache', checked ? 'true' : 'false');
     };
+
+    useEffect(() => {
+        if (selectedMovie) {
+            const updated = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(selectedMovie.link));
+            if (updated && updated.id !== selectedMovie.id) {
+                setSelectedMovie(updated);
+            }
+        }
+    }, [allMovies, selectedMovie]);
 
     useEffect(() => {
         if (searchDb !== 'cache') {
@@ -1080,7 +1089,7 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
     const handleUpdateMovie = async (id, fields) => {
         if (onUpdate) {
             await onUpdate(id, fields);
-            if (selectedMovie && selectedMovie.id === id) {
+            if (selectedMovie && (selectedMovie.id === id || (id === null && fields.link && cleanLinkPath(selectedMovie.link) === cleanLinkPath(fields.link)))) {
                 setSelectedMovie(prev => ({ ...prev, ...fields }));
             }
         }
@@ -1137,7 +1146,7 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
                     onUpdate={handleUpdateMovie}
                     onDelete={onDelete}
                     isTrashMode={isTrashMode}
-                    readOnly={!selectedMovie.id || selectedMovie.readOnly}
+                    readOnly={selectedMovie.readOnly}
                     isSelected={selectedMovie.id ? (selectedIds ? selectedIds.includes(selectedMovie.id) : false) : false}
                     onSelectToggle={selectedMovie.id && selectedIds && onSelect ? () => {
                         if (selectedIds.includes(selectedMovie.id)) {
@@ -1217,7 +1226,24 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
                                                     <div
                                                         key={item.id}
                                                         onClick={() => {
-                                                            setSelectedMovie(searchDb === 'cache' ? { ...item, poster_url: item.poster_url || item.img, readOnly: true } : item);
+                                                            if (searchDb === 'cache') {
+                                                                const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(item.link));
+                                                                if (libMovie) {
+                                                                    setSelectedMovie(libMovie);
+                                                                } else {
+                                                                    const histMovie = historyList.find(h => cleanLinkPath(h.movie_link) === cleanLinkPath(item.link));
+                                                                    setSelectedMovie({
+                                                                        ...item,
+                                                                        poster_url: item.poster_url || item.img,
+                                                                        user_rating: histMovie?.user_rating || null,
+                                                                        notes: histMovie?.notes || null,
+                                                                        notes_public: histMovie?.notes_public || 0,
+                                                                        status: histMovie?.is_watched ? 'watched' : 'want_to_watch'
+                                                                    });
+                                                                }
+                                                            } else {
+                                                                setSelectedMovie(item);
+                                                            }
                                                             setFilterQuery('');
                                                         }}
                                                         style={{
@@ -2194,16 +2220,18 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
                                         background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)',
                                         pointerEvents: 'none' // Allow click through to main card
                                     }}>
-                                        <div
-                                            onClick={(e) => e.stopPropagation()}
-                                            onMouseDown={(e) => setSelectionAnchor({ x: e.clientX, y: e.clientY })}
-                                            style={{ pointerEvents: 'auto' }}
-                                        >
-                                            <Checkbox
-                                                checked={selectedIds.includes(movie.id)}
-                                                onChange={() => toggleSelect(movie.id)}
-                                            />
-                                        </div>
+                                        {movie.id && (
+                                            <div
+                                                onClick={(e) => e.stopPropagation()}
+                                                onMouseDown={(e) => setSelectionAnchor({ x: e.clientX, y: e.clientY })}
+                                                style={{ pointerEvents: 'auto' }}
+                                            >
+                                                <Checkbox
+                                                    checked={selectedIds.includes(movie.id)}
+                                                    onChange={() => toggleSelect(movie.id)}
+                                                />
+                                            </div>
+                                        )}
                                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end', pointerEvents: 'none' }}>
                                             {/* Priority Badges: Animation */}
                                             {(movie.genres?.toLowerCase().includes('мульт') || movie.genres?.toLowerCase().includes('анимац') || movie.link?.includes('/cartoons/') || movie.link?.includes('/animation/')) ? (
@@ -2351,11 +2379,11 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
                                                     }}
                                                     onClick={async () => {
                                                         if (movie.status !== 'watched') {
-                                                            await onUpdate(movie.id, { status: 'watched' });
+                                                            await onUpdate(movie.id || null, { status: 'watched', link: movie.link });
                                                             setOpenWithWatchedPrompt(true);
                                                             setSelectedMovie({ ...movie, status: 'watched' });
                                                         } else {
-                                                            await onUpdate(movie.id, { status: 'want_to_watch' });
+                                                            await onUpdate(movie.id || null, { status: 'want_to_watch', link: movie.link });
                                                         }
                                                     }}
                                                 >
@@ -2415,7 +2443,7 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
                         </thead>
                         <tbody>
                             {filteredAndSortedMovies.slice(0, visibleCount).map(movie => (
-                                <tr key={movie.id} style={{
+                                <tr key={movie.id || movie.link} style={{
                                     borderBottom: '1px solid rgba(255,255,255,0.05)',
                                     background: selectedIds.includes(movie.id) ? 'rgba(212, 175, 55, 0.05)' : 'transparent'
                                 }}>
@@ -2423,10 +2451,12 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
                                         style={{ padding: '15px', textAlign: 'center' }}
                                         onMouseDown={(e) => setSelectionAnchor({ x: e.clientX, y: e.clientY })}
                                     >
-                                        <Checkbox
-                                            checked={selectedIds.includes(movie.id)}
-                                            onChange={() => toggleSelect(movie.id)}
-                                        />
+                                        {movie.id && (
+                                            <Checkbox
+                                                checked={selectedIds.includes(movie.id)}
+                                                onChange={() => toggleSelect(movie.id)}
+                                            />
+                                        )}
                                     </td>
                                     <td style={{ padding: '10px' }}>
                                         <div className="poster-preview-wrapper">
@@ -2510,11 +2540,11 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
                                                 className="btn-ghost"
                                                 onClick={async () => {
                                                     if (movie.status !== 'watched') {
-                                                        await onUpdate(movie.id, { status: 'watched' });
+                                                        await onUpdate(movie.id || null, { status: 'watched', link: movie.link });
                                                         setOpenWithWatchedPrompt(true);
                                                         setSelectedMovie({ ...movie, status: 'watched' });
                                                     } else {
-                                                        await onUpdate(movie.id, { status: 'want_to_watch' });
+                                                        await onUpdate(movie.id || null, { status: 'want_to_watch', link: movie.link });
                                                     }
                                                 }}
                                                 style={{
@@ -2717,7 +2747,11 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
                         {filteredOnboardingCacheMovies.map((movie, idx) => {
                             const isAdded = addedLinks.has(movie.link) || libraryLinks.has(cleanLinkPath(movie.link));
                             const isAdding = addingLinks.has(movie.link);
-                            const isMovieWatched = localWatchedLinks.has(movie.link) || allMovies.some(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.status === 'watched');
+                            const isMovieWatched = localWatchedLinks.has(movie.link) || 
+                                                   allMovies.some(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.status === 'watched') ||
+                                                   historyList.some(h => cleanLinkPath(h.movie_link) === cleanLinkPath(movie.link) && h.is_watched === 1);
+                            const userRating = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link))?.user_rating ||
+                                               historyList.find(h => cleanLinkPath(h.movie_link) === cleanLinkPath(movie.link))?.user_rating;
 
                             return (
                                 <div
@@ -2728,7 +2762,15 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
                                         if (libMovie) {
                                             setSelectedMovie(libMovie);
                                         } else {
-                                            setSelectedMovie({ ...movie, poster_url: movie.poster_url || movie.img, readOnly: true });
+                                            const histMovie = historyList.find(h => cleanLinkPath(h.movie_link) === cleanLinkPath(movie.link));
+                                            setSelectedMovie({
+                                                ...movie,
+                                                poster_url: movie.poster_url || movie.img,
+                                                user_rating: histMovie?.user_rating || null,
+                                                notes: histMovie?.notes || null,
+                                                notes_public: histMovie?.notes_public || 0,
+                                                status: histMovie?.is_watched ? 'watched' : 'want_to_watch'
+                                            });
                                         }
                                     }}
                                     style={{
@@ -2794,9 +2836,19 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
 
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#ccc', marginTop: '3px' }}>
                                                 <span>{movie.year}</span>
-                                                {movie.rating && (
-                                                    <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>★ {movie.rating}</span>
-                                                )}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                                    {movie.rating ? `★ ${movie.rating}` : '-'}
+                                                    {userRating && (
+                                                        <span style={{
+                                                            color: '#03dac6',
+                                                            borderLeft: '1px solid #444',
+                                                            paddingLeft: '5px',
+                                                            marginLeft: '2px'
+                                                        }}>
+                                                            👤 ★ {userRating}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             {movie.misc && (
@@ -2817,7 +2869,7 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
                                                         e.stopPropagation();
                                                         if (isAdding) return;
                                                         if (isAdded) {
-                                                            const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                                            const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
                                                             if (libMovie) {
                                                                 onDelete(libMovie.id, true);
                                                                 setAddedLinks(prev => {
@@ -2875,22 +2927,25 @@ function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds
                                                     onClick={async (e) => {
                                                         e.stopPropagation();
                                                         if (isAdding) return;
+                                                        const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
                                                         if (isMovieWatched) {
-                                                            // Toggle status to want_to_watch in library
-                                                            const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
                                                             if (libMovie) {
                                                                 await onUpdate(libMovie.id, { status: 'want_to_watch' });
+                                                            } else {
+                                                                await onUpdate(null, { status: 'want_to_watch', link: movie.link });
                                                             }
-                                                            // Also remove from local watched state
                                                             setLocalWatchedLinks(prev => {
                                                                 const next = new Set(prev);
                                                                 next.delete(movie.link);
                                                                 return next;
                                                             });
                                                         } else {
-                                                            // Add to library & set status as watched
                                                             setLocalWatchedLinks(prev => new Set([...prev, movie.link]));
-                                                            await handleAddMovieFromCache(movie.link, 'watched');
+                                                            if (libMovie) {
+                                                                await onUpdate(libMovie.id, { status: 'watched' });
+                                                            } else {
+                                                                await onUpdate(null, { status: 'watched', link: movie.link });
+                                                            }
                                                         }
                                                     }}
                                                     style={{
