@@ -3089,13 +3089,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                      const btnColorRest = isAdded ? '#03dac6' : '#c084fc';
                                                      const btnBgHover = isCheckmarkHovered 
                                                          ? 'rgba(3, 218, 198, 0.1)' 
-                                                         : (isAdded ? 'rgba(3, 218, 198, 0.25)' : 'rgba(168, 85, 247, 0.3)');
+                                                         : (isAdded ? 'rgba(239, 68, 68, 0.2)' : 'rgba(168, 85, 247, 0.3)');
                                                      const btnBorderHover = isCheckmarkHovered 
                                                          ? 'rgba(3, 218, 198, 0.3)' 
-                                                         : (isAdded ? '#03dac6' : 'rgba(168, 85, 247, 0.7)');
+                                                         : (isAdded ? '#ef4444' : 'rgba(168, 85, 247, 0.7)');
                                                      const btnColorHover = isCheckmarkHovered 
                                                          ? '#03dac6' 
-                                                         : (isAdded ? '#03dac6' : '#d8b4fe');
+                                                         : (isAdded ? '#ef4444' : '#d8b4fe');
                                                      
                                                      return (
                                                          <button
@@ -3163,7 +3163,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                      } else if (isCardHovered && !isBtnHovered) {
                                                                          text = 'Details';
                                                                      } else {
-                                                                         text = isAdding ? '⏳ Adding...' : isAdded ? '✓ In My Library' : '➕ Add to Library';
+                                                                         text = isAdding ? '⏳ Adding...' : isAdded ? (isBtnHovered ? '🗑 Remove' : '✓ In My Library') : '➕ Add to Library';
                                                                      }
                                                                      
                                                                      return (
