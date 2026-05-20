@@ -2293,10 +2293,17 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 style={{
                                     position: isDeleting && animationPhase ? 'fixed' : 'relative',
                                     overflow: 'hidden',
-                                    transition: isDeleting ? 'none' : 'transform 0.3s ease-out',
+                                    transition: isDeleting ? 'none' : 'transform 0.3s ease-out, box-shadow 0.3s ease-out, border-color 0.3s ease-out',
                                     border: isHighlighted
                                         ? '2px solid var(--accent-gold)'
-                                        : selectedIds.includes(movie.id) ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.05)',
+                                        : selectedIds.includes(movie.id)
+                                            ? '2px solid var(--accent-gold)'
+                                            : hoveredCardLink === movie.link
+                                                ? '1px solid rgba(3, 218, 198, 0.4)'
+                                                : '1px solid rgba(255,255,255,0.05)',
+                                    boxShadow: hoveredCardLink === movie.link
+                                        ? '0 8px 30px rgba(3, 218, 198, 0.35), 0 0 15px rgba(3, 218, 198, 0.2)'
+                                        : '0 4px 20px rgba(0,0,0,0.3)',
                                     aspectRatio: '2/3',
                                     borderRadius: '8px',
                                     ...animStyle
@@ -2949,12 +2956,17 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         borderRadius: '16px',
                                         overflow: 'hidden',
                                         aspectRatio: '2/3',
-                                        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                                        border: '1px solid rgba(255,255,255,0.06)',
+                                        boxShadow: hoveredCardLink === movie.link
+                                            ? '0 8px 30px rgba(3, 218, 198, 0.35), 0 0 15px rgba(3, 218, 198, 0.2)'
+                                            : '0 4px 20px rgba(0,0,0,0.3)',
+                                        border: hoveredCardLink === movie.link
+                                            ? '1px solid rgba(3, 218, 198, 0.4)'
+                                            : '1px solid rgba(255,255,255,0.06)',
                                         background: 'rgba(255,255,255,0.02)',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         animation: 'fadeIn 0.4s ease',
+                                        transition: 'all 0.3s ease-out',
                                         cursor: 'pointer'
                                     }}
                                 >
