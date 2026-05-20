@@ -586,6 +586,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [backgroundSearchStats, setBackgroundSearchStats] = useState(null);
     const [isBgCacheSearching, setIsBgCacheSearching] = useState(false);
     const [showAutoSwitchToast, setShowAutoSwitchToast] = useState(false);
+    const [globalHideError, setGlobalHideError] = useState('');
 
     // Custom Onboarding / Cache Directory for sparse libraries
     const [onboardingCacheMovies, setOnboardingCacheMovies] = useState([]);
@@ -638,24 +639,38 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         const normalizedLink = cleanLinkPath(link);
         if (!normalizedLink) return;
 
+        const prevCacheMoviesResults = cacheMoviesResults;
+        const prevBackgroundCacheResults = backgroundCacheResults;
+        const prevOnboardingCacheMovies = onboardingCacheMovies;
+
+        setGlobalHideError('');
         setLocalHiddenGlobalLinks(prev => new Set([...prev, normalizedLink]));
         setCacheMoviesResults(prev => prev.filter(movie => cleanLinkPath(movie.link) !== normalizedLink));
         setBackgroundCacheResults(prev => prev.filter(movie => cleanLinkPath(movie.link) !== normalizedLink));
         setOnboardingCacheMovies(prev => prev.filter(movie => cleanLinkPath(movie.link) !== normalizedLink));
 
         try {
-            await fetch('/api/hidden-global-movies', {
+            const res = await fetch('/api/hidden-global-movies', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ link })
             });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `Hide failed with HTTP ${res.status}`);
+            }
         } catch (err) {
             console.error('Failed to hide global movie:', err);
+            setGlobalHideError('Could not save hidden movie. The card was restored.');
+            setTimeout(() => setGlobalHideError(''), 4500);
             setLocalHiddenGlobalLinks(prev => {
                 const next = new Set(prev);
                 next.delete(normalizedLink);
                 return next;
             });
+            setCacheMoviesResults(prevCacheMoviesResults);
+            setBackgroundCacheResults(prevBackgroundCacheResults);
+            setOnboardingCacheMovies(prevOnboardingCacheMovies);
         }
     };
 
@@ -1309,6 +1324,25 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     >
                         ✕
                     </button>
+                </div>
+            )}
+
+            {globalHideError && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    right: '24px',
+                    background: 'rgba(239, 68, 68, 0.95)',
+                    color: '#fff',
+                    padding: '14px 20px',
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.45)',
+                    zIndex: 99999,
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
+                    border: '1px solid rgba(255,255,255,0.18)'
+                }}>
+                    {globalHideError}
                 </div>
             )}
 

@@ -342,10 +342,16 @@ function CollectionsView({ onBack }) {
         setHiddenLoading(true);
         try {
             const res = await fetch('/api/hidden-global-movies');
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `Failed to load hidden movies (${res.status})`);
+            }
             const data = await res.json();
             setHiddenMovies(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error('Failed to fetch hidden global movies:', err);
+            setActionFeedback({ id: 'hidden', type: 'error', message: err.message || 'Failed to load hidden movies.' });
+            setHiddenMovies([]);
         } finally {
             setHiddenLoading(false);
         }
@@ -670,9 +676,13 @@ function CollectionsView({ onBack }) {
     const handleUnhideMovie = async (movie, e) => {
         if (e) e.stopPropagation();
         try {
-            await fetch(`/api/hidden-global-movies?link=${encodeURIComponent(movie.link || movie.movie_link)}`, {
+            const res = await fetch(`/api/hidden-global-movies?link=${encodeURIComponent(movie.link || movie.movie_link)}`, {
                 method: 'DELETE'
             });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `Unhide failed with HTTP ${res.status}`);
+            }
             setHiddenMovies(prev => prev.filter(item => item.movie_link !== movie.movie_link));
             setActionFeedback({
                 id: 'hidden',
@@ -799,7 +809,7 @@ function CollectionsView({ onBack }) {
                     {/* Tabs */}
                     <div className="glass-panel" style={{ display: 'inline-flex', padding: '4px', borderRadius: '10px', gap: '4px' }}>
                         <button
-                            onClick={() => { setActiveTab('hidden'); setExpandedCollectionId(null); }}
+                            onClick={() => { setActiveTab('hidden'); setExpandedCollectionId(null); fetchHiddenMovies(); }}
                             className="btn"
                             style={{
                                 background: activeTab === 'hidden' ? 'var(--accent-gold)' : 'transparent',
