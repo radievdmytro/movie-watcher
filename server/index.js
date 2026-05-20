@@ -1043,10 +1043,10 @@ app.post('/api/movies', authenticateToken, (req, res) => {
         if (existing) {
             if (existing.deleted_at || existing.hidden_from_library) {
                 // Restore the soft-deleted row and sync back any saved history
-                const history = db.prepare('SELECT user_rating, notes, notes_public FROM user_movie_history WHERE user_id = ? AND movie_link = ?').get(req.user.id, link);
+                const history = db.prepare('SELECT user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = ? AND movie_link = ?').get(req.user.id, link);
                 if (history) {
-                    db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0, user_rating = ?, notes = ?, notes_public = ? WHERE id = ? AND user_id = ?')
-                        .run(history.user_rating, history.notes, history.notes_public, existing.id, req.user.id);
+                    db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0, user_rating = ?, notes = ?, notes_public = ?, status = ? WHERE id = ? AND user_id = ?')
+                        .run(history.user_rating, history.notes, history.notes_public, history.is_watched ? 'watched' : 'want_to_watch', existing.id, req.user.id);
                 } else {
                     db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0 WHERE id = ? AND user_id = ?').run(existing.id, req.user.id);
                 }
@@ -1056,11 +1056,11 @@ app.post('/api/movies', authenticateToken, (req, res) => {
         }
 
         // Check if user has history for this movie link (previously rated/noted before permanent delete)
-        const history = db.prepare('SELECT user_rating, notes, notes_public FROM user_movie_history WHERE user_id = ? AND movie_link = ?').get(req.user.id, link);
+        const history = db.prepare('SELECT user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = ? AND movie_link = ?').get(req.user.id, link);
 
         const stmt = db.prepare(`
-          INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, type, user_id, user_rating, notes, notes_public)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, type, user_id, user_rating, notes, notes_public, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const info = stmt.run(
@@ -1068,7 +1068,8 @@ app.post('/api/movies', authenticateToken, (req, res) => {
             genres, actors, director, writers, req.body.country || null, req.body.duration || null, req.body.voice_acting || null, type || 'movie', req.user.id,
             history?.user_rating ?? null,
             history?.notes ?? null,
-            history?.notes_public ?? 0
+            history?.notes_public ?? 0,
+            history?.is_watched ? 'watched' : 'want_to_watch'
         );
         res.json({ id: info.lastInsertRowid, restored_history: !!history });
     } catch (error) {
