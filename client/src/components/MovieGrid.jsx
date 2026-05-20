@@ -417,7 +417,6 @@ const CardRatingButton = ({ movie, onUpdateRating }) => {
                         {[...Array(10)].map((_, i) => {
                             const starValue = i + 1;
                             const isLit = hoverRating ? starValue <= hoverRating : starValue <= (currentRating || 0);
-                            const isSelectingNewRating = hoverRating > 0;
                             return (
                                 <span
                                     key={starValue}
@@ -432,11 +431,9 @@ const CardRatingButton = ({ movie, onUpdateRating }) => {
                                     style={{
                                         cursor: 'pointer',
                                         fontSize: '0.95rem',
-                                        color: isLit
-                                            ? (isSelectingNewRating ? '#ffd700' : 'rgba(212, 175, 55, 0.75)')
-                                            : 'rgba(255,255,255,0.2)',
-                                        textShadow: isLit && isSelectingNewRating ? '0 0 6px rgba(212,175,55,0.6)' : 'none',
-                                        transition: 'all 0.15s ease',
+                                        color: isLit ? '#ffd700' : 'rgba(255,255,255,0.2)',
+                                        textShadow: isLit ? '0 0 6px rgba(212,175,55,0.6)' : 'none',
+                                        transition: 'transform 0.1s ease',
                                         transform: hoverRating === starValue ? 'scale(1.25)' : 'scale(1)'
                                     }}
                                 >
@@ -491,6 +488,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [hoveredButtonLink, setHoveredButtonLink] = useState(null);
     const [hoveredCheckmarkLink, setHoveredCheckmarkLink] = useState(null);
     const [clickedCheckmarkLink, setClickedCheckmarkLink] = useState(null);
+    const [updatingCheckmarkLink, setUpdatingCheckmarkLink] = useState(null);
+    const [justWatchedLink, setJustWatchedLink] = useState(null);
+    const [justUnwatchedLink, setJustUnwatchedLink] = useState(null);
     const [hoveredDeleteLink, setHoveredDeleteLink] = useState(null);
 
     // Animation state
@@ -3190,83 +3190,113 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 </button>
 
                                                 <button
-                                                    className="btn-checkmark"
-                                                    onMouseEnter={() => setHoveredCheckmarkLink(movie.link)}
-                                                    onMouseLeave={() => setHoveredCheckmarkLink(null)}
-                                                    onClick={async (e) => {
-                                                        e.stopPropagation();
-                                                        if (isAdding) return;
-                                                        const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
-                                                        if (isMovieWatched) {
-                                                            if (libMovie) {
-                                                                await onUpdate(libMovie.id, { status: 'want_to_watch' });
-                                                            } else {
-                                                                await onUpdate(null, { status: 'want_to_watch', link: movie.link });
-                                                            }
-                                                            setLocalWatchedLinks(prev => {
-                                                                const next = new Set(prev);
-                                                                next.delete(movie.link);
-                                                                return next;
-                                                            });
-                                                        } else {
-                                                            setLocalWatchedLinks(prev => new Set([...prev, movie.link]));
-                                                            if (libMovie) {
-                                                                await onUpdate(libMovie.id, { status: 'watched' });
-                                                            } else {
-                                                                await onUpdate(null, { status: 'watched', link: movie.link });
-                                                            }
-                                                        }
-                                                    }}
-                                                    style={{
-                                                        width: '32px',
-                                                        height: '32px',
-                                                        borderRadius: '8px',
-                                                        background: hoveredCheckmarkLink === movie.link
-                                                            ? 'rgba(3, 218, 198, 0.2)'
-                                                            : isMovieWatched ? '#03dac6' : 'rgba(255,255,255,0.05)',
-                                                        borderColor: hoveredCheckmarkLink === movie.link
-                                                            ? '#03dac6'
-                                                            : isMovieWatched ? '#03dac6' : 'rgba(255,255,255,0.1)',
-                                                        color: hoveredCheckmarkLink === movie.link
-                                                            ? '#03dac6'
-                                                            : isMovieWatched ? '#000' : '#fff',
-                                                        border: '1px solid',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        cursor: 'pointer',
-                                                        fontSize: '0.9rem',
-                                                        fontWeight: 'bold',
-                                                        transform: hoveredCheckmarkLink === movie.link ? 'scale(1.08)' : 'scale(1)',
-                                                        boxShadow: hoveredCheckmarkLink === movie.link ? '0 0 15px rgba(3, 218, 198, 0.7), 0 0 5px rgba(3, 218, 198, 0.4)' : 'none',
-                                                        transition: 'all 0.25s ease-in-out',
-                                                        flexShrink: 0
-                                                    }}
-                                                    title={isMovieWatched ? "Mark Unwatched" : "Mark Watched & Add to Library"}
-                                                >
-                                                    <svg
-                                                        width="14"
-                                                        height="14"
-                                                        viewBox="0 0 14 14"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2.5"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        style={{ display: 'block' }}
-                                                     >
-                                                         <path
-                                                             d="M3 7.5L5.5 10L11 3.5"
-                                                             className={isCheckmarkHovered ? 'draw-checkmark-path' : ''}
-                                                             style={{
-                                                                 strokeDashoffset: isCheckmarkHovered ? undefined : 0,
-                                                                 strokeDasharray: 15,
-                                                                 opacity: isCheckmarkHovered ? 1 : (isMovieWatched ? 1 : 0.35),
-                                                                 transition: 'opacity 0.25s ease-in-out'
-                                                             }}
-                                                         />
-                                                     </svg>
-                                                </button>
+                                                     className={`btn-checkmark ${
+                                                         justWatchedLink === movie.link ? 'checkmark-pop-watched' : ''
+                                                     } ${
+                                                         justUnwatchedLink === movie.link ? 'checkmark-pop-unwatched' : ''
+                                                     }`}
+                                                     onMouseEnter={() => setHoveredCheckmarkLink(movie.link)}
+                                                     onMouseLeave={() => {
+                                                         setHoveredCheckmarkLink(null);
+                                                         setClickedCheckmarkLink(null);
+                                                     }}
+                                                     onClick={async (e) => {
+                                                         e.stopPropagation();
+                                                         if (isAdding || updatingCheckmarkLink === movie.link) return;
+                                                         
+                                                         setClickedCheckmarkLink(movie.link);
+                                                         setUpdatingCheckmarkLink(movie.link);
+                                                         
+                                                         try {
+                                                             const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
+                                                             if (isMovieWatched) {
+                                                                 if (libMovie) {
+                                                                     await onUpdate(libMovie.id, { status: 'want_to_watch' });
+                                                                 } else {
+                                                                     await onUpdate(null, { status: 'want_to_watch', link: movie.link });
+                                                                 }
+                                                                 setLocalWatchedLinks(prev => {
+                                                                     const next = new Set(prev);
+                                                                     next.delete(movie.link);
+                                                                     return next;
+                                                                 });
+                                                                 
+                                                                 setJustUnwatchedLink(movie.link);
+                                                                 setTimeout(() => setJustUnwatchedLink(null), 450);
+                                                             } else {
+                                                                 setLocalWatchedLinks(prev => new Set([...prev, movie.link]));
+                                                                 if (libMovie) {
+                                                                     await onUpdate(libMovie.id, { status: 'watched' });
+                                                                 } else {
+                                                                     await onUpdate(null, { status: 'watched', link: movie.link });
+                                                                 }
+                                                                 
+                                                                 setJustWatchedLink(movie.link);
+                                                                 setTimeout(() => setJustWatchedLink(null), 450);
+                                                             }
+                                                         } catch (err) {
+                                                             console.error(err);
+                                                         } finally {
+                                                             setUpdatingCheckmarkLink(null);
+                                                         }
+                                                     }}
+                                                     style={{
+                                                         width: '32px',
+                                                         height: '32px',
+                                                         borderRadius: '8px',
+                                                         background: isCheckmarkHovered
+                                                             ? 'rgba(3, 218, 198, 0.2)'
+                                                             : isMovieWatched ? '#03dac6' : 'rgba(255,255,255,0.05)',
+                                                         borderColor: isCheckmarkHovered
+                                                             ? '#03dac6'
+                                                             : isMovieWatched ? '#03dac6' : 'rgba(255,255,255,0.1)',
+                                                         color: isCheckmarkHovered
+                                                             ? '#03dac6'
+                                                             : isMovieWatched ? '#000' : '#fff',
+                                                         border: '1px solid',
+                                                         display: 'flex',
+                                                         alignItems: 'center',
+                                                         justifyContent: 'center',
+                                                         cursor: (isAdding || updatingCheckmarkLink === movie.link) ? 'default' : 'pointer',
+                                                         fontSize: '0.9rem',
+                                                         fontWeight: 'bold',
+                                                         transform: isCheckmarkHovered ? 'scale(1.08)' : 'scale(1)',
+                                                         boxShadow: isCheckmarkHovered ? '0 0 15px rgba(3, 218, 198, 0.7), 0 0 5px rgba(3, 218, 198, 0.4)' : 'none',
+                                                         transition: 'all 0.25s ease-in-out',
+                                                         flexShrink: 0
+                                                     }}
+                                                     title={isMovieWatched ? "Mark Unwatched" : "Mark Watched & Add to Library"}
+                                                 >
+                                                     {updatingCheckmarkLink === movie.link ? (
+                                                         <svg className="btn-loading-spin" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ display: 'block' }}>
+                                                             <circle cx="8" cy="8" r="6" style={{ opacity: 0.25 }} />
+                                                             <path d="M8 2a6 6 0 0 1 6 6" />
+                                                         </svg>
+                                                     ) : (
+                                                         <svg
+                                                             width="14"
+                                                             height="14"
+                                                             viewBox="0 0 14 14"
+                                                             fill="none"
+                                                             stroke="currentColor"
+                                                             strokeWidth="2.5"
+                                                             strokeLinecap="round"
+                                                             strokeLinejoin="round"
+                                                             style={{ display: 'block' }}
+                                                         >
+                                                             <path
+                                                                 d="M3 7.5L5.5 10L11 3.5"
+                                                                 className={isCheckmarkHovered ? 'draw-checkmark-path' : ''}
+                                                                 style={{
+                                                                     strokeDashoffset: isCheckmarkHovered ? undefined : 0,
+                                                                     strokeDasharray: 15,
+                                                                     opacity: isCheckmarkHovered ? 1 : (isMovieWatched ? 1 : 0.35),
+                                                                     transition: 'opacity 0.25s ease-in-out'
+                                                                 }}
+                                                             />
+                                                         </svg>
+                                                     )}
+                                                 </button>
                                             </div>
                                         </div>
                                     </div>
