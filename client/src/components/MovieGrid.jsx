@@ -358,7 +358,7 @@ const cleanLinkPath = (url) => {
         .split('#')[0];
 };
 
-function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink, onGuestActivity }) {
+function MovieGrid({ movies, allMovies = movies, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink, onGuestActivity }) {
     const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
     const [sortDir, setSortDir] = useState(() => localStorage.getItem('movieGrid_sortDir') || 'desc');
     const [hideWatched, setHideWatched] = useState(() => {
@@ -454,8 +454,8 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
         return backgroundCacheResults.map(m => ({ ...m, isFromCache: true }));
     }, [backgroundCacheResults]);
     const libraryLinks = useMemo(() => {
-        return new Set(movies.map(m => cleanLinkPath(m.link)));
-    }, [movies]);
+        return new Set(allMovies.map(m => cleanLinkPath(m.link)));
+    }, [allMovies]);
     const [addingLinks, setAddingLinks] = useState(new Set());
     const [addedLinks, setAddedLinks] = useState(new Set());
     const [localWatchedLinks, setLocalWatchedLinks] = useState(new Set());
@@ -2717,14 +2717,14 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                         {filteredOnboardingCacheMovies.map((movie, idx) => {
                             const isAdded = addedLinks.has(movie.link) || libraryLinks.has(cleanLinkPath(movie.link));
                             const isAdding = addingLinks.has(movie.link);
-                            const isMovieWatched = localWatchedLinks.has(movie.link) || movies.some(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.status === 'watched');
+                            const isMovieWatched = localWatchedLinks.has(movie.link) || allMovies.some(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.status === 'watched');
 
                             return (
                                 <div
                                     key={movie.link || idx}
                                     className="movie-card glass-panel"
                                     onClick={() => {
-                                        const libMovie = movies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                        const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
                                         if (libMovie) {
                                             setSelectedMovie(libMovie);
                                         } else {
@@ -2817,7 +2817,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                         e.stopPropagation();
                                                         if (isAdding) return;
                                                         if (isAdded) {
-                                                            const libMovie = movies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                                            const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
                                                             if (libMovie) {
                                                                 onDelete(libMovie.id, true);
                                                                 setAddedLinks(prev => {
@@ -2877,7 +2877,7 @@ function MovieGrid({ movies, onUpdate, onDelete, selectedIds, onSelect, onSelect
                                                         if (isAdding) return;
                                                         if (isMovieWatched) {
                                                             // Toggle status to want_to_watch in library
-                                                            const libMovie = movies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                                            const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
                                                             if (libMovie) {
                                                                 await onUpdate(libMovie.id, { status: 'want_to_watch' });
                                                             }

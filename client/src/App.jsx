@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import './App.css';
 import AddMovie from './components/AddMovie';
 import MovieGrid from './components/MovieGrid';
@@ -31,11 +31,12 @@ function App() {
         if (hash.startsWith('#collections')) return 'collections';
         if (hash === '#trash') return 'trash';
         if (hash === '#admin') return 'admin';
+        if (hash === '#watched') return 'watched';
         if (hash === '#library') return 'library';
         return 'library';
     };
 
-    const [currentView, setCurrentView] = useState(getInitialView); // 'library' | 'trash' | 'collections' | 'shared_collection' | 'admin'
+    const [currentView, setCurrentView] = useState(getInitialView); // 'library' | 'trash' | 'collections' | 'shared_collection' | 'admin' | 'watched'
     const [selectedIds, setSelectedIds] = useState([]);
     const [selectionAnchor, setSelectionAnchor] = useState(null);
     const [deletingIds, setDeletingIds] = useState([]); // Track items being deleted for animation
@@ -199,6 +200,8 @@ function App() {
                     setCurrentView('library');
                     window.location.hash = 'library';
                 }
+            } else if (hash === '#watched') {
+                setCurrentView('watched');
             } else if (hash === '#library') {
                 setCurrentView('library');
             } else if (user) {
@@ -312,11 +315,11 @@ function App() {
     };
 
     const fetchMovies = async (silent = false) => {
-        if (currentView !== 'library' && currentView !== 'trash') return;
+        if (currentView !== 'library' && currentView !== 'trash' && currentView !== 'watched') return;
         if (!user) return; // Do not fetch movies if not authenticated
         if (!silent) setLoading(true);
         try {
-            const endpoint = currentView === 'library' ? '/api/movies' : '/api/trash';
+            const endpoint = (currentView === 'library' || currentView === 'watched') ? '/api/movies' : '/api/trash';
             const res = await fetch(endpoint);
             const data = await res.json();
             setMovies(data);
@@ -597,6 +600,16 @@ function App() {
         });
     };
 
+    const displayedMovies = useMemo(() => {
+        if (currentView === 'library') {
+            return movies.filter(m => m.status !== 'watched');
+        }
+        if (currentView === 'watched') {
+            return movies.filter(m => m.status === 'watched');
+        }
+        return movies;
+    }, [movies, currentView]);
+
     if (checkingAuth) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-app)', color: '#fff' }}>
@@ -661,6 +674,21 @@ function App() {
                                     }}
                                 >
                                     Library
+                                </button>
+                                <button
+                                    onClick={() => setCurrentView('watched')}
+                                    className="btn"
+                                    style={{
+                                        background: currentView === 'watched' ? 'rgba(3, 218, 198, 0.12)' : 'rgba(20, 20, 20, 0.65)',
+                                        color: '#03dac6',
+                                        border: '1.5px solid #03dac6',
+                                        boxShadow: currentView === 'watched' ? '0 0 10px rgba(3, 218, 198, 0.3)' : 'none',
+                                        borderRadius: '8px',
+                                        fontWeight: 'bold',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    Watched
                                 </button>
                                 <button
                                     onClick={() => setCurrentView('collections')}
@@ -865,7 +893,8 @@ function App() {
                                 <div style={{ textAlign: 'center', padding: '50px' }}>Loading...</div>
                             ) : (
                                 <MovieGrid
-                                    movies={movies}
+                                    movies={displayedMovies}
+                                    allMovies={movies}
                                     onUpdate={handleUpdate}
                                     onDelete={handleDelete}
                                     selectedIds={selectedIds}
@@ -882,9 +911,9 @@ function App() {
                                     onGuestActivity={triggerGuestActivity}
                                 />
                             )}
-                            {!loading && movies.length === 0 && (
+                            {!loading && displayedMovies.length === 0 && (
                                 <div style={{ textAlign: 'center', color: '#666', marginTop: '50px' }}>
-                                    {currentView === 'library' ? '' : 'Trash is empty.'}
+                                    {currentView === 'library' ? 'Your library is empty.' : currentView === 'watched' ? 'Watched list is empty.' : 'Trash is empty.'}
                                 </div>
                             )}
                         </div>
@@ -892,14 +921,14 @@ function App() {
                 )}
             </main>
 
-            {user && (currentView === 'library' || currentView === 'trash') && (
+            {user && (currentView === 'library' || currentView === 'trash' || currentView === 'watched') && (
                 <BulkActionBar
                     selectedCount={selectedIds.length}
                     onDelete={handleBulkDelete}
                     onRefresh={handleBulkRefresh}
                     onRestore={handleBulkRestore}
                     onAddToCollection={() => setShowAddToCollection(true)}
-                    onCompare={currentView === 'library' ? handleBulkCompare : undefined}
+                    onCompare={(currentView === 'library' || currentView === 'watched') ? handleBulkCompare : undefined}
                     onCancelSelection={() => {
                         setSelectedIds([]);
                         setSelectionAnchor(null);
