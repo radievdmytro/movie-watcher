@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 
-function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle }) {
+function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie }) {
     const [liveDetails, setLiveDetails] = useState(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
@@ -118,8 +118,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
     // Global cache search state
     const [cacheSearch, setCacheSearch] = useState(null); // { type, value, movies: [], loading: false, error: null }
-    const [addingLinks, setAddingLinks] = useState(new Set());
-    const [addedLinks, setAddedLinks] = useState(new Set());
+    // local state variables removed because we use props now
 
     const handleCacheSearchClick = async (type, value) => {
         setCacheSearch({ type, value, movies: [], loading: true });
@@ -136,31 +135,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         }
     };
 
-    const handleAddMovieFromCache = async (link) => {
-        setAddingLinks(prev => new Set([...prev, link]));
-        try {
-            const res = await fetch('/api/movies/import', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: link })
-            });
-            if (res.ok || res.status === 409) {
-                setAddedLinks(prev => new Set([...prev, link]));
-                if (onUpdate) {
-                    onUpdate(null, { refreshLibrary: true });
-                }
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setAddingLinks(prev => {
-                const next = new Set(prev);
-                next.delete(link);
-                return next;
-            });
-        }
-    };
-
+    // handleAddMovieFromCache moved to parent and passed as onAddMovie prop
     // Inline feedback states
     const [notesFeedback, setNotesFeedback] = useState({ type: '', message: '' });
     const [reviewFeedback, setReviewFeedback] = useState({ type: '', message: '' });
@@ -448,18 +423,21 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         const previousStatus = localStatus;
         setLocalStatus(newStatus);
         try {
-            if (onUpdate) {
-                await onUpdate(movie.id || null, { status: newStatus, link: movie.link || movie.movie_link });
-            } else if (!movie.id) {
-                const res = await fetch('/api/movies/history', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        link: movie.link || movie.movie_link,
-                        is_watched: newStatus === 'watched' ? 1 : 0
-                    })
-                });
-                if (!res.ok) throw new Error(`Failed to update watched status (${res.status})`);
+            const actualId = movie.id || libMovieId;
+            if (isAdded && actualId) {
+                if (onUpdate) {
+                    await onUpdate(actualId, { status: newStatus, link: movie.link || movie.movie_link });
+                }
+            } else if (isAdded && !actualId) {
+                if (onUpdate) {
+                    await onUpdate(null, { status: newStatus, link: movie.link || movie.movie_link });
+                }
+            } else {
+                if (onAddMovie) {
+                    await onAddMovie(movie.link || movie.movie_link, newStatus);
+                } else if (onUpdate) {
+                    await onUpdate(null, { status: newStatus, link: movie.link || movie.movie_link });
+                }
             }
             if (newStatus === 'watched') {
                 setActiveTab('reviews');
@@ -1592,18 +1570,18 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 </>
                             ) : !isTrashMode ? (
                                 <>
-                                    {!movie.id && (
+                                    {!isAdded && (
                                         <button
                                             style={{
-                                                background: addedLinks.has(movie.link) ? 'rgba(3, 218, 198, 0.1)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
-                                                border: addedLinks.has(movie.link) ? '1px solid rgba(3, 218, 198, 0.2)' : 'none',
-                                                color: addedLinks.has(movie.link) ? '#03dac6' : '#000',
+                                                background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
+                                                border: 'none',
+                                                color: '#000',
                                                 padding: isMobile ? '8px 10px' : '12px 28px',
                                                 fontSize: isMobile ? '0.82rem' : '0.95rem',
                                                 fontWeight: '700',
                                                 borderRadius: '10px',
-                                                cursor: addingLinks.has(movie.link) || addedLinks.has(movie.link) ? 'default' : 'pointer',
-                                                boxShadow: addedLinks.has(movie.link) ? 'none' : '0 4px 15px rgba(212, 175, 55, 0.25)',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 4px 15px rgba(212, 175, 55, 0.25)',
                                                 transition: 'all 0.2s',
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
@@ -1611,10 +1589,34 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                                 gap: '6px',
                                                 flex: isMobile ? '1 1 auto' : '0 0 auto'
                                             }}
-                                            onClick={() => handleAddMovieFromCache(movie.link || movie.movie_link)}
-                                            disabled={addingLinks.has(movie.link) || addedLinks.has(movie.link)}
+                                            onClick={() => {
+                                                if (onAddMovie) onAddMovie(movie.link || movie.movie_link);
+                                            }}
                                         >
-                                            {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ In My Library' : '➕ Add to Library'}
+                                            ➕ Add to Library
+                                        </button>
+                                    )}
+                                    {isAdded && (
+                                        <button
+                                            style={{
+                                                background: 'rgba(3, 218, 198, 0.1)',
+                                                border: '1px solid rgba(3, 218, 198, 0.2)',
+                                                color: '#03dac6',
+                                                padding: isMobile ? '8px 10px' : '12px 28px',
+                                                fontSize: isMobile ? '0.82rem' : '0.95rem',
+                                                fontWeight: '700',
+                                                borderRadius: '10px',
+                                                cursor: 'default',
+                                                boxShadow: 'none',
+                                                transition: 'all 0.2s',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px',
+                                                flex: isMobile ? '1 1 auto' : '0 0 auto'
+                                            }}
+                                        >
+                                            ✓ In My Library
                                         </button>
                                     )}
                                     <button

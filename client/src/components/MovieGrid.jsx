@@ -1356,6 +1356,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     onDelete={onDelete}
                     isTrashMode={isTrashMode}
                     readOnly={selectedMovie.readOnly}
+                    isAdded={selectedMovie ? (addedLinks.has(selectedMovie.link) || libraryLinks.has(cleanLinkPath(selectedMovie.link))) : false}
+                    libMovieId={selectedMovie ? (allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(selectedMovie.link) && m.id !== null)?.id || null) : null}
+                    onAddMovie={handleAddMovieFromCache}
                     isSelected={selectedMovie.id ? (selectedIds ? selectedIds.includes(selectedMovie.id) : false) : false}
                     onSelectToggle={selectedMovie.id && selectedIds && onSelect ? () => {
                         if (selectedIds.includes(selectedMovie.id)) {
