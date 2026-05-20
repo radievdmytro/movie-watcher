@@ -2960,10 +2960,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         overflow: 'hidden',
                                         aspectRatio: '2/3',
                                         boxShadow: hoveredCardLink === movie.link
-                                            ? '0 6px 20px rgba(3, 218, 198, 0.15)'
+                                            ? '0 6px 20px rgba(168, 85, 247, 0.25)'
                                             : '0 4px 20px rgba(0,0,0,0.3)',
                                         border: hoveredCardLink === movie.link
-                                            ? '1px solid rgba(3, 218, 198, 0.4)'
+                                            ? '1px solid rgba(168, 85, 247, 0.5)'
                                             : '1px solid rgba(255,255,255,0.06)',
                                         background: 'rgba(255,255,255,0.02)',
                                         display: 'flex',
