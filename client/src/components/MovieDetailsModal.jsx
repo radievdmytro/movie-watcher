@@ -1596,13 +1596,14 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
                 {/* Modal Action Controls (Sticky/fixed at the bottom of .glass-panel) */}
                 <div style={{ 
-                    display: 'flex', 
-                    gap: '10px', 
+                    display: 'flex',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: '8px', 
                     flexWrap: 'nowrap', 
-                    paddingTop: '15px', 
-                    paddingBottom: '15px',
-                    paddingLeft: isMobile ? '16px' : '40px',
-                    paddingRight: isMobile ? '16px' : '40px',
+                    paddingTop: '12px', 
+                    paddingBottom: isMobile ? '16px' : '15px',
+                    paddingLeft: isMobile ? '12px' : '40px',
+                    paddingRight: isMobile ? '12px' : '40px',
                     borderTop: '1px solid rgba(255,255,255,0.08)',
                     background: 'rgba(20, 20, 20, 0.85)',
                     backdropFilter: 'blur(20px)',
@@ -1615,14 +1616,192 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     right: 0,
                     zIndex: 10
                 }}>
+                    {/* ─── DESKTOP: left placeholder with library button ─── */}
                     {!isMobile && (
                         <div style={{ flex: '0 0 270px', display: 'flex', alignItems: 'center' }}>
                             {(!isTrashMode || readOnly) && renderLibraryButton()}
                         </div>
                     )}
-                    {readOnly ? (
+
+                    {/* ─── MOBILE two-row layout ─── */}
+                    {isMobile && !isTrashMode && !readOnly && (
+                        <>
+                            {/* Row 1: Library button + Hide button */}
+                            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                                {/* Library / Remove button (full width minus the hide btn) */}
+                                <div style={{ flex: 1 }}>
+                                    {renderLibraryButton()}
+                                </div>
+                                {/* 🚫 Hide button — only for global (non-library) movies */}
+                                {!isAdded && onHideMovie && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (onHideMovie) onHideMovie(movie.link || movie.movie_link);
+                                            if (onClose) onClose();
+                                        }}
+                                        style={{
+                                            background: 'rgba(255,255,255,0.1)',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            color: '#fff',
+                                            width: '52px',
+                                            height: '52px',
+                                            fontSize: '1.3rem',
+                                            borderRadius: '12px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            flexShrink: 0,
+                                            transition: 'all 0.2s'
+                                        }}
+                                        title="Hide from global search"
+                                    >
+                                        🚫
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Row 2: Mark Watched + Watch on HDRezka + optional delete */}
+                            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                                {/* Mark Watched button */}
+                                <button
+                                    style={{
+                                        flex: 1,
+                                        background: localStatus === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
+                                        border: localStatus === 'watched' ? '1px solid rgba(255,255,255,0.12)' : 'none',
+                                        color: localStatus === 'watched' ? '#fff' : '#000',
+                                        padding: '12px 8px',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '700',
+                                        borderRadius: '12px',
+                                        cursor: 'pointer',
+                                        boxShadow: localStatus === 'watched' ? 'none' : '0 4px 15px rgba(212, 175, 55, 0.25)',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px',
+                                    }}
+                                    onClick={handleStatusToggle}
+                                >
+                                    <span style={{ fontSize: '1.1rem' }}>{localStatus === 'watched' ? '⚪' : '⭐'}</span>
+                                    <span>{localStatus === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}</span>
+                                </button>
+
+                                {/* Watch on HDRezka button */}
+                                <a
+                                    href={movie.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                        flex: 1,
+                                        background: 'rgba(255,255,255,0.06)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        color: '#fff',
+                                        padding: '12px 8px',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '600',
+                                        borderRadius: '12px',
+                                        textDecoration: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px',
+                                        transition: 'all 0.2s',
+                                    }}
+                                >
+                                    <span style={{ fontSize: '1.1rem' }}>🌐</span>
+                                    <span>Watch on HDRezka</span>
+                                </a>
+
+                                {/* 🗑 Delete button — only for library movies with real id */}
+                                {movie.id && (
+                                    <button
+                                        onClick={() => { onDelete(movie.id); onClose(); }}
+                                        style={{
+                                            background: 'rgba(239, 68, 68, 0.1)',
+                                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                                            color: '#ff6b6b',
+                                            width: '52px',
+                                            height: '52px',
+                                            fontSize: '1.2rem',
+                                            borderRadius: '12px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            flexShrink: 0,
+                                            transition: 'all 0.2s'
+                                        }}
+                                        title="Delete Movie"
+                                    >
+                                        🗑️
+                                    </button>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {/* ─── MOBILE readOnly layout ─── */}
+                    {isMobile && readOnly && (
+                        <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                            {renderLibraryButton()}
+                            <a
+                                href={movie.link}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                    flex: 1,
+                                    background: 'rgba(255,255,255,0.06)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    color: '#fff',
+                                    padding: '12px 8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: '600',
+                                    borderRadius: '12px',
+                                    textDecoration: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                🌐 Watch on HDRezka
+                            </a>
+                        </div>
+                    )}
+
+                    {/* ─── MOBILE trash mode ─── */}
+                    {isMobile && isTrashMode && (
+                        <button
+                            onClick={() => { onDelete(movie.id); onClose(); }}
+                            style={{
+                                width: '100%',
+                                background: 'rgba(239, 68, 68, 0.9)',
+                                border: 'none',
+                                color: '#fff',
+                                padding: '14px 16px',
+                                fontSize: '0.95rem',
+                                fontWeight: '700',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                            }}
+                        >
+                            Delete Permanently 🗑️
+                        </button>
+                    )}
+
+                    {/* ─── DESKTOP content (right side of left placeholder) ─── */}
+                    {!isMobile && readOnly && (
                                 <>
-                                    {isMobile && renderLibraryButton()}
                                     <a
                                         href={movie.link}
                                         target="_blank"
@@ -1631,8 +1810,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             background: 'rgba(255,255,255,0.03)',
                                             border: '1px solid rgba(255,255,255,0.08)',
                                             color: '#fff',
-                                            padding: isMobile ? '8px 10px' : '12px 28px',
-                                            fontSize: isMobile ? '0.82rem' : '0.95rem',
+                                            padding: '12px 28px',
+                                            fontSize: '0.95rem',
                                             fontWeight: '600',
                                             borderRadius: '10px',
                                             textDecoration: 'none',
@@ -1640,7 +1819,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             transition: 'all 0.2s',
-                                            flex: isMobile ? '1' : 'initial'
                                         }}
                                         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
@@ -1648,17 +1826,16 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         🎬 Watch on HDRezka
                                     </a>
                                 </>
-                            ) : !isTrashMode ? (
+                            )}
+                    {!isMobile && !isTrashMode && !readOnly && (
                                 <>
-                                    {renderHideButton()}
-                                    {isMobile && renderLibraryButton()}
                                     <button
                                         style={{
                                             background: localStatus === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
                                             border: localStatus === 'watched' ? '1px solid rgba(255,255,255,0.12)' : 'none',
                                             color: localStatus === 'watched' ? '#fff' : '#000',
-                                            padding: isMobile ? '8px 10px' : '12px 28px',
-                                            fontSize: isMobile ? '0.82rem' : '0.95rem',
+                                            padding: '12px 28px',
+                                            fontSize: '0.95rem',
                                             fontWeight: '700',
                                             borderRadius: '10px',
                                             cursor: 'pointer',
@@ -1668,23 +1845,10 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             gap: '6px',
-                                            flex: isMobile ? '1 1 auto' : '0 0 auto'
                                         }}
                                         onClick={handleStatusToggle}
                                     >
-                                        {isMobile ? (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', textAlign: 'left' }}>
-                                                <span style={{ fontSize: '1rem', lineHeight: 1 }}>
-                                                    {localStatus === 'watched' ? '⚪' : '⭐'}
-                                                </span>
-                                                <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.72rem', lineHeight: '1.15', fontWeight: '700' }}>
-                                                    <span>Mark</span>
-                                                    <span>{localStatus === 'watched' ? 'Unwatched' : 'Watched'}</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            localStatus === 'watched' ? 'Mark Unwatched ⚪' : 'Mark Watched ⭐'
-                                        )}
+                                        {localStatus === 'watched' ? 'Mark Unwatched ⚪' : 'Mark Watched ⭐'}
                                     </button>
                                     <a
                                         href={movie.link}
@@ -1694,8 +1858,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             background: 'rgba(255,255,255,0.03)',
                                             border: '1px solid rgba(255,255,255,0.08)',
                                             color: '#fff',
-                                            padding: isMobile ? '8px 10px' : '12px 28px',
-                                            fontSize: isMobile ? '0.82rem' : '0.95rem',
+                                            padding: '12px 28px',
+                                            fontSize: '0.95rem',
                                             fontWeight: '600',
                                             borderRadius: '10px',
                                             cursor: 'pointer',
@@ -1705,20 +1869,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             justifyContent: 'center',
                                             gap: '6px',
                                             textDecoration: 'none',
-                                            flex: isMobile ? '1 1 auto' : '0 0 auto'
                                         }}
                                     >
-                                        {isMobile ? (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', textAlign: 'left' }}>
-                                                <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>🌐</span>
-                                                <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.72rem', lineHeight: '1.15', fontWeight: '700' }}>
-                                                    <span>Watch on</span>
-                                                    <span>HDRezka</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>Watch on HDRezka 🌐</>
-                                        )}
+                                        Watch on HDRezka 🌐
                                     </a>
                                     {movie.id && (
                                         <button
@@ -1728,8 +1881,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                                 background: 'rgba(239, 68, 68, 0.08)',
                                                 border: '1px solid rgba(239, 68, 68, 0.2)',
                                                 color: '#ff6b6b',
-                                                padding: isMobile ? '8px 14px' : '12px 18px',
-                                                fontSize: isMobile ? '0.82rem' : '0.95rem',
+                                                padding: '12px 18px',
+                                                fontSize: '0.95rem',
                                                 fontWeight: '600',
                                                 borderRadius: '10px',
                                                 cursor: 'pointer',
@@ -1746,15 +1899,16 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         </button>
                                     )}
                                 </>
-                            ) : (
+                            )}
+                    {!isMobile && isTrashMode && (
                                 <button
                                     onClick={() => { onDelete(movie.id); onClose(); }}
                                     style={{
                                         background: 'rgba(239, 68, 68, 0.9)',
                                         border: 'none',
                                         color: '#fff',
-                                        padding: isMobile ? '10px 16px' : '12px 28px',
-                                        fontSize: isMobile ? '0.85rem' : '0.95rem',
+                                        padding: '12px 28px',
+                                        fontSize: '0.95rem',
                                         fontWeight: '700',
                                         borderRadius: '10px',
                                         cursor: 'pointer',
@@ -1764,14 +1918,13 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         gap: '6px',
-                                        flex: isMobile ? '1' : 'initial'
                                     }}
                                 >
                                     Delete Permanently 🗑️
                                 </button>
                             )}
-                        </div>
-                    </div>
+                </div>
+                </div>
                 {/* End of outer wrapper div */}
                 </div>
 
