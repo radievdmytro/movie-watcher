@@ -358,7 +358,7 @@ const cleanLinkPath = (url) => {
         .split('#')[0];
 };
 
-function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, highlightedLink, onGuestActivity }) {
+function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, highlightedLink, onGuestActivity }) {
     const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
     const [sortDir, setSortDir] = useState(() => localStorage.getItem('movieGrid_sortDir') || 'desc');
     const [hideWatched, setHideWatched] = useState(() => {
@@ -656,7 +656,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 }
 
                 // Status Filter
-                if (hideWatched && movie.status === 'watched') return false;
+                if (!isWatchedView && hideWatched && movie.status === 'watched') return false;
 
                 return true;
             })
@@ -1714,6 +1714,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             {/* Hide/Show Watched Button */}
                             <button
                                 onClick={() => setHideWatched(!hideWatched)}
+                                disabled={isWatchedView}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -1722,12 +1723,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     borderRadius: '15px',
                                     fontSize: '0.75rem',
                                     fontWeight: '500',
-                                    cursor: 'pointer',
+                                    cursor: isWatchedView ? 'not-allowed' : 'pointer',
                                     border: '1px solid rgba(255,255,255,0.1)',
-                                    background: hideWatched ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.05)',
-                                    color: hideWatched ? 'var(--accent-gold)' : '#888',
+                                    background: isWatchedView ? 'rgba(255,255,255,0.02)' : hideWatched ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.05)',
+                                    color: isWatchedView ? '#555' : hideWatched ? 'var(--accent-gold)' : '#888',
                                     transition: 'all 0.2s',
-                                    whiteSpace: 'nowrap'
+                                    whiteSpace: 'nowrap',
+                                    opacity: isWatchedView ? 0.5 : 1
                                 }}
                             >
                                 {hideWatched ? (

@@ -640,7 +640,7 @@ function App() {
 
     const displayedMovies = useMemo(() => {
         if (currentView === 'library') {
-            return movies.filter(m => m.status !== 'watched');
+            return movies.filter(m => m.id !== null);
         }
         if (currentView === 'watched') {
             return movies.filter(m => m.status === 'watched');
@@ -915,6 +915,7 @@ function App() {
                                     deletingIds={deletingIds}
                                     trashButtonRef={trashButtonRef}
                                     isTrashMode={currentView === 'trash'}
+                                    isWatchedView={currentView === 'watched'}
                                     highlightedLink={highlightedMovieLink}
                                     onGuestActivity={triggerGuestActivity}
                                 />
