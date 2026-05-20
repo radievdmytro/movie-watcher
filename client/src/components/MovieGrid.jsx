@@ -484,6 +484,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [selectedMovie, setSelectedMovie] = useState(null);
     const [openWithWatchedPrompt, setOpenWithWatchedPrompt] = useState(false);
     const [hoveredDescId, setHoveredDescId] = useState(null);
+    const [hoveredCardId, setHoveredCardId] = useState(null);
+    const [hoveredButtonId, setHoveredButtonId] = useState(null);
 
     // Animation state
     const [animationPhase, setAnimationPhase] = useState(null); // 'grayscale' | 'stacking' | 'flying' | null
@@ -2297,6 +2299,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     borderRadius: '8px',
                                     ...animStyle
                                 }}
+                                onMouseEnter={() => setHoveredCardId(movie.id)}
+                                onMouseLeave={() => {
+                                    setHoveredCardId(null);
+                                    setHoveredButtonId(null);
+                                }}
                             >
                                 <div
                                     style={{ width: '100%', height: '100%', cursor: 'pointer' }}
@@ -2467,37 +2474,63 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 <button
                                                     className="btn-ghost"
                                                     title={movie.status === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
+                                                    onMouseEnter={() => setHoveredButtonId(movie.id)}
+                                                    onMouseLeave={() => setHoveredButtonId(null)}
                                                     style={{
                                                         flex: 1,
                                                         padding: isMobile ? '4px 6px' : '6px 8px',
                                                         fontSize: isMobile ? '0.7rem' : '0.8rem',
                                                         borderRadius: '4px',
-                                                        border: '1px solid',
+                                                        border: hoveredButtonId === movie.id ? '1px solid transparent' : '1px solid',
                                                         cursor: 'pointer',
                                                         transition: 'all 0.2s ease',
                                                         fontWeight: 'bold',
-                                                        background: movie.status === 'watched' ? 'rgba(3, 218, 198, 0.15)' : 'rgba(255,255,255,0.05)',
-                                                        borderColor: movie.status === 'watched' ? '#03dac6' : 'rgba(255,255,255,0.1)',
-                                                        color: movie.status === 'watched' ? '#03dac6' : '#fff',
+                                                        background: hoveredButtonId === movie.id
+                                                            ? 'rgba(3, 218, 198, 0.25)'
+                                                            : movie.status === 'watched'
+                                                                ? 'rgba(3, 218, 198, 0.15)'
+                                                                : 'rgba(255,255,255,0.05)',
+                                                        borderColor: hoveredButtonId === movie.id
+                                                            ? 'transparent'
+                                                            : movie.status === 'watched'
+                                                                ? '#03dac6'
+                                                                : 'rgba(255,255,255,0.1)',
+                                                        color: hoveredButtonId === movie.id || movie.status === 'watched' ? '#03dac6' : '#fff',
                                                         height: isMobile ? '28px' : 'auto',
                                                         display: 'flex',
                                                         alignItems: 'center',
-                                                        justifyContent: 'center'
+                                                        justifyContent: 'center',
+                                                        boxShadow: 'none'
                                                     }}
                                                     onClick={async (e) => {
                                                         e.stopPropagation();
-                                                        if (movie.status !== 'watched') {
-                                                            await onUpdate(movie.id || null, { status: 'watched', link: movie.link });
+                                                        const isBtnHovered = hoveredButtonId === movie.id;
+                                                        const isCardHovered = hoveredCardId === movie.id;
+                                                        const showDetailsText = isCardHovered && !isBtnHovered;
+
+                                                        if (showDetailsText) {
+                                                            setSelectedMovie(movie);
                                                         } else {
-                                                            await onUpdate(movie.id || null, { status: 'want_to_watch', link: movie.link });
+                                                            if (movie.status !== 'watched') {
+                                                                await onUpdate(movie.id || null, { status: 'watched', link: movie.link });
+                                                            } else {
+                                                                await onUpdate(movie.id || null, { status: 'want_to_watch', link: movie.link });
+                                                            }
                                                         }
                                                     }}
                                                 >
-                                                    {movie.status === 'watched' ? (
-                                                        <span>
-                                                            {movie.user_rating ? `★ ${movie.user_rating}` : '✔ Watched'}
-                                                        </span>
-                                                    ) : 'Watch'}
+                                                    {(() => {
+                                                        const isBtnHovered = hoveredButtonId === movie.id;
+                                                        const isCardHovered = hoveredCardId === movie.id;
+                                                        if (isCardHovered && !isBtnHovered) {
+                                                            return 'Details';
+                                                        }
+                                                        return movie.status === 'watched' ? (
+                                                            <span>
+                                                                {movie.user_rating ? `★ ${movie.user_rating}` : '✔ Watched'}
+                                                            </span>
+                                                        ) : 'Watch';
+                                                    })()}
                                                 </button>
                                                 <button
                                                     className="btn-ghost"
