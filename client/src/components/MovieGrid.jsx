@@ -2304,6 +2304,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     boxShadow: hoveredCardLink === movie.link
                                         ? '0 8px 30px rgba(3, 218, 198, 0.35), 0 0 15px rgba(3, 218, 198, 0.2)'
                                         : '0 4px 20px rgba(0,0,0,0.3)',
+                                    transform: isDeleting && animationPhase
+                                        ? animStyle.transform
+                                        : (hoveredCardLink === movie.link
+                                            ? 'translateY(-6px) scale(1.03)'
+                                            : 'translateY(0) scale(1)'),
                                     aspectRatio: '2/3',
                                     borderRadius: '8px',
                                     ...animStyle
@@ -2966,6 +2971,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         display: 'flex',
                                         flexDirection: 'column',
                                         animation: 'fadeIn 0.4s ease',
+                                        transform: hoveredCardLink === movie.link
+                                            ? 'translateY(-6px) scale(1.03)'
+                                            : 'translateY(0) scale(1)',
                                         transition: 'all 0.3s ease-out',
                                         cursor: 'pointer'
                                     }}
