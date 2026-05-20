@@ -76,6 +76,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     const [notes, setNotes] = useState(movie.notes || '');
     const [isPublic, setIsPublic] = useState(movie.notes_public === 1 || movie.notes_public === true);
     const [userRating, setUserRating] = useState(movie.user_rating || 0);
+    const [localStatus, setLocalStatus] = useState(movie.status || 'want_to_watch');
     const [hoverRating, setHoverRating] = useState(0);
     const [savingNotes, setSavingNotes] = useState(false);
     const [savedToastVisible, setSavedToastVisible] = useState(false);
@@ -258,6 +259,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         setNotes(movie.notes || '');
         setIsPublic(movie.notes_public === 1 || movie.notes_public === true);
         setUserRating(movie.user_rating || 0);
+        setLocalStatus(movie.status || 'want_to_watch');
         if (openWithWatchedPrompt) {
             setActiveTab('reviews');
             setShowWatchedPrompt(true);
@@ -302,8 +304,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         setSavedToastVisible(true);
         try {
             const updates = { user_rating: ratingVal || null };
-            if (ratingVal > 0 && movie.status !== 'watched') {
+            if (ratingVal > 0 && localStatus !== 'watched') {
                 updates.status = 'watched';
+                setLocalStatus('watched');
                 setShowWatchedPrompt(true);
                 setActiveTab('reviews');
             }
@@ -332,13 +335,14 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 notes: notes.trim() === '' ? null : notes, 
                 notes_public: isPublic
             };
-            if (movie.status !== 'watched') {
+            if (localStatus !== 'watched') {
                 updates.status = 'watched';
+                setLocalStatus('watched');
                 setShowWatchedPrompt(true);
             }
             const url = movie.id ? `/api/movies/${movie.id}` : '/api/movies/history';
             const method = movie.id ? 'PATCH' : 'POST';
-            const body = movie.id ? updates : { link: movie.link, notes: notes.trim() === '' ? null : notes, notes_public: isPublic, is_watched: movie.status === 'watched' || updates.status === 'watched' ? 1 : undefined };
+            const body = movie.id ? updates : { link: movie.link, notes: notes.trim() === '' ? null : notes, notes_public: isPublic, is_watched: localStatus === 'watched' || updates.status === 'watched' ? 1 : undefined };
 
             const res = await fetch(url, {
                 method,
@@ -440,17 +444,32 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     };
 
     const handleStatusToggle = async () => {
-        const newStatus = movie.status === 'watched' ? 'want_to_watch' : 'watched';
+        const newStatus = localStatus === 'watched' ? 'want_to_watch' : 'watched';
+        const previousStatus = localStatus;
+        setLocalStatus(newStatus);
         try {
             if (onUpdate) {
                 await onUpdate(movie.id || null, { status: newStatus, link: movie.link || movie.movie_link });
-                if (newStatus === 'watched') {
-                    setActiveTab('reviews');
-                    setShowWatchedPrompt(true);
-                }
+            } else if (!movie.id) {
+                const res = await fetch('/api/movies/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        link: movie.link || movie.movie_link,
+                        is_watched: newStatus === 'watched' ? 1 : 0
+                    })
+                });
+                if (!res.ok) throw new Error(`Failed to update watched status (${res.status})`);
+            }
+            if (newStatus === 'watched') {
+                setActiveTab('reviews');
+                setShowWatchedPrompt(true);
+            } else {
+                setShowWatchedPrompt(false);
             }
         } catch (err) {
             console.error(err);
+            setLocalStatus(previousStatus);
         }
     };
 
@@ -1522,7 +1541,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     zIndex: 10
                 }}>
                     {!isMobile && <div style={{ flex: '0 0 270px' }} />}
-                    {(!movie.id || readOnly) ? (
+                    {readOnly ? (
                                 <>
                                     <button
                                         style={{
@@ -1573,17 +1592,42 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 </>
                             ) : !isTrashMode ? (
                                 <>
+                                    {!movie.id && (
+                                        <button
+                                            style={{
+                                                background: addedLinks.has(movie.link) ? 'rgba(3, 218, 198, 0.1)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
+                                                border: addedLinks.has(movie.link) ? '1px solid rgba(3, 218, 198, 0.2)' : 'none',
+                                                color: addedLinks.has(movie.link) ? '#03dac6' : '#000',
+                                                padding: isMobile ? '8px 10px' : '12px 28px',
+                                                fontSize: isMobile ? '0.82rem' : '0.95rem',
+                                                fontWeight: '700',
+                                                borderRadius: '10px',
+                                                cursor: addingLinks.has(movie.link) || addedLinks.has(movie.link) ? 'default' : 'pointer',
+                                                boxShadow: addedLinks.has(movie.link) ? 'none' : '0 4px 15px rgba(212, 175, 55, 0.25)',
+                                                transition: 'all 0.2s',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px',
+                                                flex: isMobile ? '1 1 auto' : '0 0 auto'
+                                            }}
+                                            onClick={() => handleAddMovieFromCache(movie.link || movie.movie_link)}
+                                            disabled={addingLinks.has(movie.link) || addedLinks.has(movie.link)}
+                                        >
+                                            {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ In My Library' : '➕ Add to Library'}
+                                        </button>
+                                    )}
                                     <button
                                         style={{
-                                            background: movie.status === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
-                                            border: movie.status === 'watched' ? '1px solid rgba(255,255,255,0.12)' : 'none',
-                                            color: movie.status === 'watched' ? '#fff' : '#000',
+                                            background: localStatus === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
+                                            border: localStatus === 'watched' ? '1px solid rgba(255,255,255,0.12)' : 'none',
+                                            color: localStatus === 'watched' ? '#fff' : '#000',
                                             padding: isMobile ? '8px 10px' : '12px 28px',
                                             fontSize: isMobile ? '0.82rem' : '0.95rem',
                                             fontWeight: '700',
                                             borderRadius: '10px',
                                             cursor: 'pointer',
-                                            boxShadow: movie.status === 'watched' ? 'none' : '0 4px 15px rgba(212, 175, 55, 0.25)',
+                                            boxShadow: localStatus === 'watched' ? 'none' : '0 4px 15px rgba(212, 175, 55, 0.25)',
                                             transition: 'all 0.2s',
                                             display: 'inline-flex',
                                             alignItems: 'center',
@@ -1596,15 +1640,15 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         {isMobile ? (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', textAlign: 'left' }}>
                                                 <span style={{ fontSize: '1rem', lineHeight: 1 }}>
-                                                    {movie.status === 'watched' ? '⚪' : '⭐'}
+                                                    {localStatus === 'watched' ? '⚪' : '⭐'}
                                                 </span>
                                                 <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.72rem', lineHeight: '1.15', fontWeight: '700' }}>
                                                     <span>Mark</span>
-                                                    <span>{movie.status === 'watched' ? 'Unwatched' : 'Watched'}</span>
+                                                    <span>{localStatus === 'watched' ? 'Unwatched' : 'Watched'}</span>
                                                 </div>
                                             </div>
                                         ) : (
-                                            movie.status === 'watched' ? 'Mark Unwatched ⚪' : 'Mark Watched ⭐'
+                                            localStatus === 'watched' ? 'Mark Unwatched ⚪' : 'Mark Watched ⭐'
                                         )}
                                     </button>
                                     <a
@@ -1641,29 +1685,31 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             <>Watch on HDRezka 🌐</>
                                         )}
                                     </a>
-                                    <button
-                                        onClick={() => { onDelete(movie.id); onClose(); }}
-                                        className="modal-delete-btn"
-                                        style={{
-                                            background: 'rgba(239, 68, 68, 0.08)',
-                                            border: '1px solid rgba(239, 68, 68, 0.2)',
-                                            color: '#ff6b6b',
-                                            padding: isMobile ? '8px 14px' : '12px 18px',
-                                            fontSize: isMobile ? '0.82rem' : '0.95rem',
-                                            fontWeight: '600',
-                                            borderRadius: '10px',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '6px',
-                                            flex: '0 0 auto'
-                                        }}
-                                        title="Delete Movie"
-                                    >
-                                        🗑️
-                                    </button>
+                                    {movie.id && (
+                                        <button
+                                            onClick={() => { onDelete(movie.id); onClose(); }}
+                                            className="modal-delete-btn"
+                                            style={{
+                                                background: 'rgba(239, 68, 68, 0.08)',
+                                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                color: '#ff6b6b',
+                                                padding: isMobile ? '8px 14px' : '12px 18px',
+                                                fontSize: isMobile ? '0.82rem' : '0.95rem',
+                                                fontWeight: '600',
+                                                borderRadius: '10px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px',
+                                                flex: '0 0 auto'
+                                            }}
+                                            title="Delete Movie"
+                                        >
+                                            🗑️
+                                        </button>
+                                    )}
                                 </>
                             ) : (
                                 <button
