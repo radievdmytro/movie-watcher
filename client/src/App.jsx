@@ -734,20 +734,49 @@ function App() {
 
                     {currentView !== 'shared_collection' && user && (
                         <div className="header-right" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                            {currentView === 'trash' && movies.length > 0 && (
-                                <button onClick={emptyTrash} className="btn btn-ghost" style={{ color: 'var(--danger)', fontSize: '0.85rem' }}>
-                                    Empty Trash
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                                <button
+                                    ref={trashButtonRef}
+                                    onClick={() => setCurrentView('trash')}
+                                    className={`btn header-btn-trash ${currentView === 'trash' ? 'active-trash' : ''}`}
+                                    title="Trash"
+                                    style={{ margin: 0 }}
+                                >
+                                    <span className="btn-icon">🗑️</span>
+                                    <span className="btn-label">Trash</span>
                                 </button>
-                            )}
-                            <button
-                                ref={trashButtonRef}
-                                onClick={() => setCurrentView('trash')}
-                                className={`btn header-btn-trash ${currentView === 'trash' ? 'active-trash' : ''}`}
-                                title="Trash"
-                            >
-                                <span className="btn-icon">🗑️</span>
-                                <span className="btn-label">Trash</span>
-                            </button>
+                                {currentView === 'trash' && movies.length > 0 && (
+                                    <button 
+                                        onClick={emptyTrash} 
+                                        className="btn-ghost" 
+                                        style={{ 
+                                            color: '#ef4444', 
+                                            fontSize: '0.62rem', 
+                                            padding: '2px 8px',
+                                            borderRadius: '4px',
+                                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                                            background: 'rgba(239, 68, 68, 0.05)',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            fontWeight: 'bold',
+                                            whiteSpace: 'nowrap',
+                                            boxShadow: '0 0 6px rgba(239, 68, 68, 0.05)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)';
+                                            e.currentTarget.style.borderColor = '#ef4444';
+                                            e.currentTarget.style.boxShadow = '0 0 8px rgba(239, 68, 68, 0.2)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)';
+                                            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+                                            e.currentTarget.style.boxShadow = '0 0 6px rgba(239, 68, 68, 0.05)';
+                                        }}
+                                    >
+                                        Empty Trash
+                                    </button>
+                                )}
+                            </div>
                             {globalCacheCount > 0 && (
                                 <div 
                                     className="global-cache-badge glass-panel" 
