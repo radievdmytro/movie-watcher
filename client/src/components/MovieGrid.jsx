@@ -2484,11 +2484,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         alignItems: 'center',
                                                         justifyContent: 'center'
                                                     }}
-                                                    onClick={async () => {
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
                                                         if (movie.status !== 'watched') {
                                                             await onUpdate(movie.id || null, { status: 'watched', link: movie.link });
-                                                            setOpenWithWatchedPrompt(true);
-                                                            setSelectedMovie({ ...movie, status: 'watched' });
                                                         } else {
                                                             await onUpdate(movie.id || null, { status: 'want_to_watch', link: movie.link });
                                                         }
@@ -2645,11 +2644,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             <button
                                                 className="btn-ghost"
-                                                onClick={async () => {
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
                                                     if (movie.status !== 'watched') {
                                                         await onUpdate(movie.id || null, { status: 'watched', link: movie.link });
-                                                        setOpenWithWatchedPrompt(true);
-                                                        setSelectedMovie({ ...movie, status: 'watched' });
                                                     } else {
                                                         await onUpdate(movie.id || null, { status: 'want_to_watch', link: movie.link });
                                                     }
