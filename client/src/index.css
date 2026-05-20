@@ -111,6 +111,21 @@ input {
   box-shadow: 0 0 12px rgba(239, 68, 68, 0.5) !important;
 }
 
+.draw-checkmark-path {
+  stroke-dasharray: 15;
+  stroke-dashoffset: 15;
+  animation: writeCheckmark 0.3s ease-out forwards;
+}
+
+@keyframes writeCheckmark {
+  from {
+    stroke-dashoffset: 15;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 .glass-panel {
   background: rgba(31, 31, 31, 0.6);
   backdrop-filter: blur(10px);

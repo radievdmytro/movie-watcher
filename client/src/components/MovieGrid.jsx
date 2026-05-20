@@ -3202,9 +3202,15 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         width: '32px',
                                                         height: '32px',
                                                         borderRadius: '8px',
-                                                        background: isMovieWatched ? '#03dac6' : 'rgba(255,255,255,0.05)',
-                                                        borderColor: isMovieWatched ? '#03dac6' : 'rgba(255,255,255,0.1)',
-                                                        color: isMovieWatched ? '#000' : '#fff',
+                                                        background: hoveredCheckmarkLink === movie.link
+                                                            ? 'rgba(3, 218, 198, 0.2)'
+                                                            : isMovieWatched ? '#03dac6' : 'rgba(255,255,255,0.05)',
+                                                        borderColor: hoveredCheckmarkLink === movie.link
+                                                            ? '#03dac6'
+                                                            : isMovieWatched ? '#03dac6' : 'rgba(255,255,255,0.1)',
+                                                        color: hoveredCheckmarkLink === movie.link
+                                                            ? '#03dac6'
+                                                            : isMovieWatched ? '#000' : '#fff',
                                                         border: '1px solid',
                                                         display: 'flex',
                                                         alignItems: 'center',
@@ -3213,13 +3219,33 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         fontSize: '0.9rem',
                                                         fontWeight: 'bold',
                                                         transform: hoveredCheckmarkLink === movie.link ? 'scale(1.08)' : 'scale(1)',
-                                                        boxShadow: hoveredCheckmarkLink === movie.link ? '0 0 10px rgba(3, 218, 198, 0.4)' : 'none',
-                                                        transition: 'all 0.2s ease',
+                                                        boxShadow: hoveredCheckmarkLink === movie.link ? '0 0 15px rgba(3, 218, 198, 0.7), 0 0 5px rgba(3, 218, 198, 0.4)' : 'none',
+                                                        transition: 'all 0.25s ease-in-out',
                                                         flexShrink: 0
                                                     }}
                                                     title={isMovieWatched ? "Mark Unwatched" : "Mark Watched & Add to Library"}
                                                 >
-                                                    ✓
+                                                    <svg
+                                                        width="14"
+                                                        height="14"
+                                                        viewBox="0 0 14 14"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2.5"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        style={{ display: 'block' }}
+                                                     >
+                                                         <path
+                                                             d="M3 7.5L5.5 10L11 3.5"
+                                                             className={hoveredCheckmarkLink === movie.link ? 'draw-checkmark-path' : ''}
+                                                             style={{
+                                                                 strokeDashoffset: (hoveredCheckmarkLink !== movie.link && isMovieWatched) ? 0 : 15,
+                                                                 strokeDasharray: 15,
+                                                                 transition: hoveredCheckmarkLink === movie.link ? 'none' : 'stroke-dashoffset 0.25s ease-in-out'
+                                                             }}
+                                                         />
+                                                     </svg>
                                                 </button>
                                             </div>
                                         </div>
