@@ -1372,6 +1372,40 @@ app.post('/api/movies/bulk-restore', authenticateToken, (req, res) => {
     }
 });
 
+// Bulk Mark Watched
+app.post('/api/movies/bulk-watched', authenticateToken, (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });
+
+        const selectStmt = db.prepare('SELECT link, user_rating, notes, notes_public FROM movies WHERE id = ? AND user_id = ?');
+        const updateMovieStmt = db.prepare("UPDATE movies SET status = 'watched' WHERE id = ? AND user_id = ?");
+        const historyStmt = db.prepare(`
+            INSERT INTO user_movie_history (user_id, movie_link, user_rating, notes, notes_public, is_watched, updated_at)
+            VALUES (?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(user_id, movie_link) DO UPDATE SET
+                is_watched = 1,
+                updated_at = CURRENT_TIMESTAMP
+        `);
+
+        const transaction = db.transaction((ids) => {
+            for (const id of ids) {
+                const movie = selectStmt.get(id, req.user.id);
+                if (movie) {
+                    updateMovieStmt.run(id, req.user.id);
+                    if (movie.link) {
+                        historyStmt.run(req.user.id, movie.link, movie.user_rating, movie.notes, movie.notes_public);
+                    }
+                }
+            }
+        });
+        transaction(ids);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // PERMANENT DELETE (Trash) — backfills history first so ratings/notes are never lost
 app.delete('/api/trash/:id', authenticateToken, (req, res) => {
     try {
