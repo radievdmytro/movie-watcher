@@ -2453,7 +2453,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 </div>
                                             )}
 
-                                            {movie.status === 'watched' && (
+                                            {movie.status === 'watched' && (movie.id === null || !movie.user_rating) && (
                                                 <CardRatingButton
                                                     movie={movie}
                                                     onUpdateRating={async (ratingVal) => {
@@ -2966,7 +2966,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 </div>
                                             )}
 
-                                            {isMovieWatched && (
+                                            {(() => {
+                                                const isAdded = addedLinks.has(movie.link) || libraryLinks.has(cleanLinkPath(movie.link));
+                                                const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                                const rating = libMovie?.user_rating || localRatings[movie.link];
+                                                return isMovieWatched && (!isAdded || !rating);
+                                            })() && (
                                                 <CardRatingButton
                                                     movie={allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link)) || { ...movie, user_rating: localRatings[movie.link] }}
                                                     onUpdateRating={async (ratingVal) => {
