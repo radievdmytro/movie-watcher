@@ -3252,9 +3252,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                              d="M3 7.5L5.5 10L11 3.5"
                                                              className={hoveredCheckmarkLink === movie.link ? 'draw-checkmark-path' : ''}
                                                              style={{
-                                                                 strokeDashoffset: (hoveredCheckmarkLink !== movie.link && isMovieWatched) ? 0 : 15,
+                                                                 strokeDashoffset: hoveredCheckmarkLink === movie.link ? undefined : 0,
                                                                  strokeDasharray: 15,
-                                                                 transition: hoveredCheckmarkLink === movie.link ? 'none' : 'stroke-dashoffset 0.25s ease-in-out'
+                                                                 opacity: hoveredCheckmarkLink === movie.link ? 1 : (isMovieWatched ? 1 : 0.35),
+                                                                 transition: 'opacity 0.25s ease-in-out'
                                                              }}
                                                          />
                                                      </svg>
