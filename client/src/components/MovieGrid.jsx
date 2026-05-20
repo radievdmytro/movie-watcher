@@ -484,8 +484,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [selectedMovie, setSelectedMovie] = useState(null);
     const [openWithWatchedPrompt, setOpenWithWatchedPrompt] = useState(false);
     const [hoveredDescId, setHoveredDescId] = useState(null);
-    const [hoveredCardId, setHoveredCardId] = useState(null);
-    const [hoveredButtonId, setHoveredButtonId] = useState(null);
+    const [hoveredCardLink, setHoveredCardLink] = useState(null);
+    const [hoveredButtonLink, setHoveredButtonLink] = useState(null);
+    const [hoveredCheckmarkLink, setHoveredCheckmarkLink] = useState(null);
 
     // Animation state
     const [animationPhase, setAnimationPhase] = useState(null); // 'grayscale' | 'stacking' | 'flying' | null
@@ -2299,10 +2300,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     borderRadius: '8px',
                                     ...animStyle
                                 }}
-                                onMouseEnter={() => setHoveredCardId(movie.id)}
+                                onMouseEnter={() => setHoveredCardLink(movie.link)}
                                 onMouseLeave={() => {
-                                    setHoveredCardId(null);
-                                    setHoveredButtonId(null);
+                                    setHoveredCardLink(null);
+                                    setHoveredButtonLink(null);
                                 }}
                             >
                                 <div
@@ -2474,28 +2475,28 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 <button
                                                     className="btn-ghost"
                                                     title={movie.status === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
-                                                    onMouseEnter={() => setHoveredButtonId(movie.id)}
-                                                    onMouseLeave={() => setHoveredButtonId(null)}
+                                                    onMouseEnter={() => setHoveredButtonLink(movie.link)}
+                                                    onMouseLeave={() => setHoveredButtonLink(null)}
                                                     style={{
                                                         flex: 1,
                                                         padding: isMobile ? '4px 6px' : '6px 8px',
                                                         fontSize: isMobile ? '0.7rem' : '0.8rem',
                                                         borderRadius: '4px',
-                                                        border: hoveredButtonId === movie.id ? '1px solid transparent' : '1px solid',
+                                                        border: hoveredButtonLink === movie.link ? '1px solid transparent' : '1px solid',
                                                         cursor: 'pointer',
                                                         transition: 'all 0.2s ease',
                                                         fontWeight: 'bold',
-                                                        background: hoveredButtonId === movie.id
+                                                        background: hoveredButtonLink === movie.link
                                                             ? 'rgba(3, 218, 198, 0.25)'
                                                             : movie.status === 'watched'
                                                                 ? 'rgba(3, 218, 198, 0.15)'
                                                                 : 'rgba(255,255,255,0.05)',
-                                                        borderColor: hoveredButtonId === movie.id
+                                                        borderColor: hoveredButtonLink === movie.link
                                                             ? 'transparent'
                                                             : movie.status === 'watched'
                                                                 ? '#03dac6'
                                                                 : 'rgba(255,255,255,0.1)',
-                                                        color: hoveredButtonId === movie.id || movie.status === 'watched' ? '#03dac6' : '#fff',
+                                                        color: hoveredButtonLink === movie.link || movie.status === 'watched' ? '#03dac6' : '#fff',
                                                         height: isMobile ? '28px' : 'auto',
                                                         display: 'flex',
                                                         alignItems: 'center',
@@ -2504,8 +2505,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     }}
                                                     onClick={async (e) => {
                                                         e.stopPropagation();
-                                                        const isBtnHovered = hoveredButtonId === movie.id;
-                                                        const isCardHovered = hoveredCardId === movie.id;
+                                                        const isBtnHovered = hoveredButtonLink === movie.link;
+                                                        const isCardHovered = hoveredCardLink === movie.link;
                                                         const showDetailsText = isCardHovered && !isBtnHovered;
 
                                                         if (showDetailsText) {
@@ -2520,8 +2521,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     }}
                                                 >
                                                     {(() => {
-                                                        const isBtnHovered = hoveredButtonId === movie.id;
-                                                        const isCardHovered = hoveredCardId === movie.id;
+                                                        const isBtnHovered = hoveredButtonLink === movie.link;
+                                                        const isCardHovered = hoveredCardLink === movie.link;
                                                         if (isCardHovered && !isBtnHovered) {
                                                             return 'Details';
                                                         }
@@ -2911,6 +2912,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             });
                                         }
                                     }}
+                                    onMouseEnter={() => setHoveredCardLink(movie.link)}
+                                    onMouseLeave={() => {
+                                        setHoveredCardLink(null);
+                                        setHoveredButtonLink(null);
+                                        setHoveredCheckmarkLink(null);
+                                    }}
                                     style={{
                                         position: 'relative',
                                         borderRadius: '16px',
@@ -3020,29 +3027,54 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             )}
 
                                             {/* Action Buttons */}
-                                            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                                            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
                                                 <button
                                                     disabled={isAdding}
+                                                    onMouseEnter={() => setHoveredButtonLink(movie.link)}
+                                                    onMouseLeave={() => setHoveredButtonLink(null)}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         if (isAdding) return;
-                                                        if (isAdded) {
-                                                            const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
+
+                                                        const isBtnHovered = hoveredButtonLink === movie.link;
+                                                        const isCardHovered = hoveredCardLink === movie.link;
+                                                        const isCheckmarkHovered = hoveredCheckmarkLink === movie.link;
+                                                        const showDetailsText = isCardHovered && !isBtnHovered && !isCheckmarkHovered;
+
+                                                        if (showDetailsText) {
+                                                            const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
                                                             if (libMovie) {
-                                                                onDelete(libMovie.id, true);
-                                                                setAddedLinks(prev => {
-                                                                    const next = new Set(prev);
-                                                                    next.delete(movie.link);
-                                                                    return next;
-                                                                });
-                                                                setLocalWatchedLinks(prev => {
-                                                                    const next = new Set(prev);
-                                                                    next.delete(movie.link);
-                                                                    return next;
+                                                                setSelectedMovie(libMovie);
+                                                            } else {
+                                                                const histMovie = historyList.find(h => cleanLinkPath(h.movie_link) === cleanLinkPath(movie.link));
+                                                                setSelectedMovie({
+                                                                    ...movie,
+                                                                    poster_url: movie.poster_url || movie.img,
+                                                                    user_rating: histMovie?.user_rating || null,
+                                                                    notes: histMovie?.notes || null,
+                                                                    notes_public: histMovie?.notes_public || 0,
+                                                                    status: histMovie?.is_watched ? 'watched' : 'want_to_watch'
                                                                 });
                                                             }
                                                         } else {
-                                                            handleAddMovieFromCache(movie.link);
+                                                            if (isAdded) {
+                                                                const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
+                                                                if (libMovie) {
+                                                                    onDelete(libMovie.id, true);
+                                                                    setAddedLinks(prev => {
+                                                                        const next = new Set(prev);
+                                                                        next.delete(movie.link);
+                                                                        return next;
+                                                                    });
+                                                                    setLocalWatchedLinks(prev => {
+                                                                        const next = new Set(prev);
+                                                                        next.delete(movie.link);
+                                                                        return next;
+                                                                    });
+                                                                }
+                                                            } else {
+                                                                handleAddMovieFromCache(movie.link);
+                                                            }
                                                         }
                                                     }}
                                                     className="btn"
@@ -3054,34 +3086,52 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         fontWeight: 'bold',
                                                         cursor: isAdding ? 'default' : 'pointer',
                                                         border: '1px solid',
-                                                        background: isAdded ? 'rgba(3, 218, 198, 0.15)' : 'rgba(168, 85, 247, 0.15)',
-                                                        borderColor: isAdded ? '#03dac6' : 'rgba(168, 85, 247, 0.4)',
-                                                        color: isAdded ? '#03dac6' : '#c084fc',
+                                                        background: (() => {
+                                                            if (hoveredCheckmarkLink === movie.link) return 'rgba(3, 218, 198, 0.1)';
+                                                            if (hoveredButtonLink === movie.link) {
+                                                                return isAdded ? 'rgba(3, 218, 198, 0.25)' : 'rgba(168, 85, 247, 0.3)';
+                                                            }
+                                                            return isAdded ? 'rgba(3, 218, 198, 0.15)' : 'rgba(168, 85, 247, 0.15)';
+                                                        })(),
+                                                        borderColor: (() => {
+                                                            if (hoveredCheckmarkLink === movie.link) return 'rgba(3, 218, 198, 0.3)';
+                                                            if (hoveredButtonLink === movie.link) {
+                                                                return isAdded ? '#03dac6' : 'rgba(168, 85, 247, 0.7)';
+                                                            }
+                                                            return isAdded ? '#03dac6' : 'rgba(168, 85, 247, 0.4)';
+                                                        })(),
+                                                        color: (() => {
+                                                            if (hoveredCheckmarkLink === movie.link) return '#03dac6';
+                                                            if (hoveredButtonLink === movie.link) {
+                                                                return isAdded ? '#03dac6' : '#d8b4fe';
+                                                            }
+                                                            return isAdded ? '#03dac6' : '#c084fc';
+                                                        })(),
+                                                        boxShadow: hoveredButtonLink === movie.link ? (isAdded ? '0 0 12px rgba(3, 218, 198, 0.3)' : '0 0 12px rgba(168, 85, 247, 0.4)') : 'none',
+                                                        transform: hoveredButtonLink === movie.link ? 'scale(1.02)' : 'scale(1)',
                                                         transition: 'all 0.2s ease',
                                                         textAlign: 'center'
                                                     }}
                                                     title={isAdded ? "Remove from Library" : "Add to Library"}
-                                                    onMouseEnter={(e) => {
-                                                        if (isAdded) {
-                                                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
-                                                            e.currentTarget.style.borderColor = '#ef4444';
-                                                            e.currentTarget.style.color = '#ef4444';
-                                                            e.currentTarget.innerText = '❌ Remove?';
-                                                        }
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        if (isAdded) {
-                                                            e.currentTarget.style.background = 'rgba(3, 218, 198, 0.15)';
-                                                            e.currentTarget.style.borderColor = '#03dac6';
-                                                            e.currentTarget.style.color = '#03dac6';
-                                                            e.currentTarget.innerText = '✓ In My Library';
-                                                        }
-                                                    }}
                                                 >
-                                                    {isAdding ? '⏳ Adding...' : isAdded ? '✓ In My Library' : '➕ Add to Library'}
+                                                    {(() => {
+                                                        const isBtnHovered = hoveredButtonLink === movie.link;
+                                                        const isCardHovered = hoveredCardLink === movie.link;
+                                                        const isCheckmarkHovered = hoveredCheckmarkLink === movie.link;
+
+                                                        if (isCheckmarkHovered) {
+                                                            return isMovieWatched ? 'Mark unwatched ->' : 'Mark watched ->';
+                                                        }
+                                                        if (isCardHovered && !isBtnHovered) {
+                                                            return 'Details';
+                                                        }
+                                                        return isAdding ? '⏳ Adding...' : isAdded ? '✓ In My Library' : '➕ Add to Library';
+                                                    })()}
                                                 </button>
 
                                                 <button
+                                                    onMouseEnter={() => setHoveredCheckmarkLink(movie.link)}
+                                                    onMouseLeave={() => setHoveredCheckmarkLink(null)}
                                                     onClick={async (e) => {
                                                         e.stopPropagation();
                                                         if (isAdding) return;
@@ -3120,6 +3170,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         cursor: 'pointer',
                                                         fontSize: '0.9rem',
                                                         fontWeight: 'bold',
+                                                        transform: hoveredCheckmarkLink === movie.link ? 'scale(1.08)' : 'scale(1)',
+                                                        boxShadow: hoveredCheckmarkLink === movie.link ? '0 0 10px rgba(3, 218, 198, 0.4)' : 'none',
                                                         transition: 'all 0.2s ease',
                                                         flexShrink: 0
                                                     }}
