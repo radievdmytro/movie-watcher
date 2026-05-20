@@ -3108,7 +3108,15 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                  if (isAdded) {
                                                                      const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
                                                                      if (libMovie) {
-                                                                         onDelete(libMovie.id);
+                                                                         const token = localStorage.getItem('token');
+                                                                         fetch(`/api/trash/${libMovie.id}`, {
+                                                                             method: 'DELETE',
+                                                                             headers: { 'Authorization': `Bearer ${token}` }
+                                                                         }).then(res => {
+                                                                             if (res.ok && typeof onUpdate === 'function') {
+                                                                                 onUpdate(null);
+                                                                             }
+                                                                         }).catch(console.error);
                                                                      }
                                                                  } else {
                                                                      handleAddMovieFromCache(movie.link);
