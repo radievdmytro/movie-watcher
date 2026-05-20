@@ -439,6 +439,60 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         }
     };
 
+    const renderLibraryButton = () => {
+        if (isAdded) {
+            return (
+                <button
+                    style={{
+                        background: 'rgba(3, 218, 198, 0.1)',
+                        border: '1px solid rgba(3, 218, 198, 0.2)',
+                        color: '#03dac6',
+                        padding: isMobile ? '8px 10px' : '12px 28px',
+                        fontSize: isMobile ? '0.82rem' : '0.95rem',
+                        fontWeight: '700',
+                        borderRadius: '10px',
+                        cursor: 'default',
+                        boxShadow: 'none',
+                        transition: 'all 0.2s',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        flex: isMobile ? '1 1 auto' : '0 0 auto'
+                    }}
+                >
+                    ✓ In My Library
+                </button>
+            );
+        }
+        return (
+            <button
+                style={{
+                    background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
+                    border: 'none',
+                    color: '#000',
+                    padding: isMobile ? '8px 10px' : '12px 28px',
+                    fontSize: isMobile ? '0.82rem' : '0.95rem',
+                    fontWeight: '700',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.25)',
+                    transition: 'all 0.2s',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    flex: isMobile ? '1 1 auto' : '0 0 auto'
+                }}
+                onClick={() => {
+                    if (onAddMovie) onAddMovie(movie.link || movie.movie_link);
+                }}
+            >
+                ➕ Add to Library
+            </button>
+        );
+    };
+
     return ReactDOM.createPortal(
         <div
             onMouseDown={handleBackdropMouseDown}
@@ -1506,32 +1560,14 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     right: 0,
                     zIndex: 10
                 }}>
-                    {!isMobile && <div style={{ flex: '0 0 270px' }} />}
+                    {!isMobile && (
+                        <div style={{ flex: '0 0 270px', display: 'flex', alignItems: 'center' }}>
+                            {(!isTrashMode || readOnly) && renderLibraryButton()}
+                        </div>
+                    )}
                     {readOnly ? (
                                 <>
-                                    <button
-                                        style={{
-                                            background: addedLinks.has(movie.link) ? 'rgba(3, 218, 198, 0.1)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
-                                            border: addedLinks.has(movie.link) ? '1px solid rgba(3, 218, 198, 0.2)' : 'none',
-                                            color: addedLinks.has(movie.link) ? '#03dac6' : '#000',
-                                            padding: isMobile ? '8px 15px' : '12px 28px',
-                                            fontSize: isMobile ? '0.82rem' : '0.95rem',
-                                            fontWeight: '700',
-                                            borderRadius: '10px',
-                                            cursor: 'pointer',
-                                            boxShadow: addedLinks.has(movie.link) ? 'none' : '0 4px 15px rgba(212, 175, 55, 0.25)',
-                                            transition: 'all 0.2s',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '6px',
-                                            flex: isMobile ? '1' : 'initial'
-                                        }}
-                                        onClick={() => handleAddMovieFromCache(movie.link)}
-                                        disabled={addingLinks.has(movie.link) || addedLinks.has(movie.link)}
-                                    >
-                                        {addingLinks.has(movie.link) ? '⏳ Adding...' : addedLinks.has(movie.link) ? '✓ In My Library' : '➕ Add to Library'}
-                                    </button>
+                                    {isMobile && renderLibraryButton()}
                                     <a
                                         href={movie.link}
                                         target="_blank"
@@ -1548,7 +1584,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            transition: 'all 0.2s'
+                                            transition: 'all 0.2s',
+                                            flex: isMobile ? '1' : 'initial'
                                         }}
                                         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
@@ -1558,55 +1595,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 </>
                             ) : !isTrashMode ? (
                                 <>
-                                    {!isAdded && (
-                                        <button
-                                            style={{
-                                                background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
-                                                border: 'none',
-                                                color: '#000',
-                                                padding: isMobile ? '8px 10px' : '12px 28px',
-                                                fontSize: isMobile ? '0.82rem' : '0.95rem',
-                                                fontWeight: '700',
-                                                borderRadius: '10px',
-                                                cursor: 'pointer',
-                                                boxShadow: '0 4px 15px rgba(212, 175, 55, 0.25)',
-                                                transition: 'all 0.2s',
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px',
-                                                flex: isMobile ? '1 1 auto' : '0 0 auto'
-                                            }}
-                                            onClick={() => {
-                                                if (onAddMovie) onAddMovie(movie.link || movie.movie_link);
-                                            }}
-                                        >
-                                            ➕ Add to Library
-                                        </button>
-                                    )}
-                                    {isAdded && (
-                                        <button
-                                            style={{
-                                                background: 'rgba(3, 218, 198, 0.1)',
-                                                border: '1px solid rgba(3, 218, 198, 0.2)',
-                                                color: '#03dac6',
-                                                padding: isMobile ? '8px 10px' : '12px 28px',
-                                                fontSize: isMobile ? '0.82rem' : '0.95rem',
-                                                fontWeight: '700',
-                                                borderRadius: '10px',
-                                                cursor: 'default',
-                                                boxShadow: 'none',
-                                                transition: 'all 0.2s',
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px',
-                                                flex: isMobile ? '1 1 auto' : '0 0 auto'
-                                            }}
-                                        >
-                                            ✓ In My Library
-                                        </button>
-                                    )}
+                                    {isMobile && renderLibraryButton()}
                                     <button
                                         style={{
                                             background: localStatus === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
