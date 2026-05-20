@@ -382,6 +382,28 @@ const cleanUrlPath = (url) => {
         .split('#')[0];                    // strip hash
 };
 
+const getHiddenGlobalMoviePaths = (userId) => {
+    if (!userId) return new Set();
+    try {
+        const rows = db.prepare('SELECT movie_link FROM hidden_global_movies WHERE user_id = ?').all(userId);
+        return new Set(rows.map(row => row.movie_link).filter(Boolean));
+    } catch (err) {
+        console.error('[Hidden Global Movies] Failed to load hidden links:', err.message);
+        return new Set();
+    }
+};
+
+const filterHiddenGlobalMovies = (movies, userId) => {
+    const hiddenPaths = getHiddenGlobalMoviePaths(userId);
+    if (hiddenPaths.size === 0) return movies;
+    return (movies || []).filter(movie => !hiddenPaths.has(cleanUrlPath(movie.link)));
+};
+
+const isGlobalMovieHidden = (userId, link) => {
+    if (!userId || !link) return false;
+    return getHiddenGlobalMoviePaths(userId).has(cleanUrlPath(link));
+};
+
 // Helper: Save movie details to global cache
 const saveToCache = (details) => {
     if (!details || !details.link) return;
@@ -480,13 +502,14 @@ app.get('/api/cache/directory', authenticateToken, (req, res) => {
             FROM scraped_movies_cache
             WHERE poster_url IS NOT NULL AND title IS NOT NULL
         `).all();
+        const visibleRows = filterHiddenGlobalMovies(rows, req.user.id);
 
         // 2. Initialize seedable random generator
         const rnd = seedRandom(seed);
 
         // 3. Map each movie to a score with a seedable random offset
         // Higher rated movies will naturally have higher scores, but random offset up to 6.0 introduces beautiful variety
-        const scoredMovies = rows.map(row => {
+        const scoredMovies = visibleRows.map(row => {
             const r = parseFloat(row.rating) || 5.5; // fallback rating for unrated movies
             const randomOffset = rnd() * 6.0;
             return {
@@ -505,6 +528,53 @@ app.get('/api/cache/directory', authenticateToken, (req, res) => {
         const sliced = sorted.slice(offset, offset + limit);
 
         res.json(sliced);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/hidden-global-movies', authenticateToken, (req, res) => {
+    try {
+        const hiddenRows = db.prepare('SELECT movie_link, created_at FROM hidden_global_movies WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+        const cachedRows = db.prepare('SELECT * FROM scraped_movies_cache').all();
+        const cacheByPath = new Map(cachedRows.map(movie => [cleanUrlPath(movie.link), movie]));
+
+        res.json(hiddenRows.map(row => ({
+            ...cacheByPath.get(row.movie_link),
+            movie_link: row.movie_link,
+            created_at: row.created_at,
+            title: cacheByPath.get(row.movie_link)?.title || row.movie_link,
+            link: cacheByPath.get(row.movie_link)?.link || row.movie_link
+        })));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/hidden-global-movies', authenticateToken, (req, res) => {
+    try {
+        const { link } = req.body;
+        const movieLink = cleanUrlPath(link);
+        if (!movieLink) return res.status(400).json({ error: 'link required' });
+
+        db.prepare(`
+            INSERT OR IGNORE INTO hidden_global_movies (user_id, movie_link)
+            VALUES (?, ?)
+        `).run(req.user.id, movieLink);
+
+        res.json({ success: true, movie_link: movieLink });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/hidden-global-movies', authenticateToken, (req, res) => {
+    try {
+        const movieLink = cleanUrlPath(req.query.link || req.body?.link);
+        if (!movieLink) return res.status(400).json({ error: 'link required' });
+
+        db.prepare('DELETE FROM hidden_global_movies WHERE user_id = ? AND movie_link = ?').run(req.user.id, movieLink);
+        res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -566,7 +636,7 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
         
         const start = performance.now();
         const stmt = db.prepare(sql);
-        const results = stmt.all(...params);
+        const results = filterHiddenGlobalMovies(stmt.all(...params), req.user.id);
         const { total } = db.prepare('SELECT count(*) as total FROM scraped_movies_cache').get();
         const timeMs = (performance.now() - start).toFixed(1);
         
@@ -611,6 +681,9 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
             const cached = db.prepare('SELECT * FROM scraped_movies_cache WHERE link LIKE ?').get(`%${cleanQuery}%`);
             // Only use cache instantly if it has description (meaning it was fully scraped, not just a partial search result)
             if (cached && cached.description) {
+                if (isGlobalMovieHidden(req.user.id, cached.link)) {
+                    return res.status(404).json({ error: 'Movie hidden from global results' });
+                }
                 console.log(`[Search Cache Hit] Instantly returning full details for: ${query}`);
                 // Trigger background update to keep it fresh
                 triggerBackgroundUpdate(query);
@@ -629,13 +702,13 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
             const searchLike = `%${query.trim()}%`;
             
             // Check cache first
-            const localResults = db.prepare(`
+            const localResults = filterHiddenGlobalMovies(db.prepare(`
                 SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type
                 FROM scraped_movies_cache
                 WHERE cyrillic_like(title, ?) OR cyrillic_like(original_title, ?)
                    OR actors LIKE ? OR director LIKE ? OR year LIKE ?
                 LIMIT 150
-            `).all(query.trim(), query.trim(), searchLike, searchLike, searchLike);
+            `).all(query.trim(), query.trim(), searchLike, searchLike, searchLike), req.user.id);
 
             if (localResults.length > 0) {
                 console.log(`[Search Cache Hit] Instantly returning ${localResults.length} text search results for: "${query}"`);
@@ -671,7 +744,7 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
 
             // Fallback to real-time search
             console.log(`[Search Cache Miss] Searching HDRezka for: "${query}"`);
-            const results = await searchMovies(query, getUserHeaders(req));
+            const results = filterHiddenGlobalMovies(await searchMovies(query, getUserHeaders(req)), req.user.id);
             if (results && results.length > 0) {
                 for (const item of results) {
                     try {
@@ -730,7 +803,7 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
     queryStr += ' ORDER BY year DESC, rating DESC LIMIT 50';
 
     try {
-        const movies = db.prepare(queryStr).all(...params);
+        const movies = filterHiddenGlobalMovies(db.prepare(queryStr).all(...params), req.user.id);
         res.json(movies);
     } catch (err) {
         console.error('Cache search failed:', err);
@@ -770,6 +843,11 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
 
             // Only return from cache instantly if it's a full record with description
             if (cached && cached.description) {
+                if (isGlobalMovieHidden(req.user.id, cached.link)) {
+                    send('done', { hidden: true });
+                    res.end();
+                    return;
+                }
                 send('result', { type: 'detail', data: cached, fromCache: true });
                 send('done', { fromCache: true });
                 res.end();
@@ -792,14 +870,14 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
             const qTrimmed = query.trim();
 
             // 1. Instant local DB results
-            const localResults = db.prepare(`
+            const localResults = filterHiddenGlobalMovies(db.prepare(`
                 SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type
                 FROM scraped_movies_cache
                 WHERE cyrillic_like(title, ?) OR cyrillic_like(original_title, ?)
                    OR actors LIKE ? OR director LIKE ? OR year LIKE ?
                 ORDER BY updated_at DESC
                 LIMIT 150
-            `).all(qTrimmed, qTrimmed, `%${qTrimmed}%`, `%${qTrimmed}%`, `%${qTrimmed}%`);
+            `).all(qTrimmed, qTrimmed, `%${qTrimmed}%`, `%${qTrimmed}%`, `%${qTrimmed}%`), req.user.id);
 
             if (localResults.length > 0) {
                 send('results', { items: localResults, fromCache: true });
@@ -808,7 +886,7 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
             // 2. Fetch from HDRezka (may return new items not in cache)
             send('status', { msg: 'Searching HDRezka...' });
             try {
-                const freshResults = await searchMovies(query, getUserHeaders(req));
+                const freshResults = filterHiddenGlobalMovies(await searchMovies(query, getUserHeaders(req)), req.user.id);
                 if (!isDone()) {
                     // Save to cache
                     for (const item of (freshResults || [])) {

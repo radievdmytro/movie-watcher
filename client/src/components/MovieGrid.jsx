@@ -453,6 +453,49 @@ const CardRatingButton = ({ movie, onUpdateRating }) => {
     );
 };
 
+const GlobalHideButton = ({ link, onHide, offsetRight = 10 }) => (
+    <button
+        type="button"
+        onClick={(e) => {
+            e.stopPropagation();
+            onHide(link);
+        }}
+        title="Hide from global recommendations and search"
+        style={{
+            position: 'absolute',
+            top: '10px',
+            right: `${offsetRight}px`,
+            width: '30px',
+            height: '30px',
+            borderRadius: '50%',
+            border: '1px solid rgba(239, 68, 68, 0.45)',
+            background: 'rgba(0, 0, 0, 0.72)',
+            color: '#ff6b6b',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 18,
+            fontSize: '0.95rem',
+            lineHeight: 1,
+            boxShadow: '0 6px 18px rgba(0, 0, 0, 0.35)',
+            transition: 'transform 0.15s ease, background 0.15s ease, border-color 0.15s ease'
+        }}
+        onMouseEnter={e => {
+            e.currentTarget.style.transform = 'scale(1.08)';
+            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
+            e.currentTarget.style.borderColor = '#ef4444';
+        }}
+        onMouseLeave={e => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.72)';
+            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+        }}
+    >
+        🚫
+    </button>
+);
+
 function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, highlightedLink, onGuestActivity }) {
     const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
     const [sortDir, setSortDir] = useState(() => localStorage.getItem('movieGrid_sortDir') || 'desc');
@@ -558,6 +601,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         return backgroundCacheResults.map(m => ({ ...m, isFromCache: true }));
     }, [backgroundCacheResults]);
     const [localDeletedLinks, setLocalDeletedLinks] = useState(new Set());
+    const [localHiddenGlobalLinks, setLocalHiddenGlobalLinks] = useState(new Set());
     const libraryLinks = useMemo(() => {
         return new Set(allMovies.filter(m => m.id !== null && !localDeletedLinks.has(cleanLinkPath(m.link))).map(m => cleanLinkPath(m.link)));
     }, [allMovies, localDeletedLinks]);
@@ -585,6 +629,31 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             setAddingLinks(prev => {
                 const next = new Set(prev);
                 next.delete(link);
+                return next;
+            });
+        }
+    };
+
+    const handleHideGlobalMovie = async (link) => {
+        const normalizedLink = cleanLinkPath(link);
+        if (!normalizedLink) return;
+
+        setLocalHiddenGlobalLinks(prev => new Set([...prev, normalizedLink]));
+        setCacheMoviesResults(prev => prev.filter(movie => cleanLinkPath(movie.link) !== normalizedLink));
+        setBackgroundCacheResults(prev => prev.filter(movie => cleanLinkPath(movie.link) !== normalizedLink));
+        setOnboardingCacheMovies(prev => prev.filter(movie => cleanLinkPath(movie.link) !== normalizedLink));
+
+        try {
+            await fetch('/api/hidden-global-movies', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ link })
+            });
+        } catch (err) {
+            console.error('Failed to hide global movie:', err);
+            setLocalHiddenGlobalLinks(prev => {
+                const next = new Set(prev);
+                next.delete(normalizedLink);
                 return next;
             });
         }
@@ -648,7 +717,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
     const filteredAndSortedMovies = useMemo(() => {
         if (searchDb === 'cache') {
-            return cacheMoviesResults;
+            return cacheMoviesResults.filter(movie => !localHiddenGlobalLinks.has(cleanLinkPath(movie.link)));
         }
 
         let scored = movies.map(movie => {
@@ -782,7 +851,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 return 0;
             })
             .map(item => item.movie);
-    }, [movies, sortField, sortDir, deferredFilterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields]);
+    }, [movies, sortField, sortDir, deferredFilterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields, localHiddenGlobalLinks]);
 
     const filteredOnboardingCacheMovies = useMemo(() => {
         let base = onboardingCacheMovies;
@@ -801,6 +870,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
 
         return base.filter(movie => {
+            if (localHiddenGlobalLinks.has(cleanLinkPath(movie.link))) return false;
 
             // Genre Filter
             if (filterGenres.length > 0) {
@@ -861,7 +931,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
             return true;
         });
-    }, [onboardingCacheMovies, deferredFilterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType, searchFields, uniqueBackgroundCacheResults]);
+    }, [onboardingCacheMovies, deferredFilterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType, searchFields, uniqueBackgroundCacheResults, localHiddenGlobalLinks]);
 
     const hasActiveFilter = useMemo(() => {
         return !!(
@@ -2335,6 +2405,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             objectFit: 'cover'
                                         }}
                                     />
+                                    {searchDb === 'cache' && (
+                                        <GlobalHideButton
+                                            link={movie.link}
+                                            onHide={handleHideGlobalMovie}
+                                        />
+                                    )}
                                     {/* Top Overlay Controls */}
                                     <div style={{
                                         position: 'absolute', top: '0', left: '0', width: '100%',
@@ -2999,6 +3075,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             transition: 'filter 0.3s ease'
                                         }}
                                         loading="lazy"
+                                    />
+                                    <GlobalHideButton
+                                        link={movie.link}
+                                        onHide={handleHideGlobalMovie}
                                     />
 
                                     {/* Ambient Hover overlay */}

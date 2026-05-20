@@ -150,6 +150,19 @@ const initDb = () => {
   db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_title ON scraped_movies_cache(title)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_original_title ON scraped_movies_cache(original_title)');
 
+  // Per-user hidden global-cache movies.
+  // Stores normalized link paths so a movie stays hidden even if HDRezka mirror domains rotate.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS hidden_global_movies (
+      user_id INTEGER NOT NULL,
+      movie_link TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, movie_link),
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  `);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_hidden_global_movies_user ON hidden_global_movies(user_id)');
+
   // Migration for user_id in movies
   try {
     db.exec("ALTER TABLE movies ADD COLUMN user_id INTEGER");
@@ -299,4 +312,3 @@ const initDb = () => {
 };
 
 module.exports = { db, initDb };
-

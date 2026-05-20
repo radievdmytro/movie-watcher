@@ -188,11 +188,13 @@ function EditableField({ value, onSave, style, type = 'text', placeholder, isMob
 }
 
 function CollectionsView({ onBack }) {
-    const [activeTab, setActiveTab] = useState('mine'); // 'mine' | 'shared'
+    const [activeTab, setActiveTab] = useState('mine'); // 'hidden' | 'mine' | 'shared'
     const [collections, setCollections] = useState([]);
     const [sharedCollections, setSharedCollections] = useState([]);
+    const [hiddenMovies, setHiddenMovies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [sharedLoading, setSharedLoading] = useState(false);
+    const [hiddenLoading, setHiddenLoading] = useState(false);
     const [expandedCollectionId, setExpandedCollectionId] = useState(null);
     const [expandedCollection, setExpandedCollection] = useState(null);
     const [selectedMovie, setSelectedMovie] = useState(null);
@@ -336,6 +338,19 @@ function CollectionsView({ onBack }) {
         }
     };
 
+    const fetchHiddenMovies = async () => {
+        setHiddenLoading(true);
+        try {
+            const res = await fetch('/api/hidden-global-movies');
+            const data = await res.json();
+            setHiddenMovies(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error('Failed to fetch hidden global movies:', err);
+        } finally {
+            setHiddenLoading(false);
+        }
+    };
+
     const fetchOwnedMovies = async () => {
         try {
             const res = await fetch('/api/movies');
@@ -415,6 +430,7 @@ function CollectionsView({ onBack }) {
     useEffect(() => {
         fetchCollections();
         fetchSharedCollections();
+        fetchHiddenMovies();
         fetchOwnedMovies();
     }, []);
 
@@ -651,8 +667,28 @@ function CollectionsView({ onBack }) {
         }
     };
 
-    const currentCollections = activeTab === 'mine' ? collections : sharedCollections;
-    const currentLoading = activeTab === 'mine' ? loading : sharedLoading;
+    const handleUnhideMovie = async (movie, e) => {
+        if (e) e.stopPropagation();
+        try {
+            await fetch(`/api/hidden-global-movies?link=${encodeURIComponent(movie.link || movie.movie_link)}`, {
+                method: 'DELETE'
+            });
+            setHiddenMovies(prev => prev.filter(item => item.movie_link !== movie.movie_link));
+            setActionFeedback({
+                id: 'hidden',
+                type: 'success',
+                message: `✔ "${movie.title}" is visible again.`
+            });
+            setTimeout(() => setActionFeedback({ id: null, type: '', message: '', undoAction: null }), 3000);
+        } catch (err) {
+            console.error('Failed to unhide movie:', err);
+            setActionFeedback({ id: 'hidden', type: 'error', message: 'Failed to unhide movie.' });
+            setTimeout(() => setActionFeedback({ id: null, type: '', message: '', undoAction: null }), 3000);
+        }
+    };
+
+    const currentCollections = activeTab === 'shared' ? sharedCollections : collections;
+    const currentLoading = activeTab === 'shared' ? sharedLoading : loading;
 
     return (
         <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
@@ -665,7 +701,7 @@ function CollectionsView({ onBack }) {
                     }}
                     onDelete={() => {}} 
                     isTrashMode={false}
-                    readOnly={activeTab === 'shared'} // Read-only view for shared lists received from other users
+                    readOnly={activeTab === 'shared' || activeTab === 'hidden'} // Read-only view for shared/hidden global entries
                 />
             )}
 
@@ -763,6 +799,20 @@ function CollectionsView({ onBack }) {
                     {/* Tabs */}
                     <div className="glass-panel" style={{ display: 'inline-flex', padding: '4px', borderRadius: '10px', gap: '4px' }}>
                         <button
+                            onClick={() => { setActiveTab('hidden'); setExpandedCollectionId(null); }}
+                            className="btn"
+                            style={{
+                                background: activeTab === 'hidden' ? 'var(--accent-gold)' : 'transparent',
+                                color: activeTab === 'hidden' ? '#000' : '#888',
+                                borderRadius: '8px',
+                                padding: '8px 16px',
+                                fontWeight: 600,
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            Hidden ({hiddenMovies.length})
+                        </button>
+                        <button
                             onClick={() => { setActiveTab('mine'); setExpandedCollectionId(null); }}
                             className="btn"
                             style={{
@@ -794,7 +844,123 @@ function CollectionsView({ onBack }) {
                 </div>
             </div>
 
-            {currentLoading ? (
+            {activeTab === 'hidden' ? (
+                hiddenLoading ? (
+                    <div style={{ textAlign: 'center', padding: '50px', color: '#888' }}>Loading hidden movies...</div>
+                ) : hiddenMovies.length === 0 ? (
+                    <div className="glass-panel" style={{ textAlign: 'center', padding: '50px', color: '#888' }}>
+                        <p style={{ fontSize: '1.2rem', margin: '0 0 10px 0' }}>No hidden movies.</p>
+                        <p style={{ fontSize: '0.9rem', color: '#555' }}>
+                            Movies hidden from Global Database recommendations and search will appear here.
+                        </p>
+                    </div>
+                ) : (
+                    <div>
+                        {actionFeedback.id === 'hidden' && actionFeedback.message && (
+                            <div className="glass-panel" style={{
+                                marginBottom: '16px',
+                                padding: '12px 16px',
+                                color: actionFeedback.type === 'error' ? 'var(--danger)' : '#03dac6',
+                                fontWeight: 'bold',
+                                fontSize: '0.9rem'
+                            }}>
+                                {actionFeedback.message}
+                            </div>
+                        )}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                            gap: '20px'
+                        }}>
+                            {hiddenMovies.map(movie => (
+                                <div
+                                    key={movie.movie_link}
+                                    className="glass-panel movie-card"
+                                    onClick={() => setSelectedMovie({
+                                        ...movie,
+                                        poster_url: movie.poster_url || movie.img,
+                                        readOnly: true
+                                    })}
+                                    style={{
+                                        position: 'relative',
+                                        cursor: 'pointer',
+                                        borderRadius: '8px',
+                                        overflow: 'hidden',
+                                        border: '1px solid rgba(255,255,255,0.05)',
+                                        aspectRatio: '2/3',
+                                        transition: 'transform 0.2s',
+                                        background: 'rgba(255,255,255,0.03)'
+                                    }}
+                                >
+                                    {movie.poster_url ? (
+                                        <img
+                                            src={movie.poster_url}
+                                            alt={movie.title}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.8)' }}
+                                        />
+                                    ) : (
+                                        <div style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            padding: '16px',
+                                            textAlign: 'center',
+                                            color: '#777',
+                                            background: 'rgba(0,0,0,0.25)'
+                                        }}>
+                                            {movie.title}
+                                        </div>
+                                    )}
+                                    <button
+                                        onClick={(e) => handleUnhideMovie(movie, e)}
+                                        className="btn"
+                                        style={{
+                                            position: 'absolute',
+                                            top: '10px',
+                                            right: '10px',
+                                            zIndex: 12,
+                                            background: 'rgba(3, 218, 198, 0.88)',
+                                            color: '#000',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            padding: '6px 10px',
+                                            fontSize: '0.78rem',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 6px 18px rgba(0,0,0,0.35)'
+                                        }}
+                                        title="Show in global recommendations and search again"
+                                    >
+                                        👁️ Unhide
+                                    </button>
+                                    <div style={{
+                                        position: 'absolute', bottom: 0, left: 0, width: '100%',
+                                        padding: '30px 10px 10px',
+                                        background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%)'
+                                    }}>
+                                        <h4 style={{
+                                            fontSize: '0.85rem',
+                                            color: '#fff',
+                                            margin: '0 0 2px 0',
+                                            textOverflow: 'ellipsis',
+                                            overflow: 'hidden',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            {movie.title}
+                                        </h4>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#aaa' }}>
+                                            <span>{movie.year || ''}</span>
+                                            <span style={{ color: 'var(--accent-gold)' }}>★ {movie.rating || '-'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )
+            ) : currentLoading ? (
                 <div style={{ textAlign: 'center', padding: '50px', color: '#888' }}>Loading collections...</div>
             ) : currentCollections.length === 0 ? (
                 <div className="glass-panel" style={{ textAlign: 'center', padding: '50px', color: '#888' }}>
