@@ -144,6 +144,74 @@ input {
   }
 }
 
+.btn-slide-effect {
+  position: relative;
+  overflow: hidden;
+  background: var(--btn-bg-rest) !important;
+  border-color: var(--btn-border-rest) !important;
+  color: var(--btn-color-rest) !important;
+  transition: border-color 0.3s ease, color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.btn-slide-effect::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--btn-bg-hover);
+  transform: translateX(var(--slide-translate, -101%));
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.btn-slide-effect-text {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.btn-slide-effect.slide-active {
+  border-color: var(--btn-border-hover) !important;
+  color: var(--btn-color-hover) !important;
+}
+
+.slide-entering .button-text-fade {
+  animation: slideTextIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.slide-leaving .button-text-fade {
+  animation: slideTextOut 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideTextIn {
+  from {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideTextOut {
+  from {
+    opacity: 0;
+    transform: translateX(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
 .btn-checkmark:active {
   background: #03dac6 !important;
   color: #000000 !important;
