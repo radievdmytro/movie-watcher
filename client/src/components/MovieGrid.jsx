@@ -2543,17 +2543,22 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         const isBtnHovered = hoveredButtonLink === movie.link;
                                                         const isCardHovered = hoveredCardLink === movie.link;
 
+                                                        let text = '';
                                                         if (isDeleteHovered) {
-                                                            return 'Delete ->';
+                                                            text = 'Delete ->';
+                                                        } else if (isCardHovered && !isBtnHovered) {
+                                                            text = 'Details';
+                                                        } else if (movie.status === 'watched') {
+                                                            text = movie.user_rating ? `★ ${movie.user_rating}` : '✔ Watched';
+                                                        } else {
+                                                            text = 'Watch';
                                                         }
-                                                        if (isCardHovered && !isBtnHovered) {
-                                                            return 'Details';
-                                                        }
-                                                        return movie.status === 'watched' ? (
-                                                            <span>
-                                                                {movie.user_rating ? `★ ${movie.user_rating}` : '✔ Watched'}
+
+                                                        return (
+                                                            <span key={text} className="button-text-fade" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                                {text}
                                                             </span>
-                                                        ) : 'Watch';
+                                                        );
                                                     })()}
                                                 </button>
                                                 <button
@@ -3161,13 +3166,20 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         const isCardHovered = hoveredCardLink === movie.link;
                                                         const isCheckmarkHovered = hoveredCheckmarkLink === movie.link;
 
+                                                        let text = '';
                                                         if (isCheckmarkHovered) {
-                                                            return isMovieWatched ? 'Mark unwatched ->' : 'Mark watched ->';
+                                                            text = isMovieWatched ? 'Mark unwatched ->' : 'Mark watched ->';
+                                                        } else if (isCardHovered && !isBtnHovered) {
+                                                            text = 'Details';
+                                                        } else {
+                                                            text = isAdding ? '⏳ Adding...' : isAdded ? '✓ In My Library' : '➕ Add to Library';
                                                         }
-                                                        if (isCardHovered && !isBtnHovered) {
-                                                            return 'Details';
-                                                        }
-                                                        return isAdding ? '⏳ Adding...' : isAdded ? '✓ In My Library' : '➕ Add to Library';
+
+                                                        return (
+                                                            <span key={text} className="button-text-fade" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                                                                {text}
+                                                            </span>
+                                                        );
                                                     })()}
                                                 </button>
 
