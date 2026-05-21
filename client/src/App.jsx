@@ -53,12 +53,13 @@ function App() {
 
     const [globalCacheCount, setGlobalCacheCount] = useState(0);
     const [latestScrapedMovie, setLatestScrapedMovie] = useState(null);
-    const [popupMovie, setPopupMovie] = useState(null);        // what's actually shown in the popup
-    const [isShowcaseMode, setIsShowcaseMode] = useState(false); // true = random showcase, false = crawler notification
+    const [popupMovie, setPopupMovie] = useState(null);     // what's displayed in the popup
+    const [popupMode, setPopupMode] = useState('crawler');  // 'crawler' | 'random' | 'top'
     const [showScrapePopup, setShowScrapePopup] = useState(false);
     const [scrapedDetailsMovie, setScrapedDetailsMovie] = useState(null);
     const [isHoveringBadge, setIsHoveringBadge] = useState(false);
     const scrapePopupTimer = useRef(null);
+    const showcaseCounter = useRef(0); // counts showcase fires to trigger 'top' every 4th
 
     useEffect(() => {
         if (!user) return;
@@ -80,14 +81,14 @@ function App() {
                             if (prev && prev.id !== data.lastScraped.id) {
                                 // New movie fully scraped by crawler — show crawler popup
                                 setPopupMovie(data.lastScraped);
-                                setIsShowcaseMode(false);
+                                setPopupMode('crawler');
                                 setShowScrapePopup(true);
                                 if (scrapePopupTimer.current) clearTimeout(scrapePopupTimer.current);
                                 scrapePopupTimer.current = setTimeout(() => setShowScrapePopup(false), 5000);
                             } else if (!prev) {
                                 // First load — silently set popupMovie for hover display
                                 setPopupMovie(data.lastScraped);
-                                setIsShowcaseMode(false);
+                                setPopupMode('crawler');
                             }
                             return data.lastScraped;
                         });
@@ -98,30 +99,35 @@ function App() {
             }
         };
 
-        // 30-second random showcase: fires when no crawler popup is active
+        // 30-second showcase: every 4th fires top-rated, others fire random
         const fetchRandomShowcase = async () => {
-            if (showScrapePopup) return; // crawler popup already visible — skip
+            if (showScrapePopup) return; // crawler popup visible — skip
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
-                const res = await fetch(`/api/cache/random?minRating=6&t=${Date.now()}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Cache-Control': 'no-cache'
-                    }
+
+                showcaseCounter.current += 1;
+                const isTopRatedTurn = (showcaseCounter.current % 4 === 0);
+
+                const url = isTopRatedTurn
+                    ? `/api/cache/top?t=${Date.now()}`
+                    : `/api/cache/random?minRating=6&t=${Date.now()}`;
+
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Cache-Control': 'no-cache' }
                 });
                 if (res.ok) {
                     const movie = await res.json();
                     if (movie) {
                         setPopupMovie(movie);
-                        setIsShowcaseMode(true);
+                        setPopupMode(isTopRatedTurn ? 'top' : 'random');
                         setShowScrapePopup(true);
                         if (scrapePopupTimer.current) clearTimeout(scrapePopupTimer.current);
                         scrapePopupTimer.current = setTimeout(() => setShowScrapePopup(false), 5000);
                     }
                 }
             } catch (err) {
-                console.error('Failed to fetch random showcase movie:', err);
+                console.error('Failed to fetch showcase movie:', err);
             }
         };
 
@@ -882,19 +888,25 @@ function App() {
                                     <div style={{
                                         width: '290px',
                                         marginLeft: 'auto',
-                                        background: isShowcaseMode
-                                            ? 'rgba(20, 30, 45, 0.9)'
-                                            : 'rgba(25, 20, 40, 0.88)',
+                                        background: popupMode === 'top'
+                                            ? 'rgba(30, 25, 15, 0.92)'
+                                            : popupMode === 'random'
+                                                ? 'rgba(15, 25, 35, 0.9)'
+                                                : 'rgba(25, 20, 40, 0.88)',
                                         backdropFilter: 'blur(20px)',
                                         WebkitBackdropFilter: 'blur(20px)',
-                                        border: isShowcaseMode
-                                            ? '1px solid rgba(212, 175, 55, 0.3)'
-                                            : '1px solid rgba(168, 85, 247, 0.35)',
+                                        border: popupMode === 'top'
+                                            ? '1px solid rgba(212, 175, 55, 0.45)'
+                                            : popupMode === 'random'
+                                                ? '1px solid rgba(56, 189, 248, 0.3)'
+                                                : '1px solid rgba(168, 85, 247, 0.35)',
                                         borderRadius: '16px',
                                         padding: '12px 14px',
-                                        boxShadow: isShowcaseMode
-                                            ? '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 0 20px rgba(212, 175, 55, 0.1)'
-                                            : '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 20px rgba(168, 85, 247, 0.15)',
+                                        boxShadow: popupMode === 'top'
+                                            ? '0 12px 40px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 0 25px rgba(212, 175, 55, 0.15)'
+                                            : popupMode === 'random'
+                                                ? '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 0 20px rgba(56, 189, 248, 0.1)'
+                                                : '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 20px rgba(168, 85, 247, 0.15)',
                                         opacity: (showScrapePopup || isHoveringBadge) && popupMovie ? 1 : 0,
                                         transform: (showScrapePopup || isHoveringBadge) && popupMovie 
                                             ? 'translateY(0) scale(1)' 
@@ -913,8 +925,8 @@ function App() {
                                             <img src={popupMovie.poster_url} alt="poster" style={{ width: '45px', height: '65px', borderRadius: '8px', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }} />
                                         )}
                                         <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                                            <div style={{ fontSize: '0.72rem', color: isShowcaseMode ? 'var(--accent-gold)' : '#c084fc', marginBottom: '3px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
-                                                {isShowcaseMode ? '🎲 Случайный фильм:' : 'Недавно добавлено:'}
+                                            <div style={{ fontSize: '0.72rem', color: popupMode === 'top' ? 'var(--accent-gold)' : popupMode === 'random' ? '#38bdf8' : '#c084fc', marginBottom: '3px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
+                                                {popupMode === 'top' ? '✨ Фильм с высоким рейтингом:' : popupMode === 'random' ? '🎲 Случайный фильм:' : 'Недавно добавлено:'}
                                             </div>
                                             <div style={{ fontSize: '0.92rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', lineHeight: '1.2' }}>
                                                 {popupMovie?.title}

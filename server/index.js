@@ -491,6 +491,25 @@ app.get('/api/cache/random', authenticateToken, (req, res) => {
     }
 });
 
+// High-rated movie (rating >= 8, year >= 2001) for the premium showcase notification
+app.get('/api/cache/top', authenticateToken, (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    try {
+        const movie = db.prepare(`
+            SELECT * FROM scraped_movies_cache
+            WHERE rating >= 8
+              AND (year >= 2001 OR year IS NULL)
+              AND description IS NOT NULL AND description != ''
+              AND poster_url IS NOT NULL
+            ORDER BY RANDOM()
+            LIMIT 1
+        `).get();
+        res.json(movie || null);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Seedable random number generator (Mulberry32)
 function seedRandom(seedStr) {
     let h = 1779033703 ^ seedStr.length;
