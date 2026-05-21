@@ -105,6 +105,20 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWa
     const [barWidth, setBarWidth] = useState(450);
     const [dragBounds, setDragBounds] = useState(null);
 
+    const [dragOffset, setDragOffset] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('bulkActionOffset')) || { x: 0, y: 0 };
+        } catch {
+            return { x: 0, y: 0 };
+        }
+    });
+
+    const handleDragStop = (e, data) => {
+        const newOffset = { x: data.x, y: data.y };
+        setDragOffset(newOffset);
+        localStorage.setItem('bulkActionOffset', JSON.stringify(newOffset));
+    };
+
     // Measure actual bar width
     useEffect(() => {
         if (nodeRef.current) {
@@ -326,7 +340,13 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWa
     }
 
     return (
-        <Draggable nodeRef={nodeRef} handle=".drag-handle" bounds={dragBounds || undefined}>
+        <Draggable 
+            nodeRef={nodeRef} 
+            handle=".drag-handle" 
+            bounds={dragBounds || undefined}
+            defaultPosition={dragOffset}
+            onStop={handleDragStop}
+        >
             <div 
                 ref={nodeRef}
                 style={styleDesktop}
