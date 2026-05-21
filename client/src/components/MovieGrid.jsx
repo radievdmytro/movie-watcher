@@ -2838,7 +2838,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         } else if (isCardHovered && !isBtnHovered) {
                                                             text = 'Details';
                                                         } else if (isBtnHovered && !isMobile) {
-                                                            text = movie.status === 'watched' ? (isSmall ? 'Unwatched' : 'Mark Unwatched') : (isSmall ? 'Watched' : 'Mark Watched');
+                                                            const isExtraSmall = posterSize < 180;
+                                                            text = movie.status === 'watched' ? (isExtraSmall ? 'Unwatch' : (isSmall ? 'Unwatched' : 'Mark Unwatched')) : (isSmall ? 'Watched' : 'Mark Watched');
                                                         } else if (movie.status === 'watched') {
                                                             text = movie.user_rating ? `★ ${movie.user_rating}` : (isSmall ? 'Watched' : '✔ Watched');
                                                         } else {
@@ -3512,7 +3513,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                          } else if (isHideBtnHovered) {
                                                                              text = '🚫 Hide film';
                                                                          } else if (isCheckmarkHovered) {
-                                                                             text = isMovieWatched ? (isSmall ? 'Unwatched' : 'Unwatched ->') : (isSmall ? 'Watched' : 'Mark watched ->');
+                                                                             const isExtraSmall = posterSize < 180;
+                                                                             text = isMovieWatched ? (isExtraSmall ? 'Unwatch' : (isSmall ? 'Unwatched' : 'Unwatched ->')) : (isSmall ? 'Watched' : 'Mark watched ->');
                                                                          } else if (isCardHovered && !isBtnHovered) {
                                                                              text = 'Details';
                                                                          } else {
