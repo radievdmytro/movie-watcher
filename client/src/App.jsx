@@ -909,6 +909,7 @@ function App() {
                                     movies={movies} 
                                     selectedLibraryIds={selectedIds}
                                     onGuestActivity={triggerGuestActivity}
+                                    onAddToCollectionClick={setCollectionMovie}
                                 />
                         )}
 

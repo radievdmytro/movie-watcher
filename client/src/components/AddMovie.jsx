@@ -3,7 +3,7 @@ import MovieComparisonModal from './MovieComparisonModal';
 import MovieDetailsModal from './MovieDetailsModal';
 import BulkImportModal from './BulkImportModal';
 
-function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryIds = [], onGuestActivity }) {
+function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryIds = [], onGuestActivity, onAddToCollectionClick }) {
     const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
@@ -341,6 +341,36 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                 setIsFadingLogs(false);
             }, 1000);
         }, 10000);
+    };
+
+    const handleAddToCollectionUnowned = async (item) => {
+        const token = localStorage.getItem('token');
+        setLoading(true);
+        try {
+            const res = await fetch('/api/movies/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ url: item.link })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                if (onMovieAdded) onMovieAdded();
+                if (onAddToCollectionClick) onAddToCollectionClick(data);
+            } else if (res.status === 409) {
+                const localMovie = movies.find(m => m.link === item.link || m.movie_link === item.link);
+                if (localMovie && onAddToCollectionClick) onAddToCollectionClick(localMovie);
+            } else {
+                setLogs([{ msg: `✗ Failed to add: ${data.error || 'Unknown error'}`, type: 'error' }]);
+                setIsFadingLogs(false);
+                setTimeout(() => setIsFadingLogs(true), 4000);
+            }
+        } catch (err) {
+            setLogs([{ msg: `✗ Network Error`, type: 'error' }]);
+            setIsFadingLogs(false);
+            setTimeout(() => setIsFadingLogs(true), 4000);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSelectMovie = async (link) => {
@@ -1055,30 +1085,52 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                     <div style={{ fontSize: '0.71rem', color: '#666', marginTop: '1px' }}>{item.misc}</div>
                                 </div>
                                 {item.rating && <span style={{ fontSize: '0.7rem', background: '#2a2a2a', padding: '2px 6px', borderRadius: '5px', color: '#bbb', flexShrink: 0 }}>★ {item.rating}</span>}
-                                {owned ? (
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
-                                        style={{
-                                            background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.5)',
-                                            color: 'var(--accent-gold)', borderRadius: '7px', padding: '3px 10px',
-                                            fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s',
-                                            fontWeight: '600'
+                                        title="Add to Collection"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (owned) {
+                                                const localMovie = movies.find(m => m.link === item.link || m.movie_link === item.link);
+                                                if (localMovie && onAddToCollectionClick) onAddToCollectionClick(localMovie);
+                                            } else {
+                                                handleAddToCollectionUnowned(item);
+                                            }
                                         }}
-                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.3)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.15)'}
-                                    >📍 Show</button>
-                                ) : (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleBatchImport([item.link]); }}
                                         style={{
                                             background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
-                                            color: 'var(--accent-gold)', borderRadius: '7px', padding: '3px 10px',
-                                            fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s'
+                                            color: 'var(--accent-gold)', borderRadius: '7px', padding: '3px 8px',
+                                            fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
                                         }}
                                         onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
                                         onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
-                                    >+ Add</button>
-                                )}
+                                    >📁</button>
+                                    {owned ? (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
+                                            style={{
+                                                background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.5)',
+                                                color: 'var(--accent-gold)', borderRadius: '7px', padding: '3px 10px',
+                                                fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s',
+                                                fontWeight: '600'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.3)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.15)'}
+                                        >📍 Show</button>
+                                    ) : (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleBatchImport([item.link]); }}
+                                            style={{
+                                                background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
+                                                color: 'var(--accent-gold)', borderRadius: '7px', padding: '3px 10px',
+                                                fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
+                                        >+ Add</button>
+                                    )}
+                                </div>
                             </div>
                         );
                     }) : (
@@ -1320,19 +1372,41 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                                 <div style={{ fontSize: isMobile ? '0.75rem' : '0.85rem', fontWeight: 600, color: owned ? 'var(--accent-gold)' : '#eee', marginBottom: '2px', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
                                                 <div style={{ fontSize: isMobile ? '0.65rem' : '0.7rem', color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.misc}</div>
                                             </div>
-                                            {owned && (
-                                                <div style={{ padding: isMobile ? '0 6px 6px' : '0 10px 10px' }}>
+                                            <div style={{ padding: isMobile ? '0 6px 6px' : '0 10px 10px' }}>
+                                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                                     <button
-                                                        onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
-                                                        style={{
-                                                            width: '100%', background: 'rgba(212,175,55,0.15)',
-                                                            border: '1px solid rgba(212,175,55,0.4)', color: 'var(--accent-gold)',
-                                                            borderRadius: isMobile ? '6px' : '8px', padding: isMobile ? '4px 0' : '5px 0', fontSize: isMobile ? '0.68rem' : '0.75rem',
-                                                            cursor: 'pointer', fontWeight: '600'
+                                                        title="Add to Collection"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (owned) {
+                                                                const localMovie = movies.find(m => m.link === item.link || m.movie_link === item.link);
+                                                                if (localMovie && onAddToCollectionClick) onAddToCollectionClick(localMovie);
+                                                            } else {
+                                                                handleAddToCollectionUnowned(item);
+                                                            }
                                                         }}
-                                                    >📍 Show</button>
+                                                        style={{
+                                                            background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
+                                                            color: 'var(--accent-gold)', borderRadius: isMobile ? '6px' : '8px', padding: isMobile ? '4px 8px' : '5px 10px',
+                                                            fontSize: isMobile ? '0.75rem' : '0.8rem', cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                        }}
+                                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
+                                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
+                                                    >📁</button>
+                                                    {owned && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
+                                                            style={{
+                                                                flex: 1, background: 'rgba(212,175,55,0.15)',
+                                                                border: '1px solid rgba(212,175,55,0.4)', color: 'var(--accent-gold)',
+                                                                borderRadius: isMobile ? '6px' : '8px', padding: isMobile ? '4px 0' : '5px 0', fontSize: isMobile ? '0.68rem' : '0.75rem',
+                                                                cursor: 'pointer', fontWeight: '600'
+                                                            }}
+                                                        >📍 Show</button>
+                                                    )}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -1381,16 +1455,38 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                                 <td style={{ padding: '10px 12px', color: '#666', fontSize: '0.8rem' }}>{item.misc}</td>
                                                 <td style={{ padding: '10px 12px', color: '#aaa', fontSize: '0.82rem' }}>{item.rating ? `★ ${item.rating}` : '—'}</td>
                                                 <td style={{ padding: '10px 12px' }}>
-                                                    {owned && (
+                                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
-                                                            style={{
-                                                                background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)',
-                                                                color: 'var(--accent-gold)', borderRadius: '6px', padding: '3px 10px',
-                                                                fontSize: '0.72rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap'
+                                                            title="Add to Collection"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (owned) {
+                                                                    const localMovie = movies.find(m => m.link === item.link || m.movie_link === item.link);
+                                                                    if (localMovie && onAddToCollectionClick) onAddToCollectionClick(localMovie);
+                                                                } else {
+                                                                    handleAddToCollectionUnowned(item);
+                                                                }
                                                             }}
-                                                        >📍 Show</button>
-                                                    )}
+                                                            style={{
+                                                                background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
+                                                                color: 'var(--accent-gold)', borderRadius: '6px', padding: '3px 8px',
+                                                                fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                            }}
+                                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
+                                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
+                                                        >📁</button>
+                                                        {owned && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
+                                                                style={{
+                                                                    background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)',
+                                                                    color: 'var(--accent-gold)', borderRadius: '6px', padding: '3px 10px',
+                                                                    fontSize: '0.72rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap'
+                                                                }}
+                                                            >📍 Show</button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
