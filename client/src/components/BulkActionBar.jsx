@@ -113,6 +113,10 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWa
         }
     });
 
+    const handleDrag = (e, data) => {
+        setDragOffset({ x: data.x, y: data.y });
+    };
+
     const handleDragStop = (e, data) => {
         const newOffset = { x: data.x, y: data.y };
         setDragOffset(newOffset);
@@ -169,11 +173,31 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWa
             const minX = contentLeft - currentLeft;
             const maxX = contentRight - currentLeft - barWidth;
             
-            setDragBounds({
+            const newBounds = {
                 left: minX,
                 right: maxX,
                 top: -clampedTop + 20,
                 bottom: window.innerHeight - clampedTop - 80
+            };
+            setDragBounds(newBounds);
+
+            // Also clamp current dragOffset if it exceeds the new bounds!
+            setDragOffset(prev => {
+                let newX = prev.x;
+                let newY = prev.y;
+                let changed = false;
+
+                if (newX < newBounds.left) { newX = newBounds.left; changed = true; }
+                if (newX > newBounds.right) { newX = newBounds.right; changed = true; }
+                if (newY < newBounds.top) { newY = newBounds.top; changed = true; }
+                if (newY > newBounds.bottom) { newY = newBounds.bottom; changed = true; }
+
+                if (changed) {
+                    const newOffset = { x: newX, y: newY };
+                    localStorage.setItem('bulkActionOffset', JSON.stringify(newOffset));
+                    return newOffset;
+                }
+                return prev;
             });
         };
         
@@ -344,7 +368,8 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWa
             nodeRef={nodeRef} 
             handle=".drag-handle" 
             bounds={dragBounds || undefined}
-            defaultPosition={dragOffset}
+            position={dragOffset}
+            onDrag={handleDrag}
             onStop={handleDragStop}
         >
             <div 
