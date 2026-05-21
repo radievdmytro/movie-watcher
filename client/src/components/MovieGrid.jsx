@@ -579,10 +579,19 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [filterQuery, setFilterQuery] = useState('');
     const deferredFilterQuery = useDeferredValue(filterQuery);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
-    const [filterGenres, setFilterGenres] = useState([]);
-    const [filterRating, setFilterRating] = useState([0, 10]);
-    const [filterYear, setFilterYear] = useState([1900, new Date().getFullYear() + 2]);
-    const [filterType, setFilterType] = useState('all'); // 'all' | 'movie' | 'series'
+    const [filterGenres, setFilterGenres] = useState(() => {
+        try { const s = localStorage.getItem('mg_filterGenres'); if(s) return JSON.parse(s); } catch(e){}
+        return [];
+    });
+    const [filterRating, setFilterRating] = useState(() => {
+        try { const s = localStorage.getItem('mg_filterRating'); if(s) return JSON.parse(s); } catch(e){}
+        return [0, 10];
+    });
+    const [filterYear, setFilterYear] = useState(() => {
+        try { const s = localStorage.getItem('mg_filterYear'); if(s) return JSON.parse(s); } catch(e){}
+        return [1900, new Date().getFullYear() + 2];
+    });
+    const [filterType, setFilterType] = useState(() => localStorage.getItem('mg_filterType') || 'all');
     const [searchFields, setSearchFields] = useState(() => {
         try {
             const saved = localStorage.getItem('searchFields');
@@ -603,10 +612,28 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [showAllGenres, setShowAllGenres] = useState(false);
     const [visibleCount, setVisibleCount] = useState(30);
     const sentinelRef = useRef(null);
-    const [filterGenreMode, setFilterGenreMode] = useState('include'); // 'include' | 'exclude'
+    
+    const [filterGenreMode, setFilterGenreMode] = useState(() => localStorage.getItem('mg_filterGenreMode') || 'include');
     const [availableGenres, setAvailableGenres] = useState([]);
-    const [filterDirectors, setFilterDirectors] = useState([]);
-    const [filterActors, setFilterActors] = useState([]);
+    const [filterDirectors, setFilterDirectors] = useState(() => {
+        try { const s = localStorage.getItem('mg_filterDirectors'); if(s) return JSON.parse(s); } catch(e){}
+        return [];
+    });
+    const [filterActors, setFilterActors] = useState(() => {
+        try { const s = localStorage.getItem('mg_filterActors'); if(s) return JSON.parse(s); } catch(e){}
+        return [];
+    });
+    
+    useEffect(() => {
+        localStorage.setItem('mg_filterGenres', JSON.stringify(filterGenres));
+        localStorage.setItem('mg_filterRating', JSON.stringify(filterRating));
+        localStorage.setItem('mg_filterYear', JSON.stringify(filterYear));
+        localStorage.setItem('mg_filterType', filterType);
+        localStorage.setItem('mg_filterGenreMode', filterGenreMode);
+        localStorage.setItem('mg_filterDirectors', JSON.stringify(filterDirectors));
+        localStorage.setItem('mg_filterActors', JSON.stringify(filterActors));
+    }, [filterGenres, filterRating, filterYear, filterType, filterGenreMode, filterDirectors, filterActors]);
+
     const [availableDirectors, setAvailableDirectors] = useState([]);
     const [availableActors, setAvailableActors] = useState([]);
 
