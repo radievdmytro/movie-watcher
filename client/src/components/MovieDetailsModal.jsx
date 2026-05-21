@@ -1880,8 +1880,11 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             height: '46px',
                                             overflow: 'hidden',
                                             whiteSpace: 'nowrap',
-                                            flex: 1
+                                            flex: 1,
+                                            filter: 'brightness(1)'
                                         }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'scale(1)'; }}
                                         onClick={handleStatusToggle}
                                         title={localStatus === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
                                     >
@@ -1912,8 +1915,11 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             height: '46px',
                                             overflow: 'hidden',
                                             whiteSpace: 'nowrap',
-                                            flex: 1
+                                            flex: 1,
+                                            transform: 'scale(1)'
                                         }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'scale(1)'; }}
                                         title="Watch on HDRezka"
                                     >
                                         <span style={{ fontSize: '1.1rem' }}>🌐</span>
