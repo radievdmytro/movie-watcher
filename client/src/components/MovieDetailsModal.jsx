@@ -110,43 +110,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         };
     }, []);
 
-    const trailerMatch = movie?.link?.match(/\/(\d+)-[^\/]+\.html$/);
-    const trailerId = trailerMatch ? trailerMatch[1] : null;
-
-    const [showTrailer, setShowTrailer] = useState(false);
-    const [trailerHtml, setTrailerHtml] = useState(null);
-    const [loadingTrailer, setLoadingTrailer] = useState(false);
-    const [trailerError, setTrailerError] = useState(null);
-
-    const handleShowTrailer = async () => {
-        if (!trailerId) return;
-        setShowTrailer(true);
-        if (trailerHtml) return;
-
-        setLoadingTrailer(true);
-        setTrailerError(null);
-        try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`/api/cache/trailer/${trailerId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error('Trailer not found');
-            const data = await res.json();
-            
-            // Fix iframe styling to fill the container
-            let code = data.code;
-            if (code) {
-                code = code.replace(/width="[^"]*"/, 'width="100%"').replace(/height="[^"]*"/, 'height="100%"');
-            }
-            setTrailerHtml(code);
-        } catch (e) {
-            console.error(e);
-            setTrailerError('Failed to load trailer');
-        } finally {
-            setLoadingTrailer(false);
-        }
-    };
-
     // Reviews states
     const [reviews, setReviews] = useState([]);
     const [loadingReviews, setLoadingReviews] = useState(false);
@@ -295,9 +258,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         // Handle Escape key
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
-                if (showTrailer) {
-                    setShowTrailer(false);
-                } else if (isPosterZoomed) {
+                if (isPosterZoomed) {
                     setIsPosterZoomed(false);
                 } else if (cacheSearch) {
                     setCacheSearch(null);
@@ -312,7 +273,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             document.body.style.overflow = '';
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [onClose, isPosterZoomed, cacheSearch, showTrailer]);
+    }, [onClose, isPosterZoomed, cacheSearch]);
 
     // Autosaved toast fade timer
     useEffect(() => {
@@ -691,6 +652,33 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         );
     };
 
+    const handleTrailerClick = (e) => {
+        e.stopPropagation();
+        let typeStr = 'фильм';
+        const isCartoon = movie.genres?.toLowerCase().includes('мульт') ||
+                          movie.genres?.toLowerCase().includes('анимац') ||
+                          movie.misc?.toLowerCase().includes('мульт') ||
+                          movie.misc?.toLowerCase().includes('анимац') ||
+                          movie.link?.includes('/cartoons/');
+                                
+        const isAnime = movie.genres?.toLowerCase().includes('аниме') ||
+                        movie.misc?.toLowerCase().includes('аниме') ||
+                        movie.link?.includes('/animation/');
+        
+        if (isAnime) {
+            typeStr = 'аниме';
+        } else if (isCartoon) {
+            typeStr = 'мультфильм';
+        } else if (movie.type === 'series') {
+            typeStr = 'сериал';
+        }
+        
+        const queryTokens = [typeStr, movie.original_title || movie.title, movie.year, 'трейлер'].filter(Boolean);
+        const query = queryTokens.join(' ');
+        const params = new URLSearchParams({ search_query: query });
+        const url = `https://www.youtube.com/results?${params.toString()}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+    };
 
     return ReactDOM.createPortal(
         <div
@@ -853,7 +841,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     width: '100%', borderRadius: '12px',
                                     boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
                                     border: '1px solid rgba(255,255,255,0.1)',
-                                    marginBottom: trailerId ? '12px' : '20px',
+                                    marginBottom: '20px',
                                     cursor: 'zoom-in',
                                     transition: 'transform 0.2s'
                                 }}
@@ -861,33 +849,32 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
                                 onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                             />
-                            {trailerId && (
-                                <button
-                                    onClick={handleShowTrailer}
-                                    style={{
-                                        width: '100%',
-                                        background: 'rgba(255,255,255,0.05)',
-                                        border: '1px solid rgba(255,255,255,0.15)',
-                                        color: '#fff',
-                                        padding: '10px 0',
-                                        marginBottom: '20px',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 'bold',
-                                        borderRadius: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '6px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                                >
-                                    🎬 Смотреть Трейлер
-                                </button>
-                            )}
+
+                            <button
+                                onClick={handleTrailerClick}
+                                style={{
+                                    width: '100%',
+                                    background: 'rgba(255, 0, 0, 0.15)',
+                                    border: '1px solid rgba(255, 0, 0, 0.3)',
+                                    color: '#ff4444',
+                                    padding: '10px 15px',
+                                    borderRadius: '10px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    marginBottom: '20px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    transition: 'all 0.2s',
+                                    boxShadow: '0 4px 15px rgba(255, 0, 0, 0.1)'
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 0, 0, 0.25)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 0, 0, 0.15)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                            >
+                                🎬 Искать трейлер
+                            </button>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', fontSize: '0.9rem' }}>
                                 {movie.director && (
@@ -1017,61 +1004,58 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         {isMobile ? (
                             /* Mobile Header (Compact poster + Title side-by-side) */
                             <div style={{ display: 'flex', gap: '16px', width: '100%', alignItems: 'flex-start', marginBottom: '10px' }}>
-                                <div style={{ flex: '0 0 100px', display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ flex: '0 0 100px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     <div 
                                         onClick={() => setIsPosterZoomed(true)}
-                                        style={{ 
+                                    style={{ 
+                                        flex: '0 0 100px', 
+                                        cursor: 'zoom-in', 
+                                        position: 'relative',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                                        border: '1px solid rgba(255,255,255,0.1)'
+                                    }}
+                                >
+                                    <img
+                                        src={movie.poster_url}
+                                        alt={movie.title}
+                                        style={{
                                             width: '100%',
-                                            cursor: 'zoom-in', 
-                                            position: 'relative',
-                                            borderRadius: '12px',
-                                            overflow: 'hidden',
-                                            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                                            border: '1px solid rgba(255,255,255,0.1)'
+                                            height: '145px',
+                                            objectFit: 'cover',
+                                            display: 'block'
                                         }}
-                                    >
-                                        <img
-                                            src={movie.poster_url}
-                                            alt={movie.title}
-                                            style={{
-                                                width: '100%',
-                                                height: '145px',
-                                                objectFit: 'cover',
-                                                display: 'block'
-                                            }}
-                                        />
-                                        <div style={{
-                                            position: 'absolute', bottom: 0, left: 0, right: 0,
-                                            background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '0.62rem',
-                                            textAlign: 'center', padding: '2px 0', fontWeight: 'bold'
-                                        }}>🔍 Zoom</div>
-                                    </div>
-                                    {trailerId && (
-                                        <button
-                                            onClick={handleShowTrailer}
-                                            style={{
-                                                width: '100%',
-                                                marginTop: '8px',
-                                                background: 'rgba(255,255,255,0.05)',
-                                                border: '1px solid rgba(255,255,255,0.15)',
-                                                color: '#fff',
-                                                padding: '6px 0',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 'bold',
-                                                borderRadius: '6px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '4px',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            🎬 Трейлер
-                                        </button>
-                                    )}
+                                    />
+                                    <div style={{
+                                        position: 'absolute', bottom: 0, left: 0, right: 0,
+                                        background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '0.62rem',
+                                        textAlign: 'center', padding: '2px 0', fontWeight: 'bold'
+                                    }}>🔍 Zoom</div>
                                 </div>
+                                <button
+                                    onClick={handleTrailerClick}
+                                    style={{
+                                        width: '100%',
+                                        background: 'rgba(255, 0, 0, 0.15)',
+                                        border: '1px solid rgba(255, 0, 0, 0.3)',
+                                        color: '#ff4444',
+                                        padding: '6px 0',
+                                        borderRadius: '8px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '4px'
+                                    }}
+                                >
+                                    🎬 Трейлер
+                                </button>
+                            </div>
 
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px', paddingRight: '38px' }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px', paddingRight: '38px' }}>
                                     <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 700, color: '#fff', lineHeight: 1.25 }}>{movie.title}</h2>
                                     {movie.original_title && (
                                         <div style={{ fontSize: '0.8rem', color: '#888', fontStyle: 'italic', margin: 0 }}>{movie.original_title}</div>
@@ -1912,7 +1896,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 </a>
 
 
-
                             </div>
                         </>
                     )}
@@ -1944,7 +1927,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             >
                                 🌐 Watch on HDRezka
                             </a>
-
                         </div>
                     )}
 
@@ -2000,7 +1982,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     >
                                         🎬 Watch on HDRezka
                                     </a>
-
                                 </>
                             )}
                     {!isMobile && !isTrashMode && !readOnly && (
@@ -2071,7 +2052,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             Watch on HDRezka
                                         </span>
                                     </a>
-
 
                                     {onHideMovie && (
                                         <button
@@ -2420,24 +2400,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
             `}</style>
-            
-            {/* Fullscreen Trailer Modal */}
-            {showTrailer && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    zIndex: 99999, background: 'rgba(0,0,0,0.95)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
-                }}>
-                    <button onClick={() => setShowTrailer(false)} style={{ position: 'absolute', top: '20px', right: '30px', background: 'none', border: 'none', color: '#fff', fontSize: '3rem', cursor: 'pointer', opacity: 0.7, transition: '0.2s' }} onMouseEnter={e=>e.target.style.opacity=1} onMouseLeave={e=>e.target.style.opacity=0.7}>&times;</button>
-                    {loadingTrailer ? (
-                        <div style={{ color: '#fff', fontSize: '1.2rem' }}>Loading Trailer...</div>
-                    ) : trailerError ? (
-                        <div style={{ color: '#ff6b6b' }}>{trailerError}</div>
-                    ) : trailerHtml ? (
-                        <div dangerouslySetInnerHTML={{ __html: trailerHtml }} style={{ width: '90%', height: '80%', maxWidth: '1000px', maxHeight: '600px', background: '#000', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', borderRadius: '8px', overflow: 'hidden' }} />
-                    ) : null}
-                </div>
-            )}
         </div>,
         document.body
     );
