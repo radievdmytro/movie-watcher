@@ -1252,3 +1252,9 @@ body.hide-header-search .app-header {
   border-color: rgba(239, 68, 68, 0.8);
   box-shadow: 0 0 16px rgba(239, 68, 68, 0.45);
 }
+
+@media (max-width: 768px) {
+  .global-cache-badge {
+    display: none !important;
+  }
+}
