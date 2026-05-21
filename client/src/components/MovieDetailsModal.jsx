@@ -544,7 +544,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         if (actualId && !isMobile) {
                             if (onDelete) {
                                 // false = show confirm (if needed), true = permanent, false = promptIfNoCollections
-                                onDelete(actualId, false, true, false);
+                                onDelete(actualId, movie.link || movie.movie_link, false, true, false);
                             } else if (onRemoveMovie) {
                                 onRemoveMovie(actualId, movie.link || movie.movie_link);
                             }
@@ -585,7 +585,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 const actualId = movie.id || libMovieId;
                                 if (actualId) {
                                     if (onDelete) {
-                                        onDelete(actualId, false, true, false);
+                                        onDelete(actualId, movie.link || movie.movie_link, false, true, false);
                                     } else if (onRemoveMovie) {
                                         onRemoveMovie(actualId, movie.link || movie.movie_link);
                                     }
