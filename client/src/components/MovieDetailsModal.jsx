@@ -1860,7 +1860,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 </>
                             )}
                     {!isMobile && !isTrashMode && !readOnly && (
-                                <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+                                <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
                                     <button
                                         style={{
                                             background: localStatus === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
@@ -1878,10 +1878,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             justifyContent: 'center',
                                             gap: '6px',
                                             height: '46px',
-                                            width: '185px',
                                             overflow: 'hidden',
                                             whiteSpace: 'nowrap',
-                                            flex: '0 0 auto'
+                                            flex: 1
                                         }}
                                         onClick={handleStatusToggle}
                                         title={localStatus === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
@@ -1911,10 +1910,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             gap: '6px',
                                             textDecoration: 'none',
                                             height: '46px',
-                                            width: '205px',
                                             overflow: 'hidden',
                                             whiteSpace: 'nowrap',
-                                            flex: '0 0 auto'
+                                            flex: 1
                                         }}
                                         title="Watch on HDRezka"
                                     >
