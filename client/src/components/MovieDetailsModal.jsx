@@ -5,7 +5,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     const [liveDetails, setLiveDetails] = useState(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-    const movie = propMovie ? { ...propMovie, ...liveDetails } : null;
+    const movie = useMemo(() => propMovie ? { ...propMovie, ...liveDetails } : null, [propMovie, liveDetails]);
 
     useEffect(() => {
         if (!propMovie || !propMovie.link) return;
