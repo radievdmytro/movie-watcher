@@ -510,6 +510,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         const stored = localStorage.getItem('movieGrid_hideWatched');
         return stored !== null ? JSON.parse(stored) : false;
     });
+    const [hideWatchedInGlobal, setHideWatchedInGlobal] = useState(() => {
+        const stored = localStorage.getItem('movieGrid_hideWatchedInGlobal');
+        return stored !== null ? JSON.parse(stored) : false;
+    });
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
     useEffect(() => {
@@ -524,8 +528,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         localStorage.setItem('movieGrid_sortField', sortField);
         localStorage.setItem('movieGrid_sortDir', sortDir);
         localStorage.setItem('movieGrid_hideWatched', JSON.stringify(hideWatched));
+        localStorage.setItem('movieGrid_hideWatchedInGlobal', JSON.stringify(hideWatchedInGlobal));
         localStorage.setItem('movieGrid_viewMode', viewMode);
-    }, [sortField, sortDir, hideWatched, viewMode]);
+    }, [sortField, sortDir, hideWatched, hideWatchedInGlobal, viewMode]);
 
     const [posterSize, setPosterSize] = useState(() => {
         return parseInt(localStorage.getItem('posterSize')) || 220;
@@ -894,6 +899,14 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         return base.filter(movie => {
             if (localHiddenGlobalLinks.has(cleanLinkPath(movie.link))) return false;
 
+            // Hide Watched in Global Filter
+            if (hideWatchedInGlobal) {
+                const isWatched = localWatchedLinks.has(movie.link) || 
+                                  allMovies.some(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.status === 'watched') ||
+                                  historyList.some(h => cleanLinkPath(h.movie_link) === cleanLinkPath(movie.link) && h.is_watched === 1);
+                if (isWatched) return false;
+            }
+
             // Genre Filter
             if (filterGenres.length > 0) {
                 const movieGenres = (movie.genres || movie.misc || '').split(',').map(g => g.trim());
@@ -953,7 +966,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
             return true;
         });
-    }, [onboardingCacheMovies, deferredFilterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType, searchFields, uniqueBackgroundCacheResults, localHiddenGlobalLinks]);
+    }, [onboardingCacheMovies, deferredFilterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType, searchFields, uniqueBackgroundCacheResults, localHiddenGlobalLinks, hideWatchedInGlobal]);
 
     const hasActiveFilter = useMemo(() => {
         return !!(
@@ -1965,39 +1978,63 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 </button>
                             </div>
 
-                            {/* Hide/Show Watched Button */}
-                            <button
-                                onClick={() => setHideWatched(!hideWatched)}
-                                disabled={isWatchedView}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    padding: '4px 10px',
-                                    borderRadius: '15px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '500',
-                                    cursor: isWatchedView ? 'not-allowed' : 'pointer',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    background: isWatchedView ? 'rgba(255,255,255,0.02)' : hideWatched ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.05)',
-                                    color: isWatchedView ? '#555' : hideWatched ? 'var(--accent-gold)' : '#888',
-                                    transition: 'all 0.2s',
-                                    whiteSpace: 'nowrap',
-                                    opacity: isWatchedView ? 0.5 : 1
-                                }}
-                            >
-                                {hideWatched ? (
-                                    <>
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                                        <span>{isMobile ? 'Watched' : 'Hide Watched'}</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                                        <span>{isMobile ? 'Watched' : 'Show Watched'}</span>
-                                    </>
+                            {/* Hide/Show Watched Controls */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button
+                                    onClick={() => setHideWatched(!hideWatched)}
+                                    disabled={isWatchedView}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '4px 10px',
+                                        borderRadius: '15px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '500',
+                                        cursor: isWatchedView ? 'not-allowed' : 'pointer',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        background: isWatchedView ? 'rgba(255,255,255,0.02)' : hideWatched ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.05)',
+                                        color: isWatchedView ? '#555' : hideWatched ? 'var(--accent-gold)' : '#888',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'nowrap',
+                                        opacity: isWatchedView ? 0.5 : 1
+                                    }}
+                                >
+                                    {hideWatched ? (
+                                        <>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                                            <span>{isMobile ? 'Watched' : 'Hide Watched'}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                            <span>{isMobile ? 'Watched' : 'Show Watched'}</span>
+                                        </>
+                                    )}
+                                </button>
+
+                                {hideWatched && (
+                                    <label style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        fontSize: '0.75rem',
+                                        color: hideWatchedInGlobal ? 'var(--accent-gold)' : '#888',
+                                        cursor: isWatchedView ? 'not-allowed' : 'pointer',
+                                        opacity: isWatchedView ? 0.5 : 1,
+                                        transition: 'color 0.2s'
+                                    }} title="Also hide watched movies in global search">
+                                        <input
+                                            type="checkbox"
+                                            checked={hideWatchedInGlobal}
+                                            onChange={(e) => setHideWatchedInGlobal(e.target.checked)}
+                                            disabled={isWatchedView}
+                                            style={{ accentColor: 'var(--accent-gold)' }}
+                                        />
+                                        {isMobile ? 'Global' : 'in Global DB'}
+                                    </label>
                                 )}
-                            </button>
+                            </div>
                         </div>
                     </div>
 
