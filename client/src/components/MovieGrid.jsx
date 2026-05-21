@@ -2798,7 +2798,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                             if (movie.status === 'watched') return '#03dac6';
                                                             return '#fff';
                                                         })(),
-                                                        height: isMobile ? '28px' : 'auto',
+                                                        height: isMobile ? '28px' : '30px',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
@@ -3483,6 +3483,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                      fontWeight: 'bold',
                                                                      cursor: isAdding ? 'default' : 'pointer',
                                                                      border: '1px solid',
+                                                                     height: isMobile ? '28px' : '30px',
+                                                                     display: 'flex',
+                                                                     alignItems: 'center',
+                                                                     justifyContent: 'center',
                                                                      '--btn-bg-rest': btnBgRest,
                                                                      '--btn-bg-hover': btnBgHover,
                                                                      '--btn-border-rest': btnBorderRest,
