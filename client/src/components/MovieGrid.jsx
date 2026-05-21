@@ -2653,7 +2653,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         fontWeight: 'bold',
                                                         background: (() => {
                                                             if (hoveredDeleteLink === movie.link) return 'rgba(239, 68, 68, 0.15)';
-                                                            if (hoveredButtonLink === movie.link) return 'rgba(3, 218, 198, 0.25)';
+                                                            if (hoveredButtonLink === movie.link) {
+                                                                return movie.status === 'watched' ? 'rgba(255, 152, 0, 0.25)' : 'rgba(3, 218, 198, 0.25)';
+                                                            }
                                                              return movie.status === 'watched' ? 'rgba(3, 218, 198, 0.15)' : 'rgba(255,255,255,0.05)';
                                                         })(),
                                                         borderColor: (() => {
@@ -2663,7 +2665,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         })(),
                                                         color: (() => {
                                                             if (hoveredDeleteLink === movie.link) return '#ff6b6b';
-                                                            if (hoveredButtonLink === movie.link || movie.status === 'watched') return '#03dac6';
+                                                            if (hoveredButtonLink === movie.link) {
+                                                                return movie.status === 'watched' ? '#ff9800' : '#03dac6';
+                                                            }
+                                                            if (movie.status === 'watched') return '#03dac6';
                                                             return '#fff';
                                                         })(),
                                                         height: isMobile ? '28px' : 'auto',
