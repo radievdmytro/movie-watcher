@@ -2490,18 +2490,43 @@ async function runCrawlerStep() {
         // 2. If no target movie is found, discover new ones!
         if (!targetMovie) {
             crawlerSettings.currentStatus = 'Discovering new movies...';
-            console.log('[Crawler] No unscraped movies in cache. Triggering page discovery...');
+            console.log('[Crawler] No unscraped movies in cache. Triggering smart page discovery...');
             
             const categories = ['films', 'series', 'cartoons', 'animation'];
             const category = categories[Math.floor(Math.random() * categories.length)];
-            const pageNum = Math.floor(Math.random() * 500) + 1;
-            const targetPath = `/${category}/page/${pageNum}/`;
             
-            console.log(`[Crawler] Scraping catalog page: ${targetPath}`);
+            // Smart page selection: find the lowest uncrawled page for this category
+            let pageNum;
+            const maxCrawled = db.prepare(
+                'SELECT MAX(page_number) as maxPage FROM crawled_pages WHERE category = ?'
+            ).get(category);
+            const maxPage = maxCrawled?.maxPage || 0;
+            
+            // Find a gap (uncrawled page) in the range 1..maxPage+1
+            const gap = db.prepare(`
+                SELECT p.num FROM (
+                    WITH RECURSIVE seq(num) AS (
+                        SELECT 1 UNION ALL SELECT num+1 FROM seq WHERE num < ?
+                    )
+                    SELECT num FROM seq
+                ) p
+                WHERE p.num NOT IN (
+                    SELECT page_number FROM crawled_pages WHERE category = ?
+                )
+                ORDER BY p.num ASC LIMIT 1
+            `).get(Math.max(maxPage + 10, 50), category);
+            
+            pageNum = gap ? gap.num : maxPage + 1;
+            
+            const targetPath = `/${category}/page/${pageNum}/`;
+            console.log(`[Crawler] Scraping catalog page: ${targetPath} (smart pick, maxCrawled=${maxPage})`);
             const discovered = await scrapeCatalogPage(targetPath);
             
+            // Record this page as crawled regardless of result
+            let newCount = 0;
+            const moviesFound = discovered ? discovered.length : 0;
+            
             if (discovered && discovered.length > 0) {
-                let newCount = 0;
                 for (const item of discovered) {
                     try {
                         const info = db.prepare(`
@@ -2518,16 +2543,30 @@ async function runCrawlerStep() {
                 if (newCount > 0) {
                     uploadBackup();
                 }
-
-                crawlerSettings.currentStatus = `Discovered ${newCount} new movies. Retrying scrape...`;
-                
-                // Fetch target movie again
-                targetMovie = db.prepare(`
-                    SELECT link, title FROM scraped_movies_cache 
-                    WHERE description IS NULL OR description = '' 
-                    ORDER BY RANDOM() LIMIT 1
-                `).get();
             }
+            
+            // Record the page as crawled
+            try {
+                db.prepare(`
+                    INSERT INTO crawled_pages (category, page_number, movies_found, new_movies_added, crawled_at)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(category, page_number) DO UPDATE SET
+                        movies_found = excluded.movies_found,
+                        new_movies_added = excluded.new_movies_added,
+                        crawled_at = CURRENT_TIMESTAMP
+                `).run(category, pageNum, moviesFound, newCount);
+            } catch (e) {
+                console.error('[Crawler] Failed to record crawled page:', e.message);
+            }
+
+            crawlerSettings.currentStatus = `Discovered ${newCount} new movies from /${category}/page/${pageNum}/. Retrying scrape...`;
+            
+            // Fetch target movie again
+            targetMovie = db.prepare(`
+                SELECT link, title FROM scraped_movies_cache 
+                WHERE description IS NULL OR description = '' 
+                ORDER BY RANDOM() LIMIT 1
+            `).get();
         }
 
         // 3. Scrape the full details for the target movie
@@ -2613,7 +2652,7 @@ async function runFastCrawlerProcess({ pages, categories, pageDelay }) {
     fastCrawlerState.shouldStop = false;
     fastCrawlerState.logs = [];
 
-    addFastCrawlerLog(`🚀 Fast Crawler started. Target: ${pages} pages across ${categories.length} categories.`);
+    addFastCrawlerLog(`🚀 Fast Crawler started. Target: ${pages} NEW pages across ${categories.length} categories.`);
 
     const categoryMap = {
         'films': { path: '/films/', type: 'movie', label: 'Films' },
@@ -2630,77 +2669,117 @@ async function runFastCrawlerProcess({ pages, categories, pageDelay }) {
             if (!cat) continue;
 
             fastCrawlerState.currentCategory = cat.label;
-            addFastCrawlerLog(`📂 Crawling category: ${cat.label} (${cat.path})...`);
+            
+            // Get already-crawled page numbers for this category
+            const crawledRows = db.prepare(
+                'SELECT page_number FROM crawled_pages WHERE category = ? ORDER BY page_number ASC'
+            ).all(catKey);
+            const crawledSet = new Set(crawledRows.map(r => r.page_number));
+            
+            // Find the next N uncrawled pages starting from page 1
+            const uncrawledPages = [];
+            let candidate = 1;
+            while (uncrawledPages.length < pages && candidate <= 2000) {
+                if (!crawledSet.has(candidate)) {
+                    uncrawledPages.push(candidate);
+                }
+                candidate++;
+            }
+            
+            addFastCrawlerLog(`📂 Crawling category: ${cat.label} — ${crawledSet.size} pages already done, ${uncrawledPages.length} new pages to crawl`);
 
-            for (let page = 1; page <= pages; page++) {
+            for (let i = 0; i < uncrawledPages.length; i++) {
                 if (fastCrawlerState.shouldStop) {
                     addFastCrawlerLog('🛑 Stop signal received. Terminating crawl...');
                     break;
                 }
 
+                const page = uncrawledPages[i];
                 const pagePath = page === 1 ? cat.path : `${cat.path}page/${page}/`;
-                addFastCrawlerLog(`📖 Fetching page ${page}/${pages}: ${pagePath}`);
+                addFastCrawlerLog(`📖 Fetching page ${page} (${i + 1}/${uncrawledPages.length}): ${pagePath}`);
 
                 try {
                     const discovered = await scrapeCatalogPage(pagePath);
+                    const moviesFound = discovered ? discovered.length : 0;
+                    let insertedCount = 0;
+                    
                     if (!discovered || discovered.length === 0) {
-                        addFastCrawlerLog(`⚠️ No movies found on page ${page}, skipping.`);
-                        continue;
-                    }
+                        addFastCrawlerLog(`⚠️ No movies found on page ${page}. Marking as empty.`);
+                    } else {
+                        addFastCrawlerLog(`📦 Found ${discovered.length} movies on catalog page. Inserting...`);
 
-                    addFastCrawlerLog(`📦 Found ${discovered.length} movies on catalog page. Inserting/updating...`);
+                        const insertStmt = db.prepare(`
+                            INSERT INTO scraped_movies_cache 
+                            (title, original_title, year, link, rating, poster_url, genres, type, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                            ON CONFLICT(link) DO UPDATE SET
+                                rating = EXCLUDED.rating,
+                                poster_url = EXCLUDED.poster_url,
+                                genres = EXCLUDED.genres,
+                                updated_at = CURRENT_TIMESTAMP
+                        `);
 
-                    const insertStmt = db.prepare(`
-                        INSERT INTO scraped_movies_cache 
-                        (title, original_title, year, link, rating, poster_url, genres, type, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                        ON CONFLICT(link) DO UPDATE SET
-                            rating = EXCLUDED.rating,
-                            poster_url = EXCLUDED.poster_url,
-                            genres = EXCLUDED.genres,
-                            updated_at = CURRENT_TIMESTAMP
-                    `);
-
-                    const insertTx = db.transaction((list) => {
-                        let count = 0;
-                        for (const m of list) {
-                            try {
-                                const parsedRating = m.rating ? parseFloat(m.rating) : null;
-                                const info = insertStmt.run(
-                                    m.title,
-                                    m.original_title || '',
-                                    m.year,
-                                    m.link,
-                                    parsedRating,
-                                    m.img,
-                                    m.misc,
-                                    m.type || cat.type
-                                );
-                                if (info.changes > 0) count++;
-                            } catch (err) {
-                                // ignore duplicates
+                        const insertTx = db.transaction((list) => {
+                            let count = 0;
+                            for (const m of list) {
+                                try {
+                                    const parsedRating = m.rating ? parseFloat(m.rating) : null;
+                                    const info = insertStmt.run(
+                                        m.title,
+                                        m.original_title || '',
+                                        m.year,
+                                        m.link,
+                                        parsedRating,
+                                        m.img,
+                                        m.misc,
+                                        m.type || cat.type
+                                    );
+                                    if (info.changes > 0) count++;
+                                } catch (err) {
+                                    // ignore duplicates
+                                }
                             }
+                            return count;
+                        });
+
+                        insertedCount = insertTx(discovered);
+                        fastCrawlerState.totalImported += insertedCount;
+                        addFastCrawlerLog(`✅ Cached ${insertedCount} movies from page ${page}.`);
+
+                        // Trigger cloud backup if new movies were imported
+                        if (insertedCount > 0) {
+                            uploadBackup();
                         }
-                        return count;
-                    });
-
-                    const insertedCount = insertTx(discovered);
-                    fastCrawlerState.totalImported += insertedCount;
-                    fastCrawlerState.pagesCrawled++;
-                    addFastCrawlerLog(`✅ Successfully cached ${insertedCount} movies from page ${page}.`);
-
-                    // Trigger cloud backup if new movies were imported
-                    if (insertedCount > 0) {
-                        uploadBackup();
                     }
+                    
+                    // Record page as crawled
+                    try {
+                        db.prepare(`
+                            INSERT INTO crawled_pages (category, page_number, movies_found, new_movies_added, crawled_at)
+                            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                            ON CONFLICT(category, page_number) DO UPDATE SET
+                                movies_found = excluded.movies_found,
+                                new_movies_added = excluded.new_movies_added,
+                                crawled_at = CURRENT_TIMESTAMP
+                        `).run(catKey, page, moviesFound, insertedCount);
+                    } catch (e) {}
+                    
+                    fastCrawlerState.pagesCrawled++;
 
                     // Polite delay between requests
-                    if (page < pages || categories.indexOf(catKey) < categories.length - 1) {
+                    if (i < uncrawledPages.length - 1 || categories.indexOf(catKey) < categories.length - 1) {
                         const delayTime = pageDelay + (Math.random() * 500);
                         await delay(delayTime);
                     }
                 } catch (err) {
                     addFastCrawlerLog(`❌ Error on page ${pagePath}: ${err.message}`);
+                    // Still record the page to avoid infinite retries on broken pages
+                    try {
+                        db.prepare(`
+                            INSERT OR IGNORE INTO crawled_pages (category, page_number, movies_found, new_movies_added, crawled_at)
+                            VALUES (?, ?, 0, 0, CURRENT_TIMESTAMP)
+                        `).run(catKey, page);
+                    } catch (e) {}
                     await delay(3000);
                 }
             }
@@ -2709,7 +2788,7 @@ async function runFastCrawlerProcess({ pages, categories, pageDelay }) {
         if (fastCrawlerState.shouldStop) {
             addFastCrawlerLog('🛑 Fast Crawler stopped by user.');
         } else {
-            addFastCrawlerLog(`🎉 Fast Crawler completed successfully! Total imported/updated: ${fastCrawlerState.totalImported} movies.`);
+            addFastCrawlerLog(`🎉 Fast Crawler completed! Total new movies: ${fastCrawlerState.totalImported}. Pages crawled: ${fastCrawlerState.pagesCrawled}.`);
         }
     } catch (e) {
         addFastCrawlerLog(`❌ Critical crawler exception: ${e.message}`);

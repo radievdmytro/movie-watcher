@@ -163,6 +163,21 @@ const initDb = () => {
   `);
   db.exec('CREATE INDEX IF NOT EXISTS idx_hidden_global_movies_user ON hidden_global_movies(user_id)');
 
+  // Crawler page tracking — remembers which catalog pages have been scraped
+  // so the crawler never wastes HTTP requests re-visiting them.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS crawled_pages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT NOT NULL,
+      page_number INTEGER NOT NULL,
+      movies_found INTEGER DEFAULT 0,
+      new_movies_added INTEGER DEFAULT 0,
+      crawled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(category, page_number)
+    )
+  `);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_crawled_pages_cat ON crawled_pages(category)');
+
   // Migration for user_id in movies
   try {
     db.exec("ALTER TABLE movies ADD COLUMN user_id INTEGER");
