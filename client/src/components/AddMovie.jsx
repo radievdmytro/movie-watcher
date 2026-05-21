@@ -32,6 +32,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
     const [fullPageResults, setFullPageResults] = useState(false);
     
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [hoveredCollectionLink, setHoveredCollectionLink] = useState(null);
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', handleResize);
@@ -1103,32 +1104,44 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                             fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center'
                                         }}
-                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
+                                        onMouseEnter={e => {
+                                            e.currentTarget.style.background = 'rgba(212,175,55,0.28)';
+                                            setHoveredCollectionLink(item.link);
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.background = 'rgba(212,175,55,0.12)';
+                                            setHoveredCollectionLink(null);
+                                        }}
                                     >📁</button>
                                     {owned ? (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
                                             style={{
-                                                background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.5)',
+                                                background: hoveredCollectionLink === item.link ? 'rgba(212,175,55,0.3)' : 'rgba(212,175,55,0.15)',
+                                                border: '1px solid rgba(212,175,55,0.5)',
                                                 color: 'var(--accent-gold)', borderRadius: '7px', padding: '3px 10px',
                                                 fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s',
                                                 fontWeight: '600'
                                             }}
                                             onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.3)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.15)'}
-                                        >📍 Show</button>
+                                            onMouseLeave={e => { if (hoveredCollectionLink !== item.link) e.currentTarget.style.background = 'rgba(212,175,55,0.15)' }}
+                                        >
+                                            {hoveredCollectionLink === item.link ? '<- Collection' : '📍 Show'}
+                                        </button>
                                     ) : (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleBatchImport([item.link]); }}
                                             style={{
-                                                background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
+                                                background: hoveredCollectionLink === item.link ? 'rgba(212,175,55,0.28)' : 'rgba(212,175,55,0.12)',
+                                                border: '1px solid rgba(212,175,55,0.3)',
                                                 color: 'var(--accent-gold)', borderRadius: '7px', padding: '3px 10px',
                                                 fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s'
                                             }}
                                             onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
-                                        >+ Add</button>
+                                            onMouseLeave={e => { if (hoveredCollectionLink !== item.link) e.currentTarget.style.background = 'rgba(212,175,55,0.12)' }}
+                                        >
+                                            {hoveredCollectionLink === item.link ? '<- Collection' : '+ Add'}
+                                        </button>
                                     )}
                                 </div>
                             </div>
@@ -1391,31 +1404,43 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                                             fontSize: isMobile ? '0.75rem' : '0.8rem', cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                         }}
-                                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
-                                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
+                                                        onMouseEnter={e => {
+                                                            e.currentTarget.style.background = 'rgba(212,175,55,0.28)';
+                                                            setHoveredCollectionLink(item.link);
+                                                        }}
+                                                        onMouseLeave={e => {
+                                                            e.currentTarget.style.background = 'rgba(212,175,55,0.12)';
+                                                            setHoveredCollectionLink(null);
+                                                        }}
                                                     >📁</button>
                                                     {owned ? (
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
                                                             style={{
-                                                                flex: 1, background: 'rgba(212,175,55,0.15)',
+                                                                flex: 1, background: hoveredCollectionLink === item.link ? 'rgba(212,175,55,0.3)' : 'rgba(212,175,55,0.15)',
                                                                 border: '1px solid rgba(212,175,55,0.4)', color: 'var(--accent-gold)',
                                                                 borderRadius: isMobile ? '6px' : '8px', padding: isMobile ? '4px 0' : '5px 0', fontSize: isMobile ? '0.68rem' : '0.75rem',
-                                                                cursor: 'pointer', fontWeight: '600'
+                                                                cursor: 'pointer', fontWeight: '600', transition: 'all 0.15s'
                                                             }}
-                                                        >📍 Show</button>
+                                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.3)'}
+                                                            onMouseLeave={e => { if (hoveredCollectionLink !== item.link) e.currentTarget.style.background = 'rgba(212,175,55,0.15)' }}
+                                                        >
+                                                            {hoveredCollectionLink === item.link ? '<- Collection' : '📍 Show'}
+                                                        </button>
                                                     ) : (
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); handleBatchImport([item.link]); }}
                                                             style={{
-                                                                flex: 1, background: 'rgba(212,175,55,0.12)',
+                                                                flex: 1, background: hoveredCollectionLink === item.link ? 'rgba(212,175,55,0.28)' : 'rgba(212,175,55,0.12)',
                                                                 border: '1px solid rgba(212,175,55,0.3)', color: 'var(--accent-gold)',
                                                                 borderRadius: isMobile ? '6px' : '8px', padding: isMobile ? '4px 0' : '5px 0', fontSize: isMobile ? '0.68rem' : '0.75rem',
                                                                 cursor: 'pointer', fontWeight: '600', transition: 'all 0.15s'
                                                             }}
                                                             onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
-                                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
-                                                        >+ Add</button>
+                                                            onMouseLeave={e => { if (hoveredCollectionLink !== item.link) e.currentTarget.style.background = 'rgba(212,175,55,0.12)' }}
+                                                        >
+                                                            {hoveredCollectionLink === item.link ? '<- Collection' : '+ Add'}
+                                                        </button>
                                                     )}
                                                 </div>
                                             </div>
@@ -1485,29 +1510,43 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                                                 fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
                                                                 display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                             }}
-                                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
-                                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
+                                                            onMouseEnter={e => {
+                                                                e.currentTarget.style.background = 'rgba(212,175,55,0.28)';
+                                                                setHoveredCollectionLink(item.link);
+                                                            }}
+                                                            onMouseLeave={e => {
+                                                                e.currentTarget.style.background = 'rgba(212,175,55,0.12)';
+                                                                setHoveredCollectionLink(null);
+                                                            }}
                                                         >📁</button>
                                                         {owned ? (
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); onScrollToMovie && onScrollToMovie(item.link); }}
                                                                 style={{
-                                                                    background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)',
+                                                                    background: hoveredCollectionLink === item.link ? 'rgba(212,175,55,0.3)' : 'rgba(212,175,55,0.15)',
+                                                                    border: '1px solid rgba(212,175,55,0.4)',
                                                                     color: 'var(--accent-gold)', borderRadius: '6px', padding: '3px 10px',
-                                                                    fontSize: '0.72rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap'
+                                                                    fontSize: '0.72rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap', transition: 'all 0.15s'
                                                                 }}
-                                                            >📍 Show</button>
+                                                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.3)'}
+                                                                onMouseLeave={e => { if (hoveredCollectionLink !== item.link) e.currentTarget.style.background = 'rgba(212,175,55,0.15)' }}
+                                                            >
+                                                                {hoveredCollectionLink === item.link ? '<- Collection' : '📍 Show'}
+                                                            </button>
                                                         ) : (
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handleBatchImport([item.link]); }}
                                                                 style={{
-                                                                    background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
+                                                                    background: hoveredCollectionLink === item.link ? 'rgba(212,175,55,0.28)' : 'rgba(212,175,55,0.12)',
+                                                                    border: '1px solid rgba(212,175,55,0.3)',
                                                                     color: 'var(--accent-gold)', borderRadius: '6px', padding: '3px 10px',
                                                                     fontSize: '0.72rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap', transition: 'all 0.15s'
                                                                 }}
                                                                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.28)'}
-                                                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,175,55,0.12)'}
-                                                            >+ Add</button>
+                                                                onMouseLeave={e => { if (hoveredCollectionLink !== item.link) e.currentTarget.style.background = 'rgba(212,175,55,0.12)' }}
+                                                            >
+                                                                {hoveredCollectionLink === item.link ? '<- Collection' : '+ Add'}
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </td>
