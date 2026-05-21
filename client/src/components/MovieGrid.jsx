@@ -3507,7 +3507,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                          } else if (isHideBtnHovered) {
                                                                              text = '🚫 Hide film';
                                                                          } else if (isCheckmarkHovered) {
-                                                                             text = isMovieWatched ? 'Unwatched ->' : 'Mark watched ->';
+                                                                             const isSmall = posterSize <= 210;
+                                                                             text = isMovieWatched ? (isSmall ? 'Unwatched' : 'Unwatched ->') : (isSmall ? 'Watched' : 'Mark watched ->');
                                                                          } else if (isCardHovered && !isBtnHovered) {
                                                                              text = 'Details';
                                                                          } else {
