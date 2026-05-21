@@ -729,11 +729,17 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
         if (yearMax !== undefined && yearMax !== '') { sql += ' AND year <= ?'; params.push(parseInt(yearMax)); }
         
         if (type && type !== 'all') {
+            const isCartoonCond = "(genres LIKE '%мульт%' OR genres LIKE '%анимац%' OR link LIKE '%/cartoons/%')";
+            const isAnimeCond = "(genres LIKE '%аниме%' OR link LIKE '%/animation/%')";
+            
             if (type === 'cartoon') {
-                sql += ' AND (genres LIKE \'%мульт%\' OR genres LIKE \'%анимац%\' OR link LIKE \'%/cartoons/%\' OR link LIKE \'%/animation/%\')';
-            } else {
-                sql += ' AND type = ?';
-                params.push(type);
+                sql += ` AND ${isCartoonCond}`;
+            } else if (type === 'anime') {
+                sql += ` AND ${isAnimeCond}`;
+            } else if (type === 'movie') {
+                sql += ` AND type = 'movie' AND NOT ${isCartoonCond} AND NOT ${isAnimeCond}`;
+            } else if (type === 'series') {
+                sql += ` AND type = 'series' AND NOT ${isCartoonCond} AND NOT ${isAnimeCond}`;
             }
         }
 
