@@ -2832,9 +2832,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         let text = '';
                                                         const isSmall = posterSize <= 210;
                                                         if (isDeleteHovered) {
-                                                            text = 'Delete ->';
+                                                            text = isSmall ? 'Delete' : 'Delete ->';
                                                         } else if (isCollectionHovered) {
-                                                            text = '<- Collection';
+                                                            text = isSmall ? 'Collection' : '<- Collection';
                                                         } else if (isCardHovered && !isBtnHovered) {
                                                             text = 'Details';
                                                         } else if (isBtnHovered && !isMobile) {
@@ -3506,12 +3506,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                          const isCardHovered = hoveredCardLink === movie.link;
                                                                          
                                                                          let text = '';
+                                                                         const isSmall = posterSize <= 210;
                                                                          if (isCollectionHovered) {
-                                                                             text = '<- Collection';
+                                                                             text = isSmall ? 'Collection' : '<- Collection';
                                                                          } else if (isHideBtnHovered) {
                                                                              text = '🚫 Hide film';
                                                                          } else if (isCheckmarkHovered) {
-                                                                             const isSmall = posterSize <= 210;
                                                                              text = isMovieWatched ? (isSmall ? 'Unwatched' : 'Unwatched ->') : (isSmall ? 'Watched' : 'Mark watched ->');
                                                                          } else if (isCardHovered && !isBtnHovered) {
                                                                              text = 'Details';
