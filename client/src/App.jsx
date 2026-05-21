@@ -158,6 +158,7 @@ function App() {
     };
 
     const [showAddToCollection, setShowAddToCollection] = useState(false);
+    const [collectionMovie, setCollectionMovie] = useState(null);
     const [sharedCollectionId, setSharedCollectionId] = useState(null);
 
     // Modal State
@@ -935,6 +936,7 @@ function App() {
                                     isWatchedView={currentView === 'watched'}
                                     highlightedLink={highlightedMovieLink}
                                     onGuestActivity={triggerGuestActivity}
+                                    onAddToCollectionClick={setCollectionMovie}
                                 />
                             )}
                             {!loading && displayedMovies.length === 0 && (
@@ -965,15 +967,21 @@ function App() {
                 />
             )}
 
-            {showAddToCollection && (
+            {(showAddToCollection || collectionMovie) && (
                 <AddToCollectionModal
-                    movieIds={selectedIds}
-                    movies={movies.filter(m => selectedIds.includes(m.id))}
-                    onClose={() => setShowAddToCollection(false)}
-                    onSuccess={() => {
-                        setSelectedIds([]);
-                        setSelectionAnchor(null);
+                    movieIds={showAddToCollection ? selectedIds : [collectionMovie.id].filter(Boolean)}
+                    movies={showAddToCollection ? movies.filter(m => selectedIds.includes(m.id)) : [collectionMovie]}
+                    onClose={() => {
                         setShowAddToCollection(false);
+                        setCollectionMovie(null);
+                    }}
+                    onSuccess={() => {
+                        if (showAddToCollection) {
+                            setSelectedIds([]);
+                            setSelectionAnchor(null);
+                        }
+                        setShowAddToCollection(false);
+                        setCollectionMovie(null);
                     }}
                 />
             )}

@@ -500,7 +500,7 @@ const GlobalHideButton = ({ link, onHide, offsetRight = 10, onHoverEnter, onHove
     </button>
 );
 
-function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, highlightedLink, onGuestActivity }) {
+function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, highlightedLink, onGuestActivity, onAddToCollectionClick }) {
     const [gridRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
     const [listRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
     const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
@@ -2790,6 +2790,33 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                             </span>
                                                         );
                                                     })()}
+                                                </button>
+                                                <button
+                                                    className="btn-ghost"
+                                                    title="Add to Collection"
+                                                    style={{
+                                                        padding: isMobile ? '4px 6px' : '4px 8px',
+                                                        background: 'rgba(212, 175, 55, 0.15)',
+                                                        color: 'var(--accent-gold)',
+                                                        borderRadius: '4px',
+                                                        fontSize: isMobile ? '0.75rem' : '0.9rem',
+                                                        height: isMobile ? '28px' : 'auto',
+                                                        width: isMobile ? '28px' : '28px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0,
+                                                        border: '1px solid rgba(212, 175, 55, 0.3)',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onAddToCollectionClick?.(movie);
+                                                    }}
+                                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.3)'}
+                                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)'}
+                                                >
+                                                    📁
                                                 </button>
                                                 <button
                                                     className="btn-ghost btn-trash-hover"
