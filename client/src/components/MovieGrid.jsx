@@ -2467,7 +2467,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', gap: '15px' }}>
                                 <button
                                     className="btn-primary"
-                                    onClick={() => performBgSearch(50)}
+                                    onClick={() => performBgSearch()}
                                     style={{ fontSize: '0.85rem', cursor: 'pointer', padding: '6px 16px', borderRadius: '20px', background: 'var(--accent-gold)', color: '#000', border: 'none', fontWeight: 'bold' }}
                                 >
                                     🔍 Искать
