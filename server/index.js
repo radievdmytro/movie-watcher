@@ -207,6 +207,16 @@ function authenticateToken(req, res, next) {
     });
 }
 
+function enforceGuestLibraryLimit(req, res, next) {
+    if (req.user && req.user.username && req.user.username.startsWith('guest_')) {
+        const countRow = db.prepare('SELECT count(*) as total FROM movies WHERE user_id = ? AND deleted_at IS NULL').get(req.user.id);
+        if (countRow && countRow.total >= 30) {
+            return res.status(403).json({ error: 'Гости могут хранить не более 30 фильмов в сумме. Пожалуйста, зарегистрируйтесь!' });
+        }
+    }
+    next();
+}
+
 const getClientIp = (req) => {
     return req.headers['x-forwarded-for'] || 
            req.headers['x-real-ip'] || 
@@ -1166,7 +1176,7 @@ app.get('/api/actors', authenticateToken, (req, res) => {
 });
 
 // POST Add Movie
-app.post('/api/movies', authenticateToken, (req, res) => {
+app.post('/api/movies', authenticateToken, enforceGuestLibraryLimit, (req, res) => {
     try {
         const { title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, type } = req.body;
 
@@ -1477,7 +1487,7 @@ app.post('/api/movies/bulk-hide', authenticateToken, (req, res) => {
 });
 
 // RESTORE
-app.post('/api/movies/:id/restore', authenticateToken, (req, res) => {
+app.post('/api/movies/:id/restore', authenticateToken, enforceGuestLibraryLimit, (req, res) => {
     try {
         const { id } = req.params;
         const stmt = db.prepare('UPDATE movies SET deleted_at = NULL WHERE id = ? AND user_id = ?');
@@ -1490,7 +1500,7 @@ app.post('/api/movies/:id/restore', authenticateToken, (req, res) => {
 });
 
 // POST Bulk Restore
-app.post('/api/movies/bulk-restore', authenticateToken, (req, res) => {
+app.post('/api/movies/bulk-restore', authenticateToken, enforceGuestLibraryLimit, (req, res) => {
     try {
         const { ids } = req.body;
         if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });
@@ -1613,7 +1623,7 @@ app.delete('/api/trash', authenticateToken, (req, res) => {
 });
 
 // IMPORT URL Direct (Scrape & Save)
-app.post('/api/movies/import', authenticateToken, async (req, res) => {
+app.post('/api/movies/import', authenticateToken, enforceGuestLibraryLimit, async (req, res) => {
     try {
         const { url, source_collection_name, source_collection_token, source_user_name, status, hidden_from_library } = req.body;
         if (!url || !isHdrezkaUrl(url)) return res.status(400).json({ error: 'Valid HDRezka URL required' });
@@ -2228,7 +2238,7 @@ app.get('/api/collections-shared-with-me', authenticateToken, (req, res) => {
 });
 
 // POST clone collection (save a copy to own collections)
-app.post('/api/collections/:id/clone', authenticateToken, (req, res) => {
+app.post('/api/collections/:id/clone', authenticateToken, enforceGuestLibraryLimit, (req, res) => {
     try {
         const { id } = req.params;
 
@@ -2294,7 +2304,7 @@ app.post('/api/collections/:id/clone', authenticateToken, (req, res) => {
 });
 
 // POST import movies from collection to library (without cloning collection)
-app.post('/api/collections/:id/import-movies', authenticateToken, (req, res) => {
+app.post('/api/collections/:id/import-movies', authenticateToken, enforceGuestLibraryLimit, (req, res) => {
     try {
         const { id } = req.params;
         const { movieIds } = req.body;
