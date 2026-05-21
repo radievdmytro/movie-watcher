@@ -926,7 +926,7 @@ function App() {
                                         )}
                                         <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                                             <div style={{ fontSize: '0.72rem', color: popupMode === 'top' ? 'var(--accent-gold)' : popupMode === 'random' ? '#38bdf8' : '#c084fc', marginBottom: '3px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
-                                                {popupMode === 'top' ? '✨ Фильм с высоким рейтингом:' : popupMode === 'random' ? '🎲 Случайный фильм:' : 'Недавно добавлено:'}
+                                                {popupMode === 'top' ? '✨ Высокий рейтинг:' : popupMode === 'random' ? '🎲 Случайный фильм:' : 'Недавно добавлено:'}
                                             </div>
                                             <div style={{ fontSize: '0.92rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', lineHeight: '1.2' }}>
                                                 {popupMovie?.title}
