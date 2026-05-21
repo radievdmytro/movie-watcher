@@ -2709,6 +2709,33 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             <div style={{ display: 'flex', gap: '5px', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
                                                 <button
                                                     className="btn-ghost"
+                                                    title="Add to Collection"
+                                                    style={{
+                                                        padding: isMobile ? '4px 6px' : '4px 8px',
+                                                        background: 'rgba(212, 175, 55, 0.15)',
+                                                        color: 'var(--accent-gold)',
+                                                        borderRadius: '4px',
+                                                        fontSize: isMobile ? '0.75rem' : '0.9rem',
+                                                        height: isMobile ? '28px' : 'auto',
+                                                        width: isMobile ? '28px' : '28px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0,
+                                                        border: '1px solid rgba(212, 175, 55, 0.3)',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onAddToCollectionClick?.(movie);
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212, 175, 55, 0.3)'; setHoveredCollectionLink(movie.link); }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)'; setHoveredCollectionLink(null); }}
+                                                >
+                                                    📁
+                                                </button>
+                                                <button
+                                                    className="btn-ghost"
                                                     title={movie.status === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
                                                     onMouseEnter={() => setHoveredButtonLink(movie.link)}
                                                     onMouseLeave={() => setHoveredButtonLink(null)}
@@ -2779,7 +2806,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         if (isDeleteHovered) {
                                                             text = 'Delete ->';
                                                         } else if (isCollectionHovered) {
-                                                            text = 'Collection ->';
+                                                            text = '<- Collection';
                                                         } else if (isCardHovered && !isBtnHovered) {
                                                             text = 'Details';
                                                         } else if (isBtnHovered && !isMobile) {
@@ -2797,33 +2824,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                             </span>
                                                         );
                                                     })()}
-                                                </button>
-                                                <button
-                                                    className="btn-ghost"
-                                                    title="Add to Collection"
-                                                    style={{
-                                                        padding: isMobile ? '4px 6px' : '4px 8px',
-                                                        background: 'rgba(212, 175, 55, 0.15)',
-                                                        color: 'var(--accent-gold)',
-                                                        borderRadius: '4px',
-                                                        fontSize: isMobile ? '0.75rem' : '0.9rem',
-                                                        height: isMobile ? '28px' : 'auto',
-                                                        width: isMobile ? '28px' : '28px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        flexShrink: 0,
-                                                        border: '1px solid rgba(212, 175, 55, 0.3)',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onAddToCollectionClick?.(movie);
-                                                    }}
-                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212, 175, 55, 0.3)'; setHoveredCollectionLink(movie.link); }}
-                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)'; setHoveredCollectionLink(null); }}
-                                                >
-                                                    📁
                                                 </button>
                                                 <button
                                                     className="btn-ghost btn-trash-hover"
