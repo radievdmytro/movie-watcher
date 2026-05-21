@@ -547,6 +547,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [justWatchedLink, setJustWatchedLink] = useState(null);
     const [justUnwatchedLink, setJustUnwatchedLink] = useState(null);
     const [hoveredDeleteLink, setHoveredDeleteLink] = useState(null);
+    const [hoveredCollectionLink, setHoveredCollectionLink] = useState(null);
 
     // Animation state
     const [animationPhase, setAnimationPhase] = useState(null); // 'grayscale' | 'stacking' | 'flying' | null
@@ -2716,12 +2717,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         padding: isMobile ? '4px 6px' : '6px 8px',
                                                         fontSize: isMobile ? '0.7rem' : '0.8rem',
                                                         borderRadius: '4px',
-                                                        border: (hoveredDeleteLink === movie.link || hoveredButtonLink === movie.link) ? '1px solid transparent' : '1px solid',
+                                                        border: (hoveredDeleteLink === movie.link || hoveredCollectionLink === movie.link || hoveredButtonLink === movie.link) ? '1px solid transparent' : '1px solid',
                                                         cursor: 'pointer',
                                                         transition: 'all 0.25s ease-in-out',
                                                         fontWeight: 'bold',
                                                         background: (() => {
                                                             if (hoveredDeleteLink === movie.link) return 'rgba(239, 68, 68, 0.15)';
+                                                            if (hoveredCollectionLink === movie.link) return 'rgba(212, 175, 55, 0.15)';
                                                             if (hoveredButtonLink === movie.link) {
                                                                 return movie.status === 'watched' ? 'rgba(255, 152, 0, 0.25)' : 'rgba(3, 218, 198, 0.25)';
                                                             }
@@ -2729,11 +2731,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         })(),
                                                         borderColor: (() => {
                                                             if (hoveredDeleteLink === movie.link) return 'rgba(239, 68, 68, 0.4)';
+                                                            if (hoveredCollectionLink === movie.link) return 'rgba(212, 175, 55, 0.4)';
                                                             if (hoveredButtonLink === movie.link) return 'transparent';
                                                             return movie.status === 'watched' ? '#03dac6' : 'rgba(255,255,255,0.1)';
                                                         })(),
                                                         color: (() => {
                                                             if (hoveredDeleteLink === movie.link) return '#ff6b6b';
+                                                            if (hoveredCollectionLink === movie.link) return 'var(--accent-gold)';
                                                             if (hoveredButtonLink === movie.link) {
                                                                 return movie.status === 'watched' ? '#ff9800' : '#03dac6';
                                                             }
@@ -2748,7 +2752,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     }}
                                                     onClick={async (e) => {
                                                         e.stopPropagation();
-                                                        if (hoveredDeleteLink === movie.link) return;
+                                                        if (hoveredDeleteLink === movie.link || hoveredCollectionLink === movie.link) return;
 
                                                         const isBtnHovered = hoveredButtonLink === movie.link;
                                                         const isCardHovered = hoveredCardLink === movie.link;
@@ -2767,12 +2771,15 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 >
                                                     {(() => {
                                                         const isDeleteHovered = hoveredDeleteLink === movie.link;
+                                                        const isCollectionHovered = hoveredCollectionLink === movie.link;
                                                         const isBtnHovered = hoveredButtonLink === movie.link;
                                                         const isCardHovered = hoveredCardLink === movie.link;
 
                                                         let text = '';
                                                         if (isDeleteHovered) {
                                                             text = 'Delete ->';
+                                                        } else if (isCollectionHovered) {
+                                                            text = 'Collection ->';
                                                         } else if (isCardHovered && !isBtnHovered) {
                                                             text = 'Details';
                                                         } else if (isBtnHovered && !isMobile) {
@@ -2813,8 +2820,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         e.stopPropagation();
                                                         onAddToCollectionClick?.(movie);
                                                     }}
-                                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.3)'}
-                                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)'}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212, 175, 55, 0.3)'; setHoveredCollectionLink(movie.link); }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)'; setHoveredCollectionLink(null); }}
                                                 >
                                                     📁
                                                 </button>
