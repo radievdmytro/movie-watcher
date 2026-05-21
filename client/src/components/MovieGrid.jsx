@@ -2757,7 +2757,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         justifyContent: 'center',
                                                         flexShrink: 0
                                                     }}
-                                                    onClick={() => onDelete(movie.id)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onDelete(movie.id, true, true);
+                                                    }}
                                                 >
                                                     🗑
                                                 </button>
@@ -2940,7 +2943,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     alignItems: 'center',
                                                     justifyContent: 'center'
                                                 }}
-                                                onClick={() => onDelete(movie.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onDelete(movie.id, true, true);
+                                                }}
                                             >
                                                 🗑
                                             </button>

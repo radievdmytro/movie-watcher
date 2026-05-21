@@ -402,12 +402,12 @@ function App() {
     };
 
     // Single Item Delete (Context dependent)
-    const handleDelete = async (id, forceNoConfirm = false) => {
+    const handleDelete = async (id, forceNoConfirm = false, permanent = false) => {
         const isLibrary = currentView === 'library';
 
         if (forceNoConfirm) {
             try {
-                const endpoint = isLibrary ? `/api/movies/${id}` : `/api/trash/${id}`;
+                const endpoint = (isLibrary && !permanent) ? `/api/movies/${id}` : `/api/trash/${id}`;
                 await fetch(endpoint, { method: 'DELETE' });
                 setMovies(prev => prev.filter(m => m.id !== id));
                 setSelectedIds(prev => prev.filter(sid => sid !== id));
