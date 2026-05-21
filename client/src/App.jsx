@@ -834,19 +834,22 @@ function App() {
                                     {/* The Latest Scraped Notification Popup */}
                                     <div style={{
                                         position: 'absolute',
-                                        top: '110%',
+                                        top: '115%',
                                         right: '0',
-                                        width: '280px',
-                                        background: 'rgba(20, 20, 30, 0.95)',
-                                        backdropFilter: 'blur(10px)',
-                                        border: '1px solid rgba(168, 85, 247, 0.4)',
-                                        borderRadius: '12px',
-                                        padding: '10px 12px',
-                                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(168, 85, 247, 0.2)',
+                                        width: '290px',
+                                        background: 'rgba(25, 20, 40, 0.88)',
+                                        backdropFilter: 'blur(20px)',
+                                        WebkitBackdropFilter: 'blur(20px)',
+                                        border: '1px solid rgba(168, 85, 247, 0.35)',
+                                        borderRadius: '16px',
+                                        padding: '12px 14px',
+                                        boxShadow: '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 20px rgba(168, 85, 247, 0.15)',
                                         opacity: (showScrapePopup || isHoveringBadge) && latestScrapedMovie ? 1 : 0,
-                                        transform: (showScrapePopup || isHoveringBadge) && latestScrapedMovie ? 'translateY(0)' : 'translateY(-10px)',
+                                        transform: (showScrapePopup || isHoveringBadge) && latestScrapedMovie 
+                                            ? 'translateY(0) scale(1)' 
+                                            : 'translateY(-15px) scale(0.92)',
                                         pointerEvents: (showScrapePopup || isHoveringBadge) && latestScrapedMovie ? 'auto' : 'none',
-                                        transition: 'opacity 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                        transition: 'opacity 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
                                         zIndex: 100,
                                         display: 'flex',
                                         alignItems: 'center',
@@ -856,18 +859,19 @@ function App() {
                                         if (latestScrapedMovie) setScrapedDetailsMovie(latestScrapedMovie);
                                     }}>
                                         {latestScrapedMovie?.poster_url && (
-                                            <img src={latestScrapedMovie.poster_url} alt="poster" style={{ width: '45px', height: '65px', borderRadius: '6px', objectFit: 'cover' }} />
+                                            <img src={latestScrapedMovie.poster_url} alt="poster" style={{ width: '45px', height: '65px', borderRadius: '8px', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }} />
                                         )}
                                         <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                                            <div style={{ fontSize: '0.7rem', color: '#c084fc', marginBottom: '2px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                Парсер добавил:
+                                            <div style={{ fontSize: '0.72rem', color: '#c084fc', marginBottom: '3px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
+                                                Недавно добавлено:
                                             </div>
-                                            <div style={{ fontSize: '0.9rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '500', lineHeight: '1.2' }}>
+                                            <div style={{ fontSize: '0.92rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', lineHeight: '1.2' }}>
                                                 {latestScrapedMovie?.title}
                                             </div>
-                                            <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '4px', display: 'flex', gap: '8px' }}>
+                                            <div style={{ fontSize: '0.8rem', color: '#aaa', marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
                                                 {latestScrapedMovie?.year && <span>{latestScrapedMovie.year}</span>}
-                                                {latestScrapedMovie?.rating ? <span style={{ color: 'var(--accent-gold)' }}>★ {latestScrapedMovie.rating}</span> : null}
+                                                {latestScrapedMovie?.year && latestScrapedMovie?.rating && <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }}></span>}
+                                                {latestScrapedMovie?.rating ? <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>★ {latestScrapedMovie.rating}</span> : null}
                                             </div>
                                         </div>
                                     </div>
