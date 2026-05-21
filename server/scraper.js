@@ -189,6 +189,7 @@ async function getMovieDetails(url, customHeaders = {}) {
 
         const original_title = $('.b-post__origtitle').text().trim();
         const title = $('.b-post__title h1').text().trim();
+        const trailer_id = $('.show-trailer').attr('data-id') || null;
 
         const getTableValue = (label) => {
             return $(`.b-post__info tr:contains("${label}") td:nth-child(2)`).text().trim();
@@ -262,7 +263,8 @@ async function getMovieDetails(url, customHeaders = {}) {
             country,
             duration,
             voice_acting,
-            type
+            type,
+            trailer_id
         };
 
         setToCache(detailsCache, url, result);
@@ -359,6 +361,39 @@ async function getHdrezkaComments(url, page = 1) {
     }
 }
 
+async function getHdrezkaTrailer(id) {
+    if (!id) return null;
+    try {
+        const qs = require('querystring');
+        const url = MIRRORS[currentMirrorIndex] + '/ajax/get_trailer/';
+        const randomUA = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+        
+        const res = await axios.post(url, qs.stringify({ id }), {
+            headers: {
+                ...BASE_HEADERS,
+                'User-Agent': randomUA,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Origin': MIRRORS[currentMirrorIndex]
+            },
+            timeout: 10000
+        });
+        
+        // Response is usually JSON: { success: true, code: "<iframe ...></iframe>" }
+        // Or sometimes just plain HTML.
+        const data = res.data;
+        if (data && data.success && data.code) {
+            return data.code;
+        } else if (typeof data === 'string' && data.includes('<iframe')) {
+            return data;
+        }
+        return null;
+    } catch (e) {
+        console.error('[Scraper] Failed to fetch trailer:', e.message);
+        return null;
+    }
+}
+
 async function scrapeCatalogPage(path) {
     try {
         const { data } = await requestWithRetry(path);
@@ -370,4 +405,4 @@ async function scrapeCatalogPage(path) {
     }
 }
 
-module.exports = { searchMovies, getMovieDetails, getCategoryMovies, getHdrezkaComments, scrapeCatalogPage };
+module.exports = { searchMovies, getMovieDetails, getCategoryMovies, getHdrezkaComments, scrapeCatalogPage, getHdrezkaTrailer };

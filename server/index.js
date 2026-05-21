@@ -578,6 +578,23 @@ function seedShuffle(array, seed) {
 }
 
 // Get paginated cache directory for sparse library view
+    // === Trailer Endpoint ===
+    app.get('/api/cache/trailer/:id', authenticateToken, async (req, res) => {
+        try {
+            const id = req.params.id;
+            if (!id) return res.status(400).json({ error: 'Trailer ID is required' });
+            
+            const trailerCode = await scraper.getHdrezkaTrailer(id);
+            if (!trailerCode) {
+                return res.status(404).json({ error: 'Trailer not found' });
+            }
+            res.json({ code: trailerCode });
+        } catch (err) {
+            console.error('Trailer Endpoint Error:', err);
+            res.status(500).json({ error: 'Server error fetching trailer' });
+        }
+    });
+
 app.get('/api/cache/directory', authenticateToken, (req, res) => {
     try {
         let limit = parseInt(req.query.limit) || 50;
@@ -778,7 +795,13 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
             limit = parseInt(req.query.limit) || limit;
             if (limit > 150) limit = 150;
         }
-        sql += ` ORDER BY updated_at DESC LIMIT ${limit}`;
+        
+        let offset = 0;
+        if (req.query.offset) {
+            offset = parseInt(req.query.offset) || 0;
+        }
+        
+        sql += ` ORDER BY updated_at DESC LIMIT ${limit} OFFSET ${offset}`;
         
         const start = performance.now();
         const stmt = db.prepare(sql);
@@ -986,7 +1009,6 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
             // ---- URL MODE: instant cache lookup, then scrape ----
             const cleanQuery = cleanUrlPath(query);
             const cached = db.prepare('SELECT * FROM scraped_movies_cache WHERE link LIKE ?').get(`%${cleanQuery}%`);
-
             // Only return from cache instantly if it's a full record with description
             if (cached && cached.description) {
                 if (isGlobalMovieHidden(req.user.id, cached.link)) {
