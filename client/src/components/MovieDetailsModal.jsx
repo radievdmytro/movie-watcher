@@ -541,8 +541,13 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         // But if they click it anyway, we can still remove it, or do nothing.
                         // To be safe, we'll keep the remove logic but they have a dedicated trash button below.
                         const actualId = movie.id || libMovieId;
-                        if (actualId && onRemoveMovie && !isMobile) {
-                            onRemoveMovie(actualId, movie.link || movie.movie_link);
+                        if (actualId && !isMobile) {
+                            if (onDelete) {
+                                // false = show confirm (if needed), true = permanent, false = promptIfNoCollections
+                                onDelete(actualId, false, true, false);
+                            } else if (onRemoveMovie) {
+                                onRemoveMovie(actualId, movie.link || movie.movie_link);
+                            }
                             if (typeof onClose === 'function') {
                                 onClose();
                             }

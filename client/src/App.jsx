@@ -402,7 +402,7 @@ function App() {
     };
 
     // Single Item Delete (Context dependent)
-    const handleDelete = async (id, forceNoConfirm = false, permanent = true) => {
+    const handleDelete = async (id, forceNoConfirm = false, permanent = true, promptIfNoCollections = true) => {
         const isLibrary = currentView === 'library';
 
         if (forceNoConfirm) {
@@ -434,6 +434,19 @@ function App() {
             } catch (err) {
                 console.error('Failed to check collections:', err);
             }
+        }
+
+        if (!inCollections && !promptIfNoCollections) {
+            try {
+                const endpoint = (isLibrary && !permanent) ? `/api/movies/${id}` : `/api/trash/${id}`;
+                await fetch(endpoint, { method: 'DELETE' });
+                setMovies(prev => prev.filter(m => m.id !== id));
+                setSelectedIds(prev => prev.filter(sid => sid !== id));
+                if (selectedIds.length <= 1) setSelectionAnchor(null);
+            } catch (error) {
+                console.error('Delete failed:', error);
+            }
+            return;
         }
 
         const message = inCollections ? 
