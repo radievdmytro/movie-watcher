@@ -104,8 +104,7 @@ export default function MovieComparisonModal({
     };
 
     const highestRatingIdx = getHighestRatingIdx();
-    const maxLimit = isMobile ? 2 : 3;
-    const showAddSlot = activeLinks.length < maxLimit;
+    const showAddSlot = false; // User requested to remove the empty add slot
     const totalColumns = moviesData.length + (showAddSlot ? 1 : 0);
 
     const panelMaxWidth = totalColumns <= 2 ? '900px' : totalColumns === 3 ? '1300px' : '1600px';
