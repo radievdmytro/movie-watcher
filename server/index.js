@@ -456,11 +456,12 @@ const triggerBackgroundUpdate = (url) => {
 
 // Get total stats of global website cache
 app.get('/api/cache/stats', authenticateToken, (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     try {
         const row = db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get();
         // Get the latest movie that was fully parsed (has description)
         const lastScraped = db.prepare(`
-            SELECT id, title, poster_url, rating, year, link 
+            SELECT * 
             FROM scraped_movies_cache 
             WHERE description IS NOT NULL AND description != '' 
             ORDER BY updated_at DESC LIMIT 1

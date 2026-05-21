@@ -64,15 +64,18 @@ function App() {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
-                const res = await fetch('/api/cache/stats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const res = await fetch(`/api/cache/stats?t=${Date.now()}`, {
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Cache-Control': 'no-cache'
+                    }
                 });
                 if (res.ok) {
                     const data = await res.json();
                     setGlobalCacheCount(data.totalCached);
                     if (data.lastScraped) {
                         setLatestScrapedMovie(prev => {
-                            if (!prev || prev.id !== data.lastScraped.id) {
+                            if (prev && prev.id !== data.lastScraped.id) {
                                 // New movie fully scraped! Show popup.
                                 setShowScrapePopup(true);
                                 if (scrapePopupTimer.current) clearTimeout(scrapePopupTimer.current);
@@ -272,7 +275,9 @@ function App() {
                 return;
             }
             try {
-                const res = await fetch('/api/auth/me');
+                const res = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (res.ok) {
                     const data = await res.json();
                     setUser(data.user);
