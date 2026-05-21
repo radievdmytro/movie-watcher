@@ -2830,6 +2830,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         const isCardHovered = hoveredCardLink === movie.link;
 
                                                         let text = '';
+                                                        const isSmall = posterSize <= 210;
                                                         if (isDeleteHovered) {
                                                             text = 'Delete ->';
                                                         } else if (isCollectionHovered) {
@@ -2837,10 +2838,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         } else if (isCardHovered && !isBtnHovered) {
                                                             text = 'Details';
                                                         } else if (isBtnHovered && !isMobile) {
-                                                            const isSmall = posterSize <= 210;
                                                             text = movie.status === 'watched' ? (isSmall ? 'Unwatched' : 'Mark Unwatched') : (isSmall ? 'Watched' : 'Mark Watched');
                                                         } else if (movie.status === 'watched') {
-                                                            text = movie.user_rating ? `★ ${movie.user_rating}` : '✔ Watched';
+                                                            text = movie.user_rating ? `★ ${movie.user_rating}` : (isSmall ? 'Watched' : '✔ Watched');
                                                         } else {
                                                             text = 'Watch';
                                                         }
