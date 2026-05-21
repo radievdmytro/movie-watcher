@@ -2490,7 +2490,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 <div className="movie-grid-container" ref={gridRef} style={{
                     display: 'grid',
                     gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
-                    gap: '25px'
+                    gap: '25px',
+                    transition: 'grid-template-columns 0.3s ease-out'
                 }}>
 
                     {filteredAndSortedMovies.slice(0, visibleCount).map((movie, index) => {
@@ -2547,7 +2548,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 style={{
                                     position: isDeleting && animationPhase ? 'fixed' : 'relative',
                                     overflow: 'hidden',
-                                    transition: isDeleting ? 'none' : 'transform 0.3s ease-out, box-shadow 0.3s ease-out, border-color 0.3s ease-out',
+                                    transition: isDeleting ? 'none' : 'all 0.3s ease-out',
                                     border: isHighlighted
                                         ? '2px solid var(--accent-gold)'
                                         : selectedIds.includes(movie.id)
@@ -3242,7 +3243,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     <div className="movie-grid-container" ref={listRef} style={{
                         display: 'grid',
                         gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
-                        gap: '25px'
+                        gap: '25px',
+                        transition: 'grid-template-columns 0.3s ease-out'
                     }}>
                         {filteredOnboardingCacheMovies.map((movie, idx) => {
                             const isAdded = addedLinks.has(movie.link) || libraryLinks.has(cleanLinkPath(movie.link));
