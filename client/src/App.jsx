@@ -870,11 +870,18 @@ function App() {
                                     </div>
                                     
                                     {/* The Latest Scraped Notification Popup */}
+                                    {/* Transparent bridge: fills gap between button and popup so mouse doesn't "escape" */}
                                     <div style={{
                                         position: 'absolute',
-                                        top: '115%',
+                                        top: '100%',
                                         right: '0',
+                                        width: '310px',
+                                        paddingTop: '10px',   // invisible bridge over the gap
+                                        zIndex: 100,
+                                    }}>
+                                    <div style={{
                                         width: '290px',
+                                        marginLeft: 'auto',
                                         background: isShowcaseMode
                                             ? 'rgba(20, 30, 45, 0.9)'
                                             : 'rgba(25, 20, 40, 0.88)',
@@ -918,7 +925,8 @@ function App() {
                                                 {popupMovie?.rating ? <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>★ {popupMovie.rating}</span> : null}
                                             </div>
                                         </div>
-                                    </div>
+                                    </div>  {/* end inner popup */}
+                                    </div>  {/* end bridge wrapper */}
                                 </div>
                             )}
                             <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '24px', margin: '0 5px' }}></div>
