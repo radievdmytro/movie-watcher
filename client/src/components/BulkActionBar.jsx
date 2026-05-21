@@ -114,7 +114,8 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWa
 
     const activeAnchor = anchor || lastAnchor;
     let clampedLeft = activeAnchor ? activeAnchor.x : (window.innerWidth / 2);
-    let clampedTop = activeAnchor ? activeAnchor.y : 85;
+    // Shift slightly higher so it doesn't overlap checkboxes
+    let clampedTop = activeAnchor ? activeAnchor.y - 45 : 85;
 
     const show = selectedCount > 0;
     const compareMax = isMobile ? 3 : 4;
