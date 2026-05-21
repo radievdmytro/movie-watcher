@@ -662,6 +662,33 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         }
     };
 
+    const handleAddToCollectionGlobal = async (link) => {
+        setAddingLinks(prev => new Set([...prev, link]));
+        try {
+            const res = await fetch('/api/movies/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: link, hidden_from_library: true })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                if (onUpdate) onUpdate(null);
+                if (onAddToCollectionClick) onAddToCollectionClick(data);
+            } else if (res.status === 409) {
+                const localMovie = allMovies.find(m => m.link === link || m.movie_link === link);
+                if (localMovie && onAddToCollectionClick) onAddToCollectionClick(localMovie);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setAddingLinks(prev => {
+                const next = new Set(prev);
+                next.delete(link);
+                return next;
+            });
+        }
+    };
+
     const handleHideGlobalMovie = async (link) => {
         const normalizedLink = cleanLinkPath(link);
         if (!normalizedLink) return;
@@ -3366,99 +3393,136 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
                                                 {(() => {
                                                      const isHideBtnHovered = hoveredHideGlobalLink === movie.link;
-                                                     const isSlideActive = (hoveredButtonLink === movie.link) || isCheckmarkHovered || isHideBtnHovered;
-                                                     const btnBgRest = isHideBtnHovered ? 'rgba(255, 152, 0, 0.2)' : (isAdded ? 'rgba(3, 218, 198, 0.15)' : 'rgba(168, 85, 247, 0.15)');
-                                                     const btnBorderRest = isHideBtnHovered ? 'rgba(255, 152, 0, 0.4)' : (isAdded ? '#03dac6' : 'rgba(168, 85, 247, 0.4)');
-                                                     const btnColorRest = isHideBtnHovered ? '#ff9800' : (isAdded ? '#03dac6' : '#c084fc');
-                                                     const btnBgHover = isCheckmarkHovered 
-                                                         ? 'rgba(3, 218, 198, 0.1)' 
-                                                         : (isAdded ? 'rgba(239, 68, 68, 0.2)' : 'rgba(168, 85, 247, 0.3)');
-                                                     const btnBorderHover = isCheckmarkHovered 
-                                                         ? 'rgba(3, 218, 198, 0.3)' 
-                                                         : (isAdded ? '#ef4444' : 'rgba(168, 85, 247, 0.7)');
-                                                     const btnColorHover = isCheckmarkHovered 
-                                                         ? '#03dac6' 
-                                                         : (isAdded ? '#ef4444' : '#d8b4fe');
+                                                     const isCollectionHovered = hoveredCollectionLink === movie.link;
+                                                     const isSlideActive = (hoveredButtonLink === movie.link) || isCheckmarkHovered || isHideBtnHovered || isCollectionHovered;
+                                                     const btnBgRest = isCollectionHovered ? 'rgba(212,175,55,0.2)' : (isHideBtnHovered ? 'rgba(255, 152, 0, 0.2)' : (isAdded ? 'rgba(3, 218, 198, 0.15)' : 'rgba(168, 85, 247, 0.15)'));
+                                                     const btnBorderRest = isCollectionHovered ? 'rgba(212,175,55,0.4)' : (isHideBtnHovered ? 'rgba(255, 152, 0, 0.4)' : (isAdded ? '#03dac6' : 'rgba(168, 85, 247, 0.4)'));
+                                                     const btnColorRest = isCollectionHovered ? 'var(--accent-gold)' : (isHideBtnHovered ? '#ff9800' : (isAdded ? '#03dac6' : '#c084fc'));
+                                                     const btnBgHover = isCollectionHovered 
+                                                         ? 'rgba(212,175,55,0.1)'
+                                                         : (isCheckmarkHovered 
+                                                             ? 'rgba(3, 218, 198, 0.1)' 
+                                                             : (isAdded ? 'rgba(239, 68, 68, 0.2)' : 'rgba(168, 85, 247, 0.3)'));
+                                                     const btnBorderHover = isCollectionHovered 
+                                                         ? 'rgba(212,175,55,0.3)'
+                                                         : (isCheckmarkHovered 
+                                                             ? 'rgba(3, 218, 198, 0.3)' 
+                                                             : (isAdded ? '#ef4444' : 'rgba(168, 85, 247, 0.7)'));
+                                                     const btnColorHover = isCollectionHovered 
+                                                         ? 'var(--accent-gold)'
+                                                         : (isCheckmarkHovered 
+                                                             ? '#03dac6' 
+                                                             : (isAdded ? '#ef4444' : '#d8b4fe'));
                                                      
                                                      return (
-                                                         <button
-                                                             className={`btn btn-slide-effect ${isSlideActive ? 'slide-active slide-entering' : 'slide-leaving'}`}
-                                                             disabled={isAdding}
-                                                             onMouseEnter={() => setHoveredButtonLink(movie.link)}
-                                                             onMouseLeave={() => setHoveredButtonLink(null)}
-                                                             onClick={async (e) => {
-                                                                 e.stopPropagation();
-                                                                 if (isAdding) return;
-                                                                 if (isAdded) {
-                                                                     const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
-                                                                     if (libMovie) {
-                                                                         // Optimistic UI update
-                                                                         setAddedLinks(prev => {
-                                                                             const next = new Set(prev);
-                                                                             next.delete(movie.link);
-                                                                             return next;
-                                                                         });
-                                                                         setLocalDeletedLinks(prev => new Set([...prev, cleanLinkPath(movie.link)]));
-                                                                         
-                                                                         // Fire and forget fetch
-                                                                         try {
-                                                                             const res = await fetch(`/api/trash/${libMovie.id}`, { method: 'DELETE' });
-                                                                             if (res.ok && typeof onUpdate === 'function') {
-                                                                                 onUpdate(null);
-                                                                             }
-                                                                         } catch (error) {
-                                                                             console.error(error);
-                                                                         }
-                                                                     }
-                                                                 } else {
-                                                                     handleAddMovieFromCache(movie.link);
-                                                                 }
-                                                             }}
-                                                             style={{
-                                                                 flex: 1,
-                                                                 padding: '6px 10px',
-                                                                 borderRadius: '8px',
-                                                                 fontSize: '0.78rem',
-                                                                 fontWeight: 'bold',
-                                                                 cursor: isAdding ? 'default' : 'pointer',
-                                                                 border: '1px solid',
-                                                                 '--btn-bg-rest': btnBgRest,
-                                                                 '--btn-bg-hover': btnBgHover,
-                                                                 '--btn-border-rest': btnBorderRest,
-                                                                 '--btn-border-hover': btnBorderHover,
-                                                                 '--btn-color-rest': btnColorRest,
-                                                                 '--btn-color-hover': btnColorHover,
-                                                                 '--slide-translate': isSlideActive ? '0%' : '-101%',
-                                                                 boxShadow: hoveredButtonLink === movie.link ? (isAdded ? '0 0 12px rgba(3, 218, 198, 0.3)' : '0 0 12px rgba(168, 85, 247, 0.4)') : (isHideBtnHovered ? '0 0 12px rgba(255, 152, 0, 0.2)' : 'none'),
-                                                                 transform: hoveredButtonLink === movie.link ? 'scale(1.02)' : 'scale(1)',
-                                                                 textAlign: 'center'
-                                                             }}
-                                                             title={isAdded ? "Remove from Library" : "Add to Library"}
-                                                         >
-                                                             <span className="btn-slide-effect-text">
-                                                                 {(() => {
-                                                                     const isBtnHovered = hoveredButtonLink === movie.link;
-                                                                     const isCardHovered = hoveredCardLink === movie.link;
-                                                                     
-                                                                     let text = '';
-                                                                     if (isHideBtnHovered) {
-                                                                         text = '🚫 Hide film';
-                                                                     } else if (isCheckmarkHovered) {
-                                                                         text = isMovieWatched ? 'Mark unwatched ->' : 'Mark watched ->';
-                                                                     } else if (isCardHovered && !isBtnHovered) {
-                                                                         text = 'Details';
+                                                         <>
+                                                             <button
+                                                                 title="Add to Collection"
+                                                                 onClick={(e) => {
+                                                                     e.stopPropagation();
+                                                                     if (isAdded) {
+                                                                         const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
+                                                                         if (libMovie && onAddToCollectionClick) onAddToCollectionClick(libMovie);
                                                                      } else {
-                                                                         text = isAdding ? '⏳ Adding...' : isAdded ? (isBtnHovered ? '🗑 Remove' : '✓ In My Library') : '➕ Add to Library';
+                                                                         handleAddToCollectionGlobal(movie.link);
                                                                      }
-                                                                     
-                                                                     return (
-                                                                         <span key={text} className="button-text-fade" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                                                                             {text}
-                                                                         </span>
-                                                                     );
-                                                                 })()}
-                                                             </span>
-                                                         </button>
+                                                                 }}
+                                                                 style={{
+                                                                     background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)',
+                                                                     color: 'var(--accent-gold)', borderRadius: '8px', padding: '6px 10px',
+                                                                     fontSize: '0.85rem', cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
+                                                                     display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                                 }}
+                                                                 onMouseEnter={e => {
+                                                                     e.currentTarget.style.background = 'rgba(212,175,55,0.28)';
+                                                                     setHoveredCollectionLink(movie.link);
+                                                                 }}
+                                                                 onMouseLeave={e => {
+                                                                     e.currentTarget.style.background = 'rgba(212,175,55,0.12)';
+                                                                     setHoveredCollectionLink(null);
+                                                                 }}
+                                                             >📁</button>
+                                                             <button
+                                                                 className={`btn btn-slide-effect ${isSlideActive ? 'slide-active slide-entering' : 'slide-leaving'}`}
+                                                                 disabled={isAdding}
+                                                                 onMouseEnter={() => setHoveredButtonLink(movie.link)}
+                                                                 onMouseLeave={() => setHoveredButtonLink(null)}
+                                                                 onClick={async (e) => {
+                                                                     e.stopPropagation();
+                                                                     if (isAdding) return;
+                                                                     if (isAdded) {
+                                                                         const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
+                                                                         if (libMovie) {
+                                                                             // Optimistic UI update
+                                                                             setAddedLinks(prev => {
+                                                                                 const next = new Set(prev);
+                                                                                 next.delete(movie.link);
+                                                                                 return next;
+                                                                             });
+                                                                             setLocalDeletedLinks(prev => new Set([...prev, cleanLinkPath(movie.link)]));
+                                                                             
+                                                                             // Fire and forget fetch
+                                                                             try {
+                                                                                 const res = await fetch(`/api/trash/${libMovie.id}`, { method: 'DELETE' });
+                                                                                 if (res.ok && typeof onUpdate === 'function') {
+                                                                                     onUpdate(null);
+                                                                                 }
+                                                                             } catch (error) {
+                                                                                 console.error(error);
+                                                                             }
+                                                                         }
+                                                                     } else {
+                                                                         handleAddMovieFromCache(movie.link);
+                                                                     }
+                                                                 }}
+                                                                 style={{
+                                                                     flex: 1,
+                                                                     padding: '6px 10px',
+                                                                     borderRadius: '8px',
+                                                                     fontSize: '0.78rem',
+                                                                     fontWeight: 'bold',
+                                                                     cursor: isAdding ? 'default' : 'pointer',
+                                                                     border: '1px solid',
+                                                                     '--btn-bg-rest': btnBgRest,
+                                                                     '--btn-bg-hover': btnBgHover,
+                                                                     '--btn-border-rest': btnBorderRest,
+                                                                     '--btn-border-hover': btnBorderHover,
+                                                                     '--btn-color-rest': btnColorRest,
+                                                                     '--btn-color-hover': btnColorHover,
+                                                                     '--slide-translate': isSlideActive ? '0%' : '-101%',
+                                                                     boxShadow: hoveredButtonLink === movie.link ? (isAdded ? '0 0 12px rgba(3, 218, 198, 0.3)' : '0 0 12px rgba(168, 85, 247, 0.4)') : (isHideBtnHovered ? '0 0 12px rgba(255, 152, 0, 0.2)' : (isCollectionHovered ? '0 0 12px rgba(212,175,55,0.2)' : 'none')),
+                                                                     transform: hoveredButtonLink === movie.link ? 'scale(1.02)' : 'scale(1)',
+                                                                     textAlign: 'center'
+                                                                 }}
+                                                                 title={isAdded ? "Remove from Library" : "Add to Library"}
+                                                             >
+                                                                 <span className="btn-slide-effect-text">
+                                                                     {(() => {
+                                                                         const isBtnHovered = hoveredButtonLink === movie.link;
+                                                                         const isCardHovered = hoveredCardLink === movie.link;
+                                                                         
+                                                                         let text = '';
+                                                                         if (isCollectionHovered) {
+                                                                             text = '<- Collection';
+                                                                         } else if (isHideBtnHovered) {
+                                                                             text = '🚫 Hide film';
+                                                                         } else if (isCheckmarkHovered) {
+                                                                             text = isMovieWatched ? 'Mark unwatched ->' : 'Mark watched ->';
+                                                                         } else if (isCardHovered && !isBtnHovered) {
+                                                                             text = 'Details';
+                                                                         } else {
+                                                                             text = isAdding ? '⏳ Adding...' : isAdded ? (isBtnHovered ? '🗑 Remove' : '✓ In My Library') : '➕ Add to Library';
+                                                                         }
+                                                                         
+                                                                         return (
+                                                                             <span key={text} className="button-text-fade" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                                                                                 {text}
+                                                                             </span>
+                                                                         );
+                                                                     })()}
+                                                                 </span>
+                                                             </button>
+                                                         </>
                                                      );
                                                  })()}
 
