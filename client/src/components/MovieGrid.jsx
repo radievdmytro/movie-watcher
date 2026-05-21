@@ -1048,42 +1048,27 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         );
     }, [deferredFilterQuery, filterGenres, filterType, filterDirectors, filterActors, filterRating, filterYear]);
 
-    const hasActiveFilterForBgSearch = useMemo(() => {
-        return !!(
-            deferredFilterQuery.trim().length >= 3 ||
-            filterGenres.length > 0 ||
-            filterType !== 'all' ||
-            filterDirectors.length > 0 ||
-            filterActors.length > 0 ||
-            filterRating[0] > 0 ||
-            filterRating[1] < 10 ||
-            filterYear[0] > 1900 ||
-            filterYear[1] < new Date().getFullYear() + 2
-        );
-    }, [deferredFilterQuery, filterGenres, filterType, filterDirectors, filterActors, filterRating, filterYear]);
-
-    // Background cache search when integrated cache search is enabled
+    const filtersRef = useRef({
+        filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, searchFields
+    });
     useEffect(() => {
-        if (searchDb !== 'library') {
-            setBackgroundCacheResults([]);
-            setBackgroundSearchStats(null);
-            return;
-        }
+        filtersRef.current = {
+            filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, searchFields
+        };
+    });
 
-        if (!hasActiveFilterForBgSearch) {
-            setBackgroundCacheResults([]);
-            setBackgroundSearchStats(null);
-            return;
-        }
-
+    const performBgSearch = useCallback((manualLimit = null) => {
+        if (searchDb !== 'library') return;
+        
         setIsBgCacheSearching(true);
         const queryParams = new URLSearchParams();
         const query = deferredFilterQuery.trim();
         if (query.length >= 3) {
             queryParams.append('query', query);
         }
-        queryParams.append('fields', JSON.stringify(searchFields));
         
+        const { filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, searchFields } = filtersRef.current;
+        queryParams.append('fields', JSON.stringify(searchFields));
         if (filterGenres.length > 0) queryParams.append('genres', filterGenres.join(','));
         if (filterDirectors.length > 0) queryParams.append('directors', filterDirectors.join(','));
         if (filterActors.length > 0) queryParams.append('actors', filterActors.join(','));
@@ -1094,36 +1079,62 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         if (filterType !== 'all') queryParams.append('type', filterType);
         queryParams.append('genreMode', filterGenreMode);
         
+        if (manualLimit) {
+            queryParams.append('limit', manualLimit);
+        }
+        
+        fetch(`/api/cache/search?${queryParams.toString()}`)
+            .then(res => res.ok ? res.json() : [])
+            .then(data => {
+                const results = data.results || data || [];
+                setBackgroundCacheResults(results);
+                if (data.timeMs) {
+                    setBackgroundSearchStats({ total: data.total, timeMs: data.timeMs });
+                } else {
+                    setBackgroundSearchStats(null);
+                }
+            })
+            .catch(err => {
+                console.error("Bg cache search error:", err);
+                setBackgroundCacheResults([]);
+                setBackgroundSearchStats(null);
+            })
+            .finally(() => {
+                setIsBgCacheSearching(false);
+            });
+    }, [deferredFilterQuery, searchDb]);
+
+    // Background cache search when integrated cache search is enabled (automatic for text queries)
+    useEffect(() => {
+        if (searchDb !== 'library') {
+            setBackgroundCacheResults([]);
+            setBackgroundSearchStats(null);
+            return;
+        }
+
+        const query = deferredFilterQuery.trim();
+        
+        if (query.length === 0 && !hasActiveFilter) {
+            setBackgroundCacheResults([]);
+            setBackgroundSearchStats(null);
+            return;
+        }
+        
+        if (query.length < 3) {
+            return; // Do not automatically search if query is too short (wait for manual button click)
+        }
+
         const controller = new AbortController();
 
         const delayDebounceFn = setTimeout(() => {
-            fetch(`/api/cache/search?${queryParams.toString()}`, { signal: controller.signal })
-                .then(res => res.ok ? res.json() : [])
-                .then(data => {
-                    const results = data.results || data || [];
-                    setBackgroundCacheResults(results);
-                    if (data.timeMs) {
-                        setBackgroundSearchStats({ total: data.total, timeMs: data.timeMs });
-                    } else {
-                        setBackgroundSearchStats(null);
-                    }
-                })
-                .catch(err => {
-                    if (err.name === 'AbortError') return;
-                    console.error("Bg cache search error:", err);
-                    setBackgroundCacheResults([]);
-                    setBackgroundSearchStats(null);
-                })
-                .finally(() => {
-                    setIsBgCacheSearching(false);
-                });
+            performBgSearch();
         }, 50); // Fast 50ms debounce for background search
 
         return () => {
             clearTimeout(delayDebounceFn);
             controller.abort();
         };
-    }, [hasActiveFilterForBgSearch, deferredFilterQuery, searchDb, searchFields, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType]);
+    }, [deferredFilterQuery, searchDb, hasActiveFilter, performBgSearch]);
 
 
     const { minBoundYear, maxBoundYear } = useMemo(() => {
@@ -2417,6 +2428,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             {/* Reset Actions */}
                             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', gap: '15px' }}>
                                 <button
+                                    className="btn-primary"
+                                    onClick={() => performBgSearch(50)}
+                                    style={{ fontSize: '0.85rem', cursor: 'pointer', padding: '6px 16px', borderRadius: '20px', background: 'var(--accent-gold)', color: '#000', border: 'none', fontWeight: 'bold' }}
+                                >
+                                    🔍 Искать
+                                </button>
+                                <button
                                     className="btn-ghost"
                                     onClick={() => setShowFilters(false)}
                                     style={{ fontSize: '0.85rem', textDecoration: 'underline', cursor: 'pointer', color: '#888' }}
@@ -2432,6 +2450,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         setFilterGenreMode('include');
                                         setFilterDirectors([]);
                                         setFilterActors([]);
+                                        setBackgroundCacheResults([]);
+                                        setBackgroundSearchStats(null);
                                     }}
                                     style={{ fontSize: '0.85rem', textDecoration: 'underline', cursor: 'pointer' }}
                                 >Reset All Filters</button>

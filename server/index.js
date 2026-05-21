@@ -767,7 +767,11 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
         }
         
         const isGuest = req.user && req.user.username && req.user.username.startsWith('guest_');
-        const limit = isGuest ? 30 : 150;
+        let limit = isGuest ? 30 : 150;
+        if (req.query.limit) {
+            limit = parseInt(req.query.limit) || limit;
+            if (limit > 150) limit = 150;
+        }
         sql += ` ORDER BY updated_at DESC LIMIT ${limit}`;
         
         const start = performance.now();
