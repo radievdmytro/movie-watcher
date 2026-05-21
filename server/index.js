@@ -1560,7 +1560,7 @@ app.delete('/api/trash', authenticateToken, (req, res) => {
 // IMPORT URL Direct (Scrape & Save)
 app.post('/api/movies/import', authenticateToken, async (req, res) => {
     try {
-        const { url, source_collection_name, source_collection_token, source_user_name, status } = req.body;
+        const { url, source_collection_name, source_collection_token, source_user_name, status, hidden_from_library } = req.body;
         if (!url || !isHdrezkaUrl(url)) return res.status(400).json({ error: 'Valid HDRezka URL required' });
 
         // Check duplicates for this user
@@ -1569,6 +1569,9 @@ app.post('/api/movies/import', authenticateToken, async (req, res) => {
 
         if (existing) {
             if (existing.deleted_at || existing.hidden_from_library) {
+                if (hidden_from_library) {
+                    return res.json({ id: existing.id, restored: false, title: 'Found hidden/deleted movie' });
+                }
                 db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0, status = ? WHERE id = ? AND user_id = ?').run(status || 'want_to_watch', existing.id, req.user.id);
                 return res.json({ id: existing.id, restored: true, title: 'Restored to library' });
             }
@@ -1589,8 +1592,8 @@ app.post('/api/movies/import', authenticateToken, async (req, res) => {
         const history = db.prepare('SELECT user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = ? AND movie_link = ?').get(req.user.id, url);
 
         const stmt = db.prepare(`
-            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, source_collection_name, source_collection_token, source_user_name, type, user_id, status, user_rating, notes, notes_public)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO movies (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, source_collection_name, source_collection_token, source_user_name, type, user_id, status, user_rating, notes, notes_public, hidden_from_library)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const defaultStatus = status || (history?.is_watched ? 'watched' : 'want_to_watch');
@@ -1603,7 +1606,8 @@ app.post('/api/movies/import', authenticateToken, async (req, res) => {
             details.type || 'movie', req.user.id, defaultStatus,
             history?.user_rating ?? null,
             history?.notes ?? null,
-            history?.notes_public ?? 0
+            history?.notes_public ?? 0,
+            hidden_from_library ? 1 : 0
         );
 
         res.json({ id: info.lastInsertRowid, title: details.title });

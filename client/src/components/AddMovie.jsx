@@ -350,7 +350,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
             const res = await fetch('/api/movies/import', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ url: item.link })
+                body: JSON.stringify({ url: item.link, hidden_from_library: true })
             });
             const data = await res.json();
             if (res.ok) {
