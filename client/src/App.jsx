@@ -914,7 +914,7 @@ function App() {
                                         )}
                                         <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                                             <div style={{ fontSize: '0.72rem', color: isShowcaseMode ? 'var(--accent-gold)' : '#c084fc', marginBottom: '3px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
-                                                {isShowcaseMode ? '✨ Рекомендуем:' : 'Недавно добавлено:'}
+                                                {isShowcaseMode ? '🎲 Случайный фильм:' : 'Недавно добавлено:'}
                                             </div>
                                             <div style={{ fontSize: '0.92rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', lineHeight: '1.2' }}>
                                                 {popupMovie?.title}
