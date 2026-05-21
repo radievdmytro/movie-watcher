@@ -1946,7 +1946,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                                 justifyContent: 'center',
                                                 gap: isHideBtnHovered ? '8px' : '0',
                                                 flex: '0 0 auto',
-                                                width: isHideBtnHovered ? '160px' : '46px',
+                                                width: isHideBtnHovered ? '130px' : '46px',
                                                 height: '46px',
                                                 overflow: 'hidden',
                                                 whiteSpace: 'nowrap'
@@ -1960,7 +1960,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                                 transition: 'opacity 0.3s ease', 
                                                 pointerEvents: 'none' 
                                             }}>
-                                                Hide this film
+                                                Hide film
                                             </span>
                                         </button>
                                     )}
