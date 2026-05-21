@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
+import { useState, useEffect, useMemo, useRef, useDeferredValue, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import MovieDetailsModal from './MovieDetailsModal';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
