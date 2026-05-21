@@ -3401,17 +3401,17 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                      const btnBgHover = isCollectionHovered 
                                                          ? 'rgba(212,175,55,0.1)'
                                                          : (isCheckmarkHovered 
-                                                             ? 'rgba(3, 218, 198, 0.1)' 
+                                                             ? (isMovieWatched ? 'rgba(255, 152, 0, 0.1)' : 'rgba(3, 218, 198, 0.1)') 
                                                              : (isAdded ? 'rgba(239, 68, 68, 0.2)' : 'rgba(168, 85, 247, 0.3)'));
                                                      const btnBorderHover = isCollectionHovered 
                                                          ? 'rgba(212,175,55,0.3)'
                                                          : (isCheckmarkHovered 
-                                                             ? 'rgba(3, 218, 198, 0.3)' 
+                                                             ? (isMovieWatched ? 'rgba(255, 152, 0, 0.3)' : 'rgba(3, 218, 198, 0.3)') 
                                                              : (isAdded ? '#ef4444' : 'rgba(168, 85, 247, 0.7)'));
                                                      const btnColorHover = isCollectionHovered 
                                                          ? 'var(--accent-gold)'
                                                          : (isCheckmarkHovered 
-                                                             ? '#03dac6' 
+                                                             ? (isMovieWatched ? '#ff9800' : '#03dac6') 
                                                              : (isAdded ? '#ef4444' : '#d8b4fe'));
                                                      
                                                      return (
@@ -3507,7 +3507,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                          } else if (isHideBtnHovered) {
                                                                              text = '🚫 Hide film';
                                                                          } else if (isCheckmarkHovered) {
-                                                                             text = isMovieWatched ? 'Mark unwatched ->' : 'Mark watched ->';
+                                                                             text = isMovieWatched ? 'Unwatched ->' : 'Mark watched ->';
                                                                          } else if (isCardHovered && !isBtnHovered) {
                                                                              text = 'Details';
                                                                          } else {
