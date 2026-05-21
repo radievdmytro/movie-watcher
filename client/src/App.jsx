@@ -402,7 +402,7 @@ function App() {
     };
 
     // Single Item Delete (Context dependent)
-    const handleDelete = async (id, forceNoConfirm = false, permanent = false) => {
+    const handleDelete = async (id, forceNoConfirm = false, permanent = true) => {
         const isLibrary = currentView === 'library';
 
         if (forceNoConfirm) {
@@ -439,21 +439,21 @@ function App() {
         const message = inCollections ? 
             (
                 <div>
-                    <p>This movie is in your collections:</p>
+                    <p>Этот фильм есть в ваших подборках:</p>
                     <p style={{color: 'var(--accent-gold)'}}>{collectionNames.join(', ')}</p>
-                    <p>Do you want to delete it permanently everywhere or just hide it from the library?</p>
+                    <p>Хотите удалить его отовсюду или только из библиотеки?</p>
                 </div>
             ) : 
-            (isLibrary ? 'Are you sure you want to move this movie to the trash?' : 'This action cannot be undone. Delete forever?');
+            'Это навсегда удалит фильм из вашей библиотеки. Продолжить?';
 
         setConfirmConfig({
-            title: isLibrary ? 'Delete Movie' : 'Delete Permanently',
+            title: isLibrary ? 'Удалить фильм' : 'Удалить навсегда',
             message: message,
-            confirmText: inCollections ? 'Delete Everywhere' : 'Delete',
+            confirmText: inCollections ? 'Удалить отовсюду' : 'Удалить',
             confirmColor: 'var(--danger)',
             extraActions: inCollections ? [
                 {
-                    label: 'Only Hide',
+                    label: 'Только из библиотеки',
                     color: '#4caf50',
                     onClick: async () => {
                         try {
@@ -474,7 +474,7 @@ function App() {
             ] : [],
             onConfirm: async () => {
                 try {
-                    const endpoint = isLibrary ? `/api/movies/${id}` : `/api/trash/${id}`;
+                    const endpoint = (isLibrary && !permanent) ? `/api/movies/${id}` : `/api/trash/${id}`;
                     await fetch(endpoint, { method: 'DELETE' });
                     setMovies(prev => prev.filter(m => m.id !== id));
                     setSelectedIds(prev => prev.filter(sid => sid !== id));

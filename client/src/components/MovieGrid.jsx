@@ -2796,7 +2796,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     }}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        onDelete(movie.id, true, true);
+                                                        onDelete(movie.id, false, true);
                                                     }}
                                                 >
                                                     🗑
@@ -2982,7 +2982,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    onDelete(movie.id, true, true);
+                                                    onDelete(movie.id, false, true);
                                                 }}
                                             >
                                                 🗑
