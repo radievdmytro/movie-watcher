@@ -673,7 +673,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             typeStr = 'сериал';
         }
         
-        const queryTokens = [typeStr, movie.original_title || movie.title, movie.year, 'трейлер'].filter(Boolean);
+        const queryTokens = [typeStr, movie.title, movie.year, 'трейлер'].filter(Boolean);
         const query = queryTokens.join(' ');
         const params = new URLSearchParams({ search_query: query });
         const url = `https://www.youtube.com/results?${params.toString()}`;
@@ -854,9 +854,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 onClick={handleTrailerClick}
                                 style={{
                                     width: '100%',
-                                    background: 'rgba(255, 0, 0, 0.15)',
-                                    border: '1px solid rgba(255, 0, 0, 0.3)',
-                                    color: '#ff4444',
+                                    background: 'rgba(255, 255, 255, 0.1)',
+                                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                                    color: '#ccc',
                                     padding: '10px 15px',
                                     borderRadius: '10px',
                                     fontSize: '0.9rem',
@@ -868,10 +868,10 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     justifyContent: 'center',
                                     gap: '8px',
                                     transition: 'all 0.2s',
-                                    boxShadow: '0 4px 15px rgba(255, 0, 0, 0.1)'
+                                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
                                 }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 0, 0, 0.25)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 0, 0, 0.15)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}
                             >
                                 🎬 Искать трейлер
                             </button>
@@ -1037,9 +1037,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     onClick={handleTrailerClick}
                                     style={{
                                         width: '100%',
-                                        background: 'rgba(255, 0, 0, 0.15)',
-                                        border: '1px solid rgba(255, 0, 0, 0.3)',
-                                        color: '#ff4444',
+                                        background: 'rgba(255, 255, 255, 0.1)',
+                                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                                        color: '#ccc',
                                         padding: '6px 0',
                                         borderRadius: '8px',
                                         fontSize: '0.75rem',
