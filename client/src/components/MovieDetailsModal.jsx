@@ -145,7 +145,36 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         }
     };
 
-    // handleAddMovieFromCache moved to parent and passed as onAddMovie prop
+    const [addingLinks, setAddingLinks] = useState(new Set());
+    const [addedLinks, setAddedLinks] = useState(new Set());
+
+    const handleAddMovieFromCache = async (link) => {
+        if (addingLinks.has(link) || addedLinks.has(link)) return;
+        setAddingLinks(prev => new Set([...prev, link]));
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/movies', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ link })
+            });
+            if (res.ok) {
+                setAddedLinks(prev => new Set([...prev, link]));
+            }
+        } catch (err) {
+            console.error('Failed to add movie from cache', err);
+        } finally {
+            setAddingLinks(prev => {
+                const next = new Set(prev);
+                next.delete(link);
+                return next;
+            });
+        }
+    };
+
     // Inline feedback states
     const [notesFeedback, setNotesFeedback] = useState({ type: '', message: '' });
     const [reviewFeedback, setReviewFeedback] = useState({ type: '', message: '' });
