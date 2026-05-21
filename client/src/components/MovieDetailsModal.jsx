@@ -1889,21 +1889,27 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             background: localStatus === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
                                             border: localStatus === 'watched' ? '1px solid rgba(255,255,255,0.12)' : 'none',
                                             color: localStatus === 'watched' ? '#fff' : '#000',
-                                            padding: '12px 28px',
+                                            padding: isHideBtnHovered ? '0 16px' : '0 28px',
                                             fontSize: '0.95rem',
                                             fontWeight: '700',
                                             borderRadius: '10px',
                                             cursor: 'pointer',
                                             boxShadow: localStatus === 'watched' ? 'none' : '0 4px 15px rgba(212, 175, 55, 0.25)',
-                                            transition: 'all 0.2s',
+                                            transition: 'all 0.3s ease',
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             gap: '6px',
+                                            height: '46px',
+                                            overflow: 'hidden',
+                                            whiteSpace: 'nowrap',
+                                            flex: '0 0 auto'
                                         }}
                                         onClick={handleStatusToggle}
+                                        title={localStatus === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
                                     >
-                                        {localStatus === 'watched' ? 'Mark Unwatched ⚪' : 'Mark Watched ⭐'}
+                                        <span style={{ fontSize: '1.1rem' }}>{localStatus === 'watched' ? '⚪' : '⭐'}</span>
+                                        {!isHideBtnHovered && <span>{localStatus === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}</span>}
                                     </button>
                                     <a
                                         href={movie.link}
@@ -1913,20 +1919,26 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             background: 'rgba(255,255,255,0.03)',
                                             border: '1px solid rgba(255,255,255,0.08)',
                                             color: '#fff',
-                                            padding: '12px 28px',
+                                            padding: isHideBtnHovered ? '0 16px' : '0 28px',
                                             fontSize: '0.95rem',
                                             fontWeight: '600',
                                             borderRadius: '10px',
                                             cursor: 'pointer',
-                                            transition: 'all 0.2s',
+                                            transition: 'all 0.3s ease',
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             gap: '6px',
                                             textDecoration: 'none',
+                                            height: '46px',
+                                            overflow: 'hidden',
+                                            whiteSpace: 'nowrap',
+                                            flex: '0 0 auto'
                                         }}
+                                        title="Watch on HDRezka"
                                     >
-                                        Watch on HDRezka 🌐
+                                        <span style={{ fontSize: '1.1rem' }}>🌐</span>
+                                        {!isHideBtnHovered && <span>Watch on HDRezka</span>}
                                     </a>
                                     {movie.id && (
                                         <button
@@ -1936,17 +1948,18 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                                 background: 'rgba(239, 68, 68, 0.08)',
                                                 border: '1px solid rgba(239, 68, 68, 0.2)',
                                                 color: '#ff6b6b',
-                                                padding: '12px 18px',
-                                                fontSize: '0.95rem',
+                                                padding: '0 18px',
+                                                fontSize: '1.1rem',
                                                 fontWeight: '600',
                                                 borderRadius: '10px',
                                                 cursor: 'pointer',
-                                                transition: 'all 0.2s',
+                                                transition: 'all 0.3s ease',
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 gap: '6px',
-                                                flex: '0 0 auto'
+                                                flex: '0 0 auto',
+                                                height: '46px'
                                             }}
                                             title="Delete Movie"
                                         >
@@ -1966,7 +1979,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                                 background: isHideBtnHovered ? 'rgba(255, 152, 0, 0.2)' : 'rgba(255,255,255,0.05)',
                                                 border: isHideBtnHovered ? '1px solid #ff9800' : '1px solid rgba(255,255,255,0.15)',
                                                 color: isHideBtnHovered ? '#ff9800' : '#fff',
-                                                padding: '12px',
+                                                padding: '0 16px',
                                                 fontSize: '0.95rem',
                                                 fontWeight: '600',
                                                 borderRadius: '10px',
@@ -1978,6 +1991,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                                 gap: '8px',
                                                 flex: '0 0 auto',
                                                 width: isHideBtnHovered ? '160px' : '52px',
+                                                height: '46px',
                                                 overflow: 'hidden',
                                                 whiteSpace: 'nowrap'
                                             }}
