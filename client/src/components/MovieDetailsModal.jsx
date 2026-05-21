@@ -1770,30 +1770,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     <span>Watch on HDRezka</span>
                                 </a>
 
-                                {/* 🗑 Delete button — only for library movies with real id */}
-                                {movie.id && (
-                                    <button
-                                        onClick={() => { onDelete(movie.id); onClose(); }}
-                                        style={{
-                                            background: 'rgba(239, 68, 68, 0.1)',
-                                            border: '1px solid rgba(239, 68, 68, 0.25)',
-                                            color: '#ff6b6b',
-                                            width: '52px',
-                                            height: '52px',
-                                            fontSize: '1.2rem',
-                                            borderRadius: '12px',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            flexShrink: 0,
-                                            transition: 'all 0.2s'
-                                        }}
-                                        title="Delete Movie"
-                                    >
-                                        🗑️
-                                    </button>
-                                )}
+
                             </div>
                         </>
                     )}
@@ -1940,32 +1917,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         <span style={{ fontSize: '1.1rem' }}>🌐</span>
                                         {!isHideBtnHovered && <span>Watch on HDRezka</span>}
                                     </a>
-                                    {movie.id && (
-                                        <button
-                                            onClick={() => { onDelete(movie.id); onClose(); }}
-                                            className="modal-delete-btn"
-                                            style={{
-                                                background: 'rgba(239, 68, 68, 0.08)',
-                                                border: '1px solid rgba(239, 68, 68, 0.2)',
-                                                color: '#ff6b6b',
-                                                padding: '0 18px',
-                                                fontSize: '1.1rem',
-                                                fontWeight: '600',
-                                                borderRadius: '10px',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.3s ease',
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px',
-                                                flex: '0 0 auto',
-                                                height: '46px'
-                                            }}
-                                            title="Delete Movie"
-                                        >
-                                            🗑️
-                                        </button>
-                                    )}
+
                                     {onHideMovie && (
                                         <button
                                             onMouseEnter={() => setIsHideBtnHovered(true)}
