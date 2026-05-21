@@ -472,6 +472,25 @@ app.get('/api/cache/stats', authenticateToken, (req, res) => {
     }
 });
 
+// Get a random high-rated movie for showcase notifications when crawler is idle
+app.get('/api/cache/random', authenticateToken, (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    try {
+        const minRating = parseFloat(req.query.minRating) || 6;
+        const movie = db.prepare(`
+            SELECT * FROM scraped_movies_cache
+            WHERE rating >= ?
+              AND description IS NOT NULL AND description != ''
+              AND poster_url IS NOT NULL
+            ORDER BY RANDOM()
+            LIMIT 1
+        `).get(minRating);
+        res.json(movie || null);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Seedable random number generator (Mulberry32)
 function seedRandom(seedStr) {
     let h = 1779033703 ^ seedStr.length;

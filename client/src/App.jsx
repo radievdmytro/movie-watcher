@@ -53,6 +53,8 @@ function App() {
 
     const [globalCacheCount, setGlobalCacheCount] = useState(0);
     const [latestScrapedMovie, setLatestScrapedMovie] = useState(null);
+    const [popupMovie, setPopupMovie] = useState(null);        // what's actually shown in the popup
+    const [isShowcaseMode, setIsShowcaseMode] = useState(false); // true = random showcase, false = crawler notification
     const [showScrapePopup, setShowScrapePopup] = useState(false);
     const [scrapedDetailsMovie, setScrapedDetailsMovie] = useState(null);
     const [isHoveringBadge, setIsHoveringBadge] = useState(false);
@@ -76,10 +78,16 @@ function App() {
                     if (data.lastScraped) {
                         setLatestScrapedMovie(prev => {
                             if (prev && prev.id !== data.lastScraped.id) {
-                                // New movie fully scraped! Show popup.
+                                // New movie fully scraped by crawler — show crawler popup
+                                setPopupMovie(data.lastScraped);
+                                setIsShowcaseMode(false);
                                 setShowScrapePopup(true);
                                 if (scrapePopupTimer.current) clearTimeout(scrapePopupTimer.current);
                                 scrapePopupTimer.current = setTimeout(() => setShowScrapePopup(false), 5000);
+                            } else if (!prev) {
+                                // First load — silently set popupMovie for hover display
+                                setPopupMovie(data.lastScraped);
+                                setIsShowcaseMode(false);
                             }
                             return data.lastScraped;
                         });
@@ -90,10 +98,40 @@ function App() {
             }
         };
 
+        // 30-second random showcase: fires when no crawler popup is active
+        const fetchRandomShowcase = async () => {
+            if (showScrapePopup) return; // crawler popup already visible — skip
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const res = await fetch(`/api/cache/random?minRating=6&t=${Date.now()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                if (res.ok) {
+                    const movie = await res.json();
+                    if (movie) {
+                        setPopupMovie(movie);
+                        setIsShowcaseMode(true);
+                        setShowScrapePopup(true);
+                        if (scrapePopupTimer.current) clearTimeout(scrapePopupTimer.current);
+                        scrapePopupTimer.current = setTimeout(() => setShowScrapePopup(false), 5000);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to fetch random showcase movie:', err);
+            }
+        };
+
         fetchStats();
-        const interval = setInterval(fetchStats, 5000); // Poll every 5 seconds
+        const statsInterval = setInterval(fetchStats, 5000);
+        const showcaseInterval = setInterval(fetchRandomShowcase, 30000);
+
         return () => {
-            clearInterval(interval);
+            clearInterval(statsInterval);
+            clearInterval(showcaseInterval);
             if (scrapePopupTimer.current) clearTimeout(scrapePopupTimer.current);
         };
     }, [user]);
@@ -837,18 +875,24 @@ function App() {
                                         top: '115%',
                                         right: '0',
                                         width: '290px',
-                                        background: 'rgba(25, 20, 40, 0.88)',
+                                        background: isShowcaseMode
+                                            ? 'rgba(20, 30, 45, 0.9)'
+                                            : 'rgba(25, 20, 40, 0.88)',
                                         backdropFilter: 'blur(20px)',
                                         WebkitBackdropFilter: 'blur(20px)',
-                                        border: '1px solid rgba(168, 85, 247, 0.35)',
+                                        border: isShowcaseMode
+                                            ? '1px solid rgba(212, 175, 55, 0.3)'
+                                            : '1px solid rgba(168, 85, 247, 0.35)',
                                         borderRadius: '16px',
                                         padding: '12px 14px',
-                                        boxShadow: '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 20px rgba(168, 85, 247, 0.15)',
-                                        opacity: (showScrapePopup || isHoveringBadge) && latestScrapedMovie ? 1 : 0,
-                                        transform: (showScrapePopup || isHoveringBadge) && latestScrapedMovie 
+                                        boxShadow: isShowcaseMode
+                                            ? '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 0 20px rgba(212, 175, 55, 0.1)'
+                                            : '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 20px rgba(168, 85, 247, 0.15)',
+                                        opacity: (showScrapePopup || isHoveringBadge) && popupMovie ? 1 : 0,
+                                        transform: (showScrapePopup || isHoveringBadge) && popupMovie 
                                             ? 'translateY(0) scale(1)' 
                                             : 'translateY(-15px) scale(0.92)',
-                                        pointerEvents: (showScrapePopup || isHoveringBadge) && latestScrapedMovie ? 'auto' : 'none',
+                                        pointerEvents: (showScrapePopup || isHoveringBadge) && popupMovie ? 'auto' : 'none',
                                         transition: 'opacity 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
                                         zIndex: 100,
                                         display: 'flex',
@@ -856,22 +900,22 @@ function App() {
                                         gap: '12px',
                                         cursor: 'pointer'
                                     }} onClick={() => {
-                                        if (latestScrapedMovie) setScrapedDetailsMovie(latestScrapedMovie);
+                                        if (popupMovie) setScrapedDetailsMovie(popupMovie);
                                     }}>
-                                        {latestScrapedMovie?.poster_url && (
-                                            <img src={latestScrapedMovie.poster_url} alt="poster" style={{ width: '45px', height: '65px', borderRadius: '8px', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }} />
+                                        {popupMovie?.poster_url && (
+                                            <img src={popupMovie.poster_url} alt="poster" style={{ width: '45px', height: '65px', borderRadius: '8px', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }} />
                                         )}
                                         <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                                            <div style={{ fontSize: '0.72rem', color: '#c084fc', marginBottom: '3px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
-                                                Недавно добавлено:
+                                            <div style={{ fontSize: '0.72rem', color: isShowcaseMode ? 'var(--accent-gold)' : '#c084fc', marginBottom: '3px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
+                                                {isShowcaseMode ? '✨ Рекомендуем:' : 'Недавно добавлено:'}
                                             </div>
                                             <div style={{ fontSize: '0.92rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', lineHeight: '1.2' }}>
-                                                {latestScrapedMovie?.title}
+                                                {popupMovie?.title}
                                             </div>
                                             <div style={{ fontSize: '0.8rem', color: '#aaa', marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                {latestScrapedMovie?.year && <span>{latestScrapedMovie.year}</span>}
-                                                {latestScrapedMovie?.year && latestScrapedMovie?.rating && <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }}></span>}
-                                                {latestScrapedMovie?.rating ? <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>★ {latestScrapedMovie.rating}</span> : null}
+                                                {popupMovie?.year && <span>{popupMovie.year}</span>}
+                                                {popupMovie?.year && popupMovie?.rating && <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }}></span>}
+                                                {popupMovie?.rating ? <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>★ {popupMovie.rating}</span> : null}
                                             </div>
                                         </div>
                                     </div>
