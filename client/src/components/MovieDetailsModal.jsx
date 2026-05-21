@@ -88,6 +88,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
     const [hoverRating, setHoverRating] = useState(0);
     const [isLibraryBtnHovered, setIsLibraryBtnHovered] = useState(false);
+    const [isHideBtnHovered, setIsHideBtnHovered] = useState(false);
     const [savingNotes, setSavingNotes] = useState(false);
     const [savedToastVisible, setSavedToastVisible] = useState(false);
     const [showWatchedPrompt, setShowWatchedPrompt] = useState(openWithWatchedPrompt);
@@ -1954,29 +1955,36 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     )}
                                     {onHideMovie && (
                                         <button
+                                            onMouseEnter={() => setIsHideBtnHovered(true)}
+                                            onMouseLeave={() => setIsHideBtnHovered(false)}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 onHideMovie(movie.link || movie.movie_link);
                                                 onClose();
                                             }}
                                             style={{
-                                                background: 'rgba(255,255,255,0.05)',
-                                                border: '1px solid rgba(255,255,255,0.15)',
-                                                color: '#fff',
-                                                padding: '12px 18px',
+                                                background: isHideBtnHovered ? 'rgba(255, 152, 0, 0.2)' : 'rgba(255,255,255,0.05)',
+                                                border: isHideBtnHovered ? '1px solid #ff9800' : '1px solid rgba(255,255,255,0.15)',
+                                                color: isHideBtnHovered ? '#ff9800' : '#fff',
+                                                padding: '12px',
                                                 fontSize: '0.95rem',
                                                 fontWeight: '600',
                                                 borderRadius: '10px',
                                                 cursor: 'pointer',
-                                                transition: 'all 0.2s',
+                                                transition: 'all 0.3s ease',
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                flex: '0 0 auto'
+                                                gap: '8px',
+                                                flex: '0 0 auto',
+                                                width: isHideBtnHovered ? '160px' : '52px',
+                                                overflow: 'hidden',
+                                                whiteSpace: 'nowrap'
                                             }}
                                             title="Hide from global search"
                                         >
-                                            🚫
+                                            <span style={{ fontSize: '1.1rem' }}>🚫</span>
+                                            {isHideBtnHovered && <span>Hide this film</span>}
                                         </button>
                                     )}
                                 </>
