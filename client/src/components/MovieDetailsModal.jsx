@@ -1898,6 +1898,33 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             🗑️
                                         </button>
                                     )}
+                                    {onHideMovie && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onHideMovie(movie.link || movie.movie_link);
+                                                onClose();
+                                            }}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px solid rgba(255,255,255,0.15)',
+                                                color: '#fff',
+                                                padding: '12px 18px',
+                                                fontSize: '0.95rem',
+                                                fontWeight: '600',
+                                                borderRadius: '10px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                flex: '0 0 auto'
+                                            }}
+                                            title="Hide from global search"
+                                        >
+                                            🚫
+                                        </button>
+                                    )}
                                 </>
                             )}
                     {!isMobile && isTrashMode && (
