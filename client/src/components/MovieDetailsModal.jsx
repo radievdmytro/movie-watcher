@@ -575,9 +575,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 onClick={() => {
                     if (onAddMovie) {
                         onAddMovie(movie.link || movie.movie_link);
-                        if (typeof onClose === 'function') {
-                            onClose();
-                        }
                     }
                 }}
                 style={{
