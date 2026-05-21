@@ -133,7 +133,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     const handleCacheSearchClick = async (type, value) => {
         setCacheSearch({ type, value, movies: [], loading: true });
         try {
-            const res = await fetch(`/api/cache/search?${type}=${encodeURIComponent(value)}`);
+            const res = await fetch(`/api/cache/search-exact?${type}=${encodeURIComponent(value)}`);
             if (res.ok) {
                 const data = await res.json();
                 setCacheSearch({ type, value, movies: data, loading: false });

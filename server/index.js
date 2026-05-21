@@ -774,9 +774,9 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
 });
 
 // ==========================================
-// GLOBAL CACHE SEARCH ENDPOINT
+// GLOBAL CACHE SEARCH ENDPOINT (EXACT/CYRILLIC)
 // ==========================================
-app.get('/api/cache/search', authenticateToken, (req, res) => {
+app.get('/api/cache/search-exact', authenticateToken, (req, res) => {
     const { actor, director, genre, year } = req.query;
 
     let queryStr = 'SELECT * FROM scraped_movies_cache WHERE 1=1';
