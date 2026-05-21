@@ -253,10 +253,26 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     // Lock body scroll when modal is open
     useEffect(() => {
         document.body.style.overflow = 'hidden';
+        
+        // Handle Escape key
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                if (isPosterZoomed) {
+                    setIsPosterZoomed(false);
+                } else if (cacheSearch) {
+                    setCacheSearch(null);
+                } else {
+                    onClose();
+                }
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        
         return () => {
             document.body.style.overflow = '';
+            document.removeEventListener('keydown', handleKeyDown);
         };
-    }, []);
+    }, [onClose, isPosterZoomed, cacheSearch]);
 
     // Autosaved toast fade timer
     useEffect(() => {
