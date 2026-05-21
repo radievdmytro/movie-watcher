@@ -1860,13 +1860,13 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 </>
                             )}
                     {!isMobile && !isTrashMode && !readOnly && (
-                                <>
+                                <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
                                     <button
                                         style={{
                                             background: localStatus === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
                                             border: localStatus === 'watched' ? '1px solid rgba(255,255,255,0.12)' : 'none',
                                             color: localStatus === 'watched' ? '#fff' : '#000',
-                                            padding: isHideBtnHovered ? '0 16px' : '0 28px',
+                                            padding: isHideBtnHovered ? '0' : '0 24px',
                                             fontSize: '0.95rem',
                                             fontWeight: '700',
                                             borderRadius: '10px',
@@ -1876,8 +1876,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            gap: '6px',
+                                            gap: isHideBtnHovered ? '0' : '6px',
                                             height: '46px',
+                                            width: isHideBtnHovered ? '46px' : '185px',
                                             overflow: 'hidden',
                                             whiteSpace: 'nowrap',
                                             flex: '0 0 auto'
@@ -1886,7 +1887,14 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         title={localStatus === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
                                     >
                                         <span style={{ fontSize: '1.1rem' }}>{localStatus === 'watched' ? '⚪' : '⭐'}</span>
-                                        {!isHideBtnHovered && <span>{localStatus === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}</span>}
+                                        <span style={{ 
+                                            opacity: isHideBtnHovered ? 0 : 1, 
+                                            width: isHideBtnHovered ? 0 : 'auto',
+                                            transition: 'opacity 0.2s ease', 
+                                            pointerEvents: 'none' 
+                                        }}>
+                                            {localStatus === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
+                                        </span>
                                     </button>
                                     <a
                                         href={movie.link}
@@ -1896,7 +1904,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             background: 'rgba(255,255,255,0.03)',
                                             border: '1px solid rgba(255,255,255,0.08)',
                                             color: '#fff',
-                                            padding: isHideBtnHovered ? '0 16px' : '0 28px',
+                                            padding: isHideBtnHovered ? '0' : '0 24px',
                                             fontSize: '0.95rem',
                                             fontWeight: '600',
                                             borderRadius: '10px',
@@ -1905,9 +1913,10 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            gap: '6px',
+                                            gap: isHideBtnHovered ? '0' : '6px',
                                             textDecoration: 'none',
                                             height: '46px',
+                                            width: isHideBtnHovered ? '46px' : '205px',
                                             overflow: 'hidden',
                                             whiteSpace: 'nowrap',
                                             flex: '0 0 auto'
@@ -1915,7 +1924,14 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         title="Watch on HDRezka"
                                     >
                                         <span style={{ fontSize: '1.1rem' }}>🌐</span>
-                                        {!isHideBtnHovered && <span>Watch on HDRezka</span>}
+                                        <span style={{ 
+                                            opacity: isHideBtnHovered ? 0 : 1, 
+                                            width: isHideBtnHovered ? 0 : 'auto',
+                                            transition: 'opacity 0.2s ease', 
+                                            pointerEvents: 'none' 
+                                        }}>
+                                            Watch on HDRezka
+                                        </span>
                                     </a>
 
                                     {onHideMovie && (
@@ -1931,7 +1947,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                                 background: isHideBtnHovered ? 'rgba(255, 152, 0, 0.2)' : 'rgba(255,255,255,0.05)',
                                                 border: isHideBtnHovered ? '1px solid #ff9800' : '1px solid rgba(255,255,255,0.15)',
                                                 color: isHideBtnHovered ? '#ff9800' : '#fff',
-                                                padding: '0 16px',
+                                                padding: isHideBtnHovered ? '0 16px' : '0',
                                                 fontSize: '0.95rem',
                                                 fontWeight: '600',
                                                 borderRadius: '10px',
@@ -1940,9 +1956,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                gap: '8px',
+                                                gap: isHideBtnHovered ? '8px' : '0',
                                                 flex: '0 0 auto',
-                                                width: isHideBtnHovered ? '160px' : '52px',
+                                                width: isHideBtnHovered ? '160px' : '46px',
                                                 height: '46px',
                                                 overflow: 'hidden',
                                                 whiteSpace: 'nowrap'
@@ -1950,10 +1966,17 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             title="Hide from global search"
                                         >
                                             <span style={{ fontSize: '1.1rem' }}>🚫</span>
-                                            {isHideBtnHovered && <span>Hide this film</span>}
+                                            <span style={{ 
+                                                opacity: isHideBtnHovered ? 1 : 0, 
+                                                width: isHideBtnHovered ? 'auto' : 0,
+                                                transition: 'opacity 0.3s ease', 
+                                                pointerEvents: 'none' 
+                                            }}>
+                                                Hide this film
+                                            </span>
                                         </button>
                                     )}
-                                </>
+                                </div>
                             )}
                     {!isMobile && isTrashMode && (
                                 <button
