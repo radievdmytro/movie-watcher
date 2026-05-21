@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
 import { createPortal } from 'react-dom';
 import MovieDetailsModal from './MovieDetailsModal';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 const Checkbox = ({ checked, onChange, style }) => (
     <label className="custom-checkbox" style={style} onClick={(e) => e.stopPropagation()}>
@@ -453,6 +454,7 @@ const CardRatingButton = ({ movie, onUpdateRating }) => {
     );
 };
 
+
 const GlobalHideButton = ({ link, onHide, offsetRight = 10, onHoverEnter, onHoverLeave }) => (
     <button
         type="button"
@@ -499,6 +501,8 @@ const GlobalHideButton = ({ link, onHide, offsetRight = 10, onHoverEnter, onHove
 );
 
 function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, highlightedLink, onGuestActivity }) {
+    const [gridRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
+    const [listRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
     const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
     const [sortDir, setSortDir] = useState(() => localStorage.getItem('movieGrid_sortDir') || 'desc');
     const [localRatings, setLocalRatings] = useState({});
@@ -2383,7 +2387,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             </>
 
             {viewMode === 'grid' ? (
-                <div className="movie-grid-container" style={{
+                <div className="movie-grid-container" ref={gridRef} style={{
                     display: 'grid',
                     gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
                     gap: '25px'
@@ -3093,7 +3097,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     </div>
 
                     {/* 3. Infinite Scrolling Grid */}
-                    <div className="movie-grid-container" style={{
+                    <div className="movie-grid-container" ref={listRef} style={{
                         display: 'grid',
                         gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
                         gap: '25px'
