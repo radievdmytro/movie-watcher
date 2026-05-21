@@ -576,7 +576,7 @@ function AdminDashboard({ onBack }) {
                                 background: 'rgba(0, 0, 0, 0.25)',
                                 padding: '15px 20px',
                                 borderRadius: '10px',
-                                border: '1px solid rgba(255, 255, 255, 0.03)'
+                                border: crawlerSettings.blockedUntil ? '1px solid rgba(251, 146, 60, 0.4)' : '1px solid rgba(255, 255, 255, 0.03)'
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
                                     <span style={{ color: '#888' }}>Total Global Cache:</span>
@@ -592,6 +592,51 @@ function AdminDashboard({ onBack }) {
                                     <span style={{ color: '#888' }}>Average delay:</span>
                                     <span style={{ color: '#aaa' }}>{((3600 / crawlerSettings.ratePerHour)).toFixed(0)} seconds</span>
                                 </div>
+
+                                {/* Consecutive error counter */}
+                                {crawlerSettings.enabled && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                                        <span style={{ color: '#888' }}>Error streak:</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            {[1,2,3,4,5].map(i => (
+                                                <div key={i} style={{
+                                                    width: '10px', height: '10px', borderRadius: '50%',
+                                                    background: (crawlerSettings.consecutiveErrors || 0) >= i
+                                                        ? (crawlerSettings.consecutiveErrors >= 5 ? '#fb923c' : '#facc15')
+                                                        : 'rgba(255,255,255,0.1)',
+                                                    transition: 'background 0.3s'
+                                                }} />
+                                            ))}
+                                            <span style={{ color: (crawlerSettings.consecutiveErrors || 0) >= 5 ? '#fb923c' : '#aaa', fontSize: '0.8rem' }}>
+                                                {crawlerSettings.consecutiveErrors || 0}/5
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Auto-pause alert banner */}
+                                {crawlerSettings.blockedUntil && (
+                                    <div style={{
+                                        background: 'rgba(251, 146, 60, 0.1)',
+                                        border: '1px solid rgba(251, 146, 60, 0.4)',
+                                        borderRadius: '8px',
+                                        padding: '8px 12px',
+                                        fontSize: '0.8rem',
+                                        color: '#fb923c',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}>
+                                        <span style={{ fontSize: '1rem' }}>⏸</span>
+                                        <div>
+                                            <div style={{ fontWeight: 700 }}>Auto-paused (IP block detected)</div>
+                                            <div style={{ color: '#aaa', marginTop: '2px' }}>
+                                                Resuming at {new Date(crawlerSettings.blockedUntil).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '5px' }}>
                                     <span style={{ color: '#888', fontSize: '0.8rem', fontWeight: 600 }}>Live Crawler Status:</span>
                                     <div style={{
@@ -600,8 +645,8 @@ function AdminDashboard({ onBack }) {
                                         borderRadius: '6px',
                                         fontFamily: 'monospace',
                                         fontSize: '0.82rem',
-                                        color: crawlerSettings.enabled ? '#03dac6' : '#888',
-                                        borderLeft: crawlerSettings.enabled ? '3px solid #03dac6' : '3px solid #555',
+                                        color: crawlerSettings.blockedUntil ? '#fb923c' : (crawlerSettings.enabled ? '#03dac6' : '#888'),
+                                        borderLeft: crawlerSettings.blockedUntil ? '3px solid #fb923c' : (crawlerSettings.enabled ? '3px solid #03dac6' : '3px solid #555'),
                                         wordBreak: 'break-all',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',

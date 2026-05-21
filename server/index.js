@@ -2451,7 +2451,9 @@ let crawlerSettings = {
     enabled: false,
     ratePerHour: 60,
     currentPage: 1,
-    currentStatus: 'Idle'
+    currentStatus: 'Idle',
+    consecutiveErrors: 0,  // auto-resets on success
+    blockedUntil: null     // ISO timestamp — if set, crawler is paused until this time
 };
 
 // Load settings
@@ -2479,10 +2481,32 @@ const saveCrawlerSettings = () => {
     }
 };
 
+const CRAWLER_AUTO_PAUSE_THRESHOLD = 5;   // consecutive errors before auto-pause
+const CRAWLER_AUTO_PAUSE_MS = 15 * 60 * 1000; // 15 minutes
+
 async function runCrawlerStep() {
     if (!crawlerSettings.enabled) {
         crawlerSettings.currentStatus = 'Idle (Disabled)';
         return;
+    }
+
+    // --- Auto-pause guard: check if we are currently in a blocked/cooling-off period ---
+    if (crawlerSettings.blockedUntil) {
+        const remaining = new Date(crawlerSettings.blockedUntil) - Date.now();
+        if (remaining > 0) {
+            const mins = Math.ceil(remaining / 60000);
+            crawlerSettings.currentStatus = `⏸ Auto-paused (IP block detected). Resuming in ${mins} min...`;
+            console.log(`[Crawler] Still in auto-pause. Resuming in ${mins} min.`);
+            // Re-check every 60 seconds until the pause expires
+            crawlerTimeoutId = setTimeout(() => runCrawlerStep(), 60000);
+            return;
+        } else {
+            // Pause expired — reset and resume
+            crawlerSettings.blockedUntil = null;
+            crawlerSettings.consecutiveErrors = 0;
+            crawlerSettings.currentStatus = 'Resuming after auto-pause...';
+            console.log('[Crawler] Auto-pause expired. Resuming crawl.');
+        }
     }
 
     try {
@@ -2585,6 +2609,9 @@ async function runCrawlerStep() {
             const details = await getMovieDetails(targetMovie.link);
             if (details) {
                 saveToCache(details);
+                // ✅ Success — reset the consecutive error counter
+                crawlerSettings.consecutiveErrors = 0;
+                crawlerSettings.blockedUntil = null;
                 console.log(`[Crawler] Successfully crawled details for: ${details.title}`);
                 crawlerSettings.currentStatus = `Idle. Crawled: "${details.title}"`;
                 
@@ -2599,7 +2626,22 @@ async function runCrawlerStep() {
 
     } catch (err) {
         console.error('[Crawler Loop Error]', err.message);
-        crawlerSettings.currentStatus = `Error: ${err.message}`;
+        crawlerSettings.consecutiveErrors = (crawlerSettings.consecutiveErrors || 0) + 1;
+        console.warn(`[Crawler] Consecutive errors: ${crawlerSettings.consecutiveErrors}/${CRAWLER_AUTO_PAUSE_THRESHOLD}`);
+
+        if (crawlerSettings.consecutiveErrors >= CRAWLER_AUTO_PAUSE_THRESHOLD) {
+            // 🚨 Too many consecutive failures — auto-pause to protect the IP
+            const resumeAt = new Date(Date.now() + CRAWLER_AUTO_PAUSE_MS);
+            crawlerSettings.blockedUntil = resumeAt.toISOString();
+            const resumeStr = resumeAt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            crawlerSettings.currentStatus = `⚠️ IP block detected (${crawlerSettings.consecutiveErrors} errors). Auto-paused for 15 min. Resume at ${resumeStr}.`;
+            console.error(`[Crawler] 🚨 Auto-paused until ${resumeAt.toISOString()} due to ${crawlerSettings.consecutiveErrors} consecutive errors.`);
+            // Schedule re-check after the pause
+            crawlerTimeoutId = setTimeout(() => runCrawlerStep(), CRAWLER_AUTO_PAUSE_MS);
+            return;
+        } else {
+            crawlerSettings.currentStatus = `Error (${crawlerSettings.consecutiveErrors}/${CRAWLER_AUTO_PAUSE_THRESHOLD}): ${err.message}`;
+        }
     }
 
     // Schedule next run
@@ -2868,7 +2910,9 @@ app.get('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, re
             ratePerHour: crawlerSettings.ratePerHour,
             currentStatus: crawlerSettings.currentStatus,
             totalCached: db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count,
-            partiallyScraped: db.prepare("SELECT COUNT(*) as count FROM scraped_movies_cache WHERE description IS NULL OR description = ''").get().count
+            partiallyScraped: db.prepare("SELECT COUNT(*) as count FROM scraped_movies_cache WHERE description IS NULL OR description = ''").get().count,
+            consecutiveErrors: crawlerSettings.consecutiveErrors || 0,
+            blockedUntil: crawlerSettings.blockedUntil || null
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -2881,6 +2925,13 @@ app.post('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, r
         if (enabled !== undefined) crawlerSettings.enabled = !!enabled;
         if (ratePerHour !== undefined) {
             crawlerSettings.ratePerHour = Math.max(1, Math.min(600, parseInt(ratePerHour) || 60));
+        }
+
+        // If admin manually re-enables the crawler, clear any existing auto-pause block
+        if (enabled === true) {
+            crawlerSettings.consecutiveErrors = 0;
+            crawlerSettings.blockedUntil = null;
+            console.log('[Crawler] Auto-pause cleared by admin re-enable.');
         }
 
         saveCrawlerSettings();
