@@ -2480,6 +2480,15 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             objectFit: 'cover'
                                         }}
                                     />
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        background: hoveredHideGlobalLink === movie.link ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
+                                        backdropFilter: hoveredHideGlobalLink === movie.link ? 'blur(10px)' : 'none',
+                                        WebkitBackdropFilter: hoveredHideGlobalLink === movie.link ? 'blur(10px)' : 'none',
+                                        transition: 'all 0.3s ease',
+                                        pointerEvents: 'none',
+                                        zIndex: 1
+                                    }} />
                                     {searchDb === 'cache' && (
                                         <GlobalHideButton
                                             link={movie.link}
@@ -3160,6 +3169,17 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         }}
                                         loading="lazy"
                                     />
+                                    
+                                    {/* Hide blur overlay */}
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        background: hoveredHideGlobalLink === movie.link ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
+                                        backdropFilter: hoveredHideGlobalLink === movie.link ? 'blur(10px)' : 'none',
+                                        WebkitBackdropFilter: hoveredHideGlobalLink === movie.link ? 'blur(10px)' : 'none',
+                                        transition: 'all 0.3s ease',
+                                        pointerEvents: 'none',
+                                        zIndex: 1
+                                    }} />
                                     <GlobalHideButton
                                         link={movie.link}
                                         onHide={handleHideGlobalMovie}
