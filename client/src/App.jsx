@@ -58,6 +58,8 @@ function App() {
     const [showScrapePopup, setShowScrapePopup] = useState(false);
     const [scrapedDetailsMovie, setScrapedDetailsMovie] = useState(null);
     const [isHoveringBadge, setIsHoveringBadge] = useState(false);
+    const [guestLimitReached, setGuestLimitReached] = useState(false);
+
     const scrapePopupTimer = useRef(null);
     const showcaseCounter = useRef(0); // counts showcase fires to trigger 'top' every 4th
 
@@ -344,15 +346,27 @@ function App() {
         verifyToken();
     }, []);
 
-    // Auto-show Guest Welcome Tooltip for exactly 10 seconds
+    // Auto-show Guest Welcome Tooltip for exactly 10 seconds & track reloads
     useEffect(() => {
         if (user && user.username.startsWith('guest_')) {
-            setGuestTooltipText("👋 You are browsing as a Guest. Log in or register to save your movies permanently!");
-            setShowGuestTooltip(true);
-            const timer = setTimeout(() => {
-                setShowGuestTooltip(false);
-            }, 10000); // 10 seconds popover!
-            return () => clearTimeout(timer);
+            // Track reloads
+            let reloads = parseInt(localStorage.getItem('guest_reloads') || '0');
+            reloads += 1;
+            localStorage.setItem('guest_reloads', reloads);
+
+            if (reloads >= 6) {
+                setGuestLimitReached(true);
+                setIsAuthModalOpen(true);
+                setGuestTooltipText("🚨 Вы превысили лимит просмотров для гостей. Зарегистрируйтесь, чтобы продолжить!");
+                setShowGuestTooltip(true);
+            } else {
+                setGuestTooltipText("👋 You are browsing as a Guest. Log in or register to save your movies permanently!");
+                setShowGuestTooltip(true);
+                const timer = setTimeout(() => {
+                    setShowGuestTooltip(false);
+                }, 10000); // 10 seconds popover!
+                return () => clearTimeout(timer);
+            }
         }
     }, [user]);
 
@@ -1073,6 +1087,10 @@ function App() {
                                     trashButtonRef={trashButtonRef}
                                     isTrashMode={currentView === 'trash'}
                                     isWatchedView={currentView === 'watched'}
+                                    isGuest={user?.username?.startsWith('guest_')}
+                                    guestLimitReached={guestLimitReached}
+                                    onRegisterClick={() => setIsAuthModalOpen(true)}
+                                    emptyMessage={currentView === 'library' ? 'Your library is empty.' : currentView === 'watched' ? 'Watched list is empty.' : 'Trash is empty.'}
                                     highlightedLink={highlightedMovieLink}
                                     onGuestActivity={triggerGuestActivity}
                                     onAddToCollectionClick={setCollectionMovie}

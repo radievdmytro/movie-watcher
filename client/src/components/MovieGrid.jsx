@@ -522,7 +522,7 @@ const GlobalHideButton = ({ link, onHide, offsetRight = 10, onHoverEnter, onHove
     </button>
 );
 
-function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, highlightedLink, onGuestActivity, onAddToCollectionClick }) {
+function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, guestLimitReached, isGuest, onRegisterClick, highlightedLink, onGuestActivity, onAddToCollectionClick }) {
     const [gridRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
     const [listRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
     const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
@@ -945,6 +945,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     }, [movies, sortField, sortDir, deferredFilterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields, localHiddenGlobalLinks]);
 
     const filteredOnboardingCacheMovies = useMemo(() => {
+        if (guestLimitReached) return [];
+
         let base = onboardingCacheMovies;
         
         if (uniqueBackgroundCacheResults.length > 0) {
@@ -2077,7 +2079,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     )}
                                 </button>
 
-                                {hideWatched && (
+                                {hideWatched && !guestLimitReached && (
                                     <label style={{
                                         display: 'flex',
                                         alignItems: 'center',
@@ -3682,8 +3684,45 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         })}
                     </motion.div>
 
-                    {/* Onboarding Infinite Scroll Sentinel */}
-                    {hasMoreOnboarding && (
+                    {/* Onboarding Infinite Scroll Sentinel or Guest CTA */}
+                    {isGuest && !hasMoreOnboarding && filteredOnboardingCacheMovies.length > 0 ? (
+                        <div style={{
+                            gridColumn: '1 / -1',
+                            padding: '100px 20px 40px',
+                            textAlign: 'center',
+                            background: 'linear-gradient(to top, rgba(15, 15, 20, 1) 20%, rgba(15, 15, 20, 0) 100%)',
+                            marginTop: '-120px',
+                            position: 'relative',
+                            zIndex: 10,
+                            borderRadius: '0 0 16px 16px',
+                            pointerEvents: 'auto'
+                        }}>
+                            <h3 style={{ color: '#fff', marginBottom: '12px', fontSize: '1.4rem' }}>Вы посмотрели демо-выборку</h3>
+                            <p style={{ color: '#aaa', marginBottom: '25px', fontSize: '0.95rem', maxWidth: '400px', margin: '0 auto 25px' }}>
+                                В нашей базе тысячи отличных фильмов. Зарегистрируйтесь, чтобы получить полный доступ и сохранять фильмы в свою библиотеку!
+                            </p>
+                            <button
+                                onClick={onRegisterClick}
+                                className="btn"
+                                style={{
+                                    background: 'var(--accent-gold)',
+                                    color: '#000',
+                                    padding: '14px 35px',
+                                    fontSize: '1rem',
+                                    fontWeight: '800',
+                                    borderRadius: '30px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 20px rgba(212, 175, 55, 0.4)',
+                                    transition: 'transform 0.2s, box-shadow 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            >
+                                Зарегистрироваться
+                            </button>
+                        </div>
+                    ) : hasMoreOnboarding && (
                         <div ref={onboardingSentinelRef} style={{
                             gridColumn: '1 / -1',
                             display: 'flex',

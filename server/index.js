@@ -538,9 +538,16 @@ function seedShuffle(array, seed) {
 // Get paginated cache directory for sparse library view
 app.get('/api/cache/directory', authenticateToken, (req, res) => {
     try {
-        const limit = parseInt(req.query.limit) || 50;
+        let limit = parseInt(req.query.limit) || 50;
         const offset = parseInt(req.query.offset) || 0;
         const seed = req.query.seed || 'default_seed';
+
+        // Enforce guest limit to 30 items max
+        const isGuest = req.user && req.user.username && req.user.username.startsWith('guest_');
+        if (isGuest) {
+            if (offset >= 30) return res.json([]);
+            limit = Math.min(limit, 30 - offset);
+        }
 
         // 1. Fetch all eligible cached movies
         const rows = db.prepare(`
@@ -678,7 +685,9 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
             }
         }
         
-        sql += ' ORDER BY updated_at DESC LIMIT 150';
+        const isGuest = req.user && req.user.username && req.user.username.startsWith('guest_');
+        const limit = isGuest ? 30 : 150;
+        sql += ` ORDER BY updated_at DESC LIMIT ${limit}`;
         
         const start = performance.now();
         const stmt = db.prepare(sql);
