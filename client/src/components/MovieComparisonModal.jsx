@@ -236,7 +236,11 @@ export default function MovieComparisonModal({
                                         <button 
                                             onClick={() => {
                                                 const linkToRemove = activeLinks[idx];
-                                                setActiveLinks(prev => prev.filter((_, i) => i !== idx));
+                                                const remaining = activeLinks.filter((_, i) => i !== idx);
+                                                if (remaining.length < 2) {
+                                                    onClose();
+                                                }
+                                                setActiveLinks(remaining);
                                                 onRemoveLink?.(linkToRemove);
                                             }}
                                             style={{
