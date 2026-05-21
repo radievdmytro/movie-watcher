@@ -2776,7 +2776,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         } else if (isCardHovered && !isBtnHovered) {
                                                             text = 'Details';
                                                         } else if (isBtnHovered && !isMobile) {
-                                                            text = movie.status === 'watched' ? 'Mark Unwatched' : 'Mark Watched';
+                                                            const isSmall = posterSize <= 180;
+                                                            text = movie.status === 'watched' ? (isSmall ? 'Unwatched' : 'Mark Unwatched') : (isSmall ? 'Watched' : 'Mark Watched');
                                                         } else if (movie.status === 'watched') {
                                                             text = movie.user_rating ? `★ ${movie.user_rating}` : '✔ Watched';
                                                         } else {
