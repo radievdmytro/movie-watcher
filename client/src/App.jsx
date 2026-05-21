@@ -52,6 +52,11 @@ function App() {
     const [activityCount, setActivityCount] = useState(0);
 
     const [globalCacheCount, setGlobalCacheCount] = useState(0);
+    const [latestScrapedMovie, setLatestScrapedMovie] = useState(null);
+    const [showScrapePopup, setShowScrapePopup] = useState(false);
+    const [scrapedDetailsMovie, setScrapedDetailsMovie] = useState(null);
+    const [isHoveringBadge, setIsHoveringBadge] = useState(false);
+    const scrapePopupTimer = useRef(null);
 
     useEffect(() => {
         if (!user) return;
@@ -65,6 +70,17 @@ function App() {
                 if (res.ok) {
                     const data = await res.json();
                     setGlobalCacheCount(data.totalCached);
+                    if (data.lastScraped) {
+                        setLatestScrapedMovie(prev => {
+                            if (!prev || prev.id !== data.lastScraped.id) {
+                                // New movie fully scraped! Show popup.
+                                setShowScrapePopup(true);
+                                if (scrapePopupTimer.current) clearTimeout(scrapePopupTimer.current);
+                                scrapePopupTimer.current = setTimeout(() => setShowScrapePopup(false), 5000);
+                            }
+                            return data.lastScraped;
+                        });
+                    }
                 }
             } catch (err) {
                 console.error('Failed to fetch cache stats:', err);
@@ -73,7 +89,10 @@ function App() {
 
         fetchStats();
         const interval = setInterval(fetchStats, 5000); // Poll every 5 seconds
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            if (scrapePopupTimer.current) clearTimeout(scrapePopupTimer.current);
+        };
     }, [user]);
 
     useEffect(() => {
@@ -768,39 +787,85 @@ function App() {
 
                             {globalCacheCount > 0 && (
                                 <div 
-                                    className="global-cache-badge glass-panel" 
-                                    style={{
-                                        fontSize: '0.8rem',
-                                        color: '#c084fc',
-                                        background: 'rgba(168, 85, 247, 0.08)',
-                                        border: '1px solid rgba(168, 85, 247, 0.25)',
-                                        padding: '6px 14px',
-                                        borderRadius: '20px',
+                                    style={{ position: 'relative' }}
+                                    onMouseEnter={() => setIsHoveringBadge(true)}
+                                    onMouseLeave={() => setIsHoveringBadge(false)}
+                                >
+                                    <div 
+                                        className="global-cache-badge glass-panel" 
+                                        style={{
+                                            fontSize: '0.8rem',
+                                            color: '#c084fc',
+                                            background: 'rgba(168, 85, 247, 0.08)',
+                                            border: '1px solid rgba(168, 85, 247, 0.25)',
+                                            padding: '6px 14px',
+                                            borderRadius: '20px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            fontWeight: 'bold',
+                                            boxShadow: '0 0 10px rgba(168, 85, 247, 0.05)',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            animation: 'pulse 3s infinite alternate'
+                                        }}
+                                        onClick={() => { if (user?.username?.toLowerCase() === 'radev') setCurrentView('admin'); }}
+                                    >
+                                        <span 
+                                            className="live-pulse"
+                                            style={{ 
+                                                width: '6px', 
+                                                height: '6px', 
+                                                background: '#c084fc', 
+                                                borderRadius: '50%',
+                                                display: 'inline-block',
+                                                boxShadow: '0 0 8px #c084fc',
+                                                animation: 'blink 1.5s infinite'
+                                            }} 
+                                        />
+                                        <span>🎬 {globalCacheCount.toLocaleString()} in DB</span>
+                                    </div>
+                                    
+                                    {/* The Latest Scraped Notification Popup */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '110%',
+                                        right: '0',
+                                        width: '280px',
+                                        background: 'rgba(20, 20, 30, 0.95)',
+                                        backdropFilter: 'blur(10px)',
+                                        border: '1px solid rgba(168, 85, 247, 0.4)',
+                                        borderRadius: '12px',
+                                        padding: '10px 12px',
+                                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(168, 85, 247, 0.2)',
+                                        opacity: (showScrapePopup || isHoveringBadge) && latestScrapedMovie ? 1 : 0,
+                                        transform: (showScrapePopup || isHoveringBadge) && latestScrapedMovie ? 'translateY(0)' : 'translateY(-10px)',
+                                        pointerEvents: (showScrapePopup || isHoveringBadge) && latestScrapedMovie ? 'auto' : 'none',
+                                        transition: 'opacity 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                        zIndex: 100,
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '6px',
-                                        fontWeight: 'bold',
-                                        boxShadow: '0 0 10px rgba(168, 85, 247, 0.05)',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        animation: 'pulse 3s infinite alternate'
-                                    }}
-                                    onClick={() => { if (user?.username?.toLowerCase() === 'radev') setCurrentView('admin'); }}
-                                    title="Global Database Movie Count (Updates in real-time)"
-                                >
-                                    <span 
-                                        className="live-pulse"
-                                        style={{ 
-                                            width: '6px', 
-                                            height: '6px', 
-                                            background: '#c084fc', 
-                                            borderRadius: '50%',
-                                            display: 'inline-block',
-                                            boxShadow: '0 0 8px #c084fc',
-                                            animation: 'blink 1.5s infinite'
-                                        }} 
-                                    />
-                                    <span>🎬 {globalCacheCount.toLocaleString()} in DB</span>
+                                        gap: '12px',
+                                        cursor: 'pointer'
+                                    }} onClick={() => {
+                                        if (latestScrapedMovie) setScrapedDetailsMovie(latestScrapedMovie);
+                                    }}>
+                                        {latestScrapedMovie?.poster_url && (
+                                            <img src={latestScrapedMovie.poster_url} alt="poster" style={{ width: '45px', height: '65px', borderRadius: '6px', objectFit: 'cover' }} />
+                                        )}
+                                        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                                            <div style={{ fontSize: '0.7rem', color: '#c084fc', marginBottom: '2px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                Парсер добавил:
+                                            </div>
+                                            <div style={{ fontSize: '0.9rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '500', lineHeight: '1.2' }}>
+                                                {latestScrapedMovie?.title}
+                                            </div>
+                                            <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '4px', display: 'flex', gap: '8px' }}>
+                                                {latestScrapedMovie?.year && <span>{latestScrapedMovie.year}</span>}
+                                                {latestScrapedMovie?.rating ? <span style={{ color: 'var(--accent-gold)' }}>★ {latestScrapedMovie.rating}</span> : null}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                             <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '24px', margin: '0 5px' }}></div>
@@ -1013,6 +1078,17 @@ function App() {
                     onUpdate={(id, updates) => {
                         handleUpdate(id, updates);
                         setCompareDetailsMovie(prev => (prev?.id === id ? { ...prev, ...updates } : prev));
+                    }}
+                />
+            )}
+
+            {scrapedDetailsMovie && (
+                <MovieDetailsModal
+                    movie={scrapedDetailsMovie}
+                    onClose={() => setScrapedDetailsMovie(null)}
+                    onUpdate={(id, updates) => {
+                        handleUpdate(id, updates);
+                        setScrapedDetailsMovie(prev => (prev?.id === id ? { ...prev, ...updates } : prev));
                     }}
                 />
             )}

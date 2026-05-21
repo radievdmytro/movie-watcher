@@ -458,7 +458,14 @@ const triggerBackgroundUpdate = (url) => {
 app.get('/api/cache/stats', authenticateToken, (req, res) => {
     try {
         const row = db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get();
-        res.json({ totalCached: row.count });
+        // Get the latest movie that was fully parsed (has description)
+        const lastScraped = db.prepare(`
+            SELECT id, title, poster_url, rating, year, link 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        `).get();
+        res.json({ totalCached: row.count, lastScraped });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
