@@ -359,7 +359,7 @@ const cleanLinkPath = (url) => {
         .split('#')[0];
 };
 
-const CardRatingButton = ({ movie, onUpdateRating }) => {
+const CardRatingButton = ({ movie, onUpdateRating, posterSize = 220 }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [hoverRating, setHoverRating] = useState(0);
     const currentRating = movie.user_rating;
@@ -408,7 +408,7 @@ const CardRatingButton = ({ movie, onUpdateRating }) => {
                     <div 
                         style={{ 
                             display: 'flex', 
-                            gap: '3px', 
+                            gap: posterSize < 180 ? '1px' : '3px', 
                             alignItems: 'center', 
                             justifyContent: 'center', 
                             width: '100%',
@@ -431,7 +431,7 @@ const CardRatingButton = ({ movie, onUpdateRating }) => {
                                     }}
                                     style={{
                                         cursor: 'pointer',
-                                        fontSize: '0.95rem',
+                                        fontSize: posterSize < 180 ? '0.75rem' : '0.95rem',
                                         color: isLit ? '#ffd700' : 'rgba(255,255,255,0.2)',
                                         textShadow: isLit ? '0 0 6px rgba(212,175,55,0.6)' : 'none',
                                         transition: 'transform 0.1s ease',
@@ -2726,6 +2726,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             {movie.status === 'watched' && (movie.id === null || !movie.user_rating) && (
                                                 <CardRatingButton
                                                     movie={movie}
+                                                    posterSize={posterSize}
                                                     onUpdateRating={async (ratingVal) => {
                                                         await onUpdate(movie.id || null, { user_rating: ratingVal, link: movie.link });
                                                     }}
@@ -3378,6 +3379,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             })() && (
                                                 <CardRatingButton
                                                     movie={allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link)) || { ...movie, user_rating: localRatings[movie.link] }}
+                                                    posterSize={posterSize}
                                                     onUpdateRating={async (ratingVal) => {
                                                         const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
                                                         setLocalRatings(prev => ({ ...prev, [movie.link]: ratingVal }));
