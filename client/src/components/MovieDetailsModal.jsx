@@ -244,7 +244,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         setNotes(movie.notes || '');
         setIsPublic(movie.notes_public === 1 || movie.notes_public === true);
         setUserRating(movie.user_rating || 0);
-        setLocalStatus(movie.status || 'want_to_watch');
         if (openWithWatchedPrompt) {
             setActiveTab('reviews');
             setShowWatchedPrompt(true);
