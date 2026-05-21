@@ -551,6 +551,7 @@ function AdminDashboard({ onBack }) {
                                         <option value="45">45 movies / hour (~80 sec delay - Safe)</option>
                                         <option value="60">60 movies / hour (~60 sec delay - Moderate Risk)</option>
                                         <option value="120">120 movies / hour (~30 sec delay - Unsafe without Proxy)</option>
+                                        <option value="240">240 movies / hour (~15 sec delay - Max Speed, Proxy Required)</option>
                                     </select>
                                 </div>
 
