@@ -453,7 +453,7 @@ const CardRatingButton = ({ movie, onUpdateRating }) => {
     );
 };
 
-const GlobalHideButton = ({ link, onHide, offsetRight = 10 }) => (
+const GlobalHideButton = ({ link, onHide, offsetRight = 10, onHoverEnter, onHoverLeave }) => (
     <button
         type="button"
         onClick={(e) => {
@@ -485,11 +485,13 @@ const GlobalHideButton = ({ link, onHide, offsetRight = 10 }) => (
             e.currentTarget.style.transform = 'scale(1.08)';
             e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
             e.currentTarget.style.borderColor = '#ef4444';
+            if (onHoverEnter) onHoverEnter();
         }}
         onMouseLeave={e => {
             e.currentTarget.style.transform = 'scale(1)';
             e.currentTarget.style.background = 'rgba(0, 0, 0, 0.72)';
             e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+            if (onHoverLeave) onHoverLeave();
         }}
     >
         🚫
@@ -528,6 +530,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [openWithWatchedPrompt, setOpenWithWatchedPrompt] = useState(false);
     const [hoveredDescId, setHoveredDescId] = useState(null);
     const [hoveredCardLink, setHoveredCardLink] = useState(null);
+    const [hoveredHideGlobalLink, setHoveredHideGlobalLink] = useState(null);
     const [hoveredButtonLink, setHoveredButtonLink] = useState(null);
     const [hoveredCheckmarkLink, setHoveredCheckmarkLink] = useState(null);
     const [clickedCheckmarkLink, setClickedCheckmarkLink] = useState(null);
@@ -2481,6 +2484,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         <GlobalHideButton
                                             link={movie.link}
                                             onHide={handleHideGlobalMovie}
+                                            onHoverEnter={() => setHoveredHideGlobalLink(movie.link)}
+                                            onHoverLeave={() => setHoveredHideGlobalLink(null)}
                                         />
                                     )}
                                     {/* Top Overlay Controls */}
@@ -3158,6 +3163,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     <GlobalHideButton
                                         link={movie.link}
                                         onHide={handleHideGlobalMovie}
+                                        onHoverEnter={() => setHoveredHideGlobalLink(movie.link)}
+                                        onHoverLeave={() => setHoveredHideGlobalLink(null)}
                                     />
 
                                     {/* Ambient Hover overlay */}
@@ -3242,10 +3249,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             {/* Action Buttons */}
                                             <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
                                                 {(() => {
-                                                     const isSlideActive = (hoveredButtonLink === movie.link) || isCheckmarkHovered;
-                                                     const btnBgRest = isAdded ? 'rgba(3, 218, 198, 0.15)' : 'rgba(168, 85, 247, 0.15)';
-                                                     const btnBorderRest = isAdded ? '#03dac6' : 'rgba(168, 85, 247, 0.4)';
-                                                     const btnColorRest = isAdded ? '#03dac6' : '#c084fc';
+                                                     const isHideBtnHovered = hoveredHideGlobalLink === movie.link;
+                                                     const isSlideActive = (hoveredButtonLink === movie.link) || isCheckmarkHovered || isHideBtnHovered;
+                                                     const btnBgRest = isHideBtnHovered ? 'rgba(255, 152, 0, 0.2)' : (isAdded ? 'rgba(3, 218, 198, 0.15)' : 'rgba(168, 85, 247, 0.15)');
+                                                     const btnBorderRest = isHideBtnHovered ? 'rgba(255, 152, 0, 0.4)' : (isAdded ? '#03dac6' : 'rgba(168, 85, 247, 0.4)');
+                                                     const btnColorRest = isHideBtnHovered ? '#ff9800' : (isAdded ? '#03dac6' : '#c084fc');
                                                      const btnBgHover = isCheckmarkHovered 
                                                          ? 'rgba(3, 218, 198, 0.1)' 
                                                          : (isAdded ? 'rgba(239, 68, 68, 0.2)' : 'rgba(168, 85, 247, 0.3)');
@@ -3305,7 +3313,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                  '--btn-color-rest': btnColorRest,
                                                                  '--btn-color-hover': btnColorHover,
                                                                  '--slide-translate': isSlideActive ? '0%' : '-101%',
-                                                                 boxShadow: hoveredButtonLink === movie.link ? (isAdded ? '0 0 12px rgba(3, 218, 198, 0.3)' : '0 0 12px rgba(168, 85, 247, 0.4)') : 'none',
+                                                                 boxShadow: hoveredButtonLink === movie.link ? (isAdded ? '0 0 12px rgba(3, 218, 198, 0.3)' : '0 0 12px rgba(168, 85, 247, 0.4)') : (isHideBtnHovered ? '0 0 12px rgba(255, 152, 0, 0.2)' : 'none'),
                                                                  transform: hoveredButtonLink === movie.link ? 'scale(1.02)' : 'scale(1)',
                                                                  textAlign: 'center'
                                                              }}
@@ -3317,7 +3325,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                      const isCardHovered = hoveredCardLink === movie.link;
                                                                      
                                                                      let text = '';
-                                                                     if (isCheckmarkHovered) {
+                                                                     if (isHideBtnHovered) {
+                                                                         text = '🚫 Hide film';
+                                                                     } else if (isCheckmarkHovered) {
                                                                          text = isMovieWatched ? 'Mark unwatched ->' : 'Mark watched ->';
                                                                      } else if (isCardHovered && !isBtnHovered) {
                                                                          text = 'Details';
