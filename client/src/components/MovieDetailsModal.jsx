@@ -1866,7 +1866,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             background: localStatus === 'watched' ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
                                             border: localStatus === 'watched' ? '1px solid rgba(255,255,255,0.12)' : 'none',
                                             color: localStatus === 'watched' ? '#fff' : '#000',
-                                            padding: isHideBtnHovered ? '0' : '0 24px',
+                                            padding: '0 24px',
                                             fontSize: '0.95rem',
                                             fontWeight: '700',
                                             borderRadius: '10px',
@@ -1876,9 +1876,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            gap: isHideBtnHovered ? '0' : '6px',
+                                            gap: '6px',
                                             height: '46px',
-                                            width: isHideBtnHovered ? '46px' : '185px',
+                                            width: '185px',
                                             overflow: 'hidden',
                                             whiteSpace: 'nowrap',
                                             flex: '0 0 auto'
@@ -1887,12 +1887,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         title={localStatus === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
                                     >
                                         <span style={{ fontSize: '1.1rem' }}>{localStatus === 'watched' ? '⚪' : '⭐'}</span>
-                                        <span style={{ 
-                                            opacity: isHideBtnHovered ? 0 : 1, 
-                                            width: isHideBtnHovered ? 0 : 'auto',
-                                            transition: 'opacity 0.2s ease', 
-                                            pointerEvents: 'none' 
-                                        }}>
+                                        <span style={{ whiteSpace: 'nowrap' }}>
                                             {localStatus === 'watched' ? 'Mark Unwatched' : 'Mark Watched'}
                                         </span>
                                     </button>
@@ -1904,7 +1899,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             background: 'rgba(255,255,255,0.03)',
                                             border: '1px solid rgba(255,255,255,0.08)',
                                             color: '#fff',
-                                            padding: isHideBtnHovered ? '0' : '0 24px',
+                                            padding: '0 24px',
                                             fontSize: '0.95rem',
                                             fontWeight: '600',
                                             borderRadius: '10px',
@@ -1913,10 +1908,10 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            gap: isHideBtnHovered ? '0' : '6px',
+                                            gap: '6px',
                                             textDecoration: 'none',
                                             height: '46px',
-                                            width: isHideBtnHovered ? '46px' : '205px',
+                                            width: '205px',
                                             overflow: 'hidden',
                                             whiteSpace: 'nowrap',
                                             flex: '0 0 auto'
@@ -1924,12 +1919,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         title="Watch on HDRezka"
                                     >
                                         <span style={{ fontSize: '1.1rem' }}>🌐</span>
-                                        <span style={{ 
-                                            opacity: isHideBtnHovered ? 0 : 1, 
-                                            width: isHideBtnHovered ? 0 : 'auto',
-                                            transition: 'opacity 0.2s ease', 
-                                            pointerEvents: 'none' 
-                                        }}>
+                                        <span style={{ whiteSpace: 'nowrap' }}>
                                             Watch on HDRezka
                                         </span>
                                     </a>
