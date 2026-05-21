@@ -457,6 +457,64 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
         setTimeout(() => setSearchResults(null), 400);
     };
 
+    const handleBulkAddToCollection = async () => {
+        const links = [...selectedLinks];
+        if (!links.length) return;
+        
+        const importedMoviesForCollection = [];
+        const token = localStorage.getItem('token');
+        setLoading(true);
+        setIsFadingLogs(false);
+        const newLogs = [];
+
+        try {
+            for (const url of links) {
+                const localMovie = movies.find(m => m.link === url || m.movie_link === url);
+                if (localMovie) {
+                    importedMoviesForCollection.push(localMovie);
+                } else {
+                    newLogs.push({ msg: `Processing ${url}...`, type: 'info' });
+                    setLogs([...newLogs]);
+
+                    const res = await fetch('/api/movies/import', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ url, hidden_from_library: true })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        importedMoviesForCollection.push(data);
+                    } else if (res.status === 409) {
+                        // Already in list (somehow missed by local check)
+                        const fallbackMovie = movies.find(m => m.link === url || m.movie_link === url);
+                        if (fallbackMovie) importedMoviesForCollection.push(fallbackMovie);
+                    } else {
+                        newLogs.push({ msg: `✗ Failed: ${data.error || 'Unknown error'}`, type: 'error' });
+                        setLogs([...newLogs]);
+                    }
+                }
+            }
+
+            if (importedMoviesForCollection.length > 0) {
+                if (onMovieAdded) onMovieAdded();
+                if (onAddToCollectionClick) onAddToCollectionClick(importedMoviesForCollection);
+            }
+        } catch (err) {
+            newLogs.push({ msg: `✗ Network Error`, type: 'error' });
+            setLogs([...newLogs]);
+        } finally {
+            setLoading(false);
+            setSelectedLinks(new Set());
+            setTimeout(() => {
+                setIsFadingLogs(true);
+                setTimeout(() => {
+                    setLogs([]);
+                    setIsFadingLogs(false);
+                }, 1000);
+            }, 5000);
+        }
+    };
+
     const handleFetchCategory = async (filter) => {
         setLoading(true);
         setPreview(null);
@@ -1018,6 +1076,11 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                     style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap' }}>
                                     ✚ Add Selected ({selectedLinks.size})
                                 </button>
+                                <button onClick={(e) => { e.stopPropagation(); handleBulkAddToCollection(); }}
+                                    className="btn btn-ghost"
+                                    style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap', border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)' }}>
+                                    📁 Add to Collection ({selectedLinks.size})
+                                </button>
                                 {totalCompareCount >= 2 && totalCompareCount <= (isMobile ? 2 : 3) && (
                                     <button onClick={(e) => { e.stopPropagation(); handleCompareClick(); }}
                                         className="btn btn-ghost"
@@ -1578,10 +1641,16 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                     </span>
                                 )}
                                 {selectedLinks.size > 0 && (
-                                    <button onClick={handleAddSelected} className="btn btn-primary" style={{
-                                        padding: '8px 28px', borderRadius: '20px',
-                                        boxShadow: '0 2px 15px rgba(212,175,55,0.35)', fontSize: '0.9rem'
-                                    }}>✚ Add {selectedLinks.size} to Library</button>
+                                    <>
+                                        <button onClick={handleAddSelected} className="btn btn-primary" style={{
+                                            padding: '8px 28px', borderRadius: '20px',
+                                            boxShadow: '0 2px 15px rgba(212,175,55,0.35)', fontSize: '0.9rem'
+                                        }}>✚ Add {selectedLinks.size} to Library</button>
+                                        <button onClick={handleBulkAddToCollection} className="btn btn-ghost" style={{
+                                            padding: '8px 28px', borderRadius: '20px',
+                                            border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', fontSize: '0.9rem'
+                                        }}>📁 Add {selectedLinks.size} to Collection</button>
+                                    </>
                                 )}
                             </div>
                         </div>

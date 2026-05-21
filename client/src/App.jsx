@@ -970,8 +970,8 @@ function App() {
 
             {(showAddToCollection || collectionMovie) && (
                 <AddToCollectionModal
-                    movieIds={showAddToCollection ? selectedIds : [collectionMovie.id].filter(Boolean)}
-                    movies={showAddToCollection ? movies.filter(m => selectedIds.includes(m.id)) : [collectionMovie]}
+                    movieIds={showAddToCollection ? selectedIds : (Array.isArray(collectionMovie) ? collectionMovie.map(m => m.id) : [collectionMovie.id].filter(Boolean))}
+                    movies={showAddToCollection ? movies.filter(m => selectedIds.includes(m.id)) : (Array.isArray(collectionMovie) ? collectionMovie : [collectionMovie])}
                     onClose={() => {
                         setShowAddToCollection(false);
                         setCollectionMovie(null);
