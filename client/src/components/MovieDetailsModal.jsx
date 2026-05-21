@@ -532,7 +532,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             const showRemove = !isMobile && isLibraryBtnHovered;
             const btnText = isMobile ? '✓ Already in my Library' : (showRemove ? '🗑 Remove' : '✓ In My Library');
             
-            return (
+            const libraryBtn = (
                 <button
                     onMouseEnter={() => setIsLibraryBtnHovered(true)}
                     onMouseLeave={() => setIsLibraryBtnHovered(false)}
@@ -575,6 +575,47 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     {btnText}
                 </button>
             );
+
+            if (isMobile) {
+                return (
+                    <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                        {libraryBtn}
+                        <button
+                            onClick={() => {
+                                const actualId = movie.id || libMovieId;
+                                if (actualId) {
+                                    if (onDelete) {
+                                        onDelete(actualId, false, true, false);
+                                    } else if (onRemoveMovie) {
+                                        onRemoveMovie(actualId, movie.link || movie.movie_link);
+                                    }
+                                    if (typeof onClose === 'function') {
+                                        onClose();
+                                    }
+                                }
+                            }}
+                            style={{
+                                background: 'rgba(239, 68, 68, 0.15)',
+                                border: '1px solid rgba(239, 68, 68, 0.5)',
+                                color: '#ef4444',
+                                padding: '0 15px',
+                                fontSize: '1.2rem',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                            }}
+                            title="Remove from Library"
+                        >
+                            🗑
+                        </button>
+                    </div>
+                );
+            }
+
+            return libraryBtn;
         }
         return (
             <button
