@@ -528,14 +528,19 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
     const renderLibraryButton = () => {
         if (isAdded) {
-            const showRemove = isMobile || isLibraryBtnHovered;
+            const showRemove = !isMobile && isLibraryBtnHovered;
+            const btnText = isMobile ? '✓ Already in my Library' : (showRemove ? '🗑 Remove' : '✓ In My Library');
+            
             return (
                 <button
                     onMouseEnter={() => setIsLibraryBtnHovered(true)}
                     onMouseLeave={() => setIsLibraryBtnHovered(false)}
                     onClick={() => {
+                        // On mobile, the delete button is separate, so this button can just be an indicator.
+                        // But if they click it anyway, we can still remove it, or do nothing.
+                        // To be safe, we'll keep the remove logic but they have a dedicated trash button below.
                         const actualId = movie.id || libMovieId;
-                        if (actualId && onRemoveMovie) {
+                        if (actualId && onRemoveMovie && !isMobile) {
                             onRemoveMovie(actualId, movie.link || movie.movie_link);
                             if (typeof onClose === 'function') {
                                 onClose();
@@ -543,54 +548,62 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         }
                     }}
                     style={{
-                        background: showRemove ? 'rgba(239, 68, 68, 0.2)' : 'rgba(3, 218, 198, 0.1)',
-                        border: showRemove ? '1px solid #ef4444' : '1px solid rgba(3, 218, 198, 0.2)',
-                        color: showRemove ? '#ef4444' : '#03dac6',
-                        padding: isMobile ? '8px 10px' : '12px 28px',
-                        fontSize: isMobile ? '0.82rem' : '0.95rem',
+                        background: isMobile ? 'rgba(3, 218, 198, 0.15)' : (showRemove ? 'rgba(239, 68, 68, 0.2)' : 'rgba(3, 218, 198, 0.1)'),
+                        border: isMobile ? '1px solid #03dac6' : (showRemove ? '1px solid #ef4444' : '1px solid rgba(3, 218, 198, 0.2)'),
+                        color: isMobile ? '#03dac6' : (showRemove ? '#ef4444' : '#03dac6'),
+                        padding: isMobile ? '12px 10px' : '12px 28px',
+                        fontSize: isMobile ? '0.85rem' : '0.95rem',
                         fontWeight: '700',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
+                        borderRadius: '12px',
+                        cursor: isMobile ? 'default' : 'pointer',
                         boxShadow: 'none',
                         transition: 'all 0.2s',
-                        display: 'inline-flex',
+                        display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '6px',
+                        width: isMobile ? '100%' : 'auto',
                         flex: isMobile ? '1 1 auto' : '0 0 auto'
                     }}
                 >
-                    {showRemove ? '🗑 Remove' : '✓ In My Library'}
+                    {btnText}
                 </button>
             );
         }
         return (
             <button
+                onClick={() => {
+                    if (onAddMovie) {
+                        onAddMovie(movie.link || movie.movie_link);
+                        if (typeof onClose === 'function') {
+                            onClose();
+                        }
+                    }
+                }}
                 style={{
                     background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
                     border: 'none',
                     color: '#000',
-                    padding: isMobile ? '8px 10px' : '12px 28px',
-                    fontSize: isMobile ? '0.82rem' : '0.95rem',
+                    padding: isMobile ? '12px 10px' : '12px 28px',
+                    fontSize: isMobile ? '0.85rem' : '0.95rem',
                     fontWeight: '700',
-                    borderRadius: '10px',
+                    borderRadius: '12px',
                     cursor: 'pointer',
                     boxShadow: '0 4px 15px rgba(212, 175, 55, 0.25)',
                     transition: 'all 0.2s',
-                    display: 'inline-flex',
+                    display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '6px',
+                    width: isMobile ? '100%' : 'auto',
                     flex: isMobile ? '1 1 auto' : '0 0 auto'
-                }}
-                onClick={() => {
-                    if (onAddMovie) onAddMovie(movie.link || movie.movie_link);
                 }}
             >
                 ➕ Add to Library
             </button>
         );
     };
+
 
     return ReactDOM.createPortal(
         <div
