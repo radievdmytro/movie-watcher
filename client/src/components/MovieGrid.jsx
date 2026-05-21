@@ -1048,6 +1048,20 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         );
     }, [deferredFilterQuery, filterGenres, filterType, filterDirectors, filterActors, filterRating, filterYear]);
 
+    const hasActiveFilterForBgSearch = useMemo(() => {
+        return !!(
+            deferredFilterQuery.trim().length >= 3 ||
+            filterGenres.length > 0 ||
+            filterType !== 'all' ||
+            filterDirectors.length > 0 ||
+            filterActors.length > 0 ||
+            filterRating[0] > 0 ||
+            filterRating[1] < 10 ||
+            filterYear[0] > 1900 ||
+            filterYear[1] < new Date().getFullYear() + 2
+        );
+    }, [deferredFilterQuery, filterGenres, filterType, filterDirectors, filterActors, filterRating, filterYear]);
+
     // Background cache search when integrated cache search is enabled
     useEffect(() => {
         if (searchDb !== 'library') {
@@ -1056,8 +1070,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             return;
         }
 
-        const query = deferredFilterQuery.trim();
-        if (query.length < 3) {
+        if (!hasActiveFilterForBgSearch) {
             setBackgroundCacheResults([]);
             setBackgroundSearchStats(null);
             return;
@@ -1065,8 +1078,21 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
         setIsBgCacheSearching(true);
         const queryParams = new URLSearchParams();
-        queryParams.append('query', query);
+        const query = deferredFilterQuery.trim();
+        if (query.length >= 3) {
+            queryParams.append('query', query);
+        }
         queryParams.append('fields', JSON.stringify(searchFields));
+        
+        if (filterGenres.length > 0) queryParams.append('genres', filterGenres.join(','));
+        if (filterDirectors.length > 0) queryParams.append('directors', filterDirectors.join(','));
+        if (filterActors.length > 0) queryParams.append('actors', filterActors.join(','));
+        queryParams.append('ratingMin', filterRating[0]);
+        queryParams.append('ratingMax', filterRating[1]);
+        queryParams.append('yearMin', filterYear[0]);
+        queryParams.append('yearMax', filterYear[1]);
+        if (filterType !== 'all') queryParams.append('type', filterType);
+        queryParams.append('genreMode', filterGenreMode);
         
         const controller = new AbortController();
 
@@ -1097,7 +1123,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             clearTimeout(delayDebounceFn);
             controller.abort();
         };
-    }, [deferredFilterQuery, searchDb, searchFields]);
+    }, [hasActiveFilterForBgSearch, deferredFilterQuery, searchDb, searchFields, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType]);
 
 
     const { minBoundYear, maxBoundYear } = useMemo(() => {

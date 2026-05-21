@@ -678,26 +678,65 @@ app.delete('/api/hidden-global-movies', authenticateToken, (req, res) => {
 // Global cache search endpoint
 app.get('/api/cache/search', authenticateToken, (req, res) => {
     try {
-        const { actor, director, genre, year, query } = req.query;
+        const { actor, director, genre, year, query, genres, directors, actors, ratingMin, ratingMax, yearMin, yearMax, type, genreMode } = req.query;
         let sql = 'SELECT * FROM scraped_movies_cache WHERE 1=1';
         const params = [];
         
-        if (actor) {
-            sql += ' AND actors LIKE ?';
-            params.push(`%${actor.trim()}%`);
+        // Backward compatibility
+        if (actor) { sql += ' AND actors LIKE ?'; params.push(`%${actor.trim()}%`); }
+        if (director) { sql += ' AND director LIKE ?'; params.push(`%${director.trim()}%`); }
+        if (genre) { sql += ' AND genres LIKE ?'; params.push(`%${genre.trim()}%`); }
+        if (year) { sql += ' AND year = ?'; params.push(parseInt(year) || year); }
+        
+        // Advanced Criteria
+        if (genres) {
+            const genreList = genres.split(',').map(g => g.trim()).filter(Boolean);
+            if (genreList.length > 0) {
+                if (genreMode === 'include') {
+                    genreList.forEach(g => {
+                        sql += ' AND genres LIKE ?';
+                        params.push(`%${g}%`);
+                    });
+                } else {
+                    const genreConds = genreList.map(() => 'genres LIKE ?');
+                    sql += ` AND (${genreConds.join(' OR ')})`;
+                    genreList.forEach(g => params.push(`%${g}%`));
+                }
+            }
         }
-        if (director) {
-            sql += ' AND director LIKE ?';
-            params.push(`%${director.trim()}%`);
+        
+        if (directors) {
+            const dirList = directors.split(',').map(d => d.trim()).filter(Boolean);
+            if (dirList.length > 0) {
+                const dirConds = dirList.map(() => 'director LIKE ?');
+                sql += ` AND (${dirConds.join(' OR ')})`;
+                dirList.forEach(d => params.push(`%${d}%`));
+            }
         }
-        if (genre) {
-            sql += ' AND genres LIKE ?';
-            params.push(`%${genre.trim()}%`);
+
+        if (actors) {
+            const actList = actors.split(',').map(a => a.trim()).filter(Boolean);
+            if (actList.length > 0) {
+                const actConds = actList.map(() => 'actors LIKE ?');
+                sql += ` AND (${actConds.join(' OR ')})`;
+                actList.forEach(a => params.push(`%${a}%`));
+            }
         }
-        if (year) {
-            sql += ' AND year = ?';
-            params.push(parseInt(year) || year);
+        
+        if (ratingMin !== undefined && ratingMin !== '') { sql += ' AND rating >= ?'; params.push(parseFloat(ratingMin)); }
+        if (ratingMax !== undefined && ratingMax !== '') { sql += ' AND rating <= ?'; params.push(parseFloat(ratingMax)); }
+        if (yearMin !== undefined && yearMin !== '') { sql += ' AND year >= ?'; params.push(parseInt(yearMin)); }
+        if (yearMax !== undefined && yearMax !== '') { sql += ' AND year <= ?'; params.push(parseInt(yearMax)); }
+        
+        if (type && type !== 'all') {
+            if (type === 'cartoon') {
+                sql += ' AND (genres LIKE \'%мульт%\' OR genres LIKE \'%анимац%\' OR link LIKE \'%/cartoons/%\' OR link LIKE \'%/animation/%\')';
+            } else {
+                sql += ' AND type = ?';
+                params.push(type);
+            }
         }
+
         if (query) {
             let fieldsObj = { title: true, actor: true, director: true, year: true };
             try { if (req.query.fields) fieldsObj = JSON.parse(req.query.fields); } catch(e) {}
