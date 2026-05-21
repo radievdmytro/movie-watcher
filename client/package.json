@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@formkit/auto-animate": "^0.9.0",
+    "framer-motion": "^12.40.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-draggable": "^4.5.0"

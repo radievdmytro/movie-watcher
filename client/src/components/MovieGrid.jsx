@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
 import { createPortal } from 'react-dom';
 import MovieDetailsModal from './MovieDetailsModal';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { motion } from 'framer-motion';
 
 const Checkbox = ({ checked, onChange, style }) => (
     <label className="custom-checkbox" style={style} onClick={(e) => e.stopPropagation()}>
@@ -2487,12 +2488,15 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             </>
 
             {viewMode === 'grid' ? (
-                <div className="movie-grid-container" ref={gridRef} style={{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
-                    gap: '25px',
-                    transition: 'grid-template-columns 0.3s ease-out'
-                }}>
+                <motion.div
+                    className="movie-grid-container"
+                    ref={gridRef}
+                    layout
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
+                        gap: '25px',
+                    }}>
 
                     {filteredAndSortedMovies.slice(0, visibleCount).map((movie, index) => {
                         const isDeleting = deletingIds.includes(movie.id);
@@ -2540,15 +2544,16 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         const isHighlighted = highlightedLink && movie.link === highlightedLink;
 
                         return (
-                            <div
+                            <motion.div
                                 key={movie.id}
+                                layout
+                                transition={{ layout: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } }}
                                 data-movie-id={movie.id}
                                 data-movie-link={movie.link}
                                 className={`glass-panel movie-card${isHighlighted ? ' movie-highlight-pulse' : ''}`}
                                 style={{
                                     position: isDeleting && animationPhase ? 'fixed' : 'relative',
                                     overflow: 'hidden',
-                                    transition: isDeleting ? 'none' : 'all 0.3s ease-out',
                                     border: isHighlighted
                                         ? '2px solid var(--accent-gold)'
                                         : selectedIds.includes(movie.id)
@@ -2561,7 +2566,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         : '0 4px 20px rgba(0,0,0,0.3)',
                                     transform: isDeleting && animationPhase
                                         ? animStyle.transform
-                                        : 'none',
+                                        : undefined,
                                     aspectRatio: '2/3',
                                     borderRadius: '8px',
                                     ...animStyle
@@ -2905,7 +2910,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         );
                     })}
 
@@ -2914,7 +2919,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     {visibleCount < filteredAndSortedMovies.length && (
                         <div ref={sentinelRef} style={{ height: '50px', width: '100%', gridColumn: '1 / -1' }} />
                     )}
-                </div>
+                </motion.div>
             ) : (
                 <div className="glass-panel" style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -3240,12 +3245,15 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     </div>
 
                     {/* 3. Infinite Scrolling Grid */}
-                    <div className="movie-grid-container" ref={listRef} style={{
-                        display: 'grid',
-                        gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
-                        gap: '25px',
-                        transition: 'grid-template-columns 0.3s ease-out'
-                    }}>
+                    <motion.div
+                        className="movie-grid-container"
+                        ref={listRef}
+                        layout
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
+                            gap: '25px',
+                        }}>
                         {filteredOnboardingCacheMovies.map((movie, idx) => {
                             const isAdded = addedLinks.has(movie.link) || libraryLinks.has(cleanLinkPath(movie.link));
                             const isAdding = addingLinks.has(movie.link);
@@ -3257,8 +3265,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                historyList.find(h => cleanLinkPath(h.movie_link) === cleanLinkPath(movie.link))?.user_rating;
 
                             return (
-                                <div
+                                <motion.div
                                     key={movie.link || idx}
+                                    layout
+                                    transition={{ layout: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } }}
                                     className="movie-card glass-panel"
                                     onClick={() => {
                                         const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
@@ -3298,8 +3308,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         display: 'flex',
                                         flexDirection: 'column',
                                         animation: 'fadeIn 0.4s ease',
-                                        transform: 'none',
-                                        transition: 'all 0.3s ease-out',
                                         cursor: 'pointer'
                                     }}
                                 >
@@ -3669,10 +3677,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </motion.div>
                             );
                         })}
-                    </div>
+                    </motion.div>
 
                     {/* Onboarding Infinite Scroll Sentinel */}
                     {hasMoreOnboarding && (
