@@ -578,6 +578,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         onAddMovie(movie.link || movie.movie_link);
                     }
                 }}
+                onMouseEnter={(e) => { if (!isMobile) { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.02)'; } }}
+                onMouseLeave={(e) => { if (!isMobile) { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'scale(1)'; } }}
                 style={{
                     background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
                     border: 'none',
@@ -588,13 +590,15 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     borderRadius: '12px',
                     cursor: 'pointer',
                     boxShadow: '0 4px 15px rgba(212, 175, 55, 0.25)',
-                    transition: 'all 0.2s',
+                    transition: 'all 0.3s ease',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '6px',
                     width: isMobile ? '100%' : 'auto',
-                    flex: isMobile ? '1 1 auto' : '0 0 auto'
+                    flex: isMobile ? '1 1 auto' : '0 0 auto',
+                    filter: 'brightness(1)',
+                    transform: 'scale(1)'
                 }}
             >
                 ➕ Add to Library
