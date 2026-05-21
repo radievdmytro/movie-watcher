@@ -562,7 +562,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '6px',
-                        width: isMobile ? '100%' : 'auto',
+                        width: isMobile ? '100%' : '180px',
                         flex: isMobile ? '1 1 auto' : '0 0 auto'
                     }}
                 >
