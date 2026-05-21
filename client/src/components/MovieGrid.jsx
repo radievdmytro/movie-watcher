@@ -622,6 +622,20 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [addedLinks, setAddedLinks] = useState(new Set());
     const [localWatchedLinks, setLocalWatchedLinks] = useState(new Set());
 
+    const handleGridDelete = (id, link, forceNoConfirm = false, permanent = true, promptIfNoCollections = true) => {
+        if (link) {
+            setAddedLinks(prev => {
+                const next = new Set(prev);
+                next.delete(link);
+                return next;
+            });
+            setLocalDeletedLinks(prev => new Set([...prev, cleanLinkPath(link)]));
+        }
+        if (onDelete) {
+            onDelete(id, forceNoConfirm, permanent, promptIfNoCollections);
+        }
+    };
+
     const handleAddMovieFromCache = async (link, status = null) => {
         setAddingLinks(prev => new Set([...prev, link]));
         try {
@@ -1373,7 +1387,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     openWithWatchedPrompt={openWithWatchedPrompt}
                     onClose={() => { setSelectedMovie(null); setOpenWithWatchedPrompt(false); }}
                     onUpdate={handleUpdateMovie}
-                    onDelete={onDelete}
+                    onDelete={handleGridDelete}
                     isTrashMode={isTrashMode}
                     readOnly={selectedMovie.readOnly}
                     isAdded={selectedMovie ? (addedLinks.has(selectedMovie.link) || libraryLinks.has(cleanLinkPath(selectedMovie.link))) : false}
@@ -2796,7 +2810,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     }}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        onDelete(movie.id, false, true);
+                                                        handleGridDelete(movie.id, movie.link || movie.movie_link, false, true);
                                                     }}
                                                 >
                                                     🗑
@@ -2982,7 +2996,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    onDelete(movie.id, false, true);
+                                                    handleGridDelete(movie.id, movie.link || movie.movie_link, false, true);
                                                 }}
                                             >
                                                 🗑
