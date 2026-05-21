@@ -379,6 +379,27 @@ const CardRatingButton = ({ movie, onUpdateRating, posterSize = 220 }) => {
                 zIndex: 10
             }}
         >
+            {isHovered && hoverRating > 0 && (
+                <div style={{
+                    position: 'absolute',
+                    top: '-28px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: '#1a1a1a',
+                    color: '#ffd700',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    pointerEvents: 'none',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.6)',
+                    border: '1px solid rgba(212,175,55,0.4)',
+                    zIndex: 20,
+                    whiteSpace: 'nowrap'
+                }}>
+                    {hoverRating}/10
+                </div>
+            )}
             <button
                 className="btn"
                 style={{
