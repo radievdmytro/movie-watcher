@@ -303,6 +303,15 @@ function App() {
 
     // Verify token on startup (with automatic guest account creation if unauthenticated)
     useEffect(() => {
+        const handleGuestResponse = (data) => {
+            if (data.visits >= 6) {
+                setGuestLimitReached(true);
+                setIsAuthModalOpen(true);
+                setGuestTooltipText("🚨 Вы превысили лимит просмотров для гостей. Зарегистрируйтесь, чтобы продолжить!");
+                setShowGuestTooltip(true);
+            }
+        };
+
         const verifyToken = async () => {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -312,6 +321,7 @@ function App() {
                         const guestData = await guestRes.json();
                         localStorage.setItem('token', guestData.token);
                         setUser(guestData.user);
+                        handleGuestResponse(guestData);
                     }
                 } catch (guestErr) {
                     console.error('Failed to create guest session:', guestErr);
@@ -327,6 +337,9 @@ function App() {
                 if (res.ok) {
                     const data = await res.json();
                     setUser(data.user);
+                    if (data.visits) {
+                        handleGuestResponse(data);
+                    }
                 } else {
                     localStorage.removeItem('token');
                     // Automatically get guest session instead of showing login screen
@@ -335,6 +348,7 @@ function App() {
                         const guestData = await guestRes.json();
                         localStorage.setItem('token', guestData.token);
                         setUser(guestData.user);
+                        handleGuestResponse(guestData);
                     }
                 }
             } catch (err) {
@@ -346,29 +360,17 @@ function App() {
         verifyToken();
     }, []);
 
-    // Auto-show Guest Welcome Tooltip for exactly 10 seconds & track reloads
+    // Auto-show Guest Welcome Tooltip for exactly 10 seconds
     useEffect(() => {
-        if (user && user.username.startsWith('guest_')) {
-            // Track reloads
-            let reloads = parseInt(localStorage.getItem('guest_reloads') || '0');
-            reloads += 1;
-            localStorage.setItem('guest_reloads', reloads);
-
-            if (reloads >= 6) {
-                setGuestLimitReached(true);
-                setIsAuthModalOpen(true);
-                setGuestTooltipText("🚨 Вы превысили лимит просмотров для гостей. Зарегистрируйтесь, чтобы продолжить!");
-                setShowGuestTooltip(true);
-            } else {
-                setGuestTooltipText("👋 You are browsing as a Guest. Log in or register to save your movies permanently!");
-                setShowGuestTooltip(true);
-                const timer = setTimeout(() => {
-                    setShowGuestTooltip(false);
-                }, 10000); // 10 seconds popover!
-                return () => clearTimeout(timer);
-            }
+        if (user && user.username.startsWith('guest_') && !guestLimitReached) {
+            setGuestTooltipText("👋 You are browsing as a Guest. Log in or register to save your movies permanently!");
+            setShowGuestTooltip(true);
+            const timer = setTimeout(() => {
+                setShowGuestTooltip(false);
+            }, 10000); // 10 seconds popover!
+            return () => clearTimeout(timer);
         }
-    }, [user]);
+    }, [user, guestLimitReached]);
 
     // Active Usage Trigger
     const triggerGuestActivity = () => {

@@ -12,6 +12,16 @@ db.function('cyrillic_like', (text, pattern) => {
 });
 
 const initDb = () => {
+
+  // Create guest fingerprints table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS guest_fingerprints (
+      fingerprint_hash TEXT PRIMARY KEY,
+      visits INTEGER DEFAULT 0,
+      last_visit DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Create Users Table
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (

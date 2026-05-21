@@ -292,6 +292,30 @@ const updateTelemetry = async (userId, req) => {
     }
 };
 
+const getFingerprintHash = (req) => {
+    const crypto = require('crypto');
+    const ip = getClientIp(req);
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    // Create a deterministic hash combining IP and exact User-Agent string
+    return crypto.createHash('sha256').update(`${ip}-${userAgent}`).digest('hex');
+};
+
+const trackGuestVisit = (req) => {
+    const hash = getFingerprintHash(req);
+    // Upsert fingerprint visit count
+    db.prepare(`
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES (?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    `).run(hash);
+    
+    // Return current visits
+    const row = db.prepare('SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = ?').get(hash);
+    return row ? row.visits : 1;
+};
+
 // Register
 app.post('/api/auth/register', async (req, res) => {
     try {
@@ -363,7 +387,11 @@ app.post('/api/auth/guest', async (req, res) => {
         
         updateTelemetry(userId, req);
         const token = jwt.sign({ id: userId, username: username }, JWT_SECRET, { expiresIn: '30d' });
-        res.json({ token, user: { id: userId, username: username } });
+        
+        // Track visit
+        const visits = trackGuestVisit(req);
+        
+        res.json({ token, user: { id: userId, username: username }, visits });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -371,7 +399,11 @@ app.post('/api/auth/guest', async (req, res) => {
 
 // Get Current User (Me)
 app.get('/api/auth/me', authenticateToken, (req, res) => {
-    res.json({ user: req.user });
+    let visits = null;
+    if (req.user && req.user.username.startsWith('guest_')) {
+        visits = trackGuestVisit(req);
+    }
+    res.json({ user: req.user, visits });
 });
 
 // Helper: Check if URL is HDRezka
