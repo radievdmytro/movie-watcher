@@ -3063,6 +3063,34 @@ app.post('/api/admin/scraped-movies/delete', authenticateToken, requireAdmin, (r
     }
 });
 
+app.post('/api/admin/scraped-movies/refresh', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { links } = req.body;
+        if (!Array.isArray(links) || links.length === 0) {
+            return res.status(400).json({ error: 'No links provided' });
+        }
+        
+        let refreshedCount = 0;
+        for (const link of links) {
+            try {
+                if (isHdrezkaUrl(link)) {
+                    const cleanLinkStr = cleanUrlPath(link);
+                    const details = await getMovieDetails(cleanLinkStr, getUserHeaders(req));
+                    if (details) {
+                        saveToCache(details);
+                        refreshedCount++;
+                    }
+                }
+            } catch (err) {
+                console.error(`[Refresh Error] Failed to refresh ${link}:`, err.message);
+            }
+        }
+        res.json({ success: true, refreshedCount });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Crawler settings endpoints (admin-only)
 app.get('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, res) => {
     try {

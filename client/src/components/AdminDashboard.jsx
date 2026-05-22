@@ -48,7 +48,10 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
         try {
             const res = await fetch('/api/admin/scraped-movies/delete', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                },
                 body: JSON.stringify({ links })
             });
             if (res.ok) {
@@ -62,6 +65,31 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
         } catch (e) {
             console.error('Failed to delete movies:', e);
             alert('Failed to delete movies');
+        }
+    };
+
+    const handleRefreshScrapedMovies = async (links, type) => {
+        if (!window.confirm(`Are you sure you want to refresh ${links.length} movie(s) from HDRezka? This will fetch their latest full info.`)) return;
+        try {
+            const res = await fetch('/api/admin/scraped-movies/refresh', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                },
+                body: JSON.stringify({ links })
+            });
+            if (res.ok) {
+                fetchRecentScraped();
+                if (type === 'fast') setSelectedFastMovies([]);
+                if (type === 'detailed') setSelectedDetailedMovies([]);
+            } else {
+                const data = await res.json();
+                alert(`Error: ${data.error}`);
+            }
+        } catch (e) {
+            console.error('Failed to refresh movies:', e);
+            alert('Failed to refresh movies');
         }
     };
 
@@ -978,13 +1006,20 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     />
                                 </div>
                                 {selectedFastMovies.length > 0 && (
-                                    <button 
-                                        onClick={() => handleDeleteScrapedMovies(selectedFastMovies, 'fast')}
-                                        className="btn"
-                                        style={{ fontSize: '0.8rem', color: '#f87171', background: 'rgba(248, 113, 113, 0.1)', border: '1px solid rgba(248, 113, 113, 0.25)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}
-                                    >
-                                        🗑 Delete ({selectedFastMovies.length})
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button 
+                                            onClick={() => handleRefreshScrapedMovies(selectedFastMovies, 'fast')}
+                                            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                        >
+                                            🔄 Refresh ({selectedFastMovies.length})
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeleteScrapedMovies(selectedFastMovies, 'fast')}
+                                            style={{ background: 'var(--danger)', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                        >
+                                            🗑 Delete ({selectedFastMovies.length})
+                                        </button>
+                                    </div>
                                 )}
                                 <button 
                                     onClick={fetchRecentScraped}
@@ -1100,13 +1135,20 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     />
                                 </div>
                                 {selectedDetailedMovies.length > 0 && (
-                                    <button 
-                                        onClick={() => handleDeleteScrapedMovies(selectedDetailedMovies, 'detailed')}
-                                        className="btn"
-                                        style={{ fontSize: '0.8rem', color: '#f87171', background: 'rgba(248, 113, 113, 0.1)', border: '1px solid rgba(248, 113, 113, 0.25)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}
-                                    >
-                                        🗑 Delete ({selectedDetailedMovies.length})
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button 
+                                            onClick={() => handleRefreshScrapedMovies(selectedDetailedMovies, 'detailed')}
+                                            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                        >
+                                            🔄 Refresh ({selectedDetailedMovies.length})
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeleteScrapedMovies(selectedDetailedMovies, 'detailed')}
+                                            style={{ background: 'var(--danger)', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                        >
+                                            🗑 Delete ({selectedDetailedMovies.length})
+                                        </button>
+                                    </div>
                                 )}
                                 <button 
                                     onClick={fetchRecentScraped}
