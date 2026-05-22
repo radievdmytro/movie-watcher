@@ -46,6 +46,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [refreshState, setRefreshState] = useState({ isRefreshing: false, progress: 0, total: 0, type: null });
     const [showBrokenFast, setShowBrokenFast] = useState(false);
     const [showBrokenDetailed, setShowBrokenDetailed] = useState(false);
+    const [bulkRefreshDelay, setBulkRefreshDelay] = useState(2);
 
     const handleDeleteScrapedMovies = async (links, type) => {
         if (!window.confirm(`Are you sure you want to delete ${links.length} movie(s) from the database?`)) return;
@@ -96,7 +97,8 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                 }
 
                 if (i < links.length - 1) {
-                    await new Promise(r => setTimeout(r, 2000)); // Delay between requests
+                    const delayMs = Math.max(1000, bulkRefreshDelay * 1000 + (Math.random() * 1500));
+                    await new Promise(r => setTimeout(r, delayMs)); // Configurable delay + random jitter
                 }
             } catch (e) {
                 console.error(`Failed to refresh ${links[i]}:`, e);
@@ -1030,6 +1032,16 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     Broken
                                 </label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.85rem', color: '#888' }}>~Delay (s):</span>
+                                    <input 
+                                        type="number" 
+                                        min="1" max="60"
+                                        value={bulkRefreshDelay} 
+                                        onChange={e => setBulkRefreshDelay(parseInt(e.target.value) || 2)} 
+                                        style={{ width: '55px', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff' }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
                                     <input 
                                         type="number" 
@@ -1170,6 +1182,16 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     <input type="checkbox" checked={showBrokenDetailed} onChange={e => setShowBrokenDetailed(e.target.checked)} />
                                     Broken
                                 </label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.85rem', color: '#888' }}>~Delay (s):</span>
+                                    <input 
+                                        type="number" 
+                                        min="1" max="60"
+                                        value={bulkRefreshDelay} 
+                                        onChange={e => setBulkRefreshDelay(parseInt(e.target.value) || 2)} 
+                                        style={{ width: '55px', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff' }}
+                                    />
+                                </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
                                     <input 
