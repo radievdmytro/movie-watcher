@@ -54,13 +54,13 @@ const SmoothCrawlerCounter = ({ value, isRunning, delayMs }) => {
         const end = parseInt(value, 10);
         if (isNaN(end)) return;
 
-        // If not running, or if value resets/drops, snap immediately
-        if (!isRunning || end <= displayValue) {
+        // If value resets/drops, snap immediately (no animation)
+        if (end <= displayValue) {
             setDisplayValue(end);
             return;
         }
 
-        // We only animate when value INCREASES and isRunning is TRUE
+        // We animate when value INCREASES (even if the crawler just stopped for the final batch)
         const duration = Math.max(100, delayMs * 0.75);
         let startTimestamp = null;
         let animationFrameId = null;
