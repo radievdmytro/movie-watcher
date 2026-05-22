@@ -47,6 +47,11 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [showBrokenFast, setShowBrokenFast] = useState(false);
     const [showBrokenDetailed, setShowBrokenDetailed] = useState(false);
     const [bulkRefreshDelay, setBulkRefreshDelay] = useState(2);
+    
+    // Broken Movies Repair State
+    const [brokenStats, setBrokenStats] = useState({ count: 0 });
+    const [isRepairing, setIsRepairing] = useState(false);
+    const isRepairingRef = useRef(false);
 
     const handleDeleteScrapedMovies = async (links, type) => {
         if (!window.confirm(`Are you sure you want to delete ${links.length} movie(s) from the database?`)) return;
@@ -110,6 +115,66 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
         if (type === 'detailed') setSelectedDetailedMovies([]);
     };
 
+    const fetchBrokenStats = async () => {
+        try {
+            const res = await fetch('/api/admin/broken-movies/stats', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (res.ok) setBrokenStats(await res.json());
+        } catch (e) {
+            console.error('Failed to fetch broken stats:', e);
+        }
+    };
+
+    const handleStartRepair = async () => {
+        if (isRepairingRef.current) return;
+        isRepairingRef.current = true;
+        setIsRepairing(true);
+
+        while (isRepairingRef.current) {
+            try {
+                const res = await fetch(`/api/admin/recent-scraped?limit=20&broken=true`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!res.ok) break;
+                const brokenMovies = await res.json();
+                
+                if (brokenMovies.length === 0) break;
+
+                for (let i = 0; i < brokenMovies.length; i++) {
+                    if (!isRepairingRef.current) break;
+                    
+                    await fetch('/api/admin/scraped-movies/refresh', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                        },
+                        body: JSON.stringify({ links: [brokenMovies[i].link] })
+                    });
+
+                    fetchBrokenStats();
+                    fetchRecentScraped();
+
+                    const delayMs = Math.max(1000, bulkRefreshDelay * 1000 + (Math.random() * 1500));
+                    await new Promise(r => setTimeout(r, delayMs));
+                }
+            } catch (e) {
+                console.error('Repair error:', e);
+                break;
+            }
+        }
+
+        isRepairingRef.current = false;
+        setIsRepairing(false);
+        fetchBrokenStats();
+    };
+
+    const handleStopRepair = () => {
+        isRepairingRef.current = false;
+        setIsRepairing(false);
+    };
+
     const fetchRecentScraped = async () => {
         try {
             const resFast = await fetch(`/api/admin/recent-scraped?limit=${fastScrapedLimit}&type=fast&broken=${showBrokenFast}`, {
@@ -130,13 +195,17 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     useEffect(() => {
         const interval = setInterval(() => {
             fetchRecentScraped();
+            if (!isRepairingRef.current) fetchBrokenStats();
         }, 5000);
         return () => clearInterval(interval);
     }, [isRealtime, fastScrapedLimit, detailedScrapedLimit, showBrokenFast, showBrokenDetailed]);
 
     // Initial load
     useEffect(() => {
-        if (stats) fetchRecentScraped(); // Only run if mounted/authenticated
+        if (stats) {
+            fetchRecentScraped(); // Only run if mounted/authenticated
+            fetchBrokenStats();
+        }
     }, [stats, fastScrapedLimit, detailedScrapedLimit, showBrokenFast, showBrokenDetailed]);
 
     // Inline Admin Operations State (No native popups!)
@@ -1307,6 +1376,50 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    {/* Auto-Repair Broken Movies Block */}
+                    <div className="glass-panel animate-fade-in" style={{
+                        borderRadius: '15px',
+                        padding: '20px',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        background: 'rgba(239, 68, 68, 0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '15px',
+                        marginBottom: '20px'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                            <h3 style={{ margin: 0, color: '#fca5a5', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                🛠 Auto-Repair Broken Movies
+                            </h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <span style={{ color: '#fff', fontSize: '0.9rem' }}>
+                                    Broken in DB: <strong style={{ color: '#ef4444', fontSize: '1.1rem' }}>{brokenStats.count}</strong>
+                                </span>
+                                
+                                {brokenStats.count > 0 && !isRepairing && (
+                                    <button 
+                                        onClick={handleStartRepair}
+                                        style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}
+                                    >
+                                        ▶️ Start Auto-Repair
+                                    </button>
+                                )}
+                                {isRepairing && (
+                                    <button 
+                                        onClick={handleStopRepair}
+                                        style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}
+                                    >
+                                        ⏸ Stop Repair
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#aaa', lineHeight: '1.4' }}>
+                            This tool will automatically fetch full details for all broken movies one by one. It respects the <strong>~Delay ({bulkRefreshDelay}s)</strong> setting configured above to avoid blocking.
+                            {isRepairing && <div style={{ color: '#34d399', marginTop: '5px' }}>⏳ Repairing in progress... Please leave this page open.</div>}
                         </div>
                     </div>
 
