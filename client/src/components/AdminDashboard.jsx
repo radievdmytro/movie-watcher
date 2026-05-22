@@ -925,10 +925,10 @@ function AdminDashboard({ onBack }) {
                                     <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
                                     <input 
                                         type="number" 
-                                        min="1" max="100"
+                                        min="1" max="999"
                                         value={fastScrapedLimit} 
                                         onChange={e => setFastScrapedLimit(parseInt(e.target.value) || 10)} 
-                                        style={{ width: '60px', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff' }}
+                                        style={{ width: '70px', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff' }}
                                     />
                                 </div>
                                 <button 
@@ -1012,10 +1012,10 @@ function AdminDashboard({ onBack }) {
                                     <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
                                     <input 
                                         type="number" 
-                                        min="1" max="100"
+                                        min="1" max="999"
                                         value={detailedScrapedLimit} 
                                         onChange={e => setDetailedScrapedLimit(parseInt(e.target.value) || 10)} 
-                                        style={{ width: '60px', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff' }}
+                                        style={{ width: '70px', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff' }}
                                     />
                                 </div>
                                 <button 
