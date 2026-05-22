@@ -12,6 +12,47 @@ import AdminDashboard from './components/AdminDashboard';
 import MovieDetailsModal from './components/MovieDetailsModal';
 import MovieComparisonModal from './components/MovieComparisonModal';
 
+// Smoothly animates a numeric value to avoid jarring jumps on each poll update
+function useSmoothCount(targetValue, duration = 3750) {
+    const [displayValue, setDisplayValue] = useState(targetValue);
+    const animRef = useRef(null);
+    const prevValueRef = useRef(targetValue);
+
+    useEffect(() => {
+        const end = parseInt(targetValue, 10);
+        if (isNaN(end)) return;
+
+        // Snap immediately if decreasing (shouldn't happen, but just in case)
+        if (end <= prevValueRef.current) {
+            prevValueRef.current = end;
+            setDisplayValue(end);
+            return;
+        }
+
+        const startValue = prevValueRef.current;
+        prevValueRef.current = end;
+
+        if (animRef.current) cancelAnimationFrame(animRef.current);
+
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            setDisplayValue(Math.floor(startValue + (end - startValue) * progress));
+            if (progress < 1) {
+                animRef.current = requestAnimationFrame(step);
+            } else {
+                setDisplayValue(end);
+            }
+        };
+        animRef.current = requestAnimationFrame(step);
+
+        return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+    }, [targetValue]);
+
+    return displayValue;
+}
+
 const cleanLinkPath = (url) => {
     if (!url) return '';
     return url.toLowerCase()
@@ -52,6 +93,7 @@ function App() {
     const [activityCount, setActivityCount] = useState(0);
 
     const [globalCacheCount, setGlobalCacheCount] = useState(0);
+    const smoothCacheCount = useSmoothCount(globalCacheCount, 3750);
     const [latestScrapedMovie, setLatestScrapedMovie] = useState(null);
     const [popupMovie, setPopupMovie] = useState(null);     // what's displayed in the popup
     const [popupMode, setPopupMode] = useState('crawler');  // 'crawler' | 'random' | 'top'
@@ -888,7 +930,7 @@ function App() {
                                                 animation: 'blink 1.5s infinite'
                                             }} 
                                         />
-                                        <span>🎬 {globalCacheCount.toLocaleString()} in DB</span>
+                                        <span>🎬 {smoothCacheCount.toLocaleString()} in DB</span>
                                     </div>
                                     
                                     {/* The Latest Scraped Notification Popup */}
