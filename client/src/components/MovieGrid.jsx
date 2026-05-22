@@ -1383,7 +1383,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             if (entries[0].isIntersecting) {
                 setVisibleCount(prev => prev + 30);
             }
-        }, { threshold: 0.1 });
+        }, { rootMargin: '1500px', threshold: 0.1 });
 
         if (sentinelRef.current) {
             observer.observe(sentinelRef.current);
@@ -1457,7 +1457,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     .catch(err => console.error("Error loading more onboarding cache:", err))
                     .finally(() => setIsOnboardingLoading(false));
             }
-        }, { threshold: 0.1 });
+        }, { rootMargin: '1500px', threshold: 0.1 });
 
         if (onboardingSentinelRef.current) {
             observer.observe(onboardingSentinelRef.current);
