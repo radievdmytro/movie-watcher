@@ -1284,7 +1284,7 @@ function App() {
                     backdropFilter: 'blur(10px)',
                     WebkitBackdropFilter: 'blur(10px)',
                     display: 'flex', justifyContent: 'center', alignItems: 'center',
-                    zIndex: 2000,
+                    zIndex: 12000,
                     animation: 'fadeIn 0.3s ease-out'
                 }}>
                     <div style={{ position: 'relative', width: '100%', maxWidth: '420px', padding: '10px' }}>
