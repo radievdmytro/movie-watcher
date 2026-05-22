@@ -1188,6 +1188,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                         <option value="8000">8.0 seconds (Polite - Recommended)</option>
                                         <option value="12000">12.0 seconds (Ultra Safe - Conservative)</option>
                                         <option value="60000">60.0 seconds (Live Mode)</option>
+                                        <option value="300000">300.0 seconds (Slow Mode)</option>
                                     </select>
                                 </div>
                             </div>
