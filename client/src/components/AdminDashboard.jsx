@@ -36,6 +36,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [startingFC, setStartingFC] = useState(false);
 
     // Recently Scraped Movies States
+    const [isRealtime, setIsRealtime] = useState(false);
     const [recentFastScraped, setRecentFastScraped] = useState([]);
     const [fastScrapedLimit, setFastScrapedLimit] = useState(10);
     const [recentDetailedScraped, setRecentDetailedScraped] = useState([]);
@@ -126,7 +127,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                 if (res.ok) {
                     const data = await res.json();
                     setFastCrawler(data);
-                    if (data.isRunning && stats) {
+                    if ((data.isRunning || isRealtime) && stats) {
                         setStats(prev => ({ ...prev, totalCached: data.totalCached || prev.totalCached }));
                         setCrawlerSettings(prev => ({ ...prev, totalCached: data.totalCached || prev.totalCached }));
                         fetchRecentScraped();
@@ -138,16 +139,16 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
         };
 
         fetchStatus(); // fetch immediately on mount
-        if (fastCrawler.isRunning) {
-            fcInterval = setInterval(fetchStatus, 1500);
+        if (fastCrawler.isRunning || isRealtime) {
+            fcInterval = setInterval(fetchStatus, 2500);
         } else {
-            fcInterval = setInterval(fetchStatus, 5000); // slower polling when idle
+            fcInterval = setInterval(fetchStatus, 6000); // slower polling when idle
         }
 
         return () => {
             if (fcInterval) clearInterval(fcInterval);
         };
-    }, [fastCrawler.isRunning, stats]);
+    }, [fastCrawler.isRunning, stats, isRealtime]);
 
     const handleStartFastCrawler = async () => {
         setStartingFC(true);
@@ -995,6 +996,10 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                 🚀 Fast Crawler Results <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>(Basic Info Only)</span>
                             </h3>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: isRealtime ? 'rgba(59, 130, 246, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: isRealtime ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent' }}>
+                                    <input type="checkbox" checked={isRealtime} onChange={e => setIsRealtime(e.target.checked)} />
+                                    Realtime
+                                </label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
                                     <input 
@@ -1124,6 +1129,10 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                 🔍 Detailed Parser Results <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>(Full Info)</span>
                             </h3>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: isRealtime ? 'rgba(59, 130, 246, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: isRealtime ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent' }}>
+                                    <input type="checkbox" checked={isRealtime} onChange={e => setIsRealtime(e.target.checked)} />
+                                    Realtime
+                                </label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
                                     <input 
