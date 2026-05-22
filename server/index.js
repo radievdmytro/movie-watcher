@@ -508,7 +508,14 @@ app.get('/api/cache/stats', authenticateToken, (req, res) => {
             WHERE description IS NOT NULL AND description != '' 
             ORDER BY updated_at DESC LIMIT 1
         `).get();
-        res.json({ totalCached: row.count, lastScraped });
+        res.json({ 
+            totalCached: row.count, 
+            lastScraped,
+            fastCrawler: {
+                isRunning: fastCrawlerState.isRunning,
+                delay: fastCrawlerState.delay
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -2824,7 +2831,8 @@ let fastCrawlerState = {
     totalImported: 0,
     logs: [],
     currentCategory: '',
-    shouldStop: false
+    shouldStop: false,
+    delay: 5000
 };
 
 function addFastCrawlerLog(message) {
@@ -2840,6 +2848,7 @@ function addFastCrawlerLog(message) {
 // Fast Crawler Async loop
 async function runFastCrawlerProcess({ pages, categories, pageDelay }) {
     fastCrawlerState.isRunning = true;
+    fastCrawlerState.delay = pageDelay || 5000;
     fastCrawlerState.pagesCrawled = 0;
     fastCrawlerState.totalImported = 0;
     fastCrawlerState.totalPages = categories.length * pages;

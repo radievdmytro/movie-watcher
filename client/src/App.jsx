@@ -48,7 +48,7 @@ function useSmoothCount(targetValue, duration = 3750) {
         animRef.current = requestAnimationFrame(step);
 
         return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-    }, [targetValue]);
+    }, [targetValue, duration]);
 
     return displayValue;
 }
@@ -93,7 +93,8 @@ function App() {
     const [activityCount, setActivityCount] = useState(0);
 
     const [globalCacheCount, setGlobalCacheCount] = useState(0);
-    const smoothCacheCount = useSmoothCount(globalCacheCount, Math.max(500, (parseInt(localStorage.getItem('admin_fcDelay')) || 5000) * 0.75));
+    const [fcDelay, setFcDelay] = useState(5000);
+    const smoothCacheCount = useSmoothCount(globalCacheCount, Math.max(100, fcDelay * 0.75));
     const [latestScrapedMovie, setLatestScrapedMovie] = useState(null);
     const [popupMovie, setPopupMovie] = useState(null);     // what's displayed in the popup
     const [popupMode, setPopupMode] = useState('crawler');  // 'crawler' | 'random' | 'top'
@@ -120,6 +121,9 @@ function App() {
                 if (res.ok) {
                     const data = await res.json();
                     setGlobalCacheCount(data.totalCached);
+                    if (data.fastCrawler && data.fastCrawler.delay) {
+                        setFcDelay(data.fastCrawler.delay);
+                    }
                     if (data.lastScraped) {
                         setLatestScrapedMovie(prev => {
                             if (prev && prev.id !== data.lastScraped.id) {
