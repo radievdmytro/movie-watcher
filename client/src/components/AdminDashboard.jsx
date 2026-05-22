@@ -47,6 +47,52 @@ const AnimatedCounter = ({ value }) => {
     return <>{count}</>;
 };
 
+const SmoothCrawlerCounter = ({ value, isRunning, delayMs }) => {
+    const [displayValue, setDisplayValue] = useState(value);
+    
+    useEffect(() => {
+        const end = parseInt(value, 10);
+        if (isNaN(end)) return;
+
+        // If not running, or if value resets/drops, snap immediately
+        if (!isRunning || end <= displayValue) {
+            setDisplayValue(end);
+            return;
+        }
+
+        // We only animate when value INCREASES and isRunning is TRUE
+        const duration = Math.max(100, delayMs * 0.75);
+        let startTimestamp = null;
+        let animationFrameId = null;
+        
+        // Capture the start value when this animation triggers
+        const startValue = displayValue;
+
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            
+            // Linear progression
+            setDisplayValue(Math.floor(startValue + (end - startValue) * progress));
+            
+            if (progress < 1) {
+                animationFrameId = window.requestAnimationFrame(step);
+            } else {
+                setDisplayValue(end);
+            }
+        };
+
+        animationFrameId = window.requestAnimationFrame(step);
+
+        return () => {
+            if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [value, isRunning]); // omitted displayValue, delayMs to avoid unnecessary resets
+
+    return <>{displayValue}</>;
+};
+
 function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [stats, setStats] = useState(null);
     const [users, setUsers] = useState([]);
@@ -721,7 +767,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                             </div>
                             <div className="glass-panel" style={{ padding: '20px 10px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                                 <div style={{ fontSize: '2.5rem', color: '#e5c158', fontWeight: 'bold', marginBottom: '5px' }}>
-                                    {stats.totalCached || 0}
+                                    <SmoothCrawlerCounter value={stats.totalCached || 0} isRunning={fastCrawler.isRunning} delayMs={fcDelay} />
                                 </div>
                                 <div style={{ color: '#888', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                     Global Cached (Rezka)
