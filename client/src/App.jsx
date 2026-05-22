@@ -536,7 +536,7 @@ function App() {
     };
 
     const handleGlobalAddMovie = async (link) => {
-        if (!user || user.username.startsWith('guest_')) {
+        if (!user) {
             setIsAuthModalOpen(true);
             return;
         }
@@ -548,6 +548,10 @@ function App() {
             });
             if (res.ok || res.status === 409) {
                 fetchMovies(true);
+                if (sharedMovieData && (sharedMovieData.link === link || sharedMovieData.movie_link === link)) {
+                    setSharedMovieData(null);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
             }
         } catch (e) {
             console.error('Failed to add movie globally:', e);
