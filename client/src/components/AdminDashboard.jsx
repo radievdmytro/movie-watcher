@@ -634,6 +634,30 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     Global Cached (Rezka)
                                 </div>
                             </div>
+                            <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <div style={{ fontSize: '2.5rem', color: '#ef4444', fontWeight: 'bold', marginBottom: '5px' }}>
+                                    {brokenStats.count}
+                                </div>
+                                <div style={{ color: '#fca5a5', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: brokenStats.count > 0 ? '10px' : '0' }}>
+                                    Broken Movies
+                                </div>
+                                {brokenStats.count > 0 && !isRepairing && (
+                                    <button 
+                                        onClick={handleStartRepair}
+                                        style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', width: 'fit-content', margin: '0 auto' }}
+                                    >
+                                        ▶️ Repair
+                                    </button>
+                                )}
+                                {isRepairing && (
+                                    <button 
+                                        onClick={handleStopRepair}
+                                        style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', width: 'fit-content', margin: '0 auto' }}
+                                    >
+                                        ⏸ Stop
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -1382,50 +1406,6 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     )}
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
-
-                    {/* Auto-Repair Broken Movies Block */}
-                    <div className="glass-panel animate-fade-in" style={{
-                        borderRadius: '15px',
-                        padding: '20px',
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        background: 'rgba(239, 68, 68, 0.05)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '15px',
-                        marginBottom: '20px'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                            <h3 style={{ margin: 0, color: '#fca5a5', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                🛠 Auto-Repair Broken Movies
-                            </h3>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                <span style={{ color: '#fff', fontSize: '0.9rem' }}>
-                                    Broken in DB: <strong style={{ color: '#ef4444', fontSize: '1.1rem' }}>{brokenStats.count}</strong>
-                                </span>
-                                
-                                {brokenStats.count > 0 && !isRepairing && (
-                                    <button 
-                                        onClick={handleStartRepair}
-                                        style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}
-                                    >
-                                        ▶️ Start Auto-Repair
-                                    </button>
-                                )}
-                                {isRepairing && (
-                                    <button 
-                                        onClick={handleStopRepair}
-                                        style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}
-                                    >
-                                        ⏸ Stop Repair
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                        <div style={{ fontSize: '0.85rem', color: '#aaa', lineHeight: '1.4' }}>
-                            This tool will automatically fetch full details for all broken movies one by one. It respects the <strong>~Delay ({bulkRefreshDelay}s)</strong> setting configured above to avoid blocking.
-                            {isRepairing && <div style={{ color: '#34d399', marginTop: '5px' }}>⏳ Repairing in progress... Please leave this page open.</div>}
                         </div>
                     </div>
 
