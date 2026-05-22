@@ -236,20 +236,23 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
 
     // Re-fetch when limits change
     useEffect(() => {
-        const interval = setInterval(() => {
+        if (stats) {
             fetchRecentScraped();
             if (!isRepairingRef.current) fetchBrokenStats();
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [isRealtime, fastScrapedLimit, detailedScrapedLimit, showBrokenFast, showBrokenDetailed]);
+        }
+    }, [fastScrapedLimit, detailedScrapedLimit, showBrokenFast, showBrokenDetailed]);
 
+    const hasInitiallyFetchedRef = useRef(false);
+    
     // Initial load
     useEffect(() => {
-        if (stats) {
-            fetchRecentScraped(); // Only run if mounted/authenticated
+        // Only run once when stats initially loads
+        if (stats && !isRepairingRef.current && !hasInitiallyFetchedRef.current) {
+            hasInitiallyFetchedRef.current = true;
+            fetchRecentScraped();
             fetchBrokenStats();
         }
-    }, [stats, fastScrapedLimit, detailedScrapedLimit, showBrokenFast, showBrokenDetailed]);
+    }, [stats]);
 
     // Inline Admin Operations State (No native popups!)
     const [confirmDeleteUserId, setConfirmDeleteUserId] = useState(null);
@@ -266,11 +269,31 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                 if (res.ok) {
                     const data = await res.json();
                     setFastCrawler(data);
-                    if ((data.isRunning || isRealtime) && stats) {
-                        setStats(prev => ({ ...prev, totalCached: data.totalCached || prev.totalCached }));
-                        setCrawlerSettings(prev => ({ ...prev, totalCached: data.totalCached || prev.totalCached }));
-                        fetchRecentScraped();
-                    }
+                    
+                    setStats(prev => {
+                        if (!prev) return prev;
+                        
+                        const newTotalCached = data.totalCached !== undefined ? data.totalCached : prev.totalCached;
+                        const newMissing = data.missingDescriptions !== undefined ? data.missingDescriptions : prev.missingDescriptions;
+                        
+                        const hasChanges = newTotalCached !== prev.totalCached || newMissing !== prev.missingDescriptions;
+                        
+                        if ((data.isRunning || isRealtime) && hasChanges) {
+                            fetchRecentScraped();
+                        }
+                        
+                        if (hasChanges) {
+                            return { ...prev, totalCached: newTotalCached, missingDescriptions: newMissing };
+                        }
+                        return prev;
+                    });
+                    
+                    setCrawlerSettings(prev => {
+                        if (data.totalCached !== undefined && prev.totalCached !== data.totalCached) {
+                            return { ...prev, totalCached: data.totalCached };
+                        }
+                        return prev;
+                    });
                 }
             } catch (e) {
                 console.error('Failed to poll fast crawler status:', e);
@@ -371,6 +394,19 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                     if (res.ok) {
                         const data = await res.json();
                         setCrawlerSettings(data);
+                        
+                        setStats(prev => {
+                            if (!prev) return prev;
+                            
+                            const hasChanges = prev.totalCached !== data.totalCached || prev.missingDescriptions !== data.partiallyScraped;
+                            
+                            if (hasChanges) {
+                                // Refresh recent list to show newly populated descriptions
+                                fetchRecentScraped();
+                                return { ...prev, totalCached: data.totalCached, missingDescriptions: data.partiallyScraped };
+                            }
+                            return prev;
+                        });
                     }
                 } catch (e) {
                     console.error('Failed to poll crawler settings:', e);

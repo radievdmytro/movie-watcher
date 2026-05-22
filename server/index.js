@@ -2480,9 +2480,8 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, (req, res) => {
         const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
         const totalMovies = db.prepare('SELECT COUNT(*) as count FROM movies WHERE deleted_at IS NULL').get().count;
         const totalCollections = db.prepare('SELECT COUNT(*) as count FROM collections').get().count;
-        const totalCached = db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count;
-        const missingDescriptions = db.prepare(`SELECT COUNT(*) as count FROM scraped_movies_cache WHERE description IS NULL OR description = ''`).get().count;
-        res.json({ totalUsers, totalMovies, totalCollections, totalCached, missingDescriptions });
+        const stats = getCrawlerStats();
+        res.json({ totalUsers, totalMovies, totalCollections, totalCached: stats.totalCached, missingDescriptions: stats.missingDescriptions });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -2993,13 +2992,43 @@ async function runFastCrawlerProcess({ pages, categories, pageDelay }) {
     }
 }
 
-// Fast Crawler endpoints (admin-only)
+let globalCrawlerStatsCache = {
+    totalCached: -1,
+    missingDescriptions: -1,
+    lastUpdate: 0
+};
+
+function getCrawlerStats() {
+    const now = Date.now();
+    // Re-check totalCached every time (fast query)
+    const currentTotalCached = db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count;
+    
+    // Only re-run the slow missingDescriptions query if totalCached changed, 
+    // OR if 10 seconds have passed (to catch background parser updates),
+    // OR if it's the first time
+    if (currentTotalCached !== globalCrawlerStatsCache.totalCached || 
+        globalCrawlerStatsCache.missingDescriptions === -1 ||
+        now - globalCrawlerStatsCache.lastUpdate > 10000) {
+        
+        globalCrawlerStatsCache.totalCached = currentTotalCached;
+        globalCrawlerStatsCache.missingDescriptions = db.prepare("SELECT COUNT(*) as count FROM scraped_movies_cache WHERE description IS NULL OR description = ''").get().count;
+        globalCrawlerStatsCache.lastUpdate = now;
+    }
+    
+    return {
+        totalCached: globalCrawlerStatsCache.totalCached,
+        missingDescriptions: globalCrawlerStatsCache.missingDescriptions
+    };
+}
+
 app.get('/api/admin/fast-crawler/status', authenticateToken, requireAdmin, (req, res) => {
     try {
-        const totalCached = db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count;
+        const stats = getCrawlerStats();
+
         res.json({
             ...fastCrawlerState,
-            totalCached
+            totalCached: stats.totalCached,
+            missingDescriptions: stats.missingDescriptions
         });
     } catch (err) {
         res.json(fastCrawlerState);
@@ -3110,12 +3139,13 @@ app.post('/api/admin/scraped-movies/refresh', authenticateToken, requireAdmin, a
 // Crawler settings endpoints (admin-only)
 app.get('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, res) => {
     try {
+        const stats = getCrawlerStats();
         res.json({
             enabled: crawlerSettings.enabled,
             ratePerHour: crawlerSettings.ratePerHour,
             currentStatus: crawlerSettings.currentStatus,
-            totalCached: db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count,
-            partiallyScraped: db.prepare("SELECT COUNT(*) as count FROM scraped_movies_cache WHERE description IS NULL OR description = ''").get().count,
+            totalCached: stats.totalCached,
+            partiallyScraped: stats.missingDescriptions,
             consecutiveErrors: crawlerSettings.consecutiveErrors || 0,
             blockedUntil: crawlerSettings.blockedUntil || null
         });
@@ -3153,13 +3183,14 @@ app.post('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, r
             crawlerSettings.currentStatus = 'Idle (Disabled)';
         }
 
+        const stats = getCrawlerStats();
         res.json({
             success: true,
             enabled: crawlerSettings.enabled,
             ratePerHour: crawlerSettings.ratePerHour,
             currentStatus: crawlerSettings.currentStatus,
-            totalCached: db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count,
-            partiallyScraped: db.prepare("SELECT COUNT(*) as count FROM scraped_movies_cache WHERE description IS NULL OR description = ''").get().count
+            totalCached: stats.totalCached,
+            partiallyScraped: stats.missingDescriptions
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
