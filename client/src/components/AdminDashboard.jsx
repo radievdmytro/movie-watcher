@@ -634,6 +634,30 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     Global Cached (Rezka)
                                 </div>
                             </div>
+                            <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(59,130,246,0.2)', background: 'rgba(59,130,246,0.05)', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <div style={{ fontSize: '2.5rem', color: '#3b82f6', fontWeight: 'bold', marginBottom: '5px' }}>
+                                    {stats.missingDescriptions || 0}
+                                </div>
+                                <div style={{ color: '#93c5fd', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: (stats.missingDescriptions > 0 || crawlerSettings.enabled) ? '10px' : '0' }}>
+                                    No Description
+                                </div>
+                                {stats.missingDescriptions > 0 && !crawlerSettings.enabled && (
+                                    <button 
+                                        onClick={handleToggleCrawler}
+                                        style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', width: 'fit-content', margin: '0 auto' }}
+                                    >
+                                        ▶️ Load ({crawlerSettings.ratePerHour}/h)
+                                    </button>
+                                )}
+                                {crawlerSettings.enabled && (
+                                    <button 
+                                        onClick={handleToggleCrawler}
+                                        style={{ background: 'transparent', border: '1px solid #3b82f6', color: '#3b82f6', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', width: 'fit-content', margin: '0 auto' }}
+                                    >
+                                        ⏸ Stop
+                                    </button>
+                                )}
+                            </div>
                             <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <div style={{ fontSize: '2.5rem', color: '#ef4444', fontWeight: 'bold', marginBottom: '5px' }}>
                                     {brokenStats.count}
