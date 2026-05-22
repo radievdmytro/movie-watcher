@@ -1092,10 +1092,6 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                 🚀 Fast Crawler Results <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>(Basic Info Only)</span>
                             </h3>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: isRealtime ? 'rgba(59, 130, 246, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: isRealtime ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent' }}>
-                                    <input type="checkbox" checked={isRealtime} onChange={e => setIsRealtime(e.target.checked)} />
-                                    Realtime
-                                </label>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: showBrokenFast ? 'rgba(239, 68, 68, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: showBrokenFast ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid transparent' }}>
                                     <input type="checkbox" checked={showBrokenFast} onChange={e => setShowBrokenFast(e.target.checked)} />
                                     Broken
@@ -1140,13 +1136,20 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                         </button>
                                     </div>
                                 )}
-                                <button 
-                                    onClick={fetchRecentScraped}
-                                    className="btn"
-                                    style={{ fontSize: '0.8rem', color: '#34d399', background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.25)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}
-                                >
-                                    🔄 Refresh
-                                </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <button 
+                                        onClick={fetchRecentScraped}
+                                        className="btn"
+                                        title="Refresh"
+                                        style={{ fontSize: '0.8rem', color: '#34d399', background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.25)', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer' }}
+                                    >
+                                        🔄
+                                    </button>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: isRealtime ? 'rgba(59, 130, 246, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: isRealtime ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent' }}>
+                                        <input type="checkbox" checked={isRealtime} onChange={e => setIsRealtime(e.target.checked)} />
+                                        Realtime
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         
@@ -1243,10 +1246,6 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                 🔍 Detailed Parser Results <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>(Full Info)</span>
                             </h3>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: isRealtime ? 'rgba(59, 130, 246, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: isRealtime ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent' }}>
-                                    <input type="checkbox" checked={isRealtime} onChange={e => setIsRealtime(e.target.checked)} />
-                                    Realtime
-                                </label>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: showBrokenDetailed ? 'rgba(239, 68, 68, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: showBrokenDetailed ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid transparent' }}>
                                     <input type="checkbox" checked={showBrokenDetailed} onChange={e => setShowBrokenDetailed(e.target.checked)} />
                                     Broken
@@ -1291,13 +1290,20 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                         </button>
                                     </div>
                                 )}
-                                <button 
-                                    onClick={fetchRecentScraped}
-                                    className="btn"
-                                    style={{ fontSize: '0.8rem', color: '#c084fc', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.25)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}
-                                >
-                                    🔄 Refresh
-                                </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <button 
+                                        onClick={fetchRecentScraped}
+                                        className="btn"
+                                        title="Refresh"
+                                        style={{ fontSize: '0.8rem', color: '#c084fc', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.25)', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer' }}
+                                    >
+                                        🔄
+                                    </button>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: isRealtime ? 'rgba(59, 130, 246, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: isRealtime ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent' }}>
+                                        <input type="checkbox" checked={isRealtime} onChange={e => setIsRealtime(e.target.checked)} />
+                                        Realtime
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         
