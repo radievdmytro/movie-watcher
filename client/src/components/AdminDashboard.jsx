@@ -643,7 +643,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                 </div>
                                 {stats.missingDescriptions > 0 && !crawlerSettings.enabled && (
                                     <button 
-                                        onClick={handleToggleCrawler}
+                                        onClick={() => handleUpdateCrawler({ enabled: true })}
                                         style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', width: 'fit-content', margin: '0 auto' }}
                                     >
                                         ▶️ Load ({crawlerSettings.ratePerHour}/h)
@@ -651,7 +651,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                 )}
                                 {crawlerSettings.enabled && (
                                     <button 
-                                        onClick={handleToggleCrawler}
+                                        onClick={() => handleUpdateCrawler({ enabled: false })}
                                         style={{ background: 'transparent', border: '1px solid #3b82f6', color: '#3b82f6', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', width: 'fit-content', margin: '0 auto' }}
                                     >
                                         ⏸ Stop
