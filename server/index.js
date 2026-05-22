@@ -578,23 +578,6 @@ function seedShuffle(array, seed) {
 }
 
 // Get paginated cache directory for sparse library view
-    // === Trailer Endpoint ===
-    app.get('/api/cache/trailer/:id', authenticateToken, async (req, res) => {
-        try {
-            const id = req.params.id;
-            if (!id) return res.status(400).json({ error: 'Trailer ID is required' });
-            
-            const trailerCode = await scraper.getHdrezkaTrailer(id);
-            if (!trailerCode) {
-                return res.status(404).json({ error: 'Trailer not found' });
-            }
-            res.json({ code: trailerCode });
-        } catch (err) {
-            console.error('Trailer Endpoint Error:', err);
-            res.status(500).json({ error: 'Server error fetching trailer' });
-        }
-    });
-
 app.get('/api/cache/directory', authenticateToken, (req, res) => {
     try {
         let limit = parseInt(req.query.limit) || 50;
@@ -1009,6 +992,7 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
             // ---- URL MODE: instant cache lookup, then scrape ----
             const cleanQuery = cleanUrlPath(query);
             const cached = db.prepare('SELECT * FROM scraped_movies_cache WHERE link LIKE ?').get(`%${cleanQuery}%`);
+
             // Only return from cache instantly if it's a full record with description
             if (cached && cached.description) {
                 if (isGlobalMovieHidden(req.user.id, cached.link)) {
@@ -3057,6 +3041,23 @@ app.get('/api/admin/recent-scraped', authenticateToken, requireAdmin, (req, res)
 
         const rows = db.prepare(`SELECT title, original_title, year, link, poster_url, rating, type, updated_at, description FROM scraped_movies_cache ${condition} ORDER BY updated_at DESC LIMIT ?`).all(limit);
         res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/admin/scraped-movies/delete', authenticateToken, requireAdmin, (req, res) => {
+    try {
+        const { links } = req.body;
+        if (!Array.isArray(links) || links.length === 0) {
+            return res.status(400).json({ error: 'No links provided' });
+        }
+        const stmt = db.prepare('DELETE FROM scraped_movies_cache WHERE link = ?');
+        const deleteMany = db.transaction((movies) => {
+            for (const link of movies) stmt.run(link);
+        });
+        deleteMany(links);
+        res.json({ success: true, deletedCount: links.length });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

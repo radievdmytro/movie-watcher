@@ -40,6 +40,30 @@ function AdminDashboard({ onBack }) {
     const [fastScrapedLimit, setFastScrapedLimit] = useState(10);
     const [recentDetailedScraped, setRecentDetailedScraped] = useState([]);
     const [detailedScrapedLimit, setDetailedScrapedLimit] = useState(10);
+    const [selectedFastMovies, setSelectedFastMovies] = useState([]);
+    const [selectedDetailedMovies, setSelectedDetailedMovies] = useState([]);
+
+    const handleDeleteScrapedMovies = async (links, type) => {
+        if (!window.confirm(`Are you sure you want to delete ${links.length} movie(s) from the database?`)) return;
+        try {
+            const res = await fetch('/api/admin/scraped-movies/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ links })
+            });
+            if (res.ok) {
+                fetchRecentScraped();
+                if (type === 'fast') setSelectedFastMovies([]);
+                if (type === 'detailed') setSelectedDetailedMovies([]);
+            } else {
+                const data = await res.json();
+                alert(`Error: ${data.error}`);
+            }
+        } catch (e) {
+            console.error('Failed to delete movies:', e);
+            alert('Failed to delete movies');
+        }
+    };
 
     const fetchRecentScraped = async () => {
         try {
@@ -931,6 +955,15 @@ function AdminDashboard({ onBack }) {
                                         style={{ width: '70px', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff' }}
                                     />
                                 </div>
+                                {selectedFastMovies.length > 0 && (
+                                    <button 
+                                        onClick={() => handleDeleteScrapedMovies(selectedFastMovies, 'fast')}
+                                        className="btn"
+                                        style={{ fontSize: '0.8rem', color: '#f87171', background: 'rgba(248, 113, 113, 0.1)', border: '1px solid rgba(248, 113, 113, 0.25)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}
+                                    >
+                                        🗑 Delete ({selectedFastMovies.length})
+                                    </button>
+                                )}
                                 <button 
                                     onClick={fetchRecentScraped}
                                     className="btn"
@@ -945,6 +978,16 @@ function AdminDashboard({ onBack }) {
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#888', fontSize: '0.85rem' }}>
+                                        <th style={{ padding: '10px', width: '30px' }}>
+                                            <input 
+                                                type="checkbox" 
+                                                checked={selectedFastMovies.length === recentFastScraped.length && recentFastScraped.length > 0}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) setSelectedFastMovies(recentFastScraped.map(m => m.link));
+                                                    else setSelectedFastMovies([]);
+                                                }}
+                                            />
+                                        </th>
                                         <th style={{ padding: '10px' }}>Poster</th>
                                         <th style={{ padding: '10px' }}>Title</th>
                                         <th style={{ padding: '10px' }}>Year / Type</th>
@@ -956,11 +999,21 @@ function AdminDashboard({ onBack }) {
                                     {recentFastScraped.map((m, idx) => (
                                         <tr 
                                             key={m.link || idx} 
-                                            style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', cursor: 'pointer', transition: 'background 0.2s' }}
+                                            style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', cursor: 'pointer', transition: 'background 0.2s', background: selectedFastMovies.includes(m.link) ? 'rgba(255, 255, 255, 0.08)' : 'transparent' }}
                                             onClick={() => setSelectedMovie(m)}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                            onMouseEnter={(e) => { if (!selectedFastMovies.includes(m.link)) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                                            onMouseLeave={(e) => { if (!selectedFastMovies.includes(m.link)) e.currentTarget.style.background = 'transparent' }}
                                         >
+                                            <td style={{ padding: '8px 10px' }} onClick={e => e.stopPropagation()}>
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={selectedFastMovies.includes(m.link)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) setSelectedFastMovies(prev => [...prev, m.link]);
+                                                        else setSelectedFastMovies(prev => prev.filter(link => link !== m.link));
+                                                    }}
+                                                />
+                                            </td>
                                             <td style={{ padding: '8px 10px' }}>
                                                 <img 
                                                     src={m.poster_url} 
@@ -989,7 +1042,7 @@ function AdminDashboard({ onBack }) {
                                     ))}
                                     {recentFastScraped.length === 0 && (
                                         <tr>
-                                            <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#555', fontStyle: 'italic' }}>
+                                            <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#555', fontStyle: 'italic' }}>
                                                 No recently scraped movies found by fast parser.
                                             </td>
                                         </tr>
@@ -1024,6 +1077,15 @@ function AdminDashboard({ onBack }) {
                                         style={{ width: '70px', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.5)', color: '#fff' }}
                                     />
                                 </div>
+                                {selectedDetailedMovies.length > 0 && (
+                                    <button 
+                                        onClick={() => handleDeleteScrapedMovies(selectedDetailedMovies, 'detailed')}
+                                        className="btn"
+                                        style={{ fontSize: '0.8rem', color: '#f87171', background: 'rgba(248, 113, 113, 0.1)', border: '1px solid rgba(248, 113, 113, 0.25)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}
+                                    >
+                                        🗑 Delete ({selectedDetailedMovies.length})
+                                    </button>
+                                )}
                                 <button 
                                     onClick={fetchRecentScraped}
                                     className="btn"
@@ -1038,6 +1100,16 @@ function AdminDashboard({ onBack }) {
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#888', fontSize: '0.85rem' }}>
+                                        <th style={{ padding: '10px', width: '30px' }}>
+                                            <input 
+                                                type="checkbox" 
+                                                checked={selectedDetailedMovies.length === recentDetailedScraped.length && recentDetailedScraped.length > 0}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) setSelectedDetailedMovies(recentDetailedScraped.map(m => m.link));
+                                                    else setSelectedDetailedMovies([]);
+                                                }}
+                                            />
+                                        </th>
                                         <th style={{ padding: '10px' }}>Poster</th>
                                         <th style={{ padding: '10px' }}>Title</th>
                                         <th style={{ padding: '10px' }}>Year / Type</th>
@@ -1049,11 +1121,21 @@ function AdminDashboard({ onBack }) {
                                     {recentDetailedScraped.map((m, idx) => (
                                         <tr 
                                             key={m.link || idx} 
-                                            style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', cursor: 'pointer', transition: 'background 0.2s' }}
+                                            style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', cursor: 'pointer', transition: 'background 0.2s', background: selectedDetailedMovies.includes(m.link) ? 'rgba(255, 255, 255, 0.08)' : 'transparent' }}
                                             onClick={() => setSelectedMovie(m)}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                            onMouseEnter={(e) => { if (!selectedDetailedMovies.includes(m.link)) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                                            onMouseLeave={(e) => { if (!selectedDetailedMovies.includes(m.link)) e.currentTarget.style.background = 'transparent' }}
                                         >
+                                            <td style={{ padding: '8px 10px' }} onClick={e => e.stopPropagation()}>
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={selectedDetailedMovies.includes(m.link)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) setSelectedDetailedMovies(prev => [...prev, m.link]);
+                                                        else setSelectedDetailedMovies(prev => prev.filter(link => link !== m.link));
+                                                    }}
+                                                />
+                                            </td>
                                             <td style={{ padding: '8px 10px' }}>
                                                 <img 
                                                     src={m.poster_url} 
@@ -1082,7 +1164,7 @@ function AdminDashboard({ onBack }) {
                                     ))}
                                     {recentDetailedScraped.length === 0 && (
                                         <tr>
-                                            <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#555', fontStyle: 'italic' }}>
+                                            <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#555', fontStyle: 'italic' }}>
                                                 No recently scraped movies found by detailed parser.
                                             </td>
                                         </tr>
