@@ -93,7 +93,7 @@ function App() {
     const [activityCount, setActivityCount] = useState(0);
 
     const [globalCacheCount, setGlobalCacheCount] = useState(0);
-    const smoothCacheCount = useSmoothCount(globalCacheCount, 3750);
+    const smoothCacheCount = useSmoothCount(globalCacheCount, Math.max(500, (parseInt(localStorage.getItem('admin_fcDelay')) || 5000) * 0.75));
     const [latestScrapedMovie, setLatestScrapedMovie] = useState(null);
     const [popupMovie, setPopupMovie] = useState(null);     // what's displayed in the popup
     const [popupMode, setPopupMode] = useState('crawler');  // 'crawler' | 'random' | 'top'
