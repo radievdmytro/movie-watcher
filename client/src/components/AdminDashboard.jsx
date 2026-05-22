@@ -954,7 +954,13 @@ function AdminDashboard({ onBack }) {
                                 </thead>
                                 <tbody>
                                     {recentFastScraped.map((m, idx) => (
-                                        <tr key={m.link || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                                        <tr 
+                                            key={m.link || idx} 
+                                            style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', cursor: 'pointer', transition: 'background 0.2s' }}
+                                            onClick={() => setSelectedMovie(m)}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                        >
                                             <td style={{ padding: '8px 10px' }}>
                                                 <img 
                                                     src={m.poster_url} 
@@ -1041,7 +1047,13 @@ function AdminDashboard({ onBack }) {
                                 </thead>
                                 <tbody>
                                     {recentDetailedScraped.map((m, idx) => (
-                                        <tr key={m.link || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                                        <tr 
+                                            key={m.link || idx} 
+                                            style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', cursor: 'pointer', transition: 'background 0.2s' }}
+                                            onClick={() => setSelectedMovie(m)}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                        >
                                             <td style={{ padding: '8px 10px' }}>
                                                 <img 
                                                     src={m.poster_url} 
