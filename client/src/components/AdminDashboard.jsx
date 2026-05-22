@@ -633,8 +633,8 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
 
                     {/* Stats Grid */}
                     {stats && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                            <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '15px' }}>
+                            <div className="glass-panel" style={{ padding: '20px 10px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                                 <div style={{ fontSize: '2.5rem', color: 'var(--accent-gold)', fontWeight: 'bold', marginBottom: '5px' }}>
                                     {stats.totalUsers}
                                 </div>
@@ -642,7 +642,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     Total Users
                                 </div>
                             </div>
-                            <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                            <div className="glass-panel" style={{ padding: '20px 10px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                                 <div style={{ fontSize: '2.5rem', color: '#03dac6', fontWeight: 'bold', marginBottom: '5px' }}>
                                     {stats.totalMovies}
                                 </div>
@@ -650,7 +650,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     Total Library Movies
                                 </div>
                             </div>
-                            <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                            <div className="glass-panel" style={{ padding: '20px 10px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                                 <div style={{ fontSize: '2.5rem', color: '#ff6b6b', fontWeight: 'bold', marginBottom: '5px' }}>
                                     {stats.totalCollections}
                                 </div>
@@ -658,7 +658,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     Total Collections
                                 </div>
                             </div>
-                            <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                            <div className="glass-panel" style={{ padding: '20px 10px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                                 <div style={{ fontSize: '2.5rem', color: '#e5c158', fontWeight: 'bold', marginBottom: '5px' }}>
                                     {stats.totalCached || 0}
                                 </div>
@@ -666,7 +666,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     Global Cached (Rezka)
                                 </div>
                             </div>
-                            <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(59,130,246,0.2)', background: 'rgba(59,130,246,0.05)', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <div className="glass-panel" style={{ padding: '20px 10px', borderRadius: '15px', border: '1px solid rgba(59,130,246,0.2)', background: 'rgba(59,130,246,0.05)', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <div style={{ fontSize: '2.5rem', color: '#3b82f6', fontWeight: 'bold', marginBottom: '5px' }}>
                                     <AnimatedCounter value={stats.missingDescriptions || 0} />
                                 </div>
@@ -690,7 +690,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     </button>
                                 )}
                             </div>
-                            <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <div className="glass-panel" style={{ padding: '20px 10px', borderRadius: '15px', border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <div style={{ fontSize: '2.5rem', color: '#ef4444', fontWeight: 'bold', marginBottom: '5px' }}>
                                     <AnimatedCounter value={brokenStats.count || 0} />
                                 </div>
