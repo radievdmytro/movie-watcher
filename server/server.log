@@ -1,0 +1,1521 @@
+
+> server@1.0.0 start
+> node index.js
+
+◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+☁️ Supabase credentials not found. Running with local database only.
+CREATE TABLE IF NOT EXISTS guest_fingerprints (
+      fingerprint_hash TEXT PRIMARY KEY,
+      visits INTEGER DEFAULT 0,
+      last_visit DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  
+CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  
+CREATE TABLE IF NOT EXISTS movies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      original_title TEXT,
+      year INTEGER,
+      link TEXT,
+      rating REAL,
+      description TEXT,
+      poster_url TEXT,
+      genres TEXT,
+      actors TEXT,
+      director TEXT,
+      writers TEXT,
+      country TEXT,
+      duration TEXT,
+      voice_acting TEXT,
+      source_collection_name TEXT,
+      source_collection_token TEXT,
+      source_user_name TEXT,
+      type TEXT DEFAULT 'movie',
+      status TEXT DEFAULT 'want_to_watch',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      deleted_at DATETIME DEFAULT NULL,
+      user_id INTEGER,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  
+CREATE TABLE IF NOT EXISTS collections (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      user_id INTEGER,
+      share_token TEXT,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  
+CREATE TABLE IF NOT EXISTS collection_movies (
+      collection_id INTEGER,
+      movie_id INTEGER,
+      PRIMARY KEY (collection_id, movie_id),
+      FOREIGN KEY (collection_id) REFERENCES collections (id) ON DELETE CASCADE,
+      FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE
+    )
+  
+CREATE TABLE IF NOT EXISTS shared_collections (
+      collection_id INTEGER,
+      sender_id INTEGER,
+      recipient_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (collection_id, recipient_id),
+      FOREIGN KEY (collection_id) REFERENCES collections (id) ON DELETE CASCADE,
+      FOREIGN KEY (sender_id) REFERENCES users (id) ON DELETE CASCADE,
+      FOREIGN KEY (recipient_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  
+CREATE TABLE IF NOT EXISTS movie_reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      username TEXT NOT NULL,
+      movie_link TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  
+CREATE INDEX IF NOT EXISTS idx_reviews_movie_link ON movie_reviews(movie_link)
+CREATE TABLE IF NOT EXISTS user_movie_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      movie_link TEXT NOT NULL,
+      user_rating REAL DEFAULT NULL,
+      notes TEXT DEFAULT NULL,
+      notes_public INTEGER DEFAULT 0,
+      is_watched INTEGER DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, movie_link),
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  
+CREATE INDEX IF NOT EXISTS idx_history_movie_link ON user_movie_history(movie_link)
+CREATE INDEX IF NOT EXISTS idx_history_user_link ON user_movie_history(user_id, movie_link)
+CREATE TABLE IF NOT EXISTS scraped_movies_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      original_title TEXT,
+      year INTEGER,
+      link TEXT UNIQUE,
+      rating REAL,
+      description TEXT,
+      poster_url TEXT,
+      genres TEXT,
+      actors TEXT,
+      director TEXT,
+      writers TEXT,
+      country TEXT,
+      duration TEXT,
+      voice_acting TEXT,
+      type TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  
+CREATE INDEX IF NOT EXISTS idx_scraped_cache_link ON scraped_movies_cache(link)
+CREATE INDEX IF NOT EXISTS idx_scraped_cache_title ON scraped_movies_cache(title)
+CREATE INDEX IF NOT EXISTS idx_scraped_cache_original_title ON scraped_movies_cache(original_title)
+CREATE TABLE IF NOT EXISTS hidden_global_movies (
+      user_id INTEGER NOT NULL,
+      movie_link TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, movie_link),
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  
+CREATE INDEX IF NOT EXISTS idx_hidden_global_movies_user ON hidden_global_movies(user_id)
+CREATE TABLE IF NOT EXISTS crawled_pages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT NOT NULL,
+      page_number INTEGER NOT NULL,
+      movies_found INTEGER DEFAULT 0,
+      new_movies_added INTEGER DEFAULT 0,
+      crawled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(category, page_number)
+    )
+  
+CREATE INDEX IF NOT EXISTS idx_crawled_pages_cat ON crawled_pages(category)
+SELECT id FROM collections WHERE share_token IS NULL
+🔄 Running database relation integrity checks...
+PRAGMA foreign_keys = OFF;
+
+      DELETE FROM movies 
+      WHERE user_id IS NOT NULL 
+        AND user_id NOT IN (SELECT id FROM users)
+    
+
+      DELETE FROM collections 
+      WHERE user_id IS NOT NULL 
+        AND user_id NOT IN (SELECT id FROM users)
+    
+
+      DELETE FROM collection_movies 
+      WHERE collection_id NOT IN (SELECT id FROM collections)
+         OR movie_id NOT IN (SELECT id FROM movies)
+    
+
+      DELETE FROM shared_collections 
+      WHERE collection_id NOT IN (SELECT id FROM collections)
+         OR sender_id NOT IN (SELECT id FROM users)
+         OR recipient_id NOT IN (SELECT id FROM users)
+    
+PRAGMA foreign_keys = ON;
+🟢 SQLite relation integrity verified & FOREIGN KEY constraints enabled.
+DELETE FROM movies WHERE deleted_at IS NOT NULL AND deleted_at < '2026-04-22T11:00:14.599Z'
+Server running on http://localhost:3000
+SELECT id FROM users WHERE id = 1.0
+INSERT INTO users (username, password_hash) VALUES ('guest_5fjr92c', '$2b$10$VK0bY/PL1lkfZrby7RZ.5eiLB'/*+28 bytes*/)
+
+            UPDATE users 
+            SET last_ip = '127.0.0.1', last_device = 'Desktop', last_os = 'macOS', last_browser = 'Chrome', last_login_at = datetime('now')
+            WHERE id = 15.0
+        
+UPDATE users SET last_country = '🖥 Localhost' WHERE id = 15.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('9f4ca652a4a1c15af1a7168105213da5'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '9f4ca652a4a1c15af1a7168105213da5'/*+32 bytes*/
+INSERT INTO users (username, password_hash) VALUES ('guest_t0eqwn3', '$2b$10$mZHhKsKI7sVzPpHC55SvIuhtW'/*+28 bytes*/)
+
+            UPDATE users 
+            SET last_ip = '::1', last_device = 'Desktop', last_os = 'macOS', last_browser = 'Chrome', last_login_at = datetime('now')
+            WHERE id = 16.0
+        
+UPDATE users SET last_country = '🖥 Localhost' WHERE id = 16.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 16.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 16.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 16.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 16.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 16.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 16.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 16.0
+SELECT id FROM users WHERE id = 16.0
+SELECT genres FROM movies WHERE user_id = 16.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 16.0
+SELECT director FROM movies WHERE user_id = 16.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 16.0
+SELECT actors FROM movies WHERE user_id = 16.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 16.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 16.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 16.0
+SELECT * FROM users WHERE username = 'radev'
+SELECT id FROM users WHERE id = 16.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+INSERT INTO users (username, password_hash) VALUES ('guest_ubi6k60', '$2b$10$OOu14JwiHd4cKkAaPTECg.boW'/*+28 bytes*/)
+
+            UPDATE users 
+            SET last_ip = '::1', last_device = 'Desktop', last_os = 'macOS', last_browser = 'Chrome', last_login_at = datetime('now')
+            WHERE id = 17.0
+        
+UPDATE users SET last_country = '🖥 Localhost' WHERE id = 17.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 17.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 17.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 17.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 17.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 17.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 17.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 17.0
+SELECT id FROM users WHERE id = 17.0
+SELECT genres FROM movies WHERE user_id = 17.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 17.0
+SELECT director FROM movies WHERE user_id = 17.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 17.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 17.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 17.0
+SELECT id FROM users WHERE id = 17.0
+SELECT actors FROM movies WHERE user_id = 17.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 17.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 17.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 17.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 17.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 17.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 17.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 17.0
+SELECT id FROM users WHERE id = 17.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 17.0
+SELECT genres FROM movies WHERE user_id = 17.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 17.0
+SELECT director FROM movies WHERE user_id = 17.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 17.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 17.0
+SELECT actors FROM movies WHERE user_id = 17.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 17.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 17.0
+SELECT * FROM users WHERE username = 'radev'
+INSERT INTO users (username, password_hash) VALUES ('guest_uftu0a9', '$2b$10$rbfbgBklIhvs0qRxjVG5wewWT'/*+28 bytes*/)
+
+            UPDATE users 
+            SET last_ip = '::1', last_device = 'Desktop', last_os = 'macOS', last_browser = 'Chrome', last_login_at = datetime('now')
+            WHERE id = 18.0
+        
+UPDATE users SET last_country = '🖥 Localhost' WHERE id = 18.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 18.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 18.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 18.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 18.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 18.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 18.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 18.0
+SELECT id FROM users WHERE id = 18.0
+SELECT genres FROM movies WHERE user_id = 18.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 18.0
+SELECT director FROM movies WHERE user_id = 18.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 18.0
+SELECT actors FROM movies WHERE user_id = 18.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 18.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 18.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 18.0
+SELECT * FROM users WHERE username = 'radev'
+INSERT INTO users (username, password_hash) VALUES ('guest_o8q536v', '$2b$10$gqts8NvWXrfm1XYtCX5WD.qe4'/*+28 bytes*/)
+
+            UPDATE users 
+            SET last_ip = '::1', last_device = 'Desktop', last_os = 'macOS', last_browser = 'Chrome', last_login_at = datetime('now')
+            WHERE id = 19.0
+        
+UPDATE users SET last_country = '🖥 Localhost' WHERE id = 19.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 19.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 19.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 19.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 19.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 19.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 19.0
+SELECT id FROM users WHERE id = 19.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 19.0
+SELECT genres FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 19.0
+SELECT director FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 19.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 19.0
+SELECT actors FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 19.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 19.0
+SELECT id FROM users WHERE id = 19.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 19.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 19.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 19.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 19.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 19.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 19.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 19.0
+SELECT id FROM users WHERE id = 19.0
+SELECT genres FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 19.0
+SELECT director FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 19.0
+SELECT actors FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 19.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 19.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 19.0
+SELECT id FROM users WHERE id = 19.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 19.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 19.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 19.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 19.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 19.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 19.0
+SELECT id FROM users WHERE id = 19.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 19.0
+SELECT genres FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 19.0
+SELECT director FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 19.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 19.0
+SELECT actors FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 19.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 19.0
+SELECT id FROM users WHERE id = 19.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 19.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 19.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 19.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 19.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 19.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 19.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 19.0
+SELECT id FROM users WHERE id = 19.0
+SELECT genres FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 19.0
+SELECT director FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 19.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 19.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 19.0
+SELECT id FROM users WHERE id = 19.0
+SELECT actors FROM movies WHERE user_id = 19.0 AND deleted_at IS NULL
+SELECT * FROM users WHERE username = 'radev'
+INSERT INTO users (username, password_hash) VALUES ('guest_hj5ycpr', '$2b$10$LjhXrQSzXlXSyoyikNJPweN3l'/*+28 bytes*/)
+
+            UPDATE users 
+            SET last_ip = '::1', last_device = 'Desktop', last_os = 'macOS', last_browser = 'Chrome', last_login_at = datetime('now')
+            WHERE id = 20.0
+        
+UPDATE users SET last_country = '🖥 Localhost' WHERE id = 20.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 20.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 20.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 20.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 20.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 20.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 20.0
+SELECT id FROM users WHERE id = 20.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 20.0
+SELECT genres FROM movies WHERE user_id = 20.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 20.0
+SELECT director FROM movies WHERE user_id = 20.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 20.0
+SELECT actors FROM movies WHERE user_id = 20.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 20.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 20.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 20.0
+SELECT * FROM users WHERE username = 'radev'
+INSERT INTO users (username, password_hash) VALUES ('guest_h43g10g', '$2b$10$5.sXjSi2qh3j8lHrYZok.e6ba'/*+28 bytes*/)
+
+            UPDATE users 
+            SET last_ip = '::1', last_device = 'Desktop', last_os = 'macOS', last_browser = 'Chrome', last_login_at = datetime('now')
+            WHERE id = 21.0
+        
+UPDATE users SET last_country = '🖥 Localhost' WHERE id = 21.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 21.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 21.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 21.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 21.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 21.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 21.0
+SELECT id FROM users WHERE id = 21.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 21.0
+SELECT genres FROM movies WHERE user_id = 21.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 21.0
+SELECT director FROM movies WHERE user_id = 21.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 21.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 21.0
+SELECT actors FROM movies WHERE user_id = 21.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 21.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 21.0
+SELECT * FROM users WHERE username = 'radev'
+INSERT INTO users (username, password_hash) VALUES ('guest_qj6lmkg', '$2b$10$1XaHp5KxUrbQDyTGotnCl.ea4'/*+28 bytes*/)
+
+            UPDATE users 
+            SET last_ip = '::1', last_device = 'Desktop', last_os = 'macOS', last_browser = 'Chrome', last_login_at = datetime('now')
+            WHERE id = 22.0
+        
+UPDATE users SET last_country = '🖥 Localhost' WHERE id = 22.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 22.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 22.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 22.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 22.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 22.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 22.0
+SELECT id FROM users WHERE id = 22.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 22.0
+SELECT genres FROM movies WHERE user_id = 22.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 22.0
+SELECT director FROM movies WHERE user_id = 22.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 22.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 22.0
+SELECT actors FROM movies WHERE user_id = 22.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 22.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 22.0
+SELECT * FROM users WHERE username = 'radev'
+INSERT INTO users (username, password_hash) VALUES ('guest_bg92td3', '$2b$10$oHLw4k.4O5XjXUHLkDO0fuXIC'/*+28 bytes*/)
+
+            UPDATE users 
+            SET last_ip = '::1', last_device = 'Desktop', last_os = 'macOS', last_browser = 'Chrome', last_login_at = datetime('now')
+            WHERE id = 23.0
+        
+UPDATE users SET last_country = '🖥 Localhost' WHERE id = 23.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 23.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 23.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 23.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 23.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 23.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 23.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 23.0
+SELECT id FROM users WHERE id = 23.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 23.0
+SELECT genres FROM movies WHERE user_id = 23.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 23.0
+SELECT director FROM movies WHERE user_id = 23.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 23.0
+SELECT actors FROM movies WHERE user_id = 23.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 23.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 23.0
+SELECT id FROM users WHERE id = 23.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 23.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 23.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 23.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 23.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 23.0
+
+            SELECT * FROM scraped_movies_cache
+            WHERE rating >= 6.0
+              AND description IS NOT NULL AND description != ''
+              AND poster_url IS NOT NULL
+            ORDER BY RANDOM()
+            LIMIT 1
+        
+SELECT id FROM users WHERE id = 23.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT * FROM users WHERE username = 'radev'
+INSERT INTO users (username, password_hash) VALUES ('guest_18k35f1', '$2b$10$XrwRU2FeMf2bncIi.SPG9efcX'/*+28 bytes*/)
+
+            UPDATE users 
+            SET last_ip = '::1', last_device = 'Desktop', last_os = 'macOS', last_browser = 'Chrome', last_login_at = datetime('now')
+            WHERE id = 24.0
+        
+UPDATE users SET last_country = '🖥 Localhost' WHERE id = 24.0
+
+        INSERT INTO guest_fingerprints (fingerprint_hash, visits, last_visit)
+        VALUES ('50cd602e38d8565178634afe07459928'/*+32 bytes*/, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(fingerprint_hash) DO UPDATE SET 
+            visits = visits + 1,
+            last_visit = CURRENT_TIMESTAMP
+    
+SELECT visits FROM guest_fingerprints WHERE fingerprint_hash = '50cd602e38d8565178634afe07459928'/*+32 bytes*/
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+
+            SELECT * FROM (
+                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                       m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
+                       m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m 
+                WHERE m.user_id = 24.0 AND m.deleted_at IS NULL AND m.hidden_from_library = 0
+
+                UNION ALL
+
+                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                       c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
+                       h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = h.movie_link AND m2.user_rating IS NOT NULL AND m2.user_id != h.user_id
+                           UNION ALL
+                           SELECT h2.user_rating AS r FROM user_movie_history h2
+                             WHERE h2.movie_link = h.movie_link AND h2.user_rating IS NOT NULL AND h2.user_id != h.user_id
+                             AND h2.user_id NOT IN (SELECT user_id FROM movies WHERE link = h.movie_link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM user_movie_history h
+                LEFT JOIN scraped_movies_cache c ON c.link = h.movie_link
+                WHERE h.user_id = 24.0 AND h.is_watched = 1
+                  AND h.movie_link NOT IN (
+                      SELECT link FROM movies 
+                      WHERE user_id = 24.0 AND deleted_at IS NULL AND hidden_from_library = 0
+                  )
+            )
+            ORDER BY created_at DESC
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT movie_link, user_rating, notes, notes_public, is_watched FROM user_movie_history WHERE user_id = 24.0
+SELECT id FROM users WHERE id = 24.0
+SELECT genres FROM movies WHERE user_id = 24.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 24.0
+SELECT director FROM movies WHERE user_id = 24.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+
+            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache
+            WHERE poster_url IS NOT NULL AND title IS NOT NULL
+        
+SELECT movie_link FROM hidden_global_movies WHERE user_id = 24.0
+SELECT id FROM users WHERE id = 24.0
+SELECT actors FROM movies WHERE user_id = 24.0 AND deleted_at IS NULL
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+
+            SELECT * FROM scraped_movies_cache
+            WHERE rating >= 6.0
+              AND description IS NOT NULL AND description != ''
+              AND poster_url IS NOT NULL
+            ORDER BY RANDOM()
+            LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+SELECT COUNT(*) as count FROM scraped_movies_cache
+
+            SELECT * 
+            FROM scraped_movies_cache 
+            WHERE description IS NOT NULL AND description != '' 
+            ORDER BY updated_at DESC LIMIT 1
+        
+SELECT id FROM users WHERE id = 24.0
+
+            SELECT * FROM scraped_movies_cache
+            WHERE rating >= 6.0
+              AND description IS NOT NULL AND description != ''
+              AND poster_url IS NOT NULL
+            ORDER BY RANDOM()
+            LIMIT 1
+        

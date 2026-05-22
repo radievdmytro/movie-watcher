@@ -547,6 +547,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [viewMode, setViewMode] = useState(() => localStorage.getItem('movieGrid_viewMode') || 'grid'); // 'grid' | 'table'
 
     useEffect(() => {
+        if (isWatchedView && sortField === 'status') {
+            setSortField('created_at');
+        }
+    }, [isWatchedView, sortField]);
+
+    useEffect(() => {
         localStorage.setItem('movieGrid_sortField', sortField);
         localStorage.setItem('movieGrid_sortDir', sortDir);
         localStorage.setItem('movieGrid_hideWatched', JSON.stringify(hideWatched));
@@ -2584,7 +2590,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
                             <div className="sort-tabs-row desktop-sort-tabs" style={{ gap: '8px' }}>
                                 <span style={{ color: '#666', flexShrink: 0 }}>Sort:</span>
-                                {['created_at', 'rating', 'year', 'title', 'status'].map(field => (
+                                {['created_at', 'rating', 'year', 'title', 'status']
+                                    .filter(field => !(field === 'status' && isWatchedView))
+                                    .map(field => (
                                     <button key={field} className="btn-ghost" style={{ color: sortField === field ? 'var(--accent-gold)' : 'inherit', padding: '0 5px', fontSize: '0.9rem' }}
                                         onClick={() => handleSort(field)}
                                     >{field === 'status' ? 'Watched' : field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ')} {sortField === field && (sortDir === 'asc' ? '↑' : '↓')}</button>
@@ -2626,8 +2634,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     <option value="year-asc" style={{ background: '#151515', color: '#fff' }}>Year (Oldest)</option>
                                     <option value="title-asc" style={{ background: '#151515', color: '#fff' }}>Title (A-Z)</option>
                                     <option value="title-desc" style={{ background: '#151515', color: '#fff' }}>Title (Z-A)</option>
-                                    <option value="status-desc" style={{ background: '#151515', color: '#fff' }}>Watched Status (Watched First)</option>
-                                    <option value="status-asc" style={{ background: '#151515', color: '#fff' }}>Watched Status (Unwatched First)</option>
+                                    {!isWatchedView && <option value="status-desc" style={{ background: '#151515', color: '#fff' }}>Watched Status (Watched First)</option>}
+                                    {!isWatchedView && <option value="status-asc" style={{ background: '#151515', color: '#fff' }}>Watched Status (Unwatched First)</option>}
                                 </select>
                             </div>
                         </div>

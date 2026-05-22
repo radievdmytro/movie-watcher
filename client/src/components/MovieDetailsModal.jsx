@@ -1905,7 +1905,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     {/* ─── MOBILE readOnly layout ─── */}
                     {isMobile && readOnly && (
                         <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                            {renderLibraryButton()}
+                            <div style={{ flex: 1 }}>
+                                {renderLibraryButton()}
+                            </div>
                             <a
                                 href={movie.link}
                                 target="_blank"

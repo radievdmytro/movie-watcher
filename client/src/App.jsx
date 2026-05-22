@@ -535,6 +535,25 @@ function App() {
         window.location.hash = '';
     };
 
+    const handleGlobalAddMovie = async (link) => {
+        if (!user || user.username.startsWith('guest_')) {
+            setIsAuthModalOpen(true);
+            return;
+        }
+        try {
+            const res = await fetch('/api/movies/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: link })
+            });
+            if (res.ok || res.status === 409) {
+                fetchMovies(true);
+            }
+        } catch (e) {
+            console.error('Failed to add movie globally:', e);
+        }
+    };
+
     // Single Item Delete (Context dependent)
     const handleDelete = async (id, forceNoConfirm = false, permanent = true, promptIfNoCollections = true) => {
         const isLibrary = currentView === 'library';
@@ -1212,6 +1231,8 @@ function App() {
                     }}
                     onUpdate={user && user.id === sharedMovieData.user_id ? handleUpdate : undefined}
                     readOnly={!user || user.id !== sharedMovieData.user_id}
+                    isAdded={movies.some(m => !m.deleted_at && cleanLinkPath(m.link) === cleanLinkPath(sharedMovieData.link || sharedMovieData.movie_link))}
+                    onAddMovie={handleGlobalAddMovie}
                 />
             )}
 
@@ -1223,6 +1244,8 @@ function App() {
                         if (id) handleUpdate(id, updates);
                         setCompareDetailsMovie(prev => (prev ? { ...prev, ...updates } : prev));
                     }}
+                    isAdded={movies.some(m => !m.deleted_at && cleanLinkPath(m.link) === cleanLinkPath(compareDetailsMovie.link || compareDetailsMovie.movie_link))}
+                    onAddMovie={handleGlobalAddMovie}
                 />
             )}
 
@@ -1234,6 +1257,8 @@ function App() {
                         if (id) handleUpdate(id, updates);
                         setScrapedDetailsMovie(prev => (prev ? { ...prev, ...updates } : prev));
                     }}
+                    isAdded={movies.some(m => !m.deleted_at && cleanLinkPath(m.link) === cleanLinkPath(scrapedDetailsMovie.link || scrapedDetailsMovie.movie_link))}
+                    onAddMovie={handleGlobalAddMovie}
                 />
             )}
 
