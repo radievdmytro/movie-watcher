@@ -1169,8 +1169,8 @@ function App() {
                     movie={compareDetailsMovie}
                     onClose={() => setCompareDetailsMovie(null)}
                     onUpdate={(id, updates) => {
-                        handleUpdate(id, updates);
-                        setCompareDetailsMovie(prev => (prev?.id === id ? { ...prev, ...updates } : prev));
+                        if (id) handleUpdate(id, updates);
+                        setCompareDetailsMovie(prev => (prev ? { ...prev, ...updates } : prev));
                     }}
                 />
             )}
@@ -1180,8 +1180,8 @@ function App() {
                     movie={scrapedDetailsMovie}
                     onClose={() => setScrapedDetailsMovie(null)}
                     onUpdate={(id, updates) => {
-                        handleUpdate(id, updates);
-                        setScrapedDetailsMovie(prev => (prev?.id === id ? { ...prev, ...updates } : prev));
+                        if (id) handleUpdate(id, updates);
+                        setScrapedDetailsMovie(prev => (prev ? { ...prev, ...updates } : prev));
                     }}
                 />
             )}

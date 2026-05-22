@@ -60,6 +60,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         }).then(() => {
                             if (onUpdate) onUpdate(propMovie.id, details);
                         }).catch(err => console.error('Auto-update failed', err));
+                    } else if (onUpdate) {
+                        onUpdate(null, details);
                     }
                 }
             })

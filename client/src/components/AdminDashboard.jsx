@@ -313,7 +313,11 @@ function AdminDashboard({ onBack }) {
                 <MovieDetailsModal
                     movie={selectedMovie}
                     onClose={() => setSelectedMovie(null)}
-                    onUpdate={() => {}} // Read-only admin view
+                    onUpdate={(id, updates) => {
+                        setSelectedMovie(prev => prev ? { ...prev, ...updates } : prev);
+                        setRecentFastScraped(prev => prev.map(m => m.link === updates.link ? { ...m, ...updates } : m));
+                        setRecentDetailedScraped(prev => prev.map(m => m.link === updates.link ? { ...m, ...updates } : m));
+                    }}
                     onDelete={() => {}}
                     isTrashMode={false}
                     readOnly={true}
