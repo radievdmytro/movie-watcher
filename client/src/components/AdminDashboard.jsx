@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import MovieDetailsModal from './MovieDetailsModal';
 
-function AdminDashboard({ onBack }) {
+function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [stats, setStats] = useState(null);
     const [users, setUsers] = useState([]);
     const [guestsLimit, setGuestsLimit] = useState(10);
@@ -320,7 +320,25 @@ function AdminDashboard({ onBack }) {
                     }}
                     onDelete={() => {}}
                     isTrashMode={false}
-                    readOnly={true}
+                    readOnly={false}
+                    isAdded={!!movies.find(m => (m.link || '').split('#')[0].replace(/\/$/, '') === (selectedMovie.link || '').split('#')[0].replace(/\/$/, '') && !m.deleted_at)}
+                    libMovieId={movies.find(m => (m.link || '').split('#')[0].replace(/\/$/, '') === (selectedMovie.link || '').split('#')[0].replace(/\/$/, '') && !m.deleted_at)?.id}
+                    onAddMovie={async (link) => {
+                        try {
+                            const token = localStorage.getItem('token');
+                            await fetch('/api/movies', {
+                                method: 'POST',
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}` 
+                                },
+                                body: JSON.stringify({ link })
+                            });
+                            if (onMovieAdded) onMovieAdded();
+                        } catch (e) {
+                            console.error('Failed to add movie from admin dashboard', e);
+                        }
+                    }}
                 />
             )}
 

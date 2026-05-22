@@ -1049,6 +1049,8 @@ function App() {
                 ) : currentView === 'admin' ? (
                     <AdminDashboard
                         onBack={() => setCurrentView('library')}
+                        movies={movies}
+                        onMovieAdded={() => fetchMovies(true)}
                     />
                 ) : currentView === 'collections' ? (
                     <CollectionsView
