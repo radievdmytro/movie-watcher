@@ -3,6 +3,7 @@ import MovieDetailsModal from './MovieDetailsModal';
 
 const AnimatedCounter = ({ value }) => {
     const [count, setCount] = useState(0);
+    const hasAnimated = useRef(false);
 
     useEffect(() => {
         const end = parseInt(value, 10);
@@ -11,23 +12,36 @@ const AnimatedCounter = ({ value }) => {
             return;
         }
 
+        if (hasAnimated.current) {
+            setCount(end);
+            return;
+        }
+
+        hasAnimated.current = true;
+
         let duration = 1000;
         if (end >= 1000) duration = 3000;
         else if (end >= 100) duration = 2000;
 
         let startTimestamp = null;
+        let animationFrameId = null;
+        
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
             const easeProgress = progress * (2 - progress);
             setCount(Math.floor(easeProgress * end));
             if (progress < 1) {
-                window.requestAnimationFrame(step);
+                animationFrameId = window.requestAnimationFrame(step);
             } else {
                 setCount(end);
             }
         };
-        window.requestAnimationFrame(step);
+        animationFrameId = window.requestAnimationFrame(step);
+        
+        return () => {
+            if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
+        }
     }, [value]);
 
     return <>{count}</>;
