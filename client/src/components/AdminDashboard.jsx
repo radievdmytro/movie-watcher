@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import MovieDetailsModal from './MovieDetailsModal';
 
 function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
