@@ -43,6 +43,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [detailedScrapedLimit, setDetailedScrapedLimit] = useState(10);
     const [selectedFastMovies, setSelectedFastMovies] = useState([]);
     const [selectedDetailedMovies, setSelectedDetailedMovies] = useState([]);
+    const [refreshState, setRefreshState] = useState({ isRefreshing: false, progress: 0, total: 0, type: null });
 
     const handleDeleteScrapedMovies = async (links, type) => {
         if (!window.confirm(`Are you sure you want to delete ${links.length} movie(s) from the database?`)) return;
@@ -70,28 +71,39 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     };
 
     const handleRefreshScrapedMovies = async (links, type) => {
-        if (!window.confirm(`Are you sure you want to refresh ${links.length} movie(s) from HDRezka? This will fetch their latest full info.`)) return;
-        try {
-            const res = await fetch('/api/admin/scraped-movies/refresh', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` 
-                },
-                body: JSON.stringify({ links })
-            });
-            if (res.ok) {
-                fetchRecentScraped();
-                if (type === 'fast') setSelectedFastMovies([]);
-                if (type === 'detailed') setSelectedDetailedMovies([]);
-            } else {
-                const data = await res.json();
-                alert(`Error: ${data.error}`);
+        if (refreshState.isRefreshing) return;
+        setRefreshState({ isRefreshing: true, progress: 0, total: links.length, type });
+
+        for (let i = 0; i < links.length; i++) {
+            try {
+                const res = await fetch('/api/admin/scraped-movies/refresh', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                    },
+                    body: JSON.stringify({ links: [links[i]] })
+                });
+
+                if (res.ok) {
+                    setRefreshState(prev => ({ ...prev, progress: i + 1 }));
+                    fetchRecentScraped();
+                } else {
+                    const data = await res.json();
+                    console.error(`Error refreshing ${links[i]}:`, data.error);
+                }
+
+                if (i < links.length - 1) {
+                    await new Promise(r => setTimeout(r, 2000)); // Delay between requests
+                }
+            } catch (e) {
+                console.error(`Failed to refresh ${links[i]}:`, e);
             }
-        } catch (e) {
-            console.error('Failed to refresh movies:', e);
-            alert('Failed to refresh movies');
         }
+
+        setRefreshState({ isRefreshing: false, progress: 0, total: 0, type: null });
+        if (type === 'fast') setSelectedFastMovies([]);
+        if (type === 'detailed') setSelectedDetailedMovies([]);
     };
 
     const fetchRecentScraped = async () => {
@@ -1014,9 +1026,13 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button 
                                             onClick={() => handleRefreshScrapedMovies(selectedFastMovies, 'fast')}
-                                            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                            disabled={refreshState.isRefreshing}
+                                            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '8px', cursor: refreshState.isRefreshing ? 'not-allowed' : 'pointer', fontSize: '0.8rem', fontWeight: 'bold', opacity: refreshState.isRefreshing ? 0.7 : 1 }}
                                         >
-                                            🔄 Refresh ({selectedFastMovies.length})
+                                            {refreshState.isRefreshing && refreshState.type === 'fast' 
+                                                ? `🔄 Refreshing ${refreshState.progress} / ${refreshState.total}`
+                                                : `🔄 Refresh (${selectedFastMovies.length})`
+                                            }
                                         </button>
                                         <button 
                                             onClick={() => handleDeleteScrapedMovies(selectedFastMovies, 'fast')}
@@ -1147,9 +1163,13 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button 
                                             onClick={() => handleRefreshScrapedMovies(selectedDetailedMovies, 'detailed')}
-                                            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                            disabled={refreshState.isRefreshing}
+                                            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '8px', cursor: refreshState.isRefreshing ? 'not-allowed' : 'pointer', fontSize: '0.8rem', fontWeight: 'bold', opacity: refreshState.isRefreshing ? 0.7 : 1 }}
                                         >
-                                            🔄 Refresh ({selectedDetailedMovies.length})
+                                            {refreshState.isRefreshing && refreshState.type === 'detailed' 
+                                                ? `🔄 Refreshing ${refreshState.progress} / ${refreshState.total}`
+                                                : `🔄 Refresh (${selectedDetailedMovies.length})`
+                                            }
                                         </button>
                                         <button 
                                             onClick={() => handleDeleteScrapedMovies(selectedDetailedMovies, 'detailed')}
