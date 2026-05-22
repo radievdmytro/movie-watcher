@@ -3038,7 +3038,7 @@ app.get('/api/admin/broken-movies/stats', authenticateToken, requireAdmin, (req,
 
 app.get('/api/admin/recent-scraped', authenticateToken, requireAdmin, (req, res) => {
     try {
-        const limit = Math.min(100, parseInt(req.query.limit) || 10);
+        const limit = Math.min(1000, parseInt(req.query.limit) || 10);
         const type = req.query.type; // 'fast' or 'detailed'
         const brokenOnly = req.query.broken === 'true';
         
