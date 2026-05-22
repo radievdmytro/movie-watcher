@@ -1,6 +1,38 @@
 import { useState, useEffect, useRef } from 'react';
 import MovieDetailsModal from './MovieDetailsModal';
 
+const AnimatedCounter = ({ value }) => {
+    const [count, setCount] = useState(0);
+
+    useEffect(() => {
+        const end = parseInt(value, 10);
+        if (isNaN(end) || end === 0) {
+            setCount(0);
+            return;
+        }
+
+        let duration = 1000;
+        if (end >= 1000) duration = 3000;
+        else if (end >= 100) duration = 2000;
+
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const easeProgress = progress * (2 - progress);
+            setCount(Math.floor(easeProgress * end));
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                setCount(end);
+            }
+        };
+        window.requestAnimationFrame(step);
+    }, [value]);
+
+    return <>{count}</>;
+};
+
 function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [stats, setStats] = useState(null);
     const [users, setUsers] = useState([]);
@@ -636,7 +668,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                             </div>
                             <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(59,130,246,0.2)', background: 'rgba(59,130,246,0.05)', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <div style={{ fontSize: '2.5rem', color: '#3b82f6', fontWeight: 'bold', marginBottom: '5px' }}>
-                                    {stats.missingDescriptions || 0}
+                                    <AnimatedCounter value={stats.missingDescriptions || 0} />
                                 </div>
                                 <div style={{ color: '#93c5fd', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: (stats.missingDescriptions > 0 || crawlerSettings.enabled) ? '10px' : '0' }}>
                                     No Description
@@ -660,7 +692,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                             </div>
                             <div className="glass-panel" style={{ padding: '25px', borderRadius: '15px', border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <div style={{ fontSize: '2.5rem', color: '#ef4444', fontWeight: 'bold', marginBottom: '5px' }}>
-                                    {brokenStats.count}
+                                    <AnimatedCounter value={brokenStats.count || 0} />
                                 </div>
                                 <div style={{ color: '#fca5a5', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: brokenStats.count > 0 ? '10px' : '0' }}>
                                     Broken Movies
