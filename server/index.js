@@ -3074,9 +3074,9 @@ app.post('/api/admin/scraped-movies/refresh', authenticateToken, requireAdmin, a
         for (const link of links) {
             try {
                 if (isHdrezkaUrl(link)) {
-                    const cleanLinkStr = cleanUrlPath(link);
-                    const details = await getMovieDetails(cleanLinkStr, getUserHeaders(req));
+                    const details = await getMovieDetails(link, getUserHeaders(req));
                     if (details) {
+                        details.link = link; // Ensure the link matches the database exactly
                         saveToCache(details);
                         refreshedCount++;
                     }
