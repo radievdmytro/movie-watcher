@@ -34,11 +34,14 @@ function useSmoothCount(targetValue, duration = 3750) {
 
         if (animRef.current) cancelAnimationFrame(animRef.current);
 
+        const currentDuration = startValue === 0 ? 2000 : duration;
+
         let startTimestamp = null;
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
-            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-            setDisplayValue(Math.floor(startValue + (end - startValue) * progress));
+            const progress = Math.min((timestamp - startTimestamp) / currentDuration, 1);
+            const easeProgress = progress * (2 - progress); // Add slight easing for initial load
+            setDisplayValue(Math.floor(startValue + (end - startValue) * easeProgress));
             if (progress < 1) {
                 animRef.current = requestAnimationFrame(step);
             } else {
