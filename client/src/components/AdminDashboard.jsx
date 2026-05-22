@@ -1027,7 +1027,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                 </label>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: showBrokenFast ? 'rgba(239, 68, 68, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: showBrokenFast ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid transparent' }}>
                                     <input type="checkbox" checked={showBrokenFast} onChange={e => setShowBrokenFast(e.target.checked)} />
-                                    Показать поломанные
+                                    Broken
                                 </label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
@@ -1168,7 +1168,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                 </label>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: showBrokenDetailed ? 'rgba(239, 68, 68, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: showBrokenDetailed ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid transparent' }}>
                                     <input type="checkbox" checked={showBrokenDetailed} onChange={e => setShowBrokenDetailed(e.target.checked)} />
-                                    Показать поломанные
+                                    Broken
                                 </label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
