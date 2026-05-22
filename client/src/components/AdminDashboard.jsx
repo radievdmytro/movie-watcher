@@ -62,9 +62,12 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
         currentCategory: '',
         shouldStop: false
     });
-    const [fcPages, setFcPages] = useState(5);
-    const [fcCategories, setFcCategories] = useState(['films', 'series', 'cartoons', 'animation']);
-    const [fcDelay, setFcDelay] = useState(5000);
+    const [fcPages, setFcPages] = useState(() => parseInt(localStorage.getItem('admin_fcPages')) || 5);
+    const [fcCategories, setFcCategories] = useState(() => {
+        const saved = localStorage.getItem('admin_fcCategories');
+        return saved ? JSON.parse(saved) : ['films', 'series', 'cartoons', 'animation'];
+    });
+    const [fcDelay, setFcDelay] = useState(() => parseInt(localStorage.getItem('admin_fcDelay')) || 5000);
     const [startingFC, setStartingFC] = useState(false);
 
     // Recently Scraped Movies States
@@ -78,7 +81,15 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [refreshState, setRefreshState] = useState({ isRefreshing: false, progress: 0, total: 0, type: null });
     const [showBrokenFast, setShowBrokenFast] = useState(false);
     const [showBrokenDetailed, setShowBrokenDetailed] = useState(false);
-    const [bulkRefreshDelay, setBulkRefreshDelay] = useState(2);
+    const [bulkRefreshDelay, setBulkRefreshDelay] = useState(() => parseInt(localStorage.getItem('admin_bulkRefreshDelay')) || 2);
+
+    // Save local settings to localStorage
+    useEffect(() => {
+        localStorage.setItem('admin_fcPages', fcPages.toString());
+        localStorage.setItem('admin_fcCategories', JSON.stringify(fcCategories));
+        localStorage.setItem('admin_fcDelay', fcDelay.toString());
+        localStorage.setItem('admin_bulkRefreshDelay', bulkRefreshDelay.toString());
+    }, [fcPages, fcCategories, fcDelay, bulkRefreshDelay]);
     
     // Broken Movies Repair State
     const [brokenStats, setBrokenStats] = useState({ count: 0 });
@@ -702,7 +713,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                         onClick={handleStartRepair}
                                         style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', width: 'fit-content', margin: '0 auto' }}
                                     >
-                                        ▶️ Repair
+                                        ▶️ Repair ({bulkRefreshDelay}s)
                                     </button>
                                 )}
                                 {isRepairing && (
