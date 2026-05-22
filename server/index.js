@@ -3027,6 +3027,15 @@ app.post('/api/admin/fast-crawler/stop', authenticateToken, requireAdmin, (req, 
     res.json({ success: true, message: 'Termination signal sent to crawler.' });
 });
 
+app.get('/api/admin/broken-movies/stats', authenticateToken, requireAdmin, (req, res) => {
+    try {
+        const row = db.prepare(`SELECT COUNT(*) as count FROM scraped_movies_cache WHERE ((title IS NULL OR title = '' OR title = '—') AND (rating IS NULL OR rating = 0 OR rating = ''))`).get();
+        res.json({ count: row.count });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/admin/recent-scraped', authenticateToken, requireAdmin, (req, res) => {
     try {
         const limit = Math.min(100, parseInt(req.query.limit) || 10);
@@ -3041,7 +3050,7 @@ app.get('/api/admin/recent-scraped', authenticateToken, requireAdmin, (req, res)
         }
 
         if (brokenOnly) {
-            const brokenSql = "(title IS NULL OR title = '' OR title = '—' OR poster_url IS NULL OR poster_url = '')";
+            const brokenSql = "((title IS NULL OR title = '' OR title = '—') AND (rating IS NULL OR rating = 0 OR rating = ''))";
             condition = condition ? `${condition} AND ${brokenSql}` : `WHERE ${brokenSql}`;
         }
 
