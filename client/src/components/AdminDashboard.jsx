@@ -44,6 +44,8 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [selectedFastMovies, setSelectedFastMovies] = useState([]);
     const [selectedDetailedMovies, setSelectedDetailedMovies] = useState([]);
     const [refreshState, setRefreshState] = useState({ isRefreshing: false, progress: 0, total: 0, type: null });
+    const [showBrokenFast, setShowBrokenFast] = useState(false);
+    const [showBrokenDetailed, setShowBrokenDetailed] = useState(false);
 
     const handleDeleteScrapedMovies = async (links, type) => {
         if (!window.confirm(`Are you sure you want to delete ${links.length} movie(s) from the database?`)) return;
@@ -108,21 +110,32 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
 
     const fetchRecentScraped = async () => {
         try {
-            const [fastRes, detailedRes] = await Promise.all([
-                fetch(`/api/admin/recent-scraped?type=fast&limit=${fastScrapedLimit}`),
-                fetch(`/api/admin/recent-scraped?type=detailed&limit=${detailedScrapedLimit}`)
-            ]);
-            if (fastRes.ok) setRecentFastScraped(await fastRes.json());
-            if (detailedRes.ok) setRecentDetailedScraped(await detailedRes.json());
-        } catch (err) {
-            console.error('Failed to fetch recent scraped movies:', err);
+            const resFast = await fetch(`/api/admin/recent-scraped?limit=${fastScrapedLimit}&type=fast&broken=${showBrokenFast}`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (resFast.ok) setRecentFastScraped(await resFast.json());
+
+            const resDetailed = await fetch(`/api/admin/recent-scraped?limit=${detailedScrapedLimit}&type=detailed&broken=${showBrokenDetailed}`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (resDetailed.ok) setRecentDetailedScraped(await resDetailed.json());
+        } catch (e) {
+            console.error('Failed to fetch recent scraped movies:', e);
         }
     };
 
     // Re-fetch when limits change
     useEffect(() => {
+        const interval = setInterval(() => {
+            fetchRecentScraped();
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [isRealtime, fastScrapedLimit, detailedScrapedLimit, showBrokenFast, showBrokenDetailed]);
+
+    // Initial load
+    useEffect(() => {
         if (stats) fetchRecentScraped(); // Only run if mounted/authenticated
-    }, [fastScrapedLimit, detailedScrapedLimit, stats]);
+    }, [stats, fastScrapedLimit, detailedScrapedLimit, showBrokenFast, showBrokenDetailed]);
 
     // Inline Admin Operations State (No native popups!)
     const [confirmDeleteUserId, setConfirmDeleteUserId] = useState(null);
@@ -1012,6 +1025,10 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     <input type="checkbox" checked={isRealtime} onChange={e => setIsRealtime(e.target.checked)} />
                                     Realtime
                                 </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: showBrokenFast ? 'rgba(239, 68, 68, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: showBrokenFast ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid transparent' }}>
+                                    <input type="checkbox" checked={showBrokenFast} onChange={e => setShowBrokenFast(e.target.checked)} />
+                                    Показать поломанные
+                                </label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
                                     <input 
@@ -1148,6 +1165,10 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: isRealtime ? 'rgba(59, 130, 246, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: isRealtime ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent' }}>
                                     <input type="checkbox" checked={isRealtime} onChange={e => setIsRealtime(e.target.checked)} />
                                     Realtime
+                                </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#888', cursor: 'pointer', background: showBrokenDetailed ? 'rgba(239, 68, 68, 0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px', border: showBrokenDetailed ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid transparent' }}>
+                                    <input type="checkbox" checked={showBrokenDetailed} onChange={e => setShowBrokenDetailed(e.target.checked)} />
+                                    Показать поломанные
                                 </label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.85rem', color: '#888' }}>Show:</span>
