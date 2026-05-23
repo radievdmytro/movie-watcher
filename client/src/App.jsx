@@ -853,8 +853,8 @@ function App() {
             <div 
                 className={`global-cache-wrapper ${isMobile ? 'mobile-badge-only' : 'desktop-badge-only'}`}
                 style={{ position: 'relative' }}
-                onMouseEnter={() => setIsHoveringBadge(true)}
-                onMouseLeave={() => setIsHoveringBadge(false)}
+                onMouseEnter={() => { if (!isMobile) setIsHoveringBadge(true); }}
+                onMouseLeave={() => { if (!isMobile) setIsHoveringBadge(false); }}
             >
                 <div 
                     className="global-cache-badge glass-panel" 
@@ -874,7 +874,14 @@ function App() {
                         transition: 'all 0.2s ease',
                         animation: 'pulse 3s infinite alternate'
                     }}
-                    onClick={() => { if (user?.username?.toLowerCase() === 'radev') setCurrentView('admin'); }}
+                    onClick={(e) => { 
+                        if (isMobile) {
+                            e.stopPropagation();
+                            setIsHoveringBadge(prev => !prev);
+                        } else {
+                            if (user?.username?.toLowerCase() === 'radev') setCurrentView('admin'); 
+                        }
+                    }}
                 >
                     <span 
                         className="live-pulse"
