@@ -985,7 +985,10 @@ function App() {
                     <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                         <div 
                             style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
-                            onClick={() => { if (currentView !== 'shared_collection') setCurrentView('library'); }}
+                            onClick={() => { 
+                                if (currentView !== 'shared_collection') setCurrentView('library');
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
                         >
                             <img 
                                 src="favicon.png" 
