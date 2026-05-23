@@ -847,6 +847,118 @@ function App() {
         );
     }
 
+    const renderCacheBadge = (isMobile) => {
+        if (globalCacheCount <= 0) return null;
+        return (
+            <div 
+                className={`global-cache-wrapper ${isMobile ? 'mobile-badge-only' : 'desktop-badge-only'}`}
+                style={{ position: 'relative' }}
+                onMouseEnter={() => setIsHoveringBadge(true)}
+                onMouseLeave={() => setIsHoveringBadge(false)}
+            >
+                <div 
+                    className="global-cache-badge glass-panel" 
+                    style={{
+                        fontSize: '0.8rem',
+                        color: '#c084fc',
+                        background: 'rgba(168, 85, 247, 0.08)',
+                        border: '1px solid rgba(168, 85, 247, 0.25)',
+                        padding: '6px 14px',
+                        borderRadius: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: 'bold',
+                        boxShadow: '0 0 10px rgba(168, 85, 247, 0.05)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        animation: 'pulse 3s infinite alternate'
+                    }}
+                    onClick={() => { if (user?.username?.toLowerCase() === 'radev') setCurrentView('admin'); }}
+                >
+                    <span 
+                        className="live-pulse"
+                        style={{ 
+                            width: '6px', 
+                            height: '6px', 
+                            background: '#c084fc', 
+                            borderRadius: '50%',
+                            display: 'inline-block',
+                            boxShadow: '0 0 8px #c084fc',
+                            animation: 'blink 1.5s infinite'
+                        }} 
+                    />
+                    <span>🎬 {smoothCacheCount.toLocaleString()} in DB</span>
+                </div>
+                
+                {/* The Latest Scraped Notification Popup */}
+                {/* Transparent bridge: fills gap between button and popup so mouse doesn't "escape" */}
+                <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: '0',
+                    width: '310px',
+                    paddingTop: '10px',   // invisible bridge over the gap
+                    zIndex: 100,
+                }}>
+                <div style={{
+                    width: '290px',
+                    marginLeft: 'auto',
+                    background: popupMode === 'top'
+                        ? 'rgba(30, 25, 15, 0.92)'
+                        : popupMode === 'random'
+                            ? 'rgba(15, 25, 35, 0.9)'
+                            : 'rgba(25, 20, 40, 0.88)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    border: popupMode === 'top'
+                        ? '1px solid rgba(212, 175, 55, 0.45)'
+                        : popupMode === 'random'
+                            ? '1px solid rgba(56, 189, 248, 0.3)'
+                            : '1px solid rgba(168, 85, 247, 0.35)',
+                    borderRadius: '16px',
+                    padding: '12px 14px',
+                    boxShadow: popupMode === 'top'
+                        ? '0 12px 40px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 0 25px rgba(212, 175, 55, 0.15)'
+                        : popupMode === 'random'
+                            ? '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 0 20px rgba(56, 189, 248, 0.1)'
+                            : '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 20px rgba(168, 85, 247, 0.15)',
+                    opacity: (showScrapePopup || isHoveringBadge) && popupMovie ? 1 : 0,
+                    transform: (showScrapePopup || isHoveringBadge) && popupMovie 
+                        ? 'translateY(0) scale(1)' 
+                        : 'translateY(-15px) scale(0.92)',
+                    pointerEvents: (showScrapePopup || isHoveringBadge) && popupMovie ? 'auto' : 'none',
+                    transition: 'opacity 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    zIndex: 100,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer'
+                }} onClick={() => {
+                    if (popupMovie) setScrapedDetailsMovie(popupMovie);
+                }}>
+                    {popupMovie?.poster_url && (
+                        <img src={popupMovie.poster_url} alt="poster" style={{ width: '45px', height: '65px', borderRadius: '8px', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }} />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                        <div style={{ fontSize: '0.72rem', color: popupMode === 'top' ? 'var(--accent-gold)' : popupMode === 'random' ? '#38bdf8' : '#c084fc', marginBottom: '3px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
+                            {popupMode === 'top' ? '✨ Высокий рейтинг:' : popupMode === 'random' ? '🎲 Случайный фильм:' : 'Недавно добавлено:'}
+                        </div>
+                        <div style={{ fontSize: '0.92rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', lineHeight: '1.2' }}>
+                            {popupMovie?.title}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#aaa', marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            {popupMovie?.year && <span>{popupMovie.year}</span>}
+                            {popupMovie?.year && popupMovie?.rating && <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }}></span>}
+                            {popupMovie?.rating ? <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>★ {popupMovie.rating}</span> : null}
+                        </div>
+                    </div>
+                </div>  {/* end inner popup */}
+                </div>  {/* end bridge wrapper */}
+            </div>
+        );
+    };
+
     return (
         <div className="app">
             <style>{`
@@ -861,6 +973,7 @@ function App() {
             `}</style>
             <header className={`header glass-panel app-header${headerScrolled ? ' header-scrolled' : ''}`}>
                 <div className="container header-content">
+                    {currentView !== 'shared_collection' && user && renderCacheBadge(true)}
                     <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                         <div 
                             style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
@@ -922,113 +1035,7 @@ function App() {
                     {currentView !== 'shared_collection' && user && (
                         <div className="header-right" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
 
-                            {globalCacheCount > 0 && (
-                                <div 
-                                    style={{ position: 'relative' }}
-                                    onMouseEnter={() => setIsHoveringBadge(true)}
-                                    onMouseLeave={() => setIsHoveringBadge(false)}
-                                >
-                                    <div 
-                                        className="global-cache-badge glass-panel" 
-                                        style={{
-                                            fontSize: '0.8rem',
-                                            color: '#c084fc',
-                                            background: 'rgba(168, 85, 247, 0.08)',
-                                            border: '1px solid rgba(168, 85, 247, 0.25)',
-                                            padding: '6px 14px',
-                                            borderRadius: '20px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            fontWeight: 'bold',
-                                            boxShadow: '0 0 10px rgba(168, 85, 247, 0.05)',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            animation: 'pulse 3s infinite alternate'
-                                        }}
-                                        onClick={() => { if (user?.username?.toLowerCase() === 'radev') setCurrentView('admin'); }}
-                                    >
-                                        <span 
-                                            className="live-pulse"
-                                            style={{ 
-                                                width: '6px', 
-                                                height: '6px', 
-                                                background: '#c084fc', 
-                                                borderRadius: '50%',
-                                                display: 'inline-block',
-                                                boxShadow: '0 0 8px #c084fc',
-                                                animation: 'blink 1.5s infinite'
-                                            }} 
-                                        />
-                                        <span>🎬 {smoothCacheCount.toLocaleString()} in DB</span>
-                                    </div>
-                                    
-                                    {/* The Latest Scraped Notification Popup */}
-                                    {/* Transparent bridge: fills gap between button and popup so mouse doesn't "escape" */}
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '100%',
-                                        right: '0',
-                                        width: '310px',
-                                        paddingTop: '10px',   // invisible bridge over the gap
-                                        zIndex: 100,
-                                    }}>
-                                    <div style={{
-                                        width: '290px',
-                                        marginLeft: 'auto',
-                                        background: popupMode === 'top'
-                                            ? 'rgba(30, 25, 15, 0.92)'
-                                            : popupMode === 'random'
-                                                ? 'rgba(15, 25, 35, 0.9)'
-                                                : 'rgba(25, 20, 40, 0.88)',
-                                        backdropFilter: 'blur(20px)',
-                                        WebkitBackdropFilter: 'blur(20px)',
-                                        border: popupMode === 'top'
-                                            ? '1px solid rgba(212, 175, 55, 0.45)'
-                                            : popupMode === 'random'
-                                                ? '1px solid rgba(56, 189, 248, 0.3)'
-                                                : '1px solid rgba(168, 85, 247, 0.35)',
-                                        borderRadius: '16px',
-                                        padding: '12px 14px',
-                                        boxShadow: popupMode === 'top'
-                                            ? '0 12px 40px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 0 25px rgba(212, 175, 55, 0.15)'
-                                            : popupMode === 'random'
-                                                ? '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 0 20px rgba(56, 189, 248, 0.1)'
-                                                : '0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 20px rgba(168, 85, 247, 0.15)',
-                                        opacity: (showScrapePopup || isHoveringBadge) && popupMovie ? 1 : 0,
-                                        transform: (showScrapePopup || isHoveringBadge) && popupMovie 
-                                            ? 'translateY(0) scale(1)' 
-                                            : 'translateY(-15px) scale(0.92)',
-                                        pointerEvents: (showScrapePopup || isHoveringBadge) && popupMovie ? 'auto' : 'none',
-                                        transition: 'opacity 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                                        zIndex: 100,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '12px',
-                                        cursor: 'pointer'
-                                    }} onClick={() => {
-                                        if (popupMovie) setScrapedDetailsMovie(popupMovie);
-                                    }}>
-                                        {popupMovie?.poster_url && (
-                                            <img src={popupMovie.poster_url} alt="poster" style={{ width: '45px', height: '65px', borderRadius: '8px', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }} />
-                                        )}
-                                        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                                            <div style={{ fontSize: '0.72rem', color: popupMode === 'top' ? 'var(--accent-gold)' : popupMode === 'random' ? '#38bdf8' : '#c084fc', marginBottom: '3px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
-                                                {popupMode === 'top' ? '✨ Высокий рейтинг:' : popupMode === 'random' ? '🎲 Случайный фильм:' : 'Недавно добавлено:'}
-                                            </div>
-                                            <div style={{ fontSize: '0.92rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600', lineHeight: '1.2' }}>
-                                                {popupMovie?.title}
-                                            </div>
-                                            <div style={{ fontSize: '0.8rem', color: '#aaa', marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                {popupMovie?.year && <span>{popupMovie.year}</span>}
-                                                {popupMovie?.year && popupMovie?.rating && <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }}></span>}
-                                                {popupMovie?.rating ? <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>★ {popupMovie.rating}</span> : null}
-                                            </div>
-                                        </div>
-                                    </div>  {/* end inner popup */}
-                                    </div>  {/* end bridge wrapper */}
-                                </div>
-                            )}
+                            {renderCacheBadge(false)}
                             <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '24px', margin: '0 5px' }}></div>
                             {user.username.startsWith('guest_') ? (
                                 <div style={{ position: 'relative', display: 'inline-block' }}>

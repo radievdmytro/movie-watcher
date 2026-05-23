@@ -752,8 +752,8 @@ body.hide-header-search .app-header {
 
   /* ── logo text ── */
   .app-header .logo {
-    /* font-size: 1.35rem -> 0.9rem */
-    font-size: calc(1.35rem - 0.45rem * var(--sp, 0)) !important;
+    /* font-size: 1.15rem -> 0.9rem */
+    font-size: calc(1.15rem - 0.25rem * var(--sp, 0)) !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1254,7 +1254,23 @@ body.hide-header-search .app-header {
 }
 
 @media (max-width: 768px) {
-  .global-cache-badge {
+  .desktop-badge-only {
+    display: none !important;
+  }
+  
+  .app-header .mobile-badge-only {
+    position: absolute !important;
+    top: calc(24px - 16px * var(--sp, 0)) !important;
+    right: calc(15px - 7px * var(--sp, 0)) !important;
+    z-index: 100;
+    transform: scale(calc(1 - 0.15 * var(--sp, 0))) !important;
+    transform-origin: top right !important;
+    transition: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-badge-only {
     display: none !important;
   }
 }
