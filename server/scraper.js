@@ -36,11 +36,13 @@ let currentMirrorIndex = 0;
 // Dual In-Memory Caches to prevent unnecessary outbound traffic
 const searchCache = new Map();
 const detailsCache = new Map();
+const categoryCache = new Map();
 const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 Hours TTL
+const CATEGORY_CACHE_TTL = 60 * 60 * 1000; // 1 Hour TTL
 
-function getFromCache(cache, key) {
+function getFromCache(cache, key, ttl = CACHE_TTL) {
     const entry = cache.get(key);
-    if (entry && (Date.now() - entry.timestamp < CACHE_TTL)) {
+    if (entry && (Date.now() - entry.timestamp < ttl)) {
         return entry.data;
     }
     return null;
@@ -165,11 +167,19 @@ async function searchMovies(query, customHeaders = {}) {
 }
 
 async function getCategoryMovies(filter) {
+    const cached = getFromCache(categoryCache, filter, CATEGORY_CACHE_TTL);
+    if (cached) {
+        console.log(`[Scraper] Cache hit for category filter: ${filter}`);
+        return cached;
+    }
+
     try {
         const catPath = `/new/?filter=${filter}`;
         const { data } = await requestWithRetry(catPath);
         const $ = cheerio.load(data);
-        return parseMovieList($);
+        const results = parseMovieList($);
+        setToCache(categoryCache, filter, results);
+        return results;
     } catch (error) {
         console.error(`Category Error (${filter}):`, error.message);
         return [];
