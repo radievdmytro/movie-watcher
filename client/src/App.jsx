@@ -907,6 +907,7 @@ function App() {
                     width: '310px',
                     paddingTop: '10px',   // invisible bridge over the gap
                     zIndex: 100,
+                    pointerEvents: (showScrapePopup || isHoveringBadge) && popupMovie ? 'auto' : 'none',
                 }}>
                 <div style={{
                     width: '290px',
