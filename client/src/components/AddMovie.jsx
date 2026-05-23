@@ -647,9 +647,9 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
             }} className="compact-controls-row add-movie-quick-row">
 
                 {[
-                    { id: 'watching', label: 'Watching Now', icon: '👀' },
-                    { id: 'last', label: 'New Releases', icon: '✨' },
-                    { id: 'popular', label: 'Popular', icon: '🔥' }
+                    { id: 'watching', label: isMobile ? 'Watching' : 'Watching Now', icon: '👀' },
+                    { id: 'last', label: isMobile ? 'New' : 'New Releases', icon: '✨' },
+                    { id: 'popular', label: isMobile ? 'Hot' : 'Popular', icon: '🔥' }
                 ].map(cat => (
                     <button
                         key={cat.id}
@@ -699,7 +699,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     onMouseOut={(e) => !loading && (e.currentTarget.style.background = 'rgba(192, 132, 252, 0.08)')}
                 >
                     <span>📝</span>
-                    <span>Bulk Import</span>
+                    <span>{isMobile ? 'Import' : 'Bulk Import'}</span>
                 </button>
             </div>
 
