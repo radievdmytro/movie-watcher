@@ -543,14 +543,21 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
         const year = parseInt(item.year) || 0;
 
         if (searchFilterType !== 'all') {
+            const isCartoon = item.misc?.toLowerCase().includes('мульт') ||
+                item.misc?.toLowerCase().includes('анимац') ||
+                item.link?.includes('/cartoons/');
+                
+            const isAnime = item.misc?.toLowerCase().includes('аниме') ||
+                item.link?.includes('/animation/');
+
             if (searchFilterType === 'cartoon') {
-                const isCartoon = item.misc?.toLowerCase().includes('мульт') ||
-                    item.misc?.toLowerCase().includes('анимац') ||
-                    item.link?.includes('/cartoons/') ||
-                    item.link?.includes('/animation/');
                 if (!isCartoon) return false;
-            } else if (item.type !== searchFilterType) {
-                return false;
+            } else if (searchFilterType === 'anime') {
+                if (!isAnime) return false;
+            } else if (searchFilterType === 'movie') {
+                if (item.type !== 'movie' || isCartoon || isAnime) return false;
+            } else if (searchFilterType === 'series') {
+                if (item.type !== 'series' || isCartoon || isAnime) return false;
             }
         }
         if (year < searchFilterYear[0] || year > searchFilterYear[1]) return false;
@@ -893,6 +900,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                     <option value="movie" style={{ background: '#151515' }}>Movies</option>
                                     <option value="series" style={{ background: '#151515' }}>Series</option>
                                     <option value="cartoon" style={{ background: '#151515' }}>Cartoons</option>
+                                    <option value="anime" style={{ background: '#151515' }}>Anime</option>
                                 </select>
                             </div>
 
@@ -968,7 +976,8 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                     { id: 'all', label: 'All' },
                                     { id: 'movie', label: 'Movies' },
                                     { id: 'series', label: 'Series' },
-                                    { id: 'cartoon', label: 'Cartoon' }
+                                    { id: 'cartoon', label: 'Cartoon' },
+                                    { id: 'anime', label: 'Anime' }
                                 ].map(t => (
                                     <button key={t.id} onClick={() => setSearchFilterType(t.id)} style={{
                                         padding: '5px 15px', fontSize: '0.8rem', borderRadius: '18px', border: 'none', cursor: 'pointer',

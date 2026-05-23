@@ -1049,16 +1049,24 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
             // Type Filter
             if (filterType !== 'all') {
+                const isCartoon = movie.genres?.toLowerCase().includes('мульт') ||
+                    movie.genres?.toLowerCase().includes('анимац') ||
+                    movie.misc?.toLowerCase().includes('мульт') ||
+                    movie.misc?.toLowerCase().includes('анимац') ||
+                    movie.link?.includes('/cartoons/');
+                    
+                const isAnime = movie.genres?.toLowerCase().includes('аниме') ||
+                    movie.misc?.toLowerCase().includes('аниме') ||
+                    movie.link?.includes('/animation/');
+                    
                 if (filterType === 'cartoon') {
-                    const isCartoon = movie.genres?.toLowerCase().includes('мульт') ||
-                        movie.genres?.toLowerCase().includes('анимац') ||
-                        movie.misc?.toLowerCase().includes('мульт') ||
-                        movie.misc?.toLowerCase().includes('анимац') ||
-                        movie.link?.includes('/cartoons/') ||
-                        movie.link?.includes('/animation/');
                     if (!isCartoon) return false;
-                } else if (movie.type !== filterType) {
-                    return false;
+                } else if (filterType === 'anime') {
+                    if (!isAnime) return false;
+                } else if (filterType === 'movie') {
+                    if (movie.type !== 'movie' || isCartoon || isAnime) return false;
+                } else if (filterType === 'series') {
+                    if (movie.type !== 'series' || isCartoon || isAnime) return false;
                 }
             }
 
