@@ -522,6 +522,37 @@ const GlobalHideButton = ({ link, onHide, offsetRight = 10, onHoverEnter, onHove
     </button>
 );
 
+const FolderCard = ({ groupName, movies, onClick }) => {
+    const previews = movies.slice(0, 5);
+    return (
+        <div className="watched-folder-card" onClick={onClick}>
+            <div className="folder-header">
+                <div className="folder-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    {groupName}
+                </div>
+                <div className="folder-count">{movies.length}</div>
+            </div>
+            <div className="folder-previews">
+                {previews.map((m, i) => (
+                    <img 
+                        key={m.id || m.link || i} 
+                        src={m.poster_url || 'https://via.placeholder.com/300x450?text=No+Poster'} 
+                        alt="preview"
+                        className="folder-preview-poster" 
+                        style={{
+                            marginLeft: i > 0 ? '-35px' : '0',
+                            zIndex: 10 - i,
+                            transform: `rotate(${i % 2 === 0 ? 3 : -2}deg)`
+                        }} 
+                    />
+                ))}
+            </div>
+        </div>
+    );
+};
+
+
 function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, guestLimitReached, isGuest, onRegisterClick, highlightedLink, onGuestActivity, onAddToCollectionClick }) {
     const [gridRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
     const [listRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
@@ -545,6 +576,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     }, []);
     
     const [viewMode, setViewMode] = useState(() => localStorage.getItem('movieGrid_viewMode') || 'grid'); // 'grid' | 'table'
+    const [watchedViewMode, setWatchedViewMode] = useState(() => localStorage.getItem('movieGrid_watchedViewMode') || 'folders'); // 'folders' | 'grid'
+    const [activeFolder, setActiveFolder] = useState(null);
 
     useEffect(() => {
         if (isWatchedView && sortField === 'status') {
@@ -558,7 +591,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         localStorage.setItem('movieGrid_hideWatched', JSON.stringify(hideWatched));
         localStorage.setItem('movieGrid_hideWatchedInGlobal', JSON.stringify(hideWatchedInGlobal));
         localStorage.setItem('movieGrid_viewMode', viewMode);
-    }, [sortField, sortDir, hideWatched, hideWatchedInGlobal, viewMode]);
+        localStorage.setItem('movieGrid_watchedViewMode', watchedViewMode);
+    }, [sortField, sortDir, hideWatched, hideWatchedInGlobal, viewMode, watchedViewMode]);
 
     const [posterSize, setPosterSize] = useState(() => {
         return parseInt(localStorage.getItem('posterSize')) || 220;
@@ -1087,6 +1121,55 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         });
     }, [onboardingCacheMovies, deferredFilterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType, searchFields, uniqueBackgroundCacheResults, localHiddenGlobalLinks, hideWatchedInGlobal]);
 
+    const folderGroups = useMemo(() => {
+        if (!isWatchedView || watchedViewMode !== 'folders') return null;
+
+        const groups = {};
+        const monthNames = [
+            "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+            "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+        ];
+
+        filteredAndSortedMovies.forEach(movie => {
+            const dateStr = movie.updated_at || movie.created_at;
+            let groupName = "Неизвестная дата";
+            let sortKey = 0;
+            
+            if (dateStr) {
+                const d = new Date(dateStr);
+                if (!isNaN(d.getTime())) {
+                    groupName = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+                    sortKey = d.getFullYear() * 100 + d.getMonth();
+                }
+            }
+
+            if (!groups[groupName]) {
+                groups[groupName] = { name: groupName, movies: [], sortKey };
+            }
+            groups[groupName].movies.push(movie);
+        });
+
+        return Object.values(groups).sort((a, b) => b.sortKey - a.sortKey);
+    }, [filteredAndSortedMovies, isWatchedView, watchedViewMode]);
+
+    const finalDisplayMovies = useMemo(() => {
+        if (isWatchedView && watchedViewMode === 'folders' && activeFolder) {
+            const monthNames = [
+                "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+                "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+            ];
+            return filteredAndSortedMovies.filter(m => {
+                const dateStr = m.updated_at || m.created_at;
+                if (!dateStr) return activeFolder === "Неизвестная дата";
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return activeFolder === "Неизвестная дата";
+                const gName = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+                return gName === activeFolder;
+            });
+        }
+        return filteredAndSortedMovies;
+    }, [filteredAndSortedMovies, isWatchedView, watchedViewMode, activeFolder]);
+
     const hasActiveFilter = useMemo(() => {
         return !!(
             deferredFilterQuery.trim() ||
@@ -1404,14 +1487,14 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         }
 
         return () => observer.disconnect();
-    }, [filteredAndSortedMovies.length]); // Now this is safe
+    }, [finalDisplayMovies.length]); // Now this is safe
     
     // Trigger loadMoreBgSearch when visibleCount hits the end
     useEffect(() => {
-        if (visibleCount >= filteredAndSortedMovies.length && hasMoreBgCache && !isBgCacheSearching && searchDb === 'library' && backgroundCacheResults.length > 0) {
+        if (visibleCount >= finalDisplayMovies.length && hasMoreBgCache && !isBgCacheSearching && searchDb === 'library' && backgroundCacheResults.length > 0) {
             loadMoreBgSearch();
         }
-    }, [visibleCount, filteredAndSortedMovies.length, hasMoreBgCache, isBgCacheSearching, searchDb, backgroundCacheResults.length, loadMoreBgSearch]);
+    }, [visibleCount, finalDisplayMovies.length, hasMoreBgCache, isBgCacheSearching, searchDb, backgroundCacheResults.length, loadMoreBgSearch]);
 
     // Fetch Stats and Onboarding Cache Movies
     useEffect(() => {
@@ -1492,13 +1575,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         }
     };
 
-    const isAllSelected = filteredAndSortedMovies.length > 0 && selectedIds.length === filteredAndSortedMovies.length;
+    const isAllSelected = finalDisplayMovies.length > 0 && selectedIds.length === finalDisplayMovies.length;
 
     const handleSelectAll = () => {
         if (isAllSelected) {
             onSelectAll([]);
         } else {
-            onSelectAll(filteredAndSortedMovies.map(m => m.id));
+            onSelectAll(finalDisplayMovies.map(m => m.id));
         }
     };
 
@@ -2032,9 +2115,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     color: '#e2e8f0',
                                     lineHeight: '1.4'
                                 }}>
-                                    {filteredAndSortedMovies.length === 0
+                                    {finalDisplayMovies.length === 0
                                         ? <>No matches in your library. </>
-                                        : <>Only <strong style={{ color: '#fff', textShadow: '0 0 8px rgba(255,255,255,0.2)' }}>{filteredAndSortedMovies.length}</strong> library matches. </>
+                                        : <>Only <strong style={{ color: '#fff', textShadow: '0 0 8px rgba(255,255,255,0.2)' }}>{finalDisplayMovies.length}</strong> library matches. </>
                                     }
                                     Found <strong style={{ color: '#c084fc', textShadow: '0 0 8px rgba(192, 132, 252, 0.3)' }}>{backgroundCacheResults.length}</strong> movies in Global Database!
                                     {backgroundSearchStats && (
@@ -2159,15 +2242,34 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
                             {/* View Mode Toggle */}
                             <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                {isWatchedView && (
+                                    <button
+                                        onClick={() => { setWatchedViewMode('folders'); setViewMode('grid'); }}
+                                        style={{
+                                            padding: '4px 8px',
+                                            borderRadius: '13px',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            background: watchedViewMode === 'folders' ? 'var(--accent-gold)' : 'transparent',
+                                            color: watchedViewMode === 'folders' ? '#000' : '#888',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        title="Folders View"
+                                    >
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                                    </button>
+                                )}
                                 <button
-                                    onClick={() => setViewMode('grid')}
+                                    onClick={() => { if(isWatchedView) setWatchedViewMode('grid'); setViewMode('grid'); }}
                                     style={{
                                         padding: '4px 8px',
                                         borderRadius: '13px',
                                         border: 'none',
                                         cursor: 'pointer',
-                                        background: viewMode === 'grid' ? 'var(--accent-gold)' : 'transparent',
-                                        color: viewMode === 'grid' ? '#000' : '#888',
+                                        background: viewMode === 'grid' && (!isWatchedView || watchedViewMode === 'grid') ? 'var(--accent-gold)' : 'transparent',
+                                        color: viewMode === 'grid' && (!isWatchedView || watchedViewMode === 'grid') ? '#000' : '#888',
                                         display: 'flex',
                                         alignItems: 'center',
                                         transition: 'all 0.2s'
@@ -2177,14 +2279,14 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                                 </button>
                                 <button
-                                    onClick={() => setViewMode('table')}
+                                    onClick={() => { if(isWatchedView) setWatchedViewMode('grid'); setViewMode('table'); }}
                                     style={{
                                         padding: '4px 8px',
                                         borderRadius: '13px',
                                         border: 'none',
                                         cursor: 'pointer',
-                                        background: viewMode === 'table' ? 'var(--accent-gold)' : 'transparent',
-                                        color: viewMode === 'table' ? '#000' : '#888',
+                                        background: viewMode === 'table' && (!isWatchedView || watchedViewMode === 'grid') ? 'var(--accent-gold)' : 'transparent',
+                                        color: viewMode === 'table' && (!isWatchedView || watchedViewMode === 'grid') ? '#000' : '#888',
                                         display: 'flex',
                                         alignItems: 'center',
                                         transition: 'all 0.2s'
@@ -2589,7 +2691,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             onMouseDown={(e) => setSelectionAnchor({ x: e.clientX, y: e.clientY })}
                         >
                             <Checkbox checked={isAllSelected} onChange={handleSelectAll} />
-                            <span style={{ fontSize: '0.9rem' }}>Select All ({filteredAndSortedMovies.length})</span>
+                            <span style={{ fontSize: '0.9rem' }}>Select All ({finalDisplayMovies.length})</span>
                         </label>
 
                         {/* Right Side: Desktop Tabs / Mobile Select */}
@@ -2652,17 +2754,36 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             </>
 
             {viewMode === 'grid' ? (
-                <motion.div
-                    className="movie-grid-container"
-                    ref={gridRef}
-                    layout
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
-                        gap: '25px',
-                    }}>
+                isWatchedView && watchedViewMode === 'folders' && !activeFolder ? (
+                    <div className="folder-grid">
+                        {folderGroups?.map(group => (
+                            <FolderCard 
+                                key={group.name} 
+                                groupName={group.name} 
+                                movies={group.movies} 
+                                onClick={() => setActiveFolder(group.name)} 
+                            />
+                        ))}
+                    </div>
+                ) : (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {isWatchedView && watchedViewMode === 'folders' && activeFolder && (
+                        <button className="folder-back-btn" onClick={() => setActiveFolder(null)} style={{ alignSelf: 'flex-start' }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            {isMobile ? 'Назад' : 'Вернуться к папкам'}
+                        </button>
+                    )}
+                    <motion.div
+                        className="movie-grid-container"
+                        ref={gridRef}
+                        layout
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
+                            gap: '25px',
+                        }}>
 
-                    {filteredAndSortedMovies.slice(0, visibleCount).map((movie, index) => {
+                        {finalDisplayMovies.slice(0, visibleCount).map((movie, index) => {
                         const isDeleting = deletingIds.includes(movie.id);
                         const deletingIndex = deletingIds.indexOf(movie.id);
 
@@ -3080,26 +3201,47 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
 
                     {/* Sentinel for Infinite Scroll (Grid) */}
-                    {visibleCount < filteredAndSortedMovies.length && (
+                    {visibleCount < finalDisplayMovies.length && (
                         <div ref={sentinelRef} style={{ height: '50px', width: '100%', gridColumn: '1 / -1' }} />
                     )}
                 </motion.div>
+                </div>
+                )
             ) : (
-                <div className="glass-panel" style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                <th style={{ padding: '15px', width: '40px' }}>
-                                </th>
-                                <th style={{ padding: '15px' }}>Poster</th>
-                                <th style={{ padding: '15px' }}>Title</th>
-                                <th style={{ padding: '15px' }}>Description</th>
-                                <th style={{ padding: '15px' }}>Rating</th>
-                                <th style={{ padding: '15px' }}>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredAndSortedMovies.slice(0, visibleCount).map(movie => (
+                <div className="movie-table-container">
+                    {isWatchedView && watchedViewMode === 'folders' && !activeFolder ? (
+                        <div className="folder-grid">
+                            {folderGroups?.map(group => (
+                                <FolderCard 
+                                    key={group.name} 
+                                    groupName={group.name} 
+                                    movies={group.movies} 
+                                    onClick={() => setActiveFolder(group.name)} 
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                    <div className="glass-panel" style={{ overflowX: 'auto', display: 'flex', flexDirection: 'column' }}>
+                        {isWatchedView && watchedViewMode === 'folders' && activeFolder && (
+                            <button className="folder-back-btn" onClick={() => setActiveFolder(null)} style={{ alignSelf: 'flex-start', margin: '15px 0 0 15px' }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                {isMobile ? 'Назад' : 'Вернуться к папкам'}
+                            </button>
+                        )}
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <th style={{ padding: '15px', width: '40px' }}>
+                                    </th>
+                                    <th style={{ padding: '15px' }}>Poster</th>
+                                    <th style={{ padding: '15px' }}>Title</th>
+                                    <th style={{ padding: '15px' }}>Description</th>
+                                    <th style={{ padding: '15px' }}>Rating</th>
+                                    <th style={{ padding: '15px' }}>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {finalDisplayMovies.slice(0, visibleCount).map(movie => (
                                 <tr key={movie.id || movie.link} style={{
                                     borderBottom: '1px solid rgba(255,255,255,0.05)',
                                     background: selectedIds.includes(movie.id) ? 'rgba(212, 175, 55, 0.05)' : 'transparent'
@@ -3265,8 +3407,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         </tbody>
                     </table>
                     {/* Sentinel for Infinite Scroll (Table) */}
-                    {visibleCount < filteredAndSortedMovies.length && (
+                    {visibleCount < finalDisplayMovies.length && (
                         <div ref={sentinelRef} style={{ height: '50px', width: '100%' }} />
+                    )}
+                    </div>
                     )}
                 </div>
             )}
@@ -3375,7 +3519,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 </div>
             )}
 
-            {!isTrashMode && (movies.length < 5 || visibleCount >= filteredAndSortedMovies.length || hasActiveFilter) && filteredOnboardingCacheMovies.length > 0 && (
+            {!isTrashMode && (movies.length < 5 || visibleCount >= finalDisplayMovies.length || hasActiveFilter) && filteredOnboardingCacheMovies.length > 0 && (
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',

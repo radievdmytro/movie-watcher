@@ -1275,3 +1275,99 @@ body.hide-header-search .app-header {
     display: none !important;
   }
 }
+/* Watched Folders */
+.folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.watched-folder-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.watched-folder-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.folder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+}
+
+.folder-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.folder-count {
+  font-size: 0.75rem;
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--accent-gold);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.folder-previews {
+  display: flex;
+  align-items: center;
+  height: 140px;
+  padding-left: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.folder-preview-poster {
+  width: 85px;
+  height: 125px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #222;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.5);
+  transition: transform 0.3s ease;
+}
+
+.watched-folder-card:hover .folder-preview-poster {
+  transform: translateX(4px) translateY(-2px) rotate(2deg);
+}
+
+.folder-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 20px;
+}
+
+.folder-back-btn:hover {
+  background: rgba(255,255,255,0.1);
+  transform: translateX(-2px);
+}
