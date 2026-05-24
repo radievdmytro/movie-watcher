@@ -1382,3 +1382,16 @@ body.hide-header-search .app-header {
         transform: translate(-50%, 0);
     }
 }
+
+@keyframes shimmerPulse {
+    0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); transform: scale(1); border-color: rgba(255,255,255,0.05); }
+    20% { box-shadow: 0 0 20px 5px rgba(212, 175, 55, 0.6); transform: scale(1.02); border-color: var(--accent-gold); }
+    80% { box-shadow: 0 0 20px 5px rgba(212, 175, 55, 0.6); transform: scale(1.02); border-color: var(--accent-gold); }
+    100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); transform: scale(1); border-color: var(--accent-gold); }
+}
+
+.shimmer-highlight {
+    animation: shimmerPulse 1.5s ease-in-out forwards !important;
+    position: relative;
+    z-index: 10 !important;
+}

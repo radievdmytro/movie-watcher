@@ -196,6 +196,7 @@ function CollectionsView({ onBack }) {
     const [sharedLoading, setSharedLoading] = useState(false);
     const [hiddenLoading, setHiddenLoading] = useState(false);
     const [expandedCollectionId, setExpandedCollectionId] = useState(null);
+    const [animatingCollectionId, setAnimatingCollectionId] = useState(null);
     const [expandedCollection, setExpandedCollection] = useState(null);
     const [selectedMovie, setSelectedMovie] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
@@ -469,6 +470,19 @@ function CollectionsView({ onBack }) {
             const hash = window.location.hash;
             if (hash === '#collections') {
                 setExpandedCollectionId(null);
+            } else if (hash.startsWith('#collections/animate/')) {
+                const parts = hash.split('/');
+                const id = parseInt(parts[parts.length - 1]);
+                if (!isNaN(id)) {
+                    setAnimatingCollectionId(id);
+                    setExpandedCollectionId(null);
+                    // Clear hash silently
+                    window.history.replaceState(null, '', window.location.pathname + window.location.search + `#collections/${id}`);
+                    setTimeout(() => {
+                        setAnimatingCollectionId(null);
+                        setExpandedCollectionId(id);
+                    }, 1500); // Wait for the shimmer animation duration
+                }
             } else if (hash.startsWith('#collections/')) {
                 const parts = hash.split('/');
                 const id = parseInt(parts[parts.length - 1]);
@@ -988,12 +1002,13 @@ function CollectionsView({ onBack }) {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
                     {currentCollections.map(c => {
                         const isExpanded = expandedCollectionId === c.id;
+                        const isAnimating = animatingCollectionId === c.id;
                         return (
                             <div
                                 key={c.id}
-                                className="glass-panel"
+                                className={`glass-panel ${isAnimating ? 'shimmer-highlight' : ''}`}
                                 style={{
-                                    border: isExpanded ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.05)',
+                                    border: isExpanded || isAnimating ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.05)',
                                     borderRadius: '12px', overflow: 'hidden',
                                     transition: 'all 0.3s ease'
                                 }}

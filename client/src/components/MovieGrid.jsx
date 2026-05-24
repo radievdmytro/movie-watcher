@@ -713,7 +713,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 
                 setCollectionToast({
                     message: `Подборка успешно создана. Ссылка скопирована в буфер обмена!`,
-                    linkText: "Перейти в подборки"
+                    linkText: "Перейти в подборки",
+                    collectionId: data.id
                 });
                 
                 // Auto close after 6 seconds
@@ -2876,7 +2877,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             <button
                                 onClick={() => {
                                     setCollectionToast(null);
-                                    if (onNavigate) onNavigate('collections');
+                                    if (onNavigate) {
+                                        window.location.hash = `collections/animate/${collectionToast.collectionId}`;
+                                        onNavigate('collections');
+                                    }
                                 }}
                                 style={{
                                     background: 'var(--accent-gold)',
@@ -3426,7 +3430,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 <button
                                     onClick={() => {
                                         setCollectionToast(null);
-                                        if (onNavigate) onNavigate('collections');
+                                        if (onNavigate) {
+                                            window.location.hash = `collections/animate/${collectionToast.collectionId}`;
+                                            onNavigate('collections');
+                                        }
                                     }}
                                     style={{
                                         background: 'var(--accent-gold)',
