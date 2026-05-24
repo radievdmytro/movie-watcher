@@ -2962,7 +2962,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         style={{
                             display: 'grid',
                             gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
-                            gap: '25px',
+                            // Micro-mutation in gap to force Safari to recalculate grid layout on sort change
+                            gap: `calc(25px + ${(sortField.length + (sortDir === 'asc' ? 1 : 0)) % 4 * 0.01}px)`,
                         }}>
 
                         {finalDisplayMovies.slice(0, visibleCount).map((movie, index) => {
