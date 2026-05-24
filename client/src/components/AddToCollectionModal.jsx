@@ -9,6 +9,7 @@ function AddToCollectionModal({ movieIds, movies = [], onClose, onSuccess }) {
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
+    const [createdCollectionId, setCreatedCollectionId] = useState(null);
     const modalRef = useRef(null);
 
     useEffect(() => {
@@ -116,11 +117,10 @@ function AddToCollectionModal({ movieIds, movies = [], onClose, onSuccess }) {
                 try {
                     await navigator.clipboard.writeText(shareUrl);
                     setSuccessMsg('✅ Коллекция создана! Ссылка скопирована в буфер обмена, теперь вы можете ею поделиться!');
-                    setTimeout(() => onSuccess(), 3500);
                 } catch (err) {
                     setSuccessMsg('✅ Коллекция создана! (Не удалось скопировать ссылку)');
-                    setTimeout(() => onSuccess(), 2000);
                 }
+                setCreatedCollectionId(data.id);
             } else {
                 const data = await res.json().catch(() => ({}));
                 setError(data.error || 'Failed to create collection');
@@ -246,22 +246,59 @@ function AddToCollectionModal({ movieIds, movies = [], onClose, onSuccess }) {
                             />
                         </div>
                         <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="btn"
-                                style={{ background: 'var(--accent-gold)', color: '#000', flex: 1 }}
-                            >
-                                {loading ? 'Saving...' : 'Create & Add'}
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-ghost"
-                                onClick={() => setShowCreateForm(false)}
-                                style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-                            >
-                                Cancel
-                            </button>
+                            {createdCollectionId ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="btn"
+                                        onClick={() => {
+                                            localStorage.setItem('animateCollectionId', createdCollectionId);
+                                            window.location.hash = 'collections';
+                                            if (onSuccess) onSuccess();
+                                            else onClose();
+                                        }}
+                                        style={{ 
+                                            background: 'var(--accent-gold)', color: '#000', flex: 1,
+                                            animation: 'fadeInUp 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)'
+                                        }}
+                                    >
+                                        Show in Collections
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost"
+                                        onClick={() => {
+                                            if (onSuccess) onSuccess();
+                                            else onClose();
+                                        }}
+                                        style={{ 
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            animation: 'fadeInUp 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) 0.1s both'
+                                        }}
+                                    >
+                                        Close
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="btn"
+                                        style={{ background: 'var(--accent-gold)', color: '#000', flex: 1 }}
+                                    >
+                                        {loading ? 'Saving...' : 'Create & Add'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost"
+                                        onClick={() => setShowCreateForm(false)}
+                                        style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </form>
                 ) : (
@@ -316,6 +353,7 @@ function AddToCollectionModal({ movieIds, movies = [], onClose, onSuccess }) {
             </div>
             <style>{`
                 @keyframes scaleIn { from { transform: scale(0.95) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
             `}</style>
         </div>,
         document.body
