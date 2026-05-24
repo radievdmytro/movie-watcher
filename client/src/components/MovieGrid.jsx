@@ -553,7 +553,7 @@ const FolderCard = ({ groupName, movies, onClick }) => {
 };
 
 
-function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, guestLimitReached, isGuest, onRegisterClick, highlightedLink, onGuestActivity, onAddToCollectionClick }) {
+function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, guestLimitReached, isGuest, onRegisterClick, highlightedLink, onGuestActivity, onAddToCollectionClick, onNavigate }) {
     const [gridRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
     const [listRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
     const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
@@ -649,6 +649,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     };
 
     const [isCreatingCollection, setIsCreatingCollection] = useState(false);
+    const [collectionToast, setCollectionToast] = useState(null);
     
     const handleCreateCollectionFromFolder = async () => {
         if (!activeFolder || !finalDisplayMovies.length) return;
@@ -700,8 +701,23 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 })
             });
             if (res.ok) {
+                const data = await res.json();
                 if (onUpdate) onUpdate(null);
-                alert(`Подборка "${activeFolder}" успешно создана!`);
+                
+                const shareLink = `${window.location.origin}/shared/${data.share_token}`;
+                try {
+                    await navigator.clipboard.writeText(shareLink);
+                } catch(e) {
+                    console.error('Failed to copy to clipboard', e);
+                }
+                
+                setCollectionToast({
+                    message: `Подборка успешно создана. Ссылка скопирована в буфер обмена!`,
+                    linkText: "Перейти в подборки"
+                });
+                
+                // Auto close after 6 seconds
+                setTimeout(() => setCollectionToast(null), 6000);
             } else {
                 const data = await res.json().catch(() => ({}));
                 alert(`Ошибка при создании подборки: ${data.error || 'Неизвестная ошибка'}`);
@@ -2832,7 +2848,58 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         ))}
                     </div>
                 ) : (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                    {/* Collection creation toast */}
+                    {collectionToast && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '10px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            background: 'rgba(20, 20, 25, 0.95)',
+                            border: '1px solid var(--accent-gold)',
+                            borderRadius: '12px',
+                            padding: '12px 24px',
+                            boxShadow: '0 8px 30px rgba(0,0,0,0.5), 0 0 15px rgba(212, 175, 55, 0.2)',
+                            zIndex: 100,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '15px',
+                            color: '#fff',
+                            fontSize: '0.95rem',
+                            animation: 'slideDownFadeIn 0.3s ease-out forwards'
+                        }}>
+                            <div>
+                                <span style={{ marginRight: '8px' }}>✅</span>
+                                {collectionToast.message}
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setCollectionToast(null);
+                                    if (onNavigate) onNavigate('collections');
+                                }}
+                                style={{
+                                    background: 'var(--accent-gold)',
+                                    color: '#000',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    padding: '6px 12px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    fontSize: '0.85rem'
+                                }}
+                            >
+                                {collectionToast.linkText}
+                            </button>
+                            <button 
+                                onClick={() => setCollectionToast(null)}
+                                style={{ background: 'transparent', border: 'none', color: '#999', cursor: 'pointer', fontSize: '1.2rem', padding: '0 5px' }}
+                            >
+                                ×
+                            </button>
+                        </div>
+                    )}
+
                     {isWatchedView && watchedViewMode === 'folders' && activeFolder && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', flexWrap: 'wrap', marginBottom: '25px', gap: '20px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -3331,7 +3398,58 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             ))}
                         </div>
                     ) : (
-                    <div className="glass-panel" style={{ overflowX: 'auto', display: 'flex', flexDirection: 'column' }}>
+                    <div className="glass-panel" style={{ overflowX: 'auto', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                        {/* Collection creation toast (Table View) */}
+                        {collectionToast && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '10px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                background: 'rgba(20, 20, 25, 0.95)',
+                                border: '1px solid var(--accent-gold)',
+                                borderRadius: '12px',
+                                padding: '12px 24px',
+                                boxShadow: '0 8px 30px rgba(0,0,0,0.5), 0 0 15px rgba(212, 175, 55, 0.2)',
+                                zIndex: 100,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '15px',
+                                color: '#fff',
+                                fontSize: '0.95rem',
+                                animation: 'slideDownFadeIn 0.3s ease-out forwards'
+                            }}>
+                                <div>
+                                    <span style={{ marginRight: '8px' }}>✅</span>
+                                    {collectionToast.message}
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setCollectionToast(null);
+                                        if (onNavigate) onNavigate('collections');
+                                    }}
+                                    style={{
+                                        background: 'var(--accent-gold)',
+                                        color: '#000',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        padding: '6px 12px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem'
+                                    }}
+                                >
+                                    {collectionToast.linkText}
+                                </button>
+                                <button 
+                                    onClick={() => setCollectionToast(null)}
+                                    style={{ background: 'transparent', border: 'none', color: '#999', cursor: 'pointer', fontSize: '1.2rem', padding: '0 5px' }}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        )}
+
                         {isWatchedView && watchedViewMode === 'folders' && activeFolder && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', flexWrap: 'wrap', marginBottom: '25px', gap: '20px' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>

@@ -1187,6 +1187,7 @@ function App() {
                                     highlightedLink={highlightedMovieLink}
                                     onGuestActivity={triggerGuestActivity}
                                     onAddToCollectionClick={setCollectionMovie}
+                                    onNavigate={setCurrentView}
                                 />
                             )}
                             {!loading && displayedMovies.length === 0 && (
