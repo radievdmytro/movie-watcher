@@ -703,8 +703,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             if (res.ok) {
                 const data = await res.json();
                 if (onUpdate) onUpdate(null);
-                
-                const shareLink = `${window.location.origin}/shared/${data.share_token}`;
+                const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
+                const shareLink = `${baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl}/share/collection/${data.share_token}`;
                 try {
                     await navigator.clipboard.writeText(shareLink);
                 } catch(e) {

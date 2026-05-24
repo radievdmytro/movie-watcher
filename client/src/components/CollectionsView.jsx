@@ -316,7 +316,7 @@ function CollectionsView({ onBack }) {
     const fetchCollections = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/collections');
+            const res = await fetch(`/api/collections?t=${Date.now()}`);
             const data = await res.json();
             setCollections(data);
         } catch (err) {
@@ -476,11 +476,13 @@ function CollectionsView({ onBack }) {
                 if (!isNaN(id)) {
                     setAnimatingCollectionId(id);
                     setExpandedCollectionId(null);
-                    // Clear hash silently
+                    // Use replaceState to change the URL to avoid triggering hashchange again
                     window.history.replaceState(null, '', window.location.pathname + window.location.search + `#collections/${id}`);
                     setTimeout(() => {
                         setAnimatingCollectionId(null);
                         setExpandedCollectionId(id);
+                        // explicitly fetch details in case useEffect misses it
+                        fetchCollectionDetails(id);
                     }, 1500); // Wait for the shimmer animation duration
                 }
             } else if (hash.startsWith('#collections/')) {
@@ -513,6 +515,16 @@ function CollectionsView({ onBack }) {
             setActiveTab('shared');
         }
     }, [collections, sharedCollections, expandedCollectionId]);
+
+    // Scroll to the animating collection when it appears in the DOM
+    useEffect(() => {
+        if (animatingCollectionId) {
+            const el = document.getElementById(`collection-card-${animatingCollectionId}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }, [animatingCollectionId, collections]);
 
     const handleDeleteCollection = async (id, e) => {
         if (e) e.stopPropagation();
@@ -1005,6 +1017,7 @@ function CollectionsView({ onBack }) {
                         const isAnimating = animatingCollectionId === c.id;
                         return (
                             <div
+                                id={`collection-card-${c.id}`}
                                 key={c.id}
                                 className={`glass-panel ${isAnimating ? 'shimmer-highlight' : ''}`}
                                 style={{
