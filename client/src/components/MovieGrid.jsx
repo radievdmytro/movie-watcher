@@ -2834,41 +2834,52 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 ) : (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {isWatchedView && watchedViewMode === 'folders' && activeFolder && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', marginBottom: '20px', gap: '15px' }}>
-                            <button className="folder-back-btn" onClick={() => setActiveFolder(null)}>
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                {isMobile ? 'Назад' : 'Вернуться к папкам'}
-                            </button>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', flexWrap: 'wrap', marginBottom: '25px', gap: '20px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                <button className="folder-back-btn" onClick={() => setActiveFolder(null)}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                    {isMobile ? 'Назад' : 'Вернуться к папкам'}
+                                </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <span style={{ fontSize: '2.2rem', lineHeight: 1 }}>📁</span>
+                                    <h2 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 'bold', color: '#fff', letterSpacing: '0.5px' }}>
+                                        {activeFolder}
+                                    </h2>
+                                </div>
+                            </div>
+                            
                             <button 
                                 className="btn" 
                                 onClick={handleCreateCollectionFromFolder}
                                 disabled={isCreatingCollection}
                                 style={{ 
-                                    padding: '10px 20px', 
-                                    borderRadius: '12px', 
+                                    marginTop: isMobile ? '0' : '35px',
+                                    padding: '10px 24px', 
+                                    borderRadius: '50px', 
                                     display: 'flex', 
                                     alignItems: 'center', 
-                                    gap: '10px', 
-                                    fontSize: isMobile ? '0.85rem' : '0.95rem',
-                                    background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.7), rgba(212, 175, 55, 0.7))',
-                                    color: '#fff',
-                                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                                    boxShadow: '0 4px 15px rgba(168, 85, 247, 0.25)',
+                                    gap: '8px', 
+                                    fontSize: '0.95rem',
+                                    background: 'rgba(168, 85, 247, 0.15)',
+                                    color: '#c084fc',
+                                    border: '2px solid rgba(168, 85, 247, 0.5)',
                                     fontWeight: '600',
                                     transition: 'all 0.2s ease',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap'
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(168, 85, 247, 0.4)';
+                                    e.currentTarget.style.background = 'rgba(168, 85, 247, 0.25)';
+                                    e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.8)';
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
                                 }}
                                 onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'rgba(168, 85, 247, 0.15)';
+                                    e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)';
                                     e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(168, 85, 247, 0.25)';
                                 }}
                             >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                {isCreatingCollection ? 'Создание...' : `Создать подборку из папки`}
+                                {isCreatingCollection ? 'Создание...' : `Create collection from this folder`}
                             </button>
                         </div>
                     )}
@@ -3322,41 +3333,52 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     ) : (
                     <div className="glass-panel" style={{ overflowX: 'auto', display: 'flex', flexDirection: 'column' }}>
                         {isWatchedView && watchedViewMode === 'folders' && activeFolder && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', marginBottom: '20px', gap: '15px' }}>
-                                <button className="folder-back-btn" onClick={() => setActiveFolder(null)}>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                    {isMobile ? 'Назад' : 'Вернуться к папкам'}
-                                </button>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', flexWrap: 'wrap', marginBottom: '25px', gap: '20px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                    <button className="folder-back-btn" onClick={() => setActiveFolder(null)}>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                        {isMobile ? 'Назад' : 'Вернуться к папкам'}
+                                    </button>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <span style={{ fontSize: '2.2rem', lineHeight: 1 }}>📁</span>
+                                        <h2 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 'bold', color: '#fff', letterSpacing: '0.5px' }}>
+                                            {activeFolder}
+                                        </h2>
+                                    </div>
+                                </div>
+                                
                                 <button 
                                     className="btn" 
                                     onClick={handleCreateCollectionFromFolder}
                                     disabled={isCreatingCollection}
                                     style={{ 
-                                        padding: '10px 20px', 
-                                        borderRadius: '12px', 
+                                        marginTop: isMobile ? '0' : '35px',
+                                        padding: '10px 24px', 
+                                        borderRadius: '50px', 
                                         display: 'flex', 
                                         alignItems: 'center', 
-                                        gap: '10px', 
-                                        fontSize: isMobile ? '0.85rem' : '0.95rem',
-                                        background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.7), rgba(212, 175, 55, 0.7))',
-                                        color: '#fff',
-                                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                                        boxShadow: '0 4px 15px rgba(168, 85, 247, 0.25)',
+                                        gap: '8px', 
+                                        fontSize: '0.95rem',
+                                        background: 'rgba(168, 85, 247, 0.15)',
+                                        color: '#c084fc',
+                                        border: '2px solid rgba(168, 85, 247, 0.5)',
                                         fontWeight: '600',
                                         transition: 'all 0.2s ease',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        whiteSpace: 'nowrap'
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(168, 85, 247, 0.4)';
+                                        e.currentTarget.style.background = 'rgba(168, 85, 247, 0.25)';
+                                        e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.8)';
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
                                     }}
                                     onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(168, 85, 247, 0.15)';
+                                        e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)';
                                         e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(168, 85, 247, 0.25)';
                                     }}
                                 >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                    {isCreatingCollection ? 'Создание...' : `Создать подборку из папки`}
+                                    {isCreatingCollection ? 'Создание...' : `Create collection from this folder`}
                                 </button>
                             </div>
                         )}
