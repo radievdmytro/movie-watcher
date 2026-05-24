@@ -488,20 +488,20 @@ function CollectionsView({ onBack }) {
     // Handle animation trigger from localStorage
     useEffect(() => {
         const animateIdStr = localStorage.getItem('animateCollectionId');
-        if (animateIdStr && currentCollections.length > 0) {
+        // Wait until at least one of the lists is populated
+        if (animateIdStr && (collections.length > 0 || sharedCollections.length > 0)) {
             const id = parseInt(animateIdStr);
             if (!isNaN(id)) {
-                // Wait until the collection actually appears in the list
-                const exists = currentCollections.find(c => c.id === id);
-                if (exists) {
+                const inMine = collections.some(c => c.id === id);
+                const inShared = sharedCollections.some(c => c.id === id);
+                
+                if (inMine || inShared) {
+                    // Switch to the correct tab if necessary
+                    if (inMine && activeTab !== 'mine') setActiveTab('mine');
+                    if (inShared && activeTab !== 'shared') setActiveTab('shared');
+
                     setAnimatingCollectionId(id);
                     localStorage.removeItem('animateCollectionId');
-                    
-                    // Switch to the correct tab if necessary
-                    const inMine = collections.some(c => c.id === id);
-                    if (inMine && activeTab !== 'mine') setActiveTab('mine');
-                    const inShared = sharedCollections.some(c => c.id === id);
-                    if (inShared && activeTab !== 'shared') setActiveTab('shared');
 
                     setTimeout(() => {
                         setAnimatingCollectionId(null);
@@ -509,13 +509,14 @@ function CollectionsView({ onBack }) {
                         fetchCollectionDetails(id);
                     }, 1500);
                 } else if (!loading && !sharedLoading) {
-                    // If fetching is done and we STILL don't have it, try fetching again
-                    // This could happen if DB took a moment to sync or cache hit
-                    fetchCollections();
+                    // If fetching is done and we STILL don't have it, it's invalid or deleted
+                    localStorage.removeItem('animateCollectionId');
                 }
+            } else {
+                localStorage.removeItem('animateCollectionId');
             }
         }
-    }, [currentCollections, loading, sharedLoading, collections, sharedCollections, activeTab]);
+    }, [collections, sharedCollections, loading, sharedLoading, activeTab]);
 
     // Automatically switch activeTab to match the owned or shared collection on startup/load
     useEffect(() => {
