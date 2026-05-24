@@ -500,14 +500,16 @@ function CollectionsView({ onBack }) {
                     if (inMine && activeTab !== 'mine') setActiveTab('mine');
                     if (inShared && activeTab !== 'shared') setActiveTab('shared');
 
-                    setAnimatingCollectionId(id);
                     localStorage.removeItem('animateCollectionId');
 
-                    setTimeout(() => {
-                        setAnimatingCollectionId(null);
-                        setExpandedCollectionId(id);
-                        fetchCollectionDetails(id);
-                    }, 1500);
+                    // Pre-fetch details BEFORE animation starts for maximum smoothness
+                    fetchCollectionDetails(id).then(() => {
+                        setAnimatingCollectionId(id);
+                        setTimeout(() => {
+                            setAnimatingCollectionId(null);
+                            setExpandedCollectionId(id);
+                        }, 1500);
+                    });
                 } else if (!loading && !sharedLoading) {
                     // If fetching is done and we STILL don't have it, it's invalid or deleted
                     localStorage.removeItem('animateCollectionId');
