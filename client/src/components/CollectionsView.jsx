@@ -510,9 +510,11 @@ function CollectionsView({ onBack }) {
                             setExpandedCollectionId(id);
                             
                             // "Cherry on top" - visually simulate the "Copy Link" action 
-                            // to confirm it's in the clipboard!
-                            setCopiedId(id);
-                            setTimeout(() => setCopiedId(null), 2500);
+                            // Add a delay to let the expansion animation finish first
+                            setTimeout(() => {
+                                setCopiedId(id);
+                                setTimeout(() => setCopiedId(null), 2500);
+                            }, 500);
                         }, 1500);
                     });
                 } else if (!loading && !sharedLoading) {
@@ -1161,13 +1163,22 @@ function CollectionsView({ onBack }) {
                                                     onClick={(e) => handleShare(c, e)}
                                                     className="btn"
                                                     style={{
-                                                        background: copiedId === c.id ? '#03dac6' : 'rgba(255,255,255,0.05)',
+                                                        background: copiedId === c.id ? 'var(--accent-gold)' : 'rgba(255,255,255,0.05)',
                                                         color: copiedId === c.id ? '#000' : '#fff',
-                                                        border: '1px solid rgba(255,255,255,0.1)',
-                                                        padding: '6px 12px', fontSize: '0.8rem', display: 'flex', gap: '5px', alignItems: 'center'
+                                                        border: copiedId === c.id ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.1)',
+                                                        padding: '6px 12px', fontSize: '0.8rem', display: 'flex', gap: '5px', alignItems: 'center',
+                                                        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                                        transform: copiedId === c.id ? 'scale(1.05)' : 'scale(1)',
+                                                        boxShadow: copiedId === c.id ? '0 0 15px rgba(212, 175, 55, 0.4)' : 'none',
+                                                        fontWeight: copiedId === c.id ? 'bold' : 'normal'
                                                     }}
                                                 >
-                                                    {copiedId === c.id ? '✔ Copied!' : '🔗 Copy Link'}
+                                                    <span style={{ 
+                                                        display: 'inline-block',
+                                                        animation: copiedId === c.id ? 'popIn 0.3s ease-out' : 'none'
+                                                    }}>
+                                                        {copiedId === c.id ? '✔ Copied!' : '🔗 Copy Link'}
+                                                    </span>
                                                 </button>
 
                                                 <button
@@ -1704,6 +1715,11 @@ function CollectionsView({ onBack }) {
             <style>{`
                 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
                 @keyframes scaleIn { from { transform: scale(0.95) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+                @keyframes popIn {
+                    0% { transform: scale(0.8); opacity: 0; }
+                    50% { transform: scale(1.1); }
+                    100% { transform: scale(1); opacity: 1; }
+                }
             `}</style>
         </div>
     );
