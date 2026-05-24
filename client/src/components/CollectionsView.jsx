@@ -1069,18 +1069,27 @@ function CollectionsView({ onBack }) {
                                     <div style={{ flex: '1', minWidth: '200px' }}>
                                         {activeTab === 'mine' ? (
                                             <>
-                                                <div style={{ display: 'block', marginBottom: '4px' }}>
-                                                    <EditableField
-                                                        value={c.title}
-                                                        placeholder="Collection Title"
-                                                        isMobile={isMobile}
-                                                        style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: 'var(--accent-gold)', fontWeight: 'bold' }}
-                                                        onSave={(newVal) => {
-                                                            if (newVal.trim() && newVal !== c.title) {
-                                                                handleUpdateCollection(c.id, { title: newVal }, { title: c.title });
-                                                            }
-                                                        }}
-                                                    />
+                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                                                    <div style={{ flexShrink: 1, minWidth: 0 }}>
+                                                        <EditableField
+                                                            value={c.title}
+                                                            placeholder="Collection Title"
+                                                            isMobile={isMobile}
+                                                            style={{ margin: 0, fontSize: '1.3rem', color: 'var(--accent-gold)', fontWeight: 'bold' }}
+                                                            onSave={(newVal) => {
+                                                                if (newVal.trim() && newVal !== c.title) {
+                                                                    handleUpdateCollection(c.id, { title: newVal }, { title: c.title });
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <span style={{
+                                                        background: 'rgba(212, 175, 55, 0.1)', color: 'var(--accent-gold)',
+                                                        padding: '4px 10px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 'bold', whiteSpace: 'nowrap',
+                                                        marginTop: '4px'
+                                                    }}>
+                                                        {c.movie_count} Movie{c.movie_count !== 1 ? 's' : ''}
+                                                    </span>
                                                 </div>
                                                 <div style={{ display: 'block' }}>
                                                     <EditableField
@@ -1099,10 +1108,16 @@ function CollectionsView({ onBack }) {
                                             </>
                                         ) : (
                                             <>
-                                                <div style={{ display: 'block', marginBottom: '4px' }}>
-                                                    <h3 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: 'var(--accent-gold)' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                                                    <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--accent-gold)' }}>
                                                         {c.title}
                                                     </h3>
+                                                    <span style={{
+                                                        background: 'rgba(212, 175, 55, 0.1)', color: 'var(--accent-gold)',
+                                                        padding: '4px 10px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 'bold', whiteSpace: 'nowrap'
+                                                    }}>
+                                                        {c.movie_count} Movie{c.movie_count !== 1 ? 's' : ''}
+                                                    </span>
                                                 </div>
                                                 <div style={{ display: 'block' }}>
                                                     <p style={{ margin: 0, color: '#aaa', fontSize: '0.9rem' }}>
@@ -1123,13 +1138,7 @@ function CollectionsView({ onBack }) {
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} onClick={e => e.stopPropagation()}>
-                                        <span style={{
-                                            background: 'rgba(212, 175, 55, 0.1)', color: 'var(--accent-gold)',
-                                            padding: '4px 10px', borderRadius: '15px', fontSize: '0.8rem', fontWeight: 'bold'
-                                        }}>
-                                            {c.movie_count} Movie(s)
-                                        </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end', marginTop: isMobile ? '10px' : '0' }} onClick={e => e.stopPropagation()}>
 
                                         {actionFeedback.id === c.id && actionFeedback.message && (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px' }} onClick={e => e.stopPropagation()}>
@@ -1177,7 +1186,7 @@ function CollectionsView({ onBack }) {
                                                         display: 'inline-block',
                                                         animation: copiedId === c.id ? 'popIn 0.3s ease-out' : 'none'
                                                     }}>
-                                                        {copiedId === c.id ? '✔ Copied!' : '🔗 Copy Link'}
+                                                        {copiedId === c.id ? (isMobile ? '✔' : '✔ Copied!') : (isMobile ? '🔗 Copy' : '🔗 Copy Link')}
                                                     </span>
                                                 </button>
 
@@ -1188,7 +1197,7 @@ function CollectionsView({ onBack }) {
                                                         padding: '6px 12px', fontSize: '0.8rem', display: 'flex', gap: '5px', alignItems: 'center'
                                                     }}
                                                 >
-                                                    📨 Send to User
+                                                    {isMobile ? '📨 Send' : '📨 Send to User'}
                                                 </button>
 
                                                 {confirmDeleteCollId === c.id ? (
@@ -1220,17 +1229,16 @@ function CollectionsView({ onBack }) {
                                             <>
                                                 {confirmCloneCollId === c.id ? (
                                                     <span style={{ display: 'flex', gap: '5px', alignItems: 'center', background: 'rgba(212,175,55,0.08)', padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.2)' }} onClick={e => e.stopPropagation()}>
-                                                        <span style={{ fontSize: '0.78rem', color: 'var(--accent-gold)', marginRight: '5px' }}>Import:</span>
                                                         <button
                                                             onClick={(e) => handleCloneCollection(c.id, e)}
                                                             className="btn btn-gold"
                                                             style={{ border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
-                                                        >📑 Copy Collection</button>
+                                                        >{isMobile ? '📑 Copy' : '📑 Copy Collection'}</button>
                                                         <button
                                                             onClick={(e) => handleImportAllMovies(c.id, e)}
                                                             className="btn"
                                                             style={{ background: 'var(--accent-gold)', color: '#000', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 'bold' }}
-                                                        >📥 Add All to Library</button>
+                                                        >{isMobile ? '📥 Add All' : '📥 Add All to Library'}</button>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setConfirmCloneCollId(null); }}
                                                             className="btn btn-ghost"
@@ -1245,7 +1253,7 @@ function CollectionsView({ onBack }) {
                                                             padding: '6px 12px', fontSize: '0.8rem', display: 'flex', gap: '5px', alignItems: 'center'
                                                         }}
                                                     >
-                                                        📥 Save to My Library
+                                                        {isMobile ? '📑 Copy' : '📑 Copy Collection'}
                                                     </button>
                                                 )}
                                             </>
