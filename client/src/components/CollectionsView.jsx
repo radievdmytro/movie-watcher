@@ -508,6 +508,11 @@ function CollectionsView({ onBack }) {
                         setTimeout(() => {
                             setAnimatingCollectionId(null);
                             setExpandedCollectionId(id);
+                            
+                            // "Cherry on top" - visually simulate the "Copy Link" action 
+                            // to confirm it's in the clipboard!
+                            setCopiedId(id);
+                            setTimeout(() => setCopiedId(null), 2500);
                         }, 1500);
                     });
                 } else if (!loading && !sharedLoading) {
