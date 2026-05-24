@@ -796,6 +796,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [addingLinks, setAddingLinks] = useState(new Set());
     const [addedLinks, setAddedLinks] = useState(new Set());
     const [localWatchedLinks, setLocalWatchedLinks] = useState(new Set());
+    const [localUnwatchedLinks, setLocalUnwatchedLinks] = useState(new Set());
 
     const handleGridDelete = (id, link, forceNoConfirm = false, permanent = true, promptIfNoCollections = true) => {
         if (link) {
@@ -1083,7 +1084,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 }
 
                 // Status Filter
-                if (!isWatchedView && hideWatched && movie.status === 'watched') return false;
+                const isMovieWatched = movie.status === 'watched' || localWatchedLinks.has(movie.link);
+                if (!isWatchedView && hideWatched && isMovieWatched) return false;
+
+                // Immediately hide from Watched View if marked unwatched locally
+                if (isWatchedView && localUnwatchedLinks.has(movie.link)) return false;
 
                 return true;
             })
@@ -1104,7 +1109,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 return 0;
             })
             .map(item => item.movie);
-    }, [movies, sortField, sortDir, deferredFilterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields, localHiddenGlobalLinks]);
+    }, [movies, sortField, sortDir, deferredFilterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields, localHiddenGlobalLinks, localUnwatchedLinks]);
 
     const filteredOnboardingCacheMovies = useMemo(() => {
         if (guestLimitReached) return [];
@@ -1766,6 +1771,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     onToggleWatched={(link, newStatus) => {
                         if (newStatus === 'watched') {
                             setLocalWatchedLinks(prev => new Set([...prev, link]));
+                            setLocalUnwatchedLinks(prev => {
+                                const next = new Set(prev);
+                                next.delete(link);
+                                return next;
+                            });
                             setJustWatchedLink(link);
                             setTimeout(() => setJustWatchedLink(null), 450);
                         } else {
@@ -1774,6 +1784,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 next.delete(link);
                                 return next;
                             });
+                            setLocalUnwatchedLinks(prev => new Set([...prev, link]));
                             setJustUnwatchedLink(link);
                             setTimeout(() => setJustUnwatchedLink(null), 450);
                         }
@@ -1785,10 +1796,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             return next;
                         });
                         setLocalDeletedLinks(prev => new Set([...prev, cleanLinkPath(link)]));
-                        if (currentView === 'library') {
-                            // If in library, visually remove the movie right away
-                            setMovies(prev => prev.filter(m => m.id !== id));
-                        }
                         try {
                             const res = await fetch(`/api/trash/${id}`, { method: 'DELETE' });
                             if (res.ok && typeof onUpdate === 'function') {
