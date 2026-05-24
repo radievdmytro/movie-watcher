@@ -1186,7 +1186,7 @@ function CollectionsView({ onBack }) {
                                                         display: 'inline-block',
                                                         animation: copiedId === c.id ? 'popIn 0.3s ease-out' : 'none'
                                                     }}>
-                                                        {copiedId === c.id ? (isMobile ? '✔' : '✔ Copied!') : (isMobile ? '🔗 Copy' : '🔗 Copy Link')}
+                                                        {copiedId === c.id ? '✔ Copied!' : (isMobile ? '🔗 Copy' : '🔗 Copy Link')}
                                                     </span>
                                                 </button>
 
