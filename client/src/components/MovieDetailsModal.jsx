@@ -553,7 +553,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 onMouseLeave={e => { if (!isMobile) { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.transform = 'scale(1)'; } }}
                 title="Add to Collection"
             >
-                📑
+                📁
             </button>
         ) : null;
 
