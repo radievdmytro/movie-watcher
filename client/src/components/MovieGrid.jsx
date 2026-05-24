@@ -2878,7 +2878,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 onClick={() => {
                                     setCollectionToast(null);
                                     if (onNavigate) {
-                                        window.location.hash = `collections/animate/${collectionToast.collectionId}`;
+                                        localStorage.setItem('animateCollectionId', collectionToast.collectionId);
                                         onNavigate('collections');
                                     }
                                 }}
@@ -3431,7 +3431,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     onClick={() => {
                                         setCollectionToast(null);
                                         if (onNavigate) {
-                                            window.location.hash = `collections/animate/${collectionToast.collectionId}`;
+                                            localStorage.setItem('animateCollectionId', collectionToast.collectionId);
                                             onNavigate('collections');
                                         }
                                     }}

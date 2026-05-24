@@ -470,21 +470,6 @@ function CollectionsView({ onBack }) {
             const hash = window.location.hash;
             if (hash === '#collections') {
                 setExpandedCollectionId(null);
-            } else if (hash.startsWith('#collections/animate/')) {
-                const parts = hash.split('/');
-                const id = parseInt(parts[parts.length - 1]);
-                if (!isNaN(id)) {
-                    setAnimatingCollectionId(id);
-                    setExpandedCollectionId(null);
-                    // Use replaceState to change the URL to avoid triggering hashchange again
-                    window.history.replaceState(null, '', window.location.pathname + window.location.search + `#collections/${id}`);
-                    setTimeout(() => {
-                        setAnimatingCollectionId(null);
-                        setExpandedCollectionId(id);
-                        // explicitly fetch details in case useEffect misses it
-                        fetchCollectionDetails(id);
-                    }, 1500); // Wait for the shimmer animation duration
-                }
             } else if (hash.startsWith('#collections/')) {
                 const parts = hash.split('/');
                 const id = parseInt(parts[parts.length - 1]);
@@ -499,6 +484,23 @@ function CollectionsView({ onBack }) {
         window.addEventListener('hashchange', handleHashChangeInsideCollections);
         return () => window.removeEventListener('hashchange', handleHashChangeInsideCollections);
     }, []);
+
+    // Handle animation trigger from localStorage
+    useEffect(() => {
+        const animateIdStr = localStorage.getItem('animateCollectionId');
+        if (animateIdStr && currentCollections.length > 0) {
+            const id = parseInt(animateIdStr);
+            if (!isNaN(id)) {
+                setAnimatingCollectionId(id);
+                localStorage.removeItem('animateCollectionId');
+                setTimeout(() => {
+                    setAnimatingCollectionId(null);
+                    setExpandedCollectionId(id);
+                    fetchCollectionDetails(id);
+                }, 1500);
+            }
+        }
+    }, [currentCollections]);
 
     // Automatically switch activeTab to match the owned or shared collection on startup/load
     useEffect(() => {
@@ -519,12 +521,14 @@ function CollectionsView({ onBack }) {
     // Scroll to the animating collection when it appears in the DOM
     useEffect(() => {
         if (animatingCollectionId) {
-            const el = document.getElementById(`collection-card-${animatingCollectionId}`);
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            setTimeout(() => {
+                const el = document.getElementById(`collection-card-${animatingCollectionId}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
         }
-    }, [animatingCollectionId, collections]);
+    }, [animatingCollectionId]);
 
     const handleDeleteCollection = async (id, e) => {
         if (e) e.stopPropagation();
