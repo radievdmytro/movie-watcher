@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 
-function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched, onRemoveMovie, onHideMovie }) {
+function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched, onRemoveMovie, onHideMovie, onAddToCollection }) {
     const [liveDetails, setLiveDetails] = useState(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
@@ -530,6 +530,33 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     };
 
     const renderLibraryButton = () => {
+        const collBtn = onAddToCollection ? (
+            <button
+                onClick={(e) => { e.stopPropagation(); onAddToCollection(movie); }}
+                style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: '#fff',
+                    width: isMobile ? 'auto' : '46px',
+                    height: isMobile ? 'auto' : '46px',
+                    padding: isMobile ? '12px 14px' : '0',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.2rem',
+                    transition: 'all 0.3s ease',
+                    flexShrink: 0
+                }}
+                onMouseEnter={e => { if (!isMobile) { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'; e.currentTarget.style.transform = 'scale(1.05)'; } }}
+                onMouseLeave={e => { if (!isMobile) { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.transform = 'scale(1)'; } }}
+                title="Add to Collection"
+            >
+                📑
+            </button>
+        ) : null;
+
         if (isAdded) {
             const showRemove = !isMobile && isLibraryBtnHovered;
             const btnText = isMobile ? '✓ Already in my Library' : (showRemove ? '🗑 Remove' : '✓ In My Library');
@@ -539,13 +566,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     onMouseEnter={() => setIsLibraryBtnHovered(true)}
                     onMouseLeave={() => setIsLibraryBtnHovered(false)}
                     onClick={() => {
-                        // On mobile, the delete button is separate, so this button can just be an indicator.
-                        // But if they click it anyway, we can still remove it, or do nothing.
-                        // To be safe, we'll keep the remove logic but they have a dedicated trash button below.
                         const actualId = movie.id || libMovieId;
                         if (actualId && !isMobile) {
                             if (onDelete) {
-                                // false = show confirm (if needed), true = permanent, false = promptIfNoCollections
                                 onDelete(actualId, movie.link || movie.movie_link, false, true, false);
                             } else if (onRemoveMovie) {
                                 onRemoveMovie(actualId, movie.link || movie.movie_link);
@@ -559,7 +582,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         background: isMobile ? 'rgba(3, 218, 198, 0.15)' : (showRemove ? 'rgba(239, 68, 68, 0.2)' : 'rgba(3, 218, 198, 0.1)'),
                         border: isMobile ? '1px solid #03dac6' : (showRemove ? '1px solid #ef4444' : '1px solid rgba(3, 218, 198, 0.2)'),
                         color: isMobile ? '#03dac6' : (showRemove ? '#ef4444' : '#03dac6'),
-                        padding: isMobile ? '12px 10px' : '12px 28px',
+                        padding: isMobile ? '12px 10px' : '0 28px',
+                        height: isMobile ? 'auto' : '46px',
                         fontSize: isMobile ? '0.85rem' : '0.95rem',
                         fontWeight: '700',
                         borderRadius: '12px',
@@ -580,8 +604,9 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
             if (isMobile) {
                 return (
-                    <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                    <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
                         {libraryBtn}
+                        {collBtn}
                         <button
                             onClick={() => {
                                 const actualId = movie.id || libMovieId;
@@ -617,9 +642,15 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 );
             }
 
-            return libraryBtn;
+            return (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {libraryBtn}
+                    {collBtn}
+                </div>
+            );
         }
-        return (
+
+        const addBtn = (
             <button
                 onClick={() => {
                     if (onAddMovie) {
@@ -632,7 +663,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
                     border: 'none',
                     color: '#000',
-                    padding: isMobile ? '12px 10px' : '12px 28px',
+                    padding: isMobile ? '12px 10px' : '0 28px',
+                    height: isMobile ? 'auto' : '46px',
                     fontSize: isMobile ? '0.85rem' : '0.95rem',
                     fontWeight: '700',
                     borderRadius: '12px',
@@ -651,6 +683,13 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             >
                 ➕ Add to Library
             </button>
+        );
+
+        return (
+            <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto', alignItems: 'center' }}>
+                {addBtn}
+                {collBtn}
+            </div>
         );
     };
 

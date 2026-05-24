@@ -1762,6 +1762,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     isWatched={selectedMovie ? (localWatchedLinks.has(selectedMovie.link) ? true : (selectedMovie.status === 'watched' || historyList.some(h => cleanLinkPath(h.movie_link) === cleanLinkPath(selectedMovie.link) && h.is_watched))) : false}
                     libMovieId={selectedMovie ? (allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(selectedMovie.link) && m.id !== null)?.id || null) : null}
                     onAddMovie={handleAddMovieFromCache}
+                    onAddToCollection={onAddToCollectionClick}
                     onToggleWatched={(link, newStatus) => {
                         if (newStatus === 'watched') {
                             setLocalWatchedLinks(prev => new Set([...prev, link]));

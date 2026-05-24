@@ -1255,6 +1255,7 @@ function App() {
                     readOnly={!user || user.id !== sharedMovieData.user_id}
                     isAdded={movies.some(m => !m.deleted_at && cleanLinkPath(m.link) === cleanLinkPath(sharedMovieData.link || sharedMovieData.movie_link))}
                     onAddMovie={handleGlobalAddMovie}
+                    onAddToCollection={setCollectionMovie}
                 />
             )}
 
@@ -1268,6 +1269,7 @@ function App() {
                     }}
                     isAdded={movies.some(m => !m.deleted_at && cleanLinkPath(m.link) === cleanLinkPath(compareDetailsMovie.link || compareDetailsMovie.movie_link))}
                     onAddMovie={handleGlobalAddMovie}
+                    onAddToCollection={setCollectionMovie}
                 />
             )}
 
@@ -1281,6 +1283,7 @@ function App() {
                     }}
                     isAdded={movies.some(m => !m.deleted_at && cleanLinkPath(m.link) === cleanLinkPath(scrapedDetailsMovie.link || scrapedDetailsMovie.movie_link))}
                     onAddMovie={handleGlobalAddMovie}
+                    onAddToCollection={setCollectionMovie}
                 />
             )}
 
