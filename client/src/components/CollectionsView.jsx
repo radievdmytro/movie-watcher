@@ -491,16 +491,31 @@ function CollectionsView({ onBack }) {
         if (animateIdStr && currentCollections.length > 0) {
             const id = parseInt(animateIdStr);
             if (!isNaN(id)) {
-                setAnimatingCollectionId(id);
-                localStorage.removeItem('animateCollectionId');
-                setTimeout(() => {
-                    setAnimatingCollectionId(null);
-                    setExpandedCollectionId(id);
-                    fetchCollectionDetails(id);
-                }, 1500);
+                // Wait until the collection actually appears in the list
+                const exists = currentCollections.find(c => c.id === id);
+                if (exists) {
+                    setAnimatingCollectionId(id);
+                    localStorage.removeItem('animateCollectionId');
+                    
+                    // Switch to the correct tab if necessary
+                    const inMine = collections.some(c => c.id === id);
+                    if (inMine && activeTab !== 'mine') setActiveTab('mine');
+                    const inShared = sharedCollections.some(c => c.id === id);
+                    if (inShared && activeTab !== 'shared') setActiveTab('shared');
+
+                    setTimeout(() => {
+                        setAnimatingCollectionId(null);
+                        setExpandedCollectionId(id);
+                        fetchCollectionDetails(id);
+                    }, 1500);
+                } else if (!loading && !sharedLoading) {
+                    // If fetching is done and we STILL don't have it, try fetching again
+                    // This could happen if DB took a moment to sync or cache hit
+                    fetchCollections();
+                }
             }
         }
-    }, [currentCollections]);
+    }, [currentCollections, loading, sharedLoading, collections, sharedCollections, activeTab]);
 
     // Automatically switch activeTab to match the owned or shared collection on startup/load
     useEffect(() => {
