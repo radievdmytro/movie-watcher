@@ -1262,7 +1262,7 @@ body.hide-header-search .app-header {
   .app-header .mobile-badge-only {
     position: absolute !important;
     top: calc(24px - 16px * var(--sp, 0)) !important;
-    right: calc(15px - 7px * var(--sp, 0)) !important;
+    right: calc(15px + 85px * var(--sp, 0)) !important;
     z-index: 100;
     transform: scale(calc(1 - 0.15 * var(--sp, 0))) !important;
     transform-origin: top right !important;
