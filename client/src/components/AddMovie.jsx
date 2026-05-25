@@ -1843,7 +1843,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                         borderRadius: '20px', padding: '30px 40px', textAlign: 'center',
                         boxShadow: '0 20px 50px rgba(0,0,0,0.8)', minWidth: '280px'
                     }}>
-                        <div style={{ fontSize: '2.5rem', marginBottom: '15px', animation: 'pulse 1.5s infinite alternate' }}>🎬</div>
+                        <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>🎬</div>
                         <h3 style={{ margin: '0 0 20px 0', color: 'var(--accent-gold)', fontSize: '1.2rem' }}>
                             Loading info...
                         </h3>
