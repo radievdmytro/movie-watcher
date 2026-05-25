@@ -17,6 +17,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
     const [showResultsPanel, setShowResultsPanel] = useState(false);
     const [logs, setLogs] = useState([]);
     const [isFadingLogs, setIsFadingLogs] = useState(false);
+    const [batchProgress, setBatchProgress] = useState(null);
     const activeStreamRef = useRef(null); // track open SSE connection
 
     // Filters for search results
@@ -292,8 +293,11 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
         let successCount = 0;
         const newLogs = [];
         setIsFadingLogs(false);
+        setBatchProgress({ current: 0, total: urls.length });
 
-        for (const url of urls) {
+        for (let i = 0; i < urls.length; i++) {
+            const url = urls[i];
+            setBatchProgress({ current: i + 1, total: urls.length });
             newLogs.push({ msg: `Processing ${url}...`, type: 'info' });
             setLogs([...newLogs]);
 
@@ -324,6 +328,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
             setLogs([...newLogs]);
         }
 
+        setBatchProgress(null);
         if (successCount > 0) {
             onMovieAdded();
             setQuery('');
@@ -1820,6 +1825,43 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     setCompareLinks(prev => prev.filter(l => l !== link));
                 }}
             />
+
+            {/* Batch Import Progress Overlay */}
+            {batchProgress && batchProgress.total > 1 && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+                    zIndex: 300000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    <div style={{
+                        background: 'rgba(18,18,18,0.95)', border: '1px solid rgba(212,175,55,0.3)',
+                        borderRadius: '20px', padding: '30px 40px', textAlign: 'center',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.8)', minWidth: '280px'
+                    }}>
+                        <div style={{ fontSize: '2.5rem', marginBottom: '15px', animation: 'pulse 1.5s infinite alternate' }}>🎬</div>
+                        <h3 style={{ margin: '0 0 20px 0', color: 'var(--accent-gold)', fontSize: '1.2rem' }}>
+                            Loading info...
+                        </h3>
+                        
+                        <div style={{
+                            width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)',
+                            borderRadius: '4px', overflow: 'hidden', marginBottom: '15px'
+                        }}>
+                            <div style={{
+                                width: `${(batchProgress.current / batchProgress.total) * 100}%`,
+                                height: '100%', background: 'var(--accent-gold)',
+                                transition: 'width 0.3s ease',
+                                boxShadow: '0 0 10px rgba(212,175,55,0.5)'
+                            }} />
+                        </div>
+                        
+                        <div style={{ fontSize: '0.9rem', color: '#ccc', fontWeight: 600 }}>
+                            {batchProgress.current} / {batchProgress.total}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <BulkImportModal
                 isOpen={isBulkImportOpen}
