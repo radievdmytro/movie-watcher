@@ -3102,19 +3102,19 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         <AnimatePresence mode="wait" initial={false}>
                                             <motion.div 
                                                 key={movie.status === 'watched' ? 'watched' : 'unwatched'}
-                                                initial={{ opacity: 0, y: -30 }}
+                                                initial={{ opacity: 0, y: -40 }}
                                                 animate={{ 
                                                     opacity: 1, 
                                                     y: 0,
                                                     transition: { 
-                                                        y: { type: "spring", stiffness: 350, damping: 12, mass: 0.8 },
-                                                        opacity: { duration: 0.4 }
+                                                        y: { type: "spring", stiffness: 180, damping: 12, mass: 1.2 },
+                                                        opacity: { duration: 0.6 }
                                                     }
                                                 }}
                                                 exit={{ 
                                                     opacity: 0, 
-                                                    y: -25,
-                                                    transition: { duration: 0.8, ease: "easeInOut" }
+                                                    y: -30,
+                                                    transition: { duration: 0.25, ease: "easeIn" }
                                                 }}
                                                 style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end', pointerEvents: 'none' }}
                                             >
