@@ -2944,23 +2944,42 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
                         {finalDisplayMovies.slice(0, visibleCount).map((movie, index) => {
                         const isDeleting = deletingIds.includes(movie.id);
-                        const deletingIndex = deletingIds.indexOf(movie.id);
-
-                        // Calculate animation styles
-                        let animStyle = {};
-                        if (isDeleting) {
-                            animStyle = {
-                                animation: 'tvOff 0.6s cubic-bezier(0.5, 0.05, 0.2, 1) forwards'
-                            };
-                        }
 
                         const isHighlighted = highlightedLink && movie.link === highlightedLink;
+
+                        let motionAnimate = isDeleting ? {
+                            scaleX: [1, 1.02, 1.05, 0.02, 0],
+                            scaleY: [1, 0.95, 0.008, 0.008, 0],
+                            opacity: [1, 1, 1, 1, 0],
+                            filter: [
+                                "brightness(1) contrast(1)", 
+                                "brightness(1.2) contrast(1.5) blur(1px)", 
+                                "brightness(15) contrast(10) blur(2px)", 
+                                "brightness(20) contrast(10) blur(3px)", 
+                                "brightness(0) contrast(0)"
+                            ],
+                            boxShadow: [
+                                "0 4px 20px rgba(0,0,0,0.3)", 
+                                "-5px 0 10px rgba(0, 255, 255, 0.6), 5px 0 10px rgba(255, 0, 255, 0.6)", 
+                                "-15px 0 20px rgba(0, 255, 255, 1), 15px 0 20px rgba(255, 0, 255, 1)", 
+                                "-30px 0 30px rgba(0, 255, 255, 1), 30px 0 30px rgba(255, 0, 255, 1)", 
+                                "none"
+                            ],
+                            backgroundColor: ["transparent", "transparent", "white", "white", "transparent"]
+                        } : undefined;
+
+                        let motionTransition = isDeleting ? {
+                            duration: 0.6,
+                            ease: [0.5, 0.05, 0.2, 1],
+                            times: [0, 0.15, 0.4, 0.7, 1]
+                        } : { layout: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } };
 
                         return (
                             <motion.div
                                 key={movie.id}
                                 layout
-                                transition={{ layout: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } }}
+                                animate={motionAnimate}
+                                transition={motionTransition}
                                 data-movie-id={movie.id}
                                 data-movie-link={movie.link}
                                 className={`glass-panel movie-card${isHighlighted ? ' movie-highlight-pulse' : ''}`}
@@ -2977,12 +2996,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     boxShadow: hoveredCardLink === movie.link
                                         ? '0 6px 20px rgba(3, 218, 198, 0.15)'
                                         : '0 4px 20px rgba(0,0,0,0.3)',
-                                    transform: isDeleting
-                                        ? animStyle.transform
-                                        : undefined,
                                     aspectRatio: '2/3',
-                                    borderRadius: '8px',
-                                    ...animStyle
+                                    borderRadius: '8px'
                                 }}
                                 onMouseEnter={() => setHoveredCardLink(movie.link)}
                                 onMouseLeave={() => {
