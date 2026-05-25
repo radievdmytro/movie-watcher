@@ -566,11 +566,15 @@ function App() {
 
         if (forceNoConfirm) {
             try {
+                setDeletingIds([id]);
+                await new Promise(resolve => setTimeout(resolve, 600));
+                
                 const endpoint = (isLibrary && !permanent) ? `/api/movies/${id}` : `/api/trash/${id}`;
                 await fetch(endpoint, { method: 'DELETE' });
                 setMovies(prev => prev.filter(m => m.id !== id));
                 setSelectedIds(prev => prev.filter(sid => sid !== id));
                 if (selectedIds.length <= 1) setSelectionAnchor(null);
+                setDeletingIds([]);
             } catch (error) {
                 console.error('Delete failed:', error);
             }
@@ -597,11 +601,15 @@ function App() {
 
         if (!inCollections && !promptIfNoCollections) {
             try {
+                setDeletingIds([id]);
+                await new Promise(resolve => setTimeout(resolve, 600));
+
                 const endpoint = (isLibrary && !permanent) ? `/api/movies/${id}` : `/api/trash/${id}`;
                 await fetch(endpoint, { method: 'DELETE' });
                 setMovies(prev => prev.filter(m => m.id !== id));
                 setSelectedIds(prev => prev.filter(sid => sid !== id));
                 if (selectedIds.length <= 1) setSelectionAnchor(null);
+                setDeletingIds([]);
             } catch (error) {
                 console.error('Delete failed:', error);
             }
@@ -630,6 +638,9 @@ function App() {
                     onClick: async () => {
                         try {
                             setConfirmConfig(null);
+                            setDeletingIds([id]);
+                            await new Promise(resolve => setTimeout(resolve, 600));
+
                             await fetch('/api/movies/bulk-hide', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -638,6 +649,7 @@ function App() {
                             setMovies(prev => prev.filter(m => m.id !== id));
                             setSelectedIds(prev => prev.filter(sid => sid !== id));
                             if (selectedIds.length <= 1) setSelectionAnchor(null);
+                            setDeletingIds([]);
                         } catch (error) {
                             console.error('Hide failed:', error);
                         }
@@ -646,12 +658,16 @@ function App() {
             ] : [],
             onConfirm: async () => {
                 try {
+                    setConfirmConfig(null);
+                    setDeletingIds([id]);
+                    await new Promise(resolve => setTimeout(resolve, 600));
+
                     const endpoint = (isLibrary && !permanent) ? `/api/movies/${id}` : `/api/trash/${id}`;
                     await fetch(endpoint, { method: 'DELETE' });
                     setMovies(prev => prev.filter(m => m.id !== id));
                     setSelectedIds(prev => prev.filter(sid => sid !== id));
                     if (selectedIds.length <= 1) setSelectionAnchor(null);
-                    setConfirmConfig(null);
+                    setDeletingIds([]);
                 } catch (error) {
                     console.error('Delete failed:', error);
                 }
@@ -730,7 +746,7 @@ function App() {
                     setConfirmConfig(null);
 
                     // Wait for animation to complete
-                    await new Promise(resolve => setTimeout(resolve, 400));
+                    await new Promise(resolve => setTimeout(resolve, 600));
 
                     // Perform actual deletion
                     const endpoint = isLibrary ? '/api/movies/bulk-delete' : '/api/trash';
