@@ -1515,41 +1515,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     useEffect(() => {
         if (deletingIds.length === 0) {
             setAnimationPhase(null);
-            setStackPosition(null);
             return;
         }
-
-        // Get trash button position
-        if (trashButtonRef?.current) {
-            const rect = trashButtonRef.current.getBoundingClientRect();
-            setTrashButtonPos({
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2
-            });
-        }
-
-        // Get position of first deleting item for stack anchor
-        const firstDeletingId = deletingIds[0];
-        const firstElement = document.querySelector(`[data-movie-id="${firstDeletingId}"]`);
-        if (firstElement) {
-            const rect = firstElement.getBoundingClientRect();
-            setStackPosition({
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2
-            });
-        }
-
-        // Phase 1: Grayscale (0-300ms)
-        setAnimationPhase('grayscale');
-
-        // Phase 2: Stacking (300-600ms)
-        setTimeout(() => setAnimationPhase('stacking'), 300);
-
-        // Phase 3: Flying (600-1200ms)
-        setTimeout(() => setAnimationPhase('flying'), 600);
-
-        // Phase 4: Cleanup happens in App.jsx after 1500ms
-    }, [deletingIds, trashButtonRef]);
+        setAnimationPhase('fade');
+    }, [deletingIds]);
 
     const handleSizeChange = (e) => {
         const val = parseInt(e.target.value);
@@ -2980,40 +2949,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         // Calculate animation styles
                         let animStyle = {};
                         if (isDeleting) {
-                            // Phase 1: Grayscale
-                            if (animationPhase === 'grayscale') {
-                                animStyle = {
-                                    filter: 'grayscale(1)',
-                                    transform: 'scale(0.95)',
-                                    transition: 'all 0.3s ease-out'
-                                };
-                            }
-                            // Phase 2: Stacking
-                            else if (animationPhase === 'stacking' && stackPosition) {
-                                const currentRect = document.querySelector(`[data-movie-id="${movie.id}"]`)?.getBoundingClientRect();
-                                if (currentRect) {
-                                    const deltaX = stackPosition.x - (currentRect.left + currentRect.width / 2);
-                                    const deltaY = stackPosition.y - (currentRect.top + currentRect.height / 2);
-                                    animStyle = {
-                                        filter: 'grayscale(1)',
-                                        transform: `translate(${deltaX}px, ${deltaY}px) scale(0.8) rotate(${deletingIndex * 3}deg)`,
-                                        transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                                        zIndex: 1000 + deletingIndex
-                                    };
-                                }
-                            }
-                            // Phase 3: Flying
-                            else if (animationPhase === 'flying' && stackPosition && trashButtonPos) {
-                                const deltaX = trashButtonPos.x - stackPosition.x;
-                                const deltaY = trashButtonPos.y - stackPosition.y;
-                                animStyle = {
-                                    filter: 'grayscale(1)',
-                                    transform: `translate(${deltaX}px, ${deltaY}px) scale(0.1) rotate(${deletingIndex * 15 + 360}deg)`,
-                                    transition: 'all 0.6s cubic-bezier(0.6, -0.28, 0.735, 0.045)',
-                                    opacity: 0.3,
-                                    zIndex: 2000 + deletingIndex
-                                };
-                            }
+                            animStyle = {
+                                opacity: 0,
+                                transform: 'scale(0.5)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                            };
                         }
 
                         const isHighlighted = highlightedLink && movie.link === highlightedLink;
@@ -3027,7 +2967,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 data-movie-link={movie.link}
                                 className={`glass-panel movie-card${isHighlighted ? ' movie-highlight-pulse' : ''}`}
                                 style={{
-                                    position: isDeleting && animationPhase ? 'fixed' : 'relative',
+                                    position: 'relative',
                                     overflow: 'hidden',
                                     border: isHighlighted
                                         ? '2px solid var(--accent-gold)'
@@ -3039,7 +2979,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     boxShadow: hoveredCardLink === movie.link
                                         ? '0 6px 20px rgba(3, 218, 198, 0.15)'
                                         : '0 4px 20px rgba(0,0,0,0.3)',
-                                    transform: isDeleting && animationPhase
+                                    transform: isDeleting
                                         ? animStyle.transform
                                         : undefined,
                                     aspectRatio: '2/3',

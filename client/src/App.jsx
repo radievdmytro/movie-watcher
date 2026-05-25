@@ -729,8 +729,8 @@ function App() {
                     setDeletingIds(selectedIds);
                     setConfirmConfig(null);
 
-                    // Wait for animation to complete (1500ms total)
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    // Wait for animation to complete
+                    await new Promise(resolve => setTimeout(resolve, 400));
 
                     // Perform actual deletion
                     const endpoint = isLibrary ? '/api/movies/bulk-delete' : '/api/trash';
