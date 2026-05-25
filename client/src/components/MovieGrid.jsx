@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useDeferredValue, useCallback } f
 import { createPortal } from 'react-dom';
 import MovieDetailsModal from './MovieDetailsModal';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Checkbox = ({ checked, onChange, style }) => (
     <label className="custom-checkbox" style={style} onClick={(e) => e.stopPropagation()}>
