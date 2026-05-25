@@ -2944,6 +2944,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
                         {finalDisplayMovies.slice(0, visibleCount).map((movie, index) => {
                         const isDeleting = deletingIds.includes(movie.id);
+                        const deletingIndex = deletingIds.indexOf(movie.id);
 
                         const isHighlighted = highlightedLink && movie.link === highlightedLink;
 
@@ -2970,8 +2971,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             backgroundColor: ["transparent", "transparent", "transparent", "white", "white", "transparent"]
                         } : undefined;
 
+                        const staggerDelay = deletingIndex > 0 ? deletingIndex * 0.2 : 0;
+
                         let motionTransition = isDeleting ? {
                             duration: 0.9,
+                            delay: staggerDelay,
                             ease: [0.25, 0.1, 0.25, 1],
                             times: [0, 0.2, 0.5, 0.65, 0.85, 1]
                         } : { layout: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } };
@@ -3012,7 +3016,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     <motion.div
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: [0, 0, 0.8, 1, 0] }}
-                                        transition={{ duration: 0.9, times: [0, 0.2, 0.3, 0.5, 0.6] }}
+                                        transition={{ duration: 0.9, delay: staggerDelay, times: [0, 0.2, 0.3, 0.5, 0.6] }}
                                         style={{
                                             position: 'absolute',
                                             inset: 0,

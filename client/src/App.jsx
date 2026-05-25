@@ -727,12 +727,13 @@ function App() {
                             });
                             // Start delete animation to remove them from library view
                             setDeletingIds(selectedIds);
+                            const animDelay = 900 + Math.max(0, selectedIds.length - 1) * 200;
                             setTimeout(() => {
                                 setMovies(prev => prev.filter(m => !selectedIds.includes(m.id)));
                                 setSelectedIds([]);
                                 setSelectionAnchor(null);
                                 setDeletingIds([]);
-                            }, 300);
+                            }, animDelay);
                         } catch (error) {
                             console.error('Hide failed:', error);
                         }
@@ -746,7 +747,8 @@ function App() {
                     setConfirmConfig(null);
 
                     // Wait for animation to complete
-                    await new Promise(resolve => setTimeout(resolve, 900));
+                    const animDelay = 900 + Math.max(0, selectedIds.length - 1) * 200;
+                    await new Promise(resolve => setTimeout(resolve, animDelay));
 
                     // Perform actual deletion
                     const endpoint = isLibrary ? '/api/movies/bulk-delete' : '/api/trash';
