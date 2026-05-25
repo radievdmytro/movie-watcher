@@ -1851,22 +1851,40 @@ app.get('/api/collections', authenticateToken, (req, res) => {
 // Public endpoint to fetch a single movie for sharing
 app.get('/api/public/movie/:id', (req, res) => {
     try {
-        const stmt = db.prepare(`
-            SELECT m.*,
-                   (
-                     SELECT ROUND(AVG(r), 1) FROM (
-                       SELECT m2.user_rating AS r FROM movies m2
-                         WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
-                       UNION ALL
-                       SELECT h.user_rating AS r FROM user_movie_history h
-                         WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
-                         AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
-                     )
-                   ) AS community_rating
-            FROM movies m
-            WHERE m.id = ? AND m.deleted_at IS NULL
-        `);
-        const movie = stmt.get(req.params.id);
+        let queryId = req.params.id;
+        let isCacheId = false;
+        
+        if (queryId.startsWith('c')) {
+            isCacheId = true;
+            queryId = queryId.substring(1);
+        }
+
+        let movie;
+        if (isCacheId) {
+            movie = db.prepare('SELECT * FROM scraped_movies_cache WHERE id = ?').get(queryId);
+        } else {
+            const stmt = db.prepare(`
+                SELECT m.*,
+                       (
+                         SELECT ROUND(AVG(r), 1) FROM (
+                           SELECT m2.user_rating AS r FROM movies m2
+                             WHERE m2.link = m.link AND m2.user_rating IS NOT NULL AND m2.user_id != m.user_id
+                           UNION ALL
+                           SELECT h.user_rating AS r FROM user_movie_history h
+                             WHERE h.movie_link = m.link AND h.user_rating IS NOT NULL AND h.user_id != m.user_id
+                             AND h.user_id NOT IN (SELECT user_id FROM movies WHERE link = m.link AND user_rating IS NOT NULL)
+                         )
+                       ) AS community_rating
+                FROM movies m
+                WHERE m.id = ? AND m.deleted_at IS NULL
+            `);
+            movie = stmt.get(queryId);
+            
+            // Fallback for old cache links
+            if (!movie) {
+                movie = db.prepare('SELECT * FROM scraped_movies_cache WHERE id = ?').get(queryId);
+            }
+        }
         if (!movie) return res.status(404).json({ error: 'Movie not found' });
         
         if (!movie.notes_public) {
@@ -1881,7 +1899,24 @@ app.get('/api/public/movie/:id', (req, res) => {
 // Telegram Open Graph Metadata endpoint
 app.get('/share/movie/:id', (req, res) => {
     try {
-        const movie = db.prepare('SELECT title, original_title, year, description, poster_url, genres, rating FROM movies WHERE id = ?').get(req.params.id);
+        let queryId = req.params.id;
+        let isCacheId = false;
+        
+        if (queryId.startsWith('c')) {
+            isCacheId = true;
+            queryId = queryId.substring(1);
+        }
+
+        let movie;
+        if (isCacheId) {
+            movie = db.prepare('SELECT title, original_title, year, description, poster_url, genres, rating FROM scraped_movies_cache WHERE id = ?').get(queryId);
+        } else {
+            movie = db.prepare('SELECT title, original_title, year, description, poster_url, genres, rating FROM movies WHERE id = ?').get(queryId);
+            if (!movie) {
+                movie = db.prepare('SELECT title, original_title, year, description, poster_url, genres, rating FROM scraped_movies_cache WHERE id = ?').get(queryId);
+            }
+        }
+        
         if (!movie) return res.status(404).send('Movie not found');
         
         const title = `${movie.title} (${movie.year})`;
