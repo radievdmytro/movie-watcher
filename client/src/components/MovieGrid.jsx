@@ -2948,30 +2948,32 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         const isHighlighted = highlightedLink && movie.link === highlightedLink;
 
                         let motionAnimate = isDeleting ? {
-                            scaleX: [1, 1.02, 1.05, 0.02, 0],
-                            scaleY: [1, 0.95, 0.008, 0.008, 0],
-                            opacity: [1, 1, 1, 1, 0],
+                            scaleX: [1, 1, 1, 1.05, 0.02, 0],
+                            scaleY: [1, 1, 1, 0.008, 0.008, 0],
+                            opacity: [1, 1, 1, 1, 1, 0],
                             filter: [
-                                "brightness(1) contrast(1)", 
-                                "brightness(1.2) contrast(1.5) blur(1px)", 
-                                "brightness(15) contrast(10) blur(2px)", 
-                                "brightness(20) contrast(10) blur(3px)", 
-                                "brightness(0) contrast(0)"
+                                "grayscale(0%) brightness(1) contrast(1)", 
+                                "grayscale(100%) brightness(1.2) contrast(1.2)", 
+                                "grayscale(100%) brightness(1.5) contrast(1.5)", 
+                                "grayscale(100%) brightness(15) contrast(10) blur(2px)", 
+                                "grayscale(100%) brightness(20) contrast(10) blur(3px)", 
+                                "grayscale(100%) brightness(0) contrast(0)"
                             ],
                             boxShadow: [
                                 "0 4px 20px rgba(0,0,0,0.3)", 
-                                "-5px 0 10px rgba(0, 255, 255, 0.6), 5px 0 10px rgba(255, 0, 255, 0.6)", 
-                                "-15px 0 20px rgba(0, 255, 255, 1), 15px 0 20px rgba(255, 0, 255, 1)", 
-                                "-30px 0 30px rgba(0, 255, 255, 1), 30px 0 30px rgba(255, 0, 255, 1)", 
+                                "0 4px 20px rgba(0,0,0,0.3)", 
+                                "-5px 0 10px rgba(255, 255, 255, 0.6), 5px 0 10px rgba(255, 255, 255, 0.6)", 
+                                "-15px 0 20px rgba(255, 255, 255, 1), 15px 0 20px rgba(255, 255, 255, 1)", 
+                                "-30px 0 30px rgba(255, 255, 255, 1), 30px 0 30px rgba(255, 255, 255, 1)", 
                                 "none"
                             ],
-                            backgroundColor: ["transparent", "transparent", "white", "white", "transparent"]
+                            backgroundColor: ["transparent", "transparent", "transparent", "white", "white", "transparent"]
                         } : undefined;
 
                         let motionTransition = isDeleting ? {
-                            duration: 0.6,
-                            ease: [0.5, 0.05, 0.2, 1],
-                            times: [0, 0.15, 0.4, 0.7, 1]
+                            duration: 0.9,
+                            ease: [0.25, 0.1, 0.25, 1],
+                            times: [0, 0.2, 0.5, 0.65, 0.85, 1]
                         } : { layout: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } };
 
                         return (
@@ -3006,6 +3008,22 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     setHoveredDeleteLink(null);
                                 }}
                             >
+                                {isDeleting && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: [0, 0, 0.8, 1, 0] }}
+                                        transition={{ duration: 0.9, times: [0, 0.2, 0.3, 0.5, 0.6] }}
+                                        style={{
+                                            position: 'absolute',
+                                            inset: 0,
+                                            zIndex: 20,
+                                            pointerEvents: 'none',
+                                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E")`,
+                                            mixBlendMode: 'screen',
+                                            animation: 'staticFlicker 0.2s steps(4) infinite'
+                                        }}
+                                    />
+                                )}
                                 <div
                                     style={{ width: '100%', height: '100%', cursor: 'pointer' }}
                                     onClick={() => setSelectedMovie(movie)}

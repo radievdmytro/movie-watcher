@@ -567,7 +567,7 @@ function App() {
         if (forceNoConfirm) {
             try {
                 setDeletingIds([id]);
-                await new Promise(resolve => setTimeout(resolve, 600));
+                await new Promise(resolve => setTimeout(resolve, 900));
                 
                 const endpoint = (isLibrary && !permanent) ? `/api/movies/${id}` : `/api/trash/${id}`;
                 await fetch(endpoint, { method: 'DELETE' });
@@ -602,7 +602,7 @@ function App() {
         if (!inCollections && !promptIfNoCollections) {
             try {
                 setDeletingIds([id]);
-                await new Promise(resolve => setTimeout(resolve, 600));
+                await new Promise(resolve => setTimeout(resolve, 900));
 
                 const endpoint = (isLibrary && !permanent) ? `/api/movies/${id}` : `/api/trash/${id}`;
                 await fetch(endpoint, { method: 'DELETE' });
@@ -639,7 +639,7 @@ function App() {
                         try {
                             setConfirmConfig(null);
                             setDeletingIds([id]);
-                            await new Promise(resolve => setTimeout(resolve, 600));
+                            await new Promise(resolve => setTimeout(resolve, 900));
 
                             await fetch('/api/movies/bulk-hide', {
                                 method: 'POST',
@@ -660,7 +660,7 @@ function App() {
                 try {
                     setConfirmConfig(null);
                     setDeletingIds([id]);
-                    await new Promise(resolve => setTimeout(resolve, 600));
+                    await new Promise(resolve => setTimeout(resolve, 900));
 
                     const endpoint = (isLibrary && !permanent) ? `/api/movies/${id}` : `/api/trash/${id}`;
                     await fetch(endpoint, { method: 'DELETE' });
@@ -746,7 +746,7 @@ function App() {
                     setConfirmConfig(null);
 
                     // Wait for animation to complete
-                    await new Promise(resolve => setTimeout(resolve, 600));
+                    await new Promise(resolve => setTimeout(resolve, 900));
 
                     // Perform actual deletion
                     const endpoint = isLibrary ? '/api/movies/bulk-delete' : '/api/trash';
