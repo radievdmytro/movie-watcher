@@ -3099,27 +3099,41 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end', pointerEvents: 'none' }}>
                                             {/* Priority Badges: Animation */}
                                             {(movie.genres?.toLowerCase().includes('мульт') || movie.genres?.toLowerCase().includes('анимац') || movie.link?.includes('/cartoons/') || movie.link?.includes('/animation/')) ? (
-                                                <span className="badge-ui" style={{ background: 'rgba(255, 152, 0, 0.9)' }}>Cartoon</span>
+                                                <motion.span layout className="badge-ui" style={{ background: 'rgba(255, 152, 0, 0.9)' }}>Cartoon</motion.span>
                                             ) : movie.genres?.toLowerCase().includes('аниме') ? (
-                                                <span className="badge-ui" style={{ background: 'rgba(233, 30, 99, 0.9)' }}>Anime</span>
+                                                <motion.span layout className="badge-ui" style={{ background: 'rgba(233, 30, 99, 0.9)' }}>Anime</motion.span>
                                             ) : (
                                                 /* Other Genre Badges (only if not animated) */
                                                 <>
-                                                    {movie.genres?.toLowerCase().includes('триллер') && <span className="badge-ui" style={{ background: 'rgba(183, 28, 28, 0.9)' }}>Thriller</span>}
-                                                    {movie.genres?.toLowerCase().includes('детектив') && <span className="badge-ui" style={{ background: 'rgba(74, 20, 140, 0.9)' }}>Detective</span>}
-                                                    {movie.genres?.toLowerCase().includes('ужас') && <span className="badge-ui" style={{ background: 'rgba(46, 125, 50, 0.9)' }}>Horror</span>}
-                                                    {movie.genres?.toLowerCase().includes('комед') && <span className="badge-ui" style={{ background: 'rgba(251, 192, 45, 0.9)', color: '#000' }}>Comedy</span>}
-                                                    {(movie.genres?.toLowerCase().includes('мелодрам') || movie.genres?.toLowerCase().includes('драма')) && (
-                                                        <span className="badge-ui" style={{ background: 'rgba(194, 24, 91, 0.9)' }}>Drama</span>
-                                                    )}
+                                                    <AnimatePresence>
+                                                        {movie.genres?.toLowerCase().includes('триллер') && <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(183, 28, 28, 0.9)' }}>Thriller</motion.span>}
+                                                        {movie.genres?.toLowerCase().includes('детектив') && <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(74, 20, 140, 0.9)' }}>Detective</motion.span>}
+                                                        {movie.genres?.toLowerCase().includes('ужас') && <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(46, 125, 50, 0.9)' }}>Horror</motion.span>}
+                                                        {movie.genres?.toLowerCase().includes('комед') && <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(251, 192, 45, 0.9)', color: '#000' }}>Comedy</motion.span>}
+                                                        {(movie.genres?.toLowerCase().includes('мелодрам') || movie.genres?.toLowerCase().includes('драма')) && (
+                                                            <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(194, 24, 91, 0.9)' }}>Drama</motion.span>
+                                                        )}
+                                                    </AnimatePresence>
                                                 </>
                                             )}
 
                                             {/* Series badge is always informative */}
-                                            {movie.status === 'watched' && (
-                                                <span className="badge-ui" style={{ background: 'rgba(3, 218, 198, 0.9)', color: '#fff' }}>✔ Watched</span>
-                                            )}
-                                            {movie.type === 'series' && <span className="badge-ui" style={{ background: 'rgba(33, 150, 243, 0.9)' }}>TV</span>}
+                                            <AnimatePresence>
+                                                {movie.status === 'watched' && (
+                                                    <motion.span
+                                                        layout
+                                                        initial={{ opacity: 0, scale: 0.5, width: 0 }}
+                                                        animate={{ opacity: 1, scale: 1, width: 'auto' }}
+                                                        exit={{ opacity: 0, scale: 0.5, width: 0 }}
+                                                        transition={{ duration: 0.6, ease: [0.1, 0.8, 0.2, 1] }}
+                                                        className="badge-ui" 
+                                                        style={{ background: 'rgba(3, 218, 198, 0.9)', color: '#fff', originX: 1 }}
+                                                    >
+                                                        ✔ Watched
+                                                    </motion.span>
+                                                )}
+                                                {movie.type === 'series' && <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(33, 150, 243, 0.9)' }}>TV</motion.span>}
+                                            </AnimatePresence>
                                             <div style={{
                                                 background: 'rgba(0,0,0,0.6)',
                                                 padding: isMobile ? '1px 4px' : '2px 6px',
