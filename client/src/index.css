@@ -1395,3 +1395,10 @@ body.hide-header-search .app-header {
     position: relative;
     z-index: 10 !important;
 }
+
+@keyframes tvOff {
+  0% { transform: scale(1, 1); opacity: 1; filter: brightness(1) contrast(1); }
+  40% { transform: scale(1, 0.012); opacity: 1; filter: brightness(10) contrast(5); background: white; }
+  80% { transform: scale(0.01, 0.012); opacity: 1; filter: brightness(10) contrast(5); background: white; }
+  100% { transform: scale(0, 0); opacity: 0; filter: brightness(1) contrast(1); }
+}

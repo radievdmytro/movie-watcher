@@ -2950,9 +2950,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         let animStyle = {};
                         if (isDeleting) {
                             animStyle = {
-                                opacity: 0,
-                                transform: 'scale(0.5)',
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                animation: 'tvOff 0.4s cubic-bezier(0.8, 0, 0.2, 1) forwards'
                             };
                         }
 
