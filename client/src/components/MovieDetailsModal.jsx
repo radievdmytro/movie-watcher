@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 
 function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched, onRemoveMovie, onHideMovie, onAddToCollection }) {
@@ -7,9 +7,14 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
     const movie = useMemo(() => propMovie ? { ...propMovie, ...liveDetails } : null, [propMovie, liveDetails]);
 
+    const attemptedUpdates = useRef(new Set());
+
     useEffect(() => {
         if (!propMovie || !propMovie.link) return;
         
+        // If we already tried fetching details for this movie during this modal session, don't try again (prevents infinite loops if backend also has no description)
+        if (attemptedUpdates.current.has(propMovie.link)) return;
+
         // If it's missing description or other important fields, fetch on the fly!
         const needsUpdate = !propMovie.description || propMovie.description.trim() === '' ||
             !propMovie.actors || (Array.isArray(propMovie.actors) ? propMovie.actors.length === 0 : propMovie.actors.trim() === '') ||
@@ -18,6 +23,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             !propMovie.rating;
 
         if (needsUpdate) {
+            attemptedUpdates.current.add(propMovie.link);
             setIsLoadingDetails(true);
             const token = localStorage.getItem('token');
             fetch('/api/movies/search', {

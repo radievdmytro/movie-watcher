@@ -1664,9 +1664,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const handleUpdateMovie = async (id, fields) => {
         if (onUpdate) {
             await onUpdate(id, fields);
-            if (selectedMovie && (selectedMovie.id === id || (id === null && fields.link && cleanLinkPath(selectedMovie.link) === cleanLinkPath(fields.link)))) {
-                setSelectedMovie(prev => ({ ...prev, ...fields }));
-            }
+            setSelectedMovie(prev => {
+                if (!prev) return null; // Prevent zombie reopening if closed
+                if (prev.id === id || (id === null && fields.link && cleanLinkPath(prev.link) === cleanLinkPath(fields.link))) {
+                    return { ...prev, ...fields };
+                }
+                return prev;
+            });
         }
     };
 
