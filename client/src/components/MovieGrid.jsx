@@ -559,6 +559,15 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
     const [sortDir, setSortDir] = useState(() => localStorage.getItem('movieGrid_sortDir') || 'desc');
     const [localRatings, setLocalRatings] = useState({});
+    const [ripples, setRipples] = useState([]);
+
+    const addRipple = (identifier, x, y) => {
+        const id = Date.now() + Math.random();
+        setRipples(prev => [...prev, { id, identifier, x, y }]);
+        setTimeout(() => {
+            setRipples(prev => prev.filter(r => r.id !== id));
+        }, 600);
+    };
     const [hideWatched, setHideWatched] = useState(() => {
         const stored = localStorage.getItem('movieGrid_hideWatched');
         return stored !== null ? JSON.parse(stored) : false;
@@ -3012,6 +3021,16 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     setHoveredDeleteLink(null);
                                 }}
                             >
+                                {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
+                                    <div
+                                        key={ripple.id}
+                                        className="watch-ripple"
+                                        style={{
+                                            left: ripple.x,
+                                            top: ripple.y
+                                        }}
+                                    />
+                                ))}
                                 {isDeleting && (
                                     <motion.div
                                         initial={{ opacity: 0 }}
@@ -3293,6 +3312,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         if (showDetailsText) {
                                                             setSelectedMovie(movie);
                                                         } else {
+                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                            const cardRect = e.currentTarget.closest('.movie-card').getBoundingClientRect();
+                                                            const x = rect.left + rect.width / 2 - cardRect.left;
+                                                            const y = rect.top + rect.height / 2 - cardRect.top;
+                                                            addRipple(movie.id || movie.link, x, y);
+
                                                             if (movie.status !== 'watched') {
                                                                 await onUpdate(movie.id || null, { status: 'watched', link: movie.link });
                                                             } else {
@@ -3882,6 +3907,16 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         cursor: 'pointer'
                                     }}
                                 >
+                                    {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
+                                        <div
+                                            key={ripple.id}
+                                            className="watch-ripple"
+                                            style={{
+                                                left: ripple.x,
+                                                top: ripple.y
+                                            }}
+                                        />
+                                    ))}
                                     {/* Poster Image */}
                                     <img
                                         src={movie.poster_url || movie.img}
