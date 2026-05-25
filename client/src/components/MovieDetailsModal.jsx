@@ -193,7 +193,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
     const handleShare = async () => {
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const shareUrl = `${baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl}/share/movie/${movie.id}`;
+        const shareId = movie.user_id ? movie.id : `c${movie.id}`;
+        const shareUrl = `${baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl}/share/movie/${shareId}`;
         try {
             await navigator.clipboard.writeText(shareUrl);
             setCopiedShare(true);
