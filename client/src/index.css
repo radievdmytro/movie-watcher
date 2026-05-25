@@ -1397,8 +1397,33 @@ body.hide-header-search .app-header {
 }
 
 @keyframes tvOff {
-  0% { transform: scale(1, 1); opacity: 1; filter: brightness(1) contrast(1); }
-  40% { transform: scale(1, 0.012); opacity: 1; filter: brightness(10) contrast(5); background: white; }
-  80% { transform: scale(0.01, 0.012); opacity: 1; filter: brightness(10) contrast(5); background: white; }
-  100% { transform: scale(0, 0); opacity: 0; filter: brightness(1) contrast(1); }
+  0% { 
+    transform: scale(1, 1); 
+    opacity: 1; 
+    filter: brightness(1) contrast(1); 
+  }
+  15% {
+    transform: scale(1.02, 0.95);
+    opacity: 1;
+    filter: brightness(1.2) contrast(1.5) blur(1px);
+    box-shadow: -5px 0 10px rgba(0, 255, 255, 0.6), 5px 0 10px rgba(255, 0, 255, 0.6);
+  }
+  40% { 
+    transform: scale(1.05, 0.008); 
+    opacity: 1; 
+    filter: brightness(15) contrast(10) blur(2px); 
+    background: white; 
+    box-shadow: -15px 0 20px rgba(0, 255, 255, 1), 15px 0 20px rgba(255, 0, 255, 1);
+  }
+  70% { 
+    transform: scale(0.02, 0.008); 
+    opacity: 1; 
+    filter: brightness(20) contrast(10) blur(3px); 
+    background: white; 
+    box-shadow: -30px 0 30px rgba(0, 255, 255, 1), 30px 0 30px rgba(255, 0, 255, 1);
+  }
+  100% { 
+    transform: scale(0, 0); 
+    opacity: 0; 
+  }
 }
