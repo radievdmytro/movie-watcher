@@ -1083,12 +1083,12 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                 <button onClick={(e) => { e.stopPropagation(); handleAddSelected(); }}
                                     className="btn btn-primary"
                                     style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap' }}>
-                                    ✚ Add Selected ({selectedLinks.size})
+                                    ✚ To library ({selectedLinks.size})
                                 </button>
                                 <button onClick={(e) => { e.stopPropagation(); handleBulkAddToCollection(); }}
                                     className="btn btn-ghost"
                                     style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap', border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)' }}>
-                                    📁 Add to Collection ({selectedLinks.size})
+                                    📁 To collection ({selectedLinks.size})
                                 </button>
                                 {totalCompareCount >= 2 && totalCompareCount <= (isMobile ? 2 : 3) && (
                                     <button onClick={(e) => { e.stopPropagation(); handleCompareClick(); }}
@@ -1338,6 +1338,15 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                                 fontSize: '0.7rem', cursor: 'pointer'
                                             }}>
                                                 Clear
+                                            </button>
+                                        )}
+                                        {totalCompareCount === 2 && (
+                                            <button onClick={(e) => { e.stopPropagation(); handleCompareClick(); }} style={{
+                                                background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                                                color: '#fff', borderRadius: '16px', padding: '3px 10px',
+                                                fontSize: '0.7rem', cursor: 'pointer'
+                                            }}>
+                                                ⚖️ Compare
                                             </button>
                                         )}
                                     </div>
@@ -1654,11 +1663,11 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                         <button onClick={handleAddSelected} className="btn btn-primary" style={{
                                             padding: '8px 28px', borderRadius: '20px',
                                             boxShadow: '0 2px 15px rgba(212,175,55,0.35)', fontSize: '0.9rem'
-                                        }}>✚ Add {selectedLinks.size} to Library</button>
+                                        }}>✚ To library ({selectedLinks.size})</button>
                                         <button onClick={handleBulkAddToCollection} className="btn btn-ghost" style={{
                                             padding: '8px 28px', borderRadius: '20px',
                                             border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', fontSize: '0.9rem'
-                                        }}>📁 Add {selectedLinks.size} to Collection</button>
+                                        }}>📁 To collection ({selectedLinks.size})</button>
                                     </>
                                 )}
                             </div>
