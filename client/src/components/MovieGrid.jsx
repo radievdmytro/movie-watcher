@@ -3102,10 +3102,20 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         <AnimatePresence mode="wait" initial={false}>
                                             <motion.div 
                                                 key={movie.status === 'watched' ? 'watched' : 'unwatched'}
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.8 }}
+                                                initial={{ opacity: 0, y: -30 }}
+                                                animate={{ 
+                                                    opacity: 1, 
+                                                    y: 0,
+                                                    transition: { 
+                                                        y: { type: "spring", stiffness: 350, damping: 12, mass: 0.8 },
+                                                        opacity: { duration: 0.4 }
+                                                    }
+                                                }}
+                                                exit={{ 
+                                                    opacity: 0, 
+                                                    y: -25,
+                                                    transition: { duration: 0.8, ease: "easeInOut" }
+                                                }}
                                                 style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end', pointerEvents: 'none' }}
                                             >
                                                 {/* Priority Badges: Animation */}
