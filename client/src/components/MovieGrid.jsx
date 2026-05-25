@@ -3219,15 +3219,24 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 </div>
                                             )}
 
-                                            {movie.status === 'watched' && (movie.id === null || !movie.user_rating) && (
-                                                <CardRatingButton
-                                                    movie={movie}
-                                                    posterSize={posterSize}
-                                                    onUpdateRating={async (ratingVal) => {
-                                                        await onUpdate(movie.id || null, { user_rating: ratingVal, link: movie.link });
-                                                    }}
-                                                />
-                                            )}
+                                            <AnimatePresence>
+                                                {movie.status === 'watched' && (movie.id === null || !movie.user_rating) && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden' }}
+                                                        animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1 }}
+                                                        exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95 }}
+                                                        transition={{ duration: 0.8, ease: [0.1, 0.8, 0.2, 1] }}
+                                                    >
+                                                        <CardRatingButton
+                                                            movie={movie}
+                                                            posterSize={posterSize}
+                                                            onUpdateRating={async (ratingVal) => {
+                                                                await onUpdate(movie.id || null, { user_rating: ratingVal, link: movie.link });
+                                                            }}
+                                                        />
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
 
                                             {/* Quick Actions (Mini) */}
                                             <div style={{ display: 'flex', gap: '5px', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
@@ -4008,26 +4017,35 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 </div>
                                             )}
 
-                                            {(() => {
-                                                const isAdded = addedLinks.has(movie.link) || libraryLinks.has(cleanLinkPath(movie.link));
-                                                const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
-                                                const rating = libMovie?.user_rating || localRatings[movie.link];
-                                                return isMovieWatched && (!isAdded || !rating);
-                                            })() && (
-                                                <CardRatingButton
-                                                    movie={allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link)) || { ...movie, user_rating: localRatings[movie.link] }}
-                                                    posterSize={posterSize}
-                                                    onUpdateRating={async (ratingVal) => {
-                                                        const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
-                                                        setLocalRatings(prev => ({ ...prev, [movie.link]: ratingVal }));
-                                                        if (libMovie) {
-                                                            await onUpdate(libMovie.id, { user_rating: ratingVal, link: movie.link });
-                                                        } else {
-                                                            await onUpdate(null, { user_rating: ratingVal, link: movie.link });
-                                                        }
-                                                    }}
-                                                />
-                                            )}
+                                            <AnimatePresence>
+                                                {(() => {
+                                                    const isAdded = addedLinks.has(movie.link) || libraryLinks.has(cleanLinkPath(movie.link));
+                                                    const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                                    const rating = libMovie?.user_rating || localRatings[movie.link];
+                                                    return isMovieWatched && (!isAdded || !rating);
+                                                })() && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden' }}
+                                                        animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1 }}
+                                                        exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95 }}
+                                                        transition={{ duration: 0.8, ease: [0.1, 0.8, 0.2, 1] }}
+                                                    >
+                                                        <CardRatingButton
+                                                            movie={allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link)) || { ...movie, user_rating: localRatings[movie.link] }}
+                                                            posterSize={posterSize}
+                                                            onUpdateRating={async (ratingVal) => {
+                                                                const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                                                setLocalRatings(prev => ({ ...prev, [movie.link]: ratingVal }));
+                                                                if (libMovie) {
+                                                                    await onUpdate(libMovie.id, { user_rating: ratingVal, link: movie.link });
+                                                                } else {
+                                                                    await onUpdate(null, { user_rating: ratingVal, link: movie.link });
+                                                                }
+                                                            }}
+                                                        />
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
 
                                             {/* Action Buttons */}
                                             <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
