@@ -88,6 +88,7 @@ function App() {
     const trashButtonRef = useRef(null);
     const [highlightedMovieLink, setHighlightedMovieLink] = useState(null);
     const [headerScrolled, setHeaderScrolled] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
     // Guest Experience Tooltips and Modal States
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -231,6 +232,7 @@ function App() {
             document.documentElement.style.setProperty('--sp', progress);
             
             setHeaderScrolled(scrollY > 48);
+            setIsMobile(window.innerWidth <= 768);
             
             // Set immediately for pre-transition height
             requestAnimationFrame(setH);
