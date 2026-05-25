@@ -3096,70 +3096,65 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 />
                                             </div>
                                         )}
-                                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end', pointerEvents: 'none' }}>
-                                            {/* Priority Badges: Animation */}
-                                            {(movie.genres?.toLowerCase().includes('мульт') || movie.genres?.toLowerCase().includes('анимац') || movie.link?.includes('/cartoons/') || movie.link?.includes('/animation/')) ? (
-                                                <motion.span layout className="badge-ui" style={{ background: 'rgba(255, 152, 0, 0.9)' }}>Cartoon</motion.span>
-                                            ) : movie.genres?.toLowerCase().includes('аниме') ? (
-                                                <motion.span layout className="badge-ui" style={{ background: 'rgba(233, 30, 99, 0.9)' }}>Anime</motion.span>
-                                            ) : (
-                                                /* Other Genre Badges (only if not animated) */
-                                                <>
-                                                    <AnimatePresence>
-                                                        {movie.genres?.toLowerCase().includes('триллер') && <motion.span key="thriller" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(183, 28, 28, 0.9)' }}>Thriller</motion.span>}
-                                                        {movie.genres?.toLowerCase().includes('детектив') && <motion.span key="detective" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(74, 20, 140, 0.9)' }}>Detective</motion.span>}
-                                                        {movie.genres?.toLowerCase().includes('ужас') && <motion.span key="horror" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(46, 125, 50, 0.9)' }}>Horror</motion.span>}
-                                                        {movie.genres?.toLowerCase().includes('комед') && <motion.span key="comedy" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(251, 192, 45, 0.9)', color: '#000' }}>Comedy</motion.span>}
+                                        <AnimatePresence mode="wait" initial={false}>
+                                            <motion.div 
+                                                key={movie.status === 'watched' ? 'watched' : 'unwatched'}
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.8 }}
+                                                style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end', pointerEvents: 'none' }}
+                                            >
+                                                {/* Priority Badges: Animation */}
+                                                {(movie.genres?.toLowerCase().includes('мульт') || movie.genres?.toLowerCase().includes('анимац') || movie.link?.includes('/cartoons/') || movie.link?.includes('/animation/')) ? (
+                                                    <span className="badge-ui" style={{ background: 'rgba(255, 152, 0, 0.9)' }}>Cartoon</span>
+                                                ) : movie.genres?.toLowerCase().includes('аниме') ? (
+                                                    <span className="badge-ui" style={{ background: 'rgba(233, 30, 99, 0.9)' }}>Anime</span>
+                                                ) : (
+                                                    /* Other Genre Badges (only if not animated) */
+                                                    <>
+                                                        {movie.genres?.toLowerCase().includes('триллер') && <span className="badge-ui" style={{ background: 'rgba(183, 28, 28, 0.9)' }}>Thriller</span>}
+                                                        {movie.genres?.toLowerCase().includes('детектив') && <span className="badge-ui" style={{ background: 'rgba(74, 20, 140, 0.9)' }}>Detective</span>}
+                                                        {movie.genres?.toLowerCase().includes('ужас') && <span className="badge-ui" style={{ background: 'rgba(46, 125, 50, 0.9)' }}>Horror</span>}
+                                                        {movie.genres?.toLowerCase().includes('комед') && <span className="badge-ui" style={{ background: 'rgba(251, 192, 45, 0.9)', color: '#000' }}>Comedy</span>}
                                                         {(movie.genres?.toLowerCase().includes('мелодрам') || movie.genres?.toLowerCase().includes('драма')) && (
-                                                            <motion.span key="drama" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(194, 24, 91, 0.9)' }}>Drama</motion.span>
+                                                            <span className="badge-ui" style={{ background: 'rgba(194, 24, 91, 0.9)' }}>Drama</span>
                                                         )}
-                                                    </AnimatePresence>
-                                                </>
-                                            )}
+                                                    </>
+                                                )}
 
-                                            {/* Series badge is always informative */}
-                                            <AnimatePresence>
+                                                {/* Series badge is always informative */}
                                                 {movie.status === 'watched' && (
-                                                    <motion.span
-                                                        key="watched-badge"
-                                                        layout
-                                                        initial={{ opacity: 0, scale: 0.5, width: 0, paddingLeft: 0, paddingRight: 0, marginLeft: -4 }}
-                                                        animate={{ opacity: 1, scale: 1, width: 'auto', paddingLeft: isMobile ? 3 : 6, paddingRight: isMobile ? 3 : 6, marginLeft: 0 }}
-                                                        exit={{ opacity: 0, scale: 0.5, width: 0, paddingLeft: 0, paddingRight: 0, marginLeft: -4 }}
-                                                        transition={{ duration: 0.6, ease: [0.1, 0.8, 0.2, 1] }}
-                                                        className="badge-ui" 
-                                                        style={{ background: 'rgba(3, 218, 198, 0.9)', color: '#fff', originX: 1 }}
-                                                    >
-                                                        ✔ Watched
-                                                    </motion.span>
+                                                    <span className="badge-ui" style={{ background: 'rgba(3, 218, 198, 0.9)', color: '#fff' }}>✔ Watched</span>
                                                 )}
-                                                {movie.type === 'series' && <motion.span key="series-badge" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(33, 150, 243, 0.9)' }}>TV</motion.span>}
-                                            </AnimatePresence>
-                                            <div style={{
-                                                background: 'rgba(0,0,0,0.6)',
-                                                padding: isMobile ? '1px 4px' : '2px 6px',
-                                                borderRadius: isMobile ? '2px' : '4px',
-                                                fontWeight: 'bold',
-                                                color: 'var(--accent-gold)',
-                                                fontSize: isMobile ? '0.65rem' : '0.8rem',
-                                                backdropFilter: 'blur(4px)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '2px'
-                                            }}>
-                                                {movie.rating ? `★ ${movie.rating}` : '-'}
-                                                {movie.user_rating && (
-                                                    <span style={{
-                                                        color: '#03dac6',
-                                                        borderLeft: '1px solid #444',
-                                                        paddingLeft: isMobile ? '3px' : '5px',
-                                                        marginLeft: isMobile ? '1px' : '2px'
-                                                    }}>
-                                                        👤 {isMobile ? '' : '★ '}{movie.user_rating}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
+                                                {movie.type === 'series' && <span className="badge-ui" style={{ background: 'rgba(33, 150, 243, 0.9)' }}>TV</span>}
+                                                
+                                                <div style={{
+                                                    background: 'rgba(0,0,0,0.6)',
+                                                    padding: isMobile ? '1px 4px' : '2px 6px',
+                                                    borderRadius: isMobile ? '2px' : '4px',
+                                                    fontWeight: 'bold',
+                                                    color: 'var(--accent-gold)',
+                                                    fontSize: isMobile ? '0.65rem' : '0.8rem',
+                                                    backdropFilter: 'blur(4px)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '2px'
+                                                }}>
+                                                    {movie.rating ? `★ ${movie.rating}` : '-'}
+                                                    {movie.user_rating && (
+                                                        <span style={{
+                                                            color: '#03dac6',
+                                                            borderLeft: '1px solid #444',
+                                                            paddingLeft: isMobile ? '3px' : '5px',
+                                                            marginLeft: isMobile ? '1px' : '2px'
+                                                        }}>
+                                                            👤 {isMobile ? '' : '★ '}{movie.user_rating}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        </AnimatePresence>
 
                                         <style>{`
                     .badge-ui {
