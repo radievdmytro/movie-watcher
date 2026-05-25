@@ -3123,9 +3123,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     <motion.span
                                                         key="watched-badge"
                                                         layout
-                                                        initial={{ opacity: 0, scale: 0.5, width: 0 }}
-                                                        animate={{ opacity: 1, scale: 1, width: 'auto' }}
-                                                        exit={{ opacity: 0, scale: 0.5, width: 0 }}
+                                                        initial={{ opacity: 0, scale: 0.5, width: 0, paddingLeft: 0, paddingRight: 0, marginLeft: -4 }}
+                                                        animate={{ opacity: 1, scale: 1, width: 'auto', paddingLeft: isMobile ? 3 : 6, paddingRight: isMobile ? 3 : 6, marginLeft: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.5, width: 0, paddingLeft: 0, paddingRight: 0, marginLeft: -4 }}
                                                         transition={{ duration: 0.6, ease: [0.1, 0.8, 0.2, 1] }}
                                                         className="badge-ui" 
                                                         style={{ background: 'rgba(3, 218, 198, 0.9)', color: '#fff', originX: 1 }}
@@ -3165,7 +3165,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     .badge-ui {
                         padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #fff; 
                         font-size: 0.65rem; backdrop-filter: blur(4px); text-transform: uppercase;
-                        display: inline-block;
+                        display: inline-block; white-space: nowrap; overflow: hidden;
                     }
                     @media (max-width: 768px) {
                         .badge-ui {
