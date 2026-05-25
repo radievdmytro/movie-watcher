@@ -2943,7 +2943,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     <motion.div
                         className="movie-grid-container"
                         ref={gridRef}
-                        layout
                         style={{
                             display: 'grid',
                             gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
@@ -3864,7 +3863,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     <motion.div
                         className="movie-grid-container"
                         ref={listRef}
-                        layout
                         style={{
                             display: 'grid',
                             gridTemplateColumns: `repeat(auto-fill, minmax(${posterSize}px, 1fr))`,
