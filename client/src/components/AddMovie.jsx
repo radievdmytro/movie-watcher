@@ -470,10 +470,13 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
         const token = localStorage.getItem('token');
         setLoading(true);
         setIsFadingLogs(false);
+        setBatchProgress({ current: 0, total: links.length });
         const newLogs = [];
 
         try {
-            for (const url of links) {
+            for (let i = 0; i < links.length; i++) {
+                const url = links[i];
+                setBatchProgress({ current: i + 1, total: links.length });
                 const localMovie = movies.find(m => m.link === url || m.movie_link === url);
                 if (localMovie) {
                     importedMoviesForCollection.push(localMovie);
@@ -508,6 +511,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
             newLogs.push({ msg: `✗ Network Error`, type: 'error' });
             setLogs([...newLogs]);
         } finally {
+            setBatchProgress(null);
             setLoading(false);
             setSelectedLinks(new Set());
             setTimeout(() => {
