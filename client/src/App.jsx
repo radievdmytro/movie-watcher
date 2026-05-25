@@ -1034,8 +1034,10 @@ function App() {
                                     <button
                                         onClick={() => setCurrentView('admin')}
                                         className={`btn ${currentView === 'admin' ? 'active-admin' : ''}`}
+                                        style={isMobile && headerScrolled ? { padding: '4px 10px', minWidth: 'auto' } : undefined}
+                                        title="Admin Panel"
                                     >
-                                        👑 Admin Panel
+                                        {isMobile && headerScrolled ? '👑' : '👑 Admin Panel'}
                                     </button>
                                 )}
                             </div>
