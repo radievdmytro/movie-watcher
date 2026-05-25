@@ -515,12 +515,12 @@ function App() {
             return;
         }
         try {
+            setMovies(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
             await fetch(`/api/movies/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updates)
             });
-            setMovies(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
             fetchHistoryList();
         } catch (error) {
             console.error('Update failed:', error);
