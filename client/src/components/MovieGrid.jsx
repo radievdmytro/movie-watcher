@@ -3106,12 +3106,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 /* Other Genre Badges (only if not animated) */
                                                 <>
                                                     <AnimatePresence>
-                                                        {movie.genres?.toLowerCase().includes('триллер') && <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(183, 28, 28, 0.9)' }}>Thriller</motion.span>}
-                                                        {movie.genres?.toLowerCase().includes('детектив') && <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(74, 20, 140, 0.9)' }}>Detective</motion.span>}
-                                                        {movie.genres?.toLowerCase().includes('ужас') && <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(46, 125, 50, 0.9)' }}>Horror</motion.span>}
-                                                        {movie.genres?.toLowerCase().includes('комед') && <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(251, 192, 45, 0.9)', color: '#000' }}>Comedy</motion.span>}
+                                                        {movie.genres?.toLowerCase().includes('триллер') && <motion.span key="thriller" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(183, 28, 28, 0.9)' }}>Thriller</motion.span>}
+                                                        {movie.genres?.toLowerCase().includes('детектив') && <motion.span key="detective" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(74, 20, 140, 0.9)' }}>Detective</motion.span>}
+                                                        {movie.genres?.toLowerCase().includes('ужас') && <motion.span key="horror" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(46, 125, 50, 0.9)' }}>Horror</motion.span>}
+                                                        {movie.genres?.toLowerCase().includes('комед') && <motion.span key="comedy" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(251, 192, 45, 0.9)', color: '#000' }}>Comedy</motion.span>}
                                                         {(movie.genres?.toLowerCase().includes('мелодрам') || movie.genres?.toLowerCase().includes('драма')) && (
-                                                            <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(194, 24, 91, 0.9)' }}>Drama</motion.span>
+                                                            <motion.span key="drama" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(194, 24, 91, 0.9)' }}>Drama</motion.span>
                                                         )}
                                                     </AnimatePresence>
                                                 </>
@@ -3121,6 +3121,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             <AnimatePresence>
                                                 {movie.status === 'watched' && (
                                                     <motion.span
+                                                        key="watched-badge"
                                                         layout
                                                         initial={{ opacity: 0, scale: 0.5, width: 0 }}
                                                         animate={{ opacity: 1, scale: 1, width: 'auto' }}
@@ -3132,7 +3133,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         ✔ Watched
                                                     </motion.span>
                                                 )}
-                                                {movie.type === 'series' && <motion.span layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(33, 150, 243, 0.9)' }}>TV</motion.span>}
+                                                {movie.type === 'series' && <motion.span key="series-badge" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="badge-ui" style={{ background: 'rgba(33, 150, 243, 0.9)' }}>TV</motion.span>}
                                             </AnimatePresence>
                                             <div style={{
                                                 background: 'rgba(0,0,0,0.6)',
@@ -3236,6 +3237,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             <AnimatePresence>
                                                 {movie.status === 'watched' && (movie.id === null || !movie.user_rating) && (
                                                     <motion.div
+                                                        key="rating-button"
                                                         initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden' }}
                                                         animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1 }}
                                                         exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95 }}
@@ -4039,6 +4041,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     return isMovieWatched && (!isAdded || !rating);
                                                 })() && (
                                                     <motion.div
+                                                        key="rating-button"
                                                         initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden' }}
                                                         animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1 }}
                                                         exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95 }}
