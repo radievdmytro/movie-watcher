@@ -164,7 +164,7 @@ function AddToCollectionModal({ movieIds, movies = [], onClose, onSuccess }) {
                 background: 'rgba(0, 0, 0, 0.85)',
                 backdropFilter: 'blur(10px)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                zIndex: 20000, padding: '20px'
+                zIndex: 300000, padding: '20px'
             }}
         >
             <div
