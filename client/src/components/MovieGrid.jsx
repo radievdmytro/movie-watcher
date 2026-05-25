@@ -566,7 +566,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         setRipples(prev => [...prev, { id, identifier, x, y }]);
         setTimeout(() => {
             setRipples(prev => prev.filter(r => r.id !== id));
-        }, 600);
+        }, 850);
     };
     const [hideWatched, setHideWatched] = useState(() => {
         const stored = localStorage.getItem('movieGrid_hideWatched');
