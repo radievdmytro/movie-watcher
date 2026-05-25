@@ -1723,22 +1723,26 @@ app.post('/api/movies/import', authenticateToken, enforceGuestLibraryLimit, asyn
         if (!url || !isHdrezkaUrl(url)) return res.status(400).json({ error: 'Valid HDRezka URL required' });
 
         // Check duplicates for this user
-        const checkStmt = db.prepare('SELECT id, deleted_at, hidden_from_library FROM movies WHERE link = ? AND user_id = ?');
+        const checkStmt = db.prepare('SELECT id, title, deleted_at, hidden_from_library FROM movies WHERE link = ? AND user_id = ?');
         const existing = checkStmt.get(url, req.user.id);
 
         if (existing) {
             if (existing.deleted_at || existing.hidden_from_library) {
                 if (hidden_from_library) {
-                    return res.json({ id: existing.id, restored: false, title: 'Found hidden/deleted movie' });
+                    return res.json({ id: existing.id, restored: false, title: existing.title || 'Found hidden/deleted movie' });
                 }
-                db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0, status = ? WHERE id = ? AND user_id = ?').run(status || 'want_to_watch', existing.id, req.user.id);
-                return res.json({ id: existing.id, restored: true, title: 'Restored to library' });
+                db.prepare('UPDATE movies SET deleted_at = NULL, hidden_from_library = 0, status = ?, created_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?').run(status || 'want_to_watch', existing.id, req.user.id);
+                return res.json({ id: existing.id, restored: true, title: existing.title || 'Restored to library' });
             }
             if (status) {
-                db.prepare('UPDATE movies SET status = ? WHERE id = ? AND user_id = ?').run(status, existing.id, req.user.id);
-                return res.json({ id: existing.id, updatedStatus: true, title: 'Updated status' });
+                db.prepare('UPDATE movies SET status = ?, created_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?').run(status, existing.id, req.user.id);
+                return res.json({ id: existing.id, updatedStatus: true, title: existing.title || 'Updated status' });
             }
-            return res.status(409).json({ error: 'Movie already exists in your list' });
+            
+            // If the movie is already active and they re-add it, bump created_at to CURRENT_TIMESTAMP
+            // so it jumps to the top of the list when sorting by date added.
+            db.prepare('UPDATE movies SET created_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?').run(existing.id, req.user.id);
+            return res.json({ id: existing.id, restored: true, bumped: true, title: existing.title || 'Movie moved to top' });
         }
 
         const details = await getMovieDetails(url, getUserHeaders(req));
