@@ -10,8 +10,9 @@ export default function MatrixRain({ textSource, color = '#D4AF37' }) {
         let animationFrameId;
 
         // Split slogan into individual words, characters, and the full string to simulate "lines of text"
+        const additionalPhrases = ['searching trailers', 'preparing video', 'please wait'];
         const words = textSource.split(' ').filter(w => w.trim().length > 0);
-        words.push(textSource); 
+        words.push(textSource, ...additionalPhrases); 
         const chars = Array.from(new Set(textSource.split('').filter(c => c.trim().length > 0)));
         const textElements = [...words, ...chars];
 
