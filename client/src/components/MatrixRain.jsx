@@ -79,7 +79,7 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
                 p.z -= speed;
 
                 // If particle flies past the camera, reset it to the back
-                if (p.z <= 1) {
+                if (p.z <= -280) {
                     particles[i] = createParticle(maxZ);
                     continue;
                 }
@@ -89,12 +89,17 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
                 const y2d = centerY + p.y * scale;
 
                 // Skip rendering if particle is way off-screen
-                if (x2d < -200 || x2d > canvas.width + 200 || y2d < -200 || y2d > canvas.height + 200) {
+                if (x2d < -1000 || x2d > canvas.width + 1000 || y2d < -1000 || y2d > canvas.height + 1000) {
                     continue;
                 }
 
                 // Opacity fades out as it gets further away
-                const fade = 1 - (p.z / maxZ);
+                let fade = 1 - (p.z / maxZ);
+                
+                // Fade out smoothly as it passes right in front of the camera
+                if (p.z < 200) {
+                    fade *= Math.max(0, (p.z + 280) / 480);
+                }
                 
                 ctx.globalAlpha = p.opacity * fade;
                 ctx.fillStyle = actualColor;
