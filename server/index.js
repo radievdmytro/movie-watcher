@@ -3319,6 +3319,18 @@ app.get('/api/youtube/search', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Query parameter q is required' });
         }
         
+        // 1. Check cache first
+        const cached = db.prepare('SELECT results_json FROM youtube_search_cache WHERE query = ?').get(query);
+        if (cached) {
+            try {
+                const results = JSON.parse(cached.results_json);
+                return res.json({ results, cached: true });
+            } catch (e) {
+                // If invalid JSON, ignore cache and fetch again
+            }
+        }
+        
+        // 2. Not in cache, fetch from YouTube
         const r = await yts(query);
         const videos = r.videos.slice(0, 5).map(v => ({
             id: v.videoId,
@@ -3329,7 +3341,14 @@ app.get('/api/youtube/search', authenticateToken, async (req, res) => {
             author: v.author.name
         }));
         
-        res.json({ results: videos });
+        // 3. Save to cache
+        db.prepare(`
+            INSERT INTO youtube_search_cache (query, results_json, updated_at) 
+            VALUES (?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(query) DO UPDATE SET results_json = excluded.results_json, updated_at = CURRENT_TIMESTAMP
+        `).run(query, JSON.stringify(videos));
+        
+        res.json({ results: videos, cached: false });
     } catch (err) {
         console.error('YouTube search failed:', err);
         res.status(500).json({ error: 'Failed to search YouTube' });

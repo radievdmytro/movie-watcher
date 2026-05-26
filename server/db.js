@@ -160,6 +160,15 @@ const initDb = () => {
   db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_title ON scraped_movies_cache(title)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_original_title ON scraped_movies_cache(original_title)');
 
+  // Create YouTube search cache table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS youtube_search_cache (
+      query TEXT PRIMARY KEY,
+      results_json TEXT NOT NULL,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Per-user hidden global-cache movies.
   // Stores normalized link paths so a movie stays hidden even if HDRezka mirror domains rotate.
   db.exec(`
