@@ -138,7 +138,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
         setLoading(true);
         setSearchStreaming(true);
         setSearchStatus('Searching...');
-        const openFull = openFullPage || isMobile;
+        const openFull = openFullPage;
         if (openFull) {
             setFullPageResults(true);
         } else {
