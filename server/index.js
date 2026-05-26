@@ -1150,7 +1150,7 @@ app.get('/api/movies', authenticateToken, (req, res) => {
 
                 UNION ALL
 
-                SELECT NULL AS id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
+                SELECT NULL AS id, h.user_id AS user_id, c.title, c.original_title, c.year, h.movie_link AS link, c.rating, c.description, c.poster_url, 
                        c.genres, c.actors, c.director, c.writers, c.country, c.duration, c.voice_acting, c.type, 
                        h.user_rating, h.notes, h.notes_public, 'watched' AS status, h.updated_at AS created_at, h.updated_at,
                        (
