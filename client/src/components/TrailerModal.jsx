@@ -180,7 +180,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 </div>
 
                 {/* Content */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: activeVideoId ? 0 : '24px' }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: activeVideoId ? 0 : '24px', position: 'relative' }}>
                     {activeVideoId ? (
                         <div style={{ width: '100%', height: '100%', minHeight: '500px', backgroundColor: '#000' }}>
                             <iframe 
