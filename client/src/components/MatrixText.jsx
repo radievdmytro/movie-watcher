@@ -10,10 +10,7 @@ export default function MatrixText({ targetWord, isSearching, skipAnimation = fa
         let timeout;
         let interval;
 
-        if (skipAnimation) {
-            setDisplayText(targetWord);
-            return;
-        }
+
 
         if (isSearching) {
             // Set initial static word (e.g. "Искать")
@@ -30,8 +27,8 @@ export default function MatrixText({ targetWord, isSearching, skipAnimation = fa
         } else {
             // Not searching -> resolve to targetWord (e.g. "Смотреть")
             let iterations = 0;
-            const maxIterations = 15;
-            const duration = 400; // 400ms resolve animation
+            const maxIterations = 20;
+            const duration = 500; // 500ms resolve animation
             
             interval = setInterval(() => {
                 if (!active) return;
