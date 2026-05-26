@@ -1315,32 +1315,41 @@ app.post('/api/movies', authenticateToken, enforceGuestLibraryLimit, (req, res) 
     }
 });
 
-// PATCH Update Movie (Status, Notes, Notes Public status, and User Rating)
+// PATCH Update Movie (Status, Notes, Notes Public status, User Rating, and Metadata)
 app.patch('/api/movies/:id', authenticateToken, (req, res) => {
     try {
         const { id } = req.params;
-        const { status, notes, notes_public, user_rating } = req.body;
+        const { status, notes, notes_public, user_rating, title, original_title, year, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, type } = req.body;
         
         // Dynamically build fields to update
         const fields = [];
         const values = [];
         
-        if (status !== undefined) {
-            fields.push('status = ?');
-            values.push(status);
-        }
-        if (notes !== undefined) {
-            fields.push('notes = ?');
-            values.push(notes);
-        }
-        if (notes_public !== undefined) {
-            fields.push('notes_public = ?');
-            values.push(notes_public ? 1 : 0);
-        }
-        if (user_rating !== undefined) {
-            fields.push('user_rating = ?');
-            values.push(user_rating);
-        }
+        const updateField = (name, value) => {
+            if (value !== undefined) {
+                fields.push(`${name} = ?`);
+                values.push(value);
+            }
+        };
+
+        updateField('status', status);
+        updateField('notes', notes);
+        if (notes_public !== undefined) updateField('notes_public', notes_public ? 1 : 0);
+        updateField('user_rating', user_rating);
+        updateField('title', title);
+        updateField('original_title', original_title);
+        updateField('year', year);
+        updateField('rating', rating);
+        updateField('description', description);
+        updateField('poster_url', poster_url);
+        updateField('genres', genres);
+        updateField('actors', actors);
+        updateField('director', director);
+        updateField('writers', writers);
+        updateField('country', country);
+        updateField('duration', duration);
+        updateField('voice_acting', voice_acting);
+        updateField('type', type);
         
         if (fields.length === 0) {
             return res.status(400).json({ error: 'No fields to update' });
