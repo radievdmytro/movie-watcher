@@ -102,6 +102,14 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
                     fade *= Math.max(0, (p.z + 280) / 480);
                 }
                 
+                // Depth of field effect: blur symbols that are very close to the camera
+                if (p.z < 100) {
+                    const blurAmount = Math.min(15, (100 - p.z) / 25);
+                    ctx.filter = `blur(${blurAmount}px)`;
+                } else {
+                    ctx.filter = 'none';
+                }
+                
                 ctx.globalAlpha = p.opacity * fade;
                 ctx.fillStyle = actualColor;
                 
@@ -113,6 +121,7 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
             }
             
             ctx.globalAlpha = 1.0; // Reset alpha
+            ctx.filter = 'none'; // Reset filter
             animationFrameId = requestAnimationFrame(draw);
         };
 
