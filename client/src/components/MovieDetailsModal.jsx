@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import TrailerModal from './TrailerModal';
+import MatrixText from './MatrixText';
 
 function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched, onRemoveMovie, onHideMovie, onAddToCollection }) {
     const [liveDetails, setLiveDetails] = useState(null);
@@ -976,7 +977,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     e.currentTarget.style.transform = 'scale(1)';
                                 }}
                             >
-                                {Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 ? '🎬 Смотреть трейлер' : '🎬 Искать трейлер'}
+                                🎬 <MatrixText text={Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 ? 'Смотреть трейлер' : 'Искать трейлер'} duration={500} />
                             </button>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', fontSize: '0.9rem' }}>
@@ -1165,7 +1166,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         e.currentTarget.style.color = '#ccc';
                                     }}
                                 >
-                                    {Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 ? '🎬 Смотреть трейлер' : '🎬 Искать трейлер'}
+                                    🎬 <MatrixText text={Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 ? 'Смотреть трейлер' : 'Искать трейлер'} duration={500} />
                                 </button>
                             </div>
 
