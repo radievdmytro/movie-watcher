@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import TrailerModal from './TrailerModal';
 
 function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched, onRemoveMovie, onHideMovie, onAddToCollection }) {
     const [liveDetails, setLiveDetails] = useState(null);
@@ -137,7 +138,10 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
     // Global cache search state
     const [cacheSearch, setCacheSearch] = useState(null); // { type, value, movies: [], loading: false, error: null }
-    // local state variables removed because we use props now
+    
+    // Trailer modal state
+    const [isTrailerModalOpen, setIsTrailerModalOpen] = useState(false);
+    const [trailerSearchQuery, setTrailerSearchQuery] = useState('');
 
     const handleCacheSearchClick = async (type, value) => {
         setCacheSearch({ type, value, movies: [], loading: true });
@@ -271,6 +275,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     setIsPosterZoomed(false);
                 } else if (cacheSearch) {
                     setCacheSearch(null);
+                } else if (isTrailerModalOpen) {
+                    setIsTrailerModalOpen(false);
                 } else {
                     onClose();
                 }
@@ -282,7 +288,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             document.body.style.overflow = '';
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [onClose, isPosterZoomed, cacheSearch]);
+    }, [onClose, isPosterZoomed, cacheSearch, isTrailerModalOpen]);
 
     // Autosaved toast fade timer
     useEffect(() => {
@@ -723,9 +729,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         
         const queryTokens = [typeStr, movie.title, movie.year, 'трейлер'].filter(Boolean);
         const query = queryTokens.join(' ');
-        const params = new URLSearchParams({ search_query: query });
-        const url = `https://www.youtube.com/results?${params.toString()}`;
-        window.open(url, '_blank', 'noopener,noreferrer');
+        setTrailerSearchQuery(query);
+        setIsTrailerModalOpen(true);
     };
 
     return ReactDOM.createPortal(
@@ -2455,6 +2460,16 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         </div>
                     </div>
                 </div>
+            )}
+            
+            {isTrailerModalOpen && (
+                <TrailerModal 
+                    searchQuery={trailerSearchQuery}
+                    onClose={(e) => {
+                        if (e) e.stopPropagation();
+                        setIsTrailerModalOpen(false);
+                    }}
+                />
             )}
 
             <style>{`
