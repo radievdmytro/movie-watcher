@@ -2324,6 +2324,15 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 cacheSearch.movies.map((item, idx) => (
                                     <div
                                         key={idx}
+                                        onClick={() => window.open('?movie=c' + item.id, '_blank')}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                        }}
                                         style={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -2332,6 +2341,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             background: 'rgba(255,255,255,0.02)',
                                             border: '1px solid rgba(255,255,255,0.04)',
                                             borderRadius: '10px',
+                                            cursor: 'pointer',
                                             transition: 'transform 0.2s, background-color 0.2s'
                                         }}
                                     >
@@ -2387,7 +2397,10 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                                 </span>
                                             ) : (
                                                 <button
-                                                    onClick={() => handleAddMovieFromCache(item.link)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleAddMovieFromCache(item.link);
+                                                    }}
                                                     disabled={addingLinks.has(item.link)}
                                                     style={{
                                                         background: 'linear-gradient(135deg, #FFDF73 0%, #D4AF37 100%)',
