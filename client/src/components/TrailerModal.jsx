@@ -11,6 +11,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     const [matrixPhrases, setMatrixPhrases] = useState(['searching trailers', 'preparing video', 'please wait']);
     const [useSloganInMatrix, setUseSloganInMatrix] = useState(true);
     const [matrixAnimationType, setMatrixAnimationType] = useState('3D');
+    const [settingsLoaded, setSettingsLoaded] = useState(false);
 
     useEffect(() => {
         fetch('/api/settings/public')
@@ -20,7 +21,8 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 if (data.useSloganInMatrix !== undefined) setUseSloganInMatrix(data.useSloganInMatrix);
                 if (data.matrixAnimationType) setMatrixAnimationType(data.matrixAnimationType);
             })
-            .catch(err => console.error('Failed to load matrix phrases:', err));
+            .catch(err => console.error('Failed to load matrix phrases:', err))
+            .finally(() => setSettingsLoaded(true));
     }, []);
 
     // Block body scrolling
@@ -170,10 +172,14 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                         <>
                             {loading && (
                                 <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '16px', overflow: 'hidden', minHeight: '300px' }}>
-                                    {matrixAnimationType === '3D' ? (
-                                        <MatrixRain textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
-                                    ) : (
-                                        <MatrixRain2D textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
+                                    {settingsLoaded && (
+                                        <div style={{ animation: 'fadeIn 0.8s ease-out' }}>
+                                            {matrixAnimationType === '3D' ? (
+                                                <MatrixRain textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
+                                            ) : (
+                                                <MatrixRain2D textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
+                                            )}
+                                        </div>
                                     )}
                                     <div style={{
                                         position: 'relative',
