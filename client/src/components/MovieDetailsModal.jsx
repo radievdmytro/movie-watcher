@@ -976,7 +976,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     e.currentTarget.style.transform = 'scale(1)';
                                 }}
                             >
-                                🎬 Искать трейлер
+                                {Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 ? '🎬 Смотреть трейлер' : '🎬 Искать трейлер'}
                             </button>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', fontSize: '0.9rem' }}>
@@ -1165,7 +1165,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         e.currentTarget.style.color = '#ccc';
                                     }}
                                 >
-                                    🎬 Трейлер
+                                    {Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 ? '🎬 Смотреть трейлер' : '🎬 Искать трейлер'}
                                 </button>
                             </div>
 
