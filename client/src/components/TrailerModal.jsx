@@ -22,7 +22,9 @@ const prefetchSettings = () => {
     }
     return cachedSettingsPromise;
 };
-prefetchSettings();
+
+// Export it so App.jsx can trigger it safely
+export { prefetchSettings };
 
 window.addEventListener('matrixSettingsUpdated', () => {
     cachedSettingsPromise = null;

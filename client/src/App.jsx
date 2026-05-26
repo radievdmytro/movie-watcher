@@ -13,6 +13,7 @@ import AuthScreen from './components/AuthScreen';
 import AdminDashboard from './components/AdminDashboard';
 import MovieDetailsModal from './components/MovieDetailsModal';
 import MovieComparisonModal from './components/MovieComparisonModal';
+import { prefetchSettings } from './components/TrailerModal';
 
 // Smoothly animates a numeric value to avoid jarring jumps on each poll update
 function useSmoothCount(targetValue, duration = 3750) {
@@ -280,6 +281,12 @@ function App() {
 
     const [showAddToCollection, setShowAddToCollection] = useState(false);
     const [collectionMovie, setCollectionMovie] = useState(null);
+    const [isSharedCollectionValid, setIsSharedCollectionValid] = useState(true);
+
+    useEffect(() => {
+        prefetchSettings(); // Prefetch safely after global fetch interceptor is ready
+    }, []);
+
     const [sharedCollectionId, setSharedCollectionId] = useState(null);
 
     // Modal State
