@@ -26,7 +26,7 @@ export default function MatrixText({ targetWord, isSearching, skipAnimation = fa
                     if (!active) return;
                     setDisplayText(targetWord.split('').map(() => characters[Math.floor(Math.random() * characters.length)]).join(''));
                 }, 50);
-            }, 3000);
+            }, 3500);
         } else {
             // Not searching -> resolve to targetWord (e.g. "Смотреть")
             let iterations = 0;
