@@ -9,9 +9,11 @@ export default function MatrixRain({ textSource, color = '#D4AF37' }) {
         
         let animationFrameId;
 
-        // Use unique characters from the textSource, filtering out spaces
-        const charSet = Array.from(new Set(textSource.split('').filter(c => c.trim().length > 0)));
-        if (charSet.length === 0) charSet.push('0', '1'); // fallback
+        // Split slogan into individual words, characters, and the full string to simulate "lines of text"
+        const words = textSource.split(' ').filter(w => w.trim().length > 0);
+        words.push(textSource); 
+        const chars = Array.from(new Set(textSource.split('').filter(c => c.trim().length > 0)));
+        const textElements = [...words, ...chars];
 
         const resizeCanvas = () => {
             if (canvas.parentElement) {
@@ -29,64 +31,90 @@ export default function MatrixRain({ textSource, color = '#D4AF37' }) {
         }
         resizeCanvas();
 
-        const fontSize = 16;
-        let columns = 0;
-        let drops = [];
-        
-        const initDrops = () => {
-            const newColumns = Math.floor(canvas.width / fontSize);
-            if (newColumns > columns) {
-                for (let x = columns; x < newColumns; x++) {
-                    // Initialize drops randomly across the entire height so the effect is instantly visible
-                    drops[x] = Math.floor(Math.random() * (canvas.height / fontSize));
-                }
-                columns = newColumns;
-            }
+        // 3D parameters
+        const numParticles = 200;
+        const particles = [];
+        const maxZ = 2000;
+        const speed = 25; // Speed of flying forward
+        const perspective = 300; // Field of view
+
+        // Resolve CSS variable if needed
+        let actualColor = color;
+        if (color.startsWith('var(')) {
+            const varName = color.match(/var\(([^)]+)\)/)[1];
+            actualColor = getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#D4AF37';
+        }
+
+        const createParticle = (initialZ = maxZ) => {
+            return {
+                x: (Math.random() - 0.5) * 3500, // Spread across X
+                y: (Math.random() - 0.5) * 3500, // Spread across Y
+                z: initialZ,
+                text: textElements[Math.floor(Math.random() * textElements.length)],
+                opacity: Math.random() * 0.7 + 0.3 // Random base opacity
+            };
         };
+
+        // Initialize particles with random depth (Z)
+        for (let i = 0; i < numParticles; i++) {
+            particles.push(createParticle(Math.random() * maxZ));
+        }
 
         const draw = () => {
-            initDrops();
-            // Translucent black background to create trail effect
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            // Dark translucent background for motion blur effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Resolve CSS variable if needed
-            let actualColor = color;
-            if (color.startsWith('var(')) {
-                const varName = color.match(/var\(([^)]+)\)/)[1];
-                actualColor = getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#D4AF37';
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Sort particles by Z so further ones are drawn first
+            particles.sort((a, b) => b.z - a.z);
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.z -= speed;
+
+                // If particle flies past the camera, reset it to the back
+                if (p.z <= 1) {
+                    particles[i] = createParticle(maxZ);
+                    continue;
+                }
+
+                const scale = perspective / (perspective + p.z);
+                const x2d = centerX + p.x * scale;
+                const y2d = centerY + p.y * scale;
+
+                // Skip rendering if particle is way off-screen
+                if (x2d < -200 || x2d > canvas.width + 200 || y2d < -200 || y2d > canvas.height + 200) {
+                    continue;
+                }
+
+                // Opacity fades out as it gets further away
+                const fade = 1 - (p.z / maxZ);
+                
+                ctx.globalAlpha = p.opacity * fade;
+                ctx.fillStyle = actualColor;
+                
+                // Font size scales with depth
+                const fontSize = Math.max(4, 60 * scale);
+                ctx.font = `bold ${fontSize}px monospace`;
+
+                ctx.fillText(p.text, x2d, y2d);
             }
             
-            ctx.fillStyle = actualColor;
-            ctx.font = `${fontSize}px monospace`;
-
-            for (let i = 0; i < drops.length; i++) {
-                const text = charSet[Math.floor(Math.random() * charSet.length)];
-                
-                const x = i * fontSize;
-                const y = drops[i] * fontSize;
-
-                ctx.fillText(text, x, y);
-
-                if (y > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                
-                drops[i]++;
-            }
+            ctx.globalAlpha = 1.0; // Reset alpha
+            animationFrameId = requestAnimationFrame(draw);
         };
 
-        let timeoutId;
-        const loop = () => {
-            draw();
-            timeoutId = setTimeout(loop, 50); // 50ms = 20fps
-        };
-        
-        loop();
+        draw();
 
         return () => {
             resizeObserver.disconnect();
-            clearTimeout(timeoutId);
+            cancelAnimationFrame(animationFrameId);
         };
     }, [textSource, color]);
 
@@ -99,7 +127,7 @@ export default function MatrixRain({ textSource, color = '#D4AF37' }) {
                 left: 0, 
                 width: '100%', 
                 height: '100%', 
-                opacity: 0.6, // Increased visibility
+                opacity: 0.9,
                 pointerEvents: 'none',
                 zIndex: 0
             }} 
