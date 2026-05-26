@@ -966,7 +966,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     gap: '8px',
                                     transition: 'all 0.2s ease',
                                     boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-                                    animation: (Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 && !isTrailerCached) ? 'shimmerGold 1.5s ease-out 1' : 'none'
+                                    animation: (Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 && !isTrailerCached) ? 'shimmerGold 1.5s ease-out 1s 1 forwards' : 'none'
                                 }}
                                 onMouseEnter={(e) => {
                                     e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
@@ -983,7 +983,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             >
                                 🎬 <MatrixText 
                                     text={Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 ? 'Смотреть' : 'Искать'} 
-                                    duration={400} 
+                                    duration={1000} 
                                     skipAnimation={isTrailerCached}
                                 /> трейлер
                             </button>
