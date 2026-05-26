@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import './App.css';
 import AddMovie from './components/AddMovie';
+import MatrixText from './components/MatrixText';
+import { APP_CONFIG } from './config';
 import MovieGrid from './components/MovieGrid';
 import BulkActionBar from './components/BulkActionBar';
 import ConfirmModal from './components/ConfirmModal';
@@ -1026,8 +1028,8 @@ function App() {
                                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
                             />
                             <h1 className="gold logo" style={{ margin: 0, fontSize: '1.35rem', letterSpacing: '0.5px', lineHeight: '1.1', display: 'flex', flexDirection: 'column' }}>
-                                <span>Radev's</span>
-                                <span className="gold">Movie Selector</span>
+                                <span>{APP_CONFIG.sloganPrefix}</span>
+                                <span className="gold" style={{ textTransform: 'capitalize' }}>{APP_CONFIG.sloganHighlight}</span>
                             </h1>
                         </div>
                         {user && currentView !== 'shared_collection' ? (

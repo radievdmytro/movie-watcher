@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import MatrixText from './MatrixText';
+import { APP_CONFIG } from '../config';
 
 function AuthScreen({ onAuthSuccess }) {
     const [isLogin, setIsLogin] = useState(true);
@@ -56,7 +58,7 @@ function AuthScreen({ onAuthSuccess }) {
                         onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
                     />
                     <h1 className="logo" style={{ margin: 0, fontSize: '2rem' }}>
-                        Radev's <span className="gold">Movie Selector</span>
+                        {APP_CONFIG.sloganPrefix} <span className="gold" style={{ textTransform: 'capitalize' }}>{APP_CONFIG.sloganHighlight}</span>
                     </h1>
                     <p className="auth-subtitle" style={{ marginTop: '5px' }}>
                         {isLogin ? 'Log in to manage your private watchlists' : 'Register your free personal account'}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-
+import MatrixRain from './MatrixRain';
+import { APP_SLOGAN } from '../config';
 function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     const [results, setResults] = useState(() => Array.isArray(preloadedTrailers) ? preloadedTrailers : []);
     const [loading, setLoading] = useState(() => preloadedTrailers === null);
@@ -152,15 +153,18 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                     ) : (
                         <>
                             {loading && (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '16px' }}>
+                                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '16px', overflow: 'hidden', minHeight: '300px' }}>
+                                    <MatrixRain textSource={APP_SLOGAN} color="var(--accent-gold)" />
                                     <div style={{
+                                        position: 'relative',
+                                        zIndex: 1,
                                         width: '40px', height: '40px',
                                         border: '3px solid rgba(255,255,255,0.1)',
                                         borderTopColor: 'var(--accent-gold)',
                                         borderRadius: '50%',
                                         animation: 'spin 1s linear infinite'
                                     }}></div>
-                                    <span style={{ color: '#aaa' }}>Searching YouTube...</span>
+                                    <span style={{ position: 'relative', zIndex: 1, color: '#aaa', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>Searching YouTube...</span>
                                 </div>
                             )}
 
