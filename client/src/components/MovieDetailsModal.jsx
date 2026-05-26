@@ -920,11 +920,21 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     gap: '8px',
-                                    transition: 'all 0.2s',
+                                    transition: 'all 0.2s ease',
                                     boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
                                 }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
+                                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.4)';
+                                    e.currentTarget.style.color = '#fff';
+                                    e.currentTarget.style.transform = 'scale(1.02)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                                    e.currentTarget.style.color = '#ccc';
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                }}
                             >
                                 🎬 Искать трейлер
                             </button>
@@ -1101,7 +1111,18 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        gap: '4px'
+                                        gap: '4px',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
+                                        e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.4)';
+                                        e.currentTarget.style.color = '#fff';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                                        e.currentTarget.style.color = '#ccc';
                                     }}
                                 >
                                     🎬 Трейлер
