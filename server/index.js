@@ -3201,7 +3201,8 @@ app.get('/api/settings/public', (req, res) => {
         const { getSetting } = require('./db');
         const matrixPhrases = getSetting('matrixPhrases', ['searching trailers', 'preparing video', 'please wait']);
         const useSloganInMatrix = getSetting('useSloganInMatrix', true);
-        res.json({ matrixPhrases, useSloganInMatrix });
+        const matrixAnimationType = getSetting('matrixAnimationType', '3D'); // '2D' or '3D'
+        res.json({ matrixPhrases, useSloganInMatrix, matrixAnimationType });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch settings' });
@@ -3211,12 +3212,15 @@ app.get('/api/settings/public', (req, res) => {
 app.post('/api/admin/settings', authenticateToken, requireAdmin, (req, res) => {
     try {
         const { setSetting } = require('./db');
-        const { matrixPhrases, useSloganInMatrix } = req.body;
+        const { matrixPhrases, useSloganInMatrix, matrixAnimationType } = req.body;
         if (matrixPhrases !== undefined) {
             setSetting('matrixPhrases', matrixPhrases);
         }
         if (useSloganInMatrix !== undefined) {
             setSetting('useSloganInMatrix', useSloganInMatrix);
+        }
+        if (matrixAnimationType !== undefined) {
+            setSetting('matrixAnimationType', matrixAnimationType);
         }
         res.json({ success: true });
     } catch (err) {

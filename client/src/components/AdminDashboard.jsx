@@ -139,7 +139,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [selectedFastMovies, setSelectedFastMovies] = useState([]);
     const [selectedDetailedMovies, setSelectedDetailedMovies] = useState([]);
     const [refreshState, setRefreshState] = useState({ isRefreshing: false, progress: 0, total: 0, type: null });
-    const [systemSettings, setSystemSettings] = useState({ matrixPhrases: ['searching trailers', 'preparing video', 'please wait'], useSloganInMatrix: true });
+    const [systemSettings, setSystemSettings] = useState({ matrixPhrases: ['searching trailers', 'preparing video', 'please wait'], useSloganInMatrix: true, matrixAnimationType: '3D' });
     const [matrixPhrasesRaw, setMatrixPhrasesRaw] = useState('');
     const [savingSettings, setSavingSettings] = useState(false);
     const [showBrokenFast, setShowBrokenFast] = useState(false);
@@ -441,7 +441,8 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                 if (settingsData.matrixPhrases) {
                     setSystemSettings({
                         matrixPhrases: settingsData.matrixPhrases,
-                        useSloganInMatrix: settingsData.useSloganInMatrix !== undefined ? settingsData.useSloganInMatrix : true
+                        useSloganInMatrix: settingsData.useSloganInMatrix !== undefined ? settingsData.useSloganInMatrix : true,
+                        matrixAnimationType: settingsData.matrixAnimationType || '3D'
                     });
                     setMatrixPhrasesRaw(settingsData.matrixPhrases.join(', '));
                 }
@@ -596,7 +597,8 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                 },
                 body: JSON.stringify({
                     matrixPhrases: matrixPhrasesRaw.split(',').map(s => s.trim()).filter(Boolean),
-                    useSloganInMatrix: systemSettings.useSloganInMatrix
+                    useSloganInMatrix: systemSettings.useSloganInMatrix,
+                    matrixAnimationType: systemSettings.matrixAnimationType
                 })
             });
             if (!res.ok) throw new Error('Failed to save settings');
@@ -2133,8 +2135,32 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                     border: '1px solid rgba(255,255,255,0.1)'
                 }}>
                     <h3 style={{ margin: '0 0 15px 0', color: '#fff', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        ⚙️ Настройки анимации (3D Матрица)
+                        ⚙️ Настройки анимации загрузки
                     </h3>
+                    <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontSize: '0.95rem', cursor: 'pointer' }}>
+                            <input 
+                                type="radio" 
+                                name="matrixAnimationType"
+                                value="3D"
+                                checked={systemSettings.matrixAnimationType === '3D'}
+                                onChange={(e) => setSystemSettings({ ...systemSettings, matrixAnimationType: e.target.value })}
+                                style={{ accentColor: '#3b82f6', cursor: 'pointer' }}
+                            />
+                            3D Матрица (полет)
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontSize: '0.95rem', cursor: 'pointer' }}>
+                            <input 
+                                type="radio" 
+                                name="matrixAnimationType"
+                                value="2D"
+                                checked={systemSettings.matrixAnimationType === '2D'}
+                                onChange={(e) => setSystemSettings({ ...systemSettings, matrixAnimationType: e.target.value })}
+                                style={{ accentColor: '#3b82f6', cursor: 'pointer' }}
+                            />
+                            2D Дождь (классика)
+                        </label>
+                    </div>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#fff', fontSize: '0.95rem', marginBottom: '15px', cursor: 'pointer' }}>
                         <input 
                             type="checkbox" 
