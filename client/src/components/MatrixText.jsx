@@ -1,14 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const characters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
 
-export default function MatrixText({ text, duration = 600 }) {
+export default function MatrixText({ text, duration = 600, skipAnimation = false }) {
     const [displayText, setDisplayText] = useState(text);
     const [isAnimating, setIsAnimating] = useState(false);
+    const isFirstRender = useRef(true);
 
     useEffect(() => {
         // Only trigger if text actually changes
         let active = true;
+        
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            setDisplayText(text);
+            return;
+        }
+
+        if (skipAnimation) {
+            setDisplayText(text);
+            setIsAnimating(false);
+            return;
+        }
         
         let iterations = 0;
         const maxIterations = 15;
@@ -42,14 +55,10 @@ export default function MatrixText({ text, duration = 600 }) {
             active = false;
             clearInterval(interval);
         };
-    }, [text, duration]);
+    }, [text, duration, skipAnimation]);
 
     return (
-        <span style={{ 
-            fontFamily: isAnimating ? 'monospace' : 'inherit',
-            letterSpacing: isAnimating ? '1px' : 'inherit',
-            transition: 'all 0.2s'
-        }}>
+        <span>
             {displayText}
         </span>
     );

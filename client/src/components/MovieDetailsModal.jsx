@@ -144,6 +144,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     const [isTrailerModalOpen, setIsTrailerModalOpen] = useState(false);
     const [trailerSearchQuery, setTrailerSearchQuery] = useState('');
     const [preloadedTrailers, setPreloadedTrailers] = useState(null);
+    const [isTrailerCached, setIsTrailerCached] = useState(false);
 
 
     useEffect(() => {
@@ -173,7 +174,10 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 });
                 if (!res.ok) throw new Error('Failed to fetch trailers');
                 const data = await res.json();
-                if (active) setPreloadedTrailers(data.results || []);
+                if (active) {
+                    setPreloadedTrailers(data.results || []);
+                    if (data.cached) setIsTrailerCached(true);
+                }
             } catch (err) {
                 console.error(err);
                 if (active) setPreloadedTrailers(new Error('Could not load trailers'));
@@ -962,7 +966,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     gap: '8px',
                                     transition: 'all 0.2s ease',
                                     boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-                                    animation: (Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0) ? 'shimmerGold 1.5s ease-out 1' : 'none'
+                                    animation: (Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 && !isTrailerCached) ? 'shimmerGold 1.5s ease-out 1' : 'none'
                                 }}
                                 onMouseEnter={(e) => {
                                     e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
@@ -977,7 +981,11 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     e.currentTarget.style.transform = 'scale(1)';
                                 }}
                             >
-                                🎬 <MatrixText text={Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 ? 'Смотреть трейлер' : 'Искать трейлер'} duration={500} />
+                                🎬 <MatrixText 
+                                    text={Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 ? 'Смотреть' : 'Искать'} 
+                                    duration={400} 
+                                    skipAnimation={isTrailerCached}
+                                /> трейлер
                             </button>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', fontSize: '0.9rem' }}>
@@ -1166,7 +1174,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         e.currentTarget.style.color = '#ccc';
                                     }}
                                 >
-                                    🎬 <MatrixText text={Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0 ? 'Смотреть трейлер' : 'Искать трейлер'} duration={500} />
+                                    🎬 Трейлер
                                 </button>
                             </div>
 
