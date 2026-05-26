@@ -31,25 +31,25 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
         resizeCanvas();
 
         const fontSize = 16;
-        let columns = 0;
-        let drops = [];
-        
-        const initDrops = () => {
-            const newColumns = Math.floor(canvas.width / fontSize);
-            if (newColumns > columns) {
-                for (let x = columns; x < newColumns; x++) {
-                    // Initialize drops randomly across the entire height so the effect is instantly visible
-                    drops[x] = Math.floor(Math.random() * (canvas.height / fontSize));
+        let grid = [];
+        const initGrid = () => {
+            const columns = Math.floor(canvas.width / fontSize) + 1;
+            if (grid.length < columns) {
+                const diff = columns - grid.length;
+                for (let i = 0; i < diff; i++) {
+                    grid.push({
+                        headY: Math.floor(Math.random() * -50),
+                        speed: 0.5 + Math.random() * 0.5,
+                        accumulator: 0,
+                        chars: []
+                    });
                 }
-                columns = newColumns;
             }
         };
 
         const draw = () => {
-            initDrops();
-            // Translucent black background to create trail effect
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            initGrid();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // Resolve CSS variable if needed
             let actualColor = color;
@@ -58,29 +58,60 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
                 actualColor = getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#D4AF37';
             }
             
-            ctx.fillStyle = actualColor;
             ctx.font = `${fontSize}px monospace`;
+            ctx.textAlign = 'center';
 
-            for (let i = 0; i < drops.length; i++) {
-                const text = charSet[Math.floor(Math.random() * charSet.length)];
+            for (let i = 0; i < grid.length; i++) {
+                const stream = grid[i];
                 
-                const x = i * fontSize;
-                const y = drops[i] * fontSize;
+                stream.accumulator += stream.speed;
+                if (stream.accumulator >= 1) {
+                    stream.accumulator -= 1;
+                    
+                    const newChar = charSet[Math.floor(Math.random() * charSet.length)];
+                    stream.chars.push({ y: stream.headY, text: newChar, opacity: 1.0 });
+                    stream.headY++;
 
-                ctx.fillText(text, x, y);
-
-                if (y > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
+                    if (stream.headY * fontSize > canvas.height + 200 && Math.random() > 0.95) {
+                        stream.headY = Math.floor(Math.random() * -20);
+                        stream.chars = [];
+                    }
                 }
-                
-                drops[i]++;
+
+                for (let j = stream.chars.length - 1; j >= 0; j--) {
+                    const c = stream.chars[j];
+                    
+                    // Decrease opacity
+                    c.opacity -= 0.035; 
+                    
+                    if (c.opacity <= 0) {
+                        stream.chars.splice(j, 1);
+                        continue;
+                    }
+
+                    // Randomly flip character to match real Matrix style
+                    if (Math.random() > 0.98) {
+                        c.text = charSet[Math.floor(Math.random() * charSet.length)];
+                    }
+
+                    ctx.globalAlpha = c.opacity;
+                    // Make the leading character white and brighter
+                    ctx.fillStyle = c.opacity > 0.95 ? '#ffffff' : actualColor; 
+                    
+                    const xPos = i * fontSize + fontSize / 2;
+                    const yPos = c.y * fontSize;
+                    
+                    ctx.fillText(c.text, xPos, yPos);
+                }
             }
+            
+            ctx.globalAlpha = 1.0;
         };
 
         let timeoutId;
         const loop = () => {
             draw();
-            timeoutId = setTimeout(loop, 50); // 50ms = 20fps
+            timeoutId = setTimeout(loop, 30); // ~33fps
         };
         
         loop();
@@ -100,11 +131,8 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
                 left: 0, 
                 width: '100%', 
                 height: '100%', 
-                opacity: 0.8,
                 pointerEvents: 'none',
-                zIndex: 0,
-                WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 90%)',
-                maskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 90%)'
+                zIndex: 0
             }} 
         />
     );
