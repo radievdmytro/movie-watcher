@@ -1,7 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 
-export default function MatrixRain({ textSource, color = '#D4AF37', customPhrases = [] }) {
+export default function MatrixRain({ textSource, color = '#D4AF37', customPhrases = [], stopping = false }) {
     const canvasRef = useRef(null);
+    const stoppingRef = useRef(stopping);
+
+    useEffect(() => {
+        stoppingRef.current = stopping;
+    }, [stopping]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -65,6 +70,10 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
             // Clear the canvas completely for 3D particles (no trails needed)
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            if (particles.length === 0) {
+                return;
+            }
+
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
 
@@ -80,7 +89,12 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
 
                 // If particle flies past the camera, reset it to the back
                 if (p.z <= -280) {
-                    particles[i] = createParticle(maxZ);
+                    if (stoppingRef.current) {
+                        particles.splice(i, 1);
+                        i--;
+                    } else {
+                        particles[i] = createParticle(maxZ);
+                    }
                     continue;
                 }
 

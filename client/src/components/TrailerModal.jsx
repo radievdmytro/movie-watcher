@@ -189,44 +189,46 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                         </div>
                     ) : (
                         <>
-                            {loading && (
-                                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '16px', overflow: 'hidden', minHeight: '300px' }}>
-                                    {settingsLoaded && (
-                                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                                            {matrixAnimationType === '3D' ? (
-                                                <MatrixRain textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
-                                            ) : (
-                                                <MatrixRain2D textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
-                                            )}
-                                        </div>
+                            {settingsLoaded && (
+                                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 }}>
+                                    {matrixAnimationType === '3D' ? (
+                                        <MatrixRain stopping={!loading} textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
+                                    ) : (
+                                        <MatrixRain2D stopping={!loading} textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
                                     )}
-                                    <div style={{
-                                        position: 'relative',
-                                        zIndex: 1,
-                                        width: '40px', height: '40px',
-                                        border: '3px solid rgba(255,255,255,0.1)',
-                                        borderTopColor: 'var(--accent-gold)',
-                                        borderRadius: '50%',
-                                        animation: 'spin 1s linear infinite'
-                                    }}></div>
-                                    <span style={{ position: 'relative', zIndex: 1, color: '#aaa', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>Searching YouTube...</span>
                                 </div>
                             )}
 
-                            {error && (
-                                <div style={{ color: 'var(--danger)', textAlign: 'center', padding: '40px' }}>
-                                    ⚠️ {error}
-                                </div>
-                            )}
+                            <div style={{ position: 'relative', zIndex: 1, minHeight: '100%' }}>
+                                {loading && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '16px', overflow: 'hidden', minHeight: '300px' }}>
+                                        <div style={{
+                                            position: 'relative',
+                                            zIndex: 1,
+                                            width: '40px', height: '40px',
+                                            border: '3px solid rgba(255,255,255,0.1)',
+                                            borderTopColor: 'var(--accent-gold)',
+                                            borderRadius: '50%',
+                                            animation: 'spin 1s linear infinite'
+                                        }}></div>
+                                        <span style={{ position: 'relative', zIndex: 1, color: '#aaa', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>Searching YouTube...</span>
+                                    </div>
+                                )}
 
-                            {!loading && !error && results.length === 0 && (
-                                <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
-                                    No trailers found.
-                                </div>
-                            )}
+                                {error && (
+                                    <div style={{ color: 'var(--danger)', textAlign: 'center', padding: '40px' }}>
+                                        ⚠️ {error}
+                                    </div>
+                                )}
 
-                            {!loading && !error && results.length > 0 && (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
+                                {!loading && !error && results.length === 0 && (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+                                        No trailers found.
+                                    </div>
+                                )}
+
+                                {!loading && !error && results.length > 0 && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
                                     {results.map(video => (
                                         <div 
                                             key={video.id}
@@ -283,6 +285,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                     ))}
                                 </div>
                             )}
+                            </div>
                         </>
                     )}
                 </div>

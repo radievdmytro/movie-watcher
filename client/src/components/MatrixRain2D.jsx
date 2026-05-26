@@ -1,7 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 
-export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhrases = [] }) {
+export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhrases = [], stopping = false }) {
     const canvasRef = useRef(null);
+    const stoppingRef = useRef(stopping);
+
+    useEffect(() => {
+        stoppingRef.current = stopping;
+    }, [stopping]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -61,6 +66,8 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
             ctx.font = `${fontSize}px monospace`;
             ctx.textAlign = 'center';
 
+            let hasActiveChars = false;
+
             for (let i = 0; i < grid.length; i++) {
                 const stream = grid[i];
                 
@@ -68,14 +75,22 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
                 if (stream.accumulator >= 1) {
                     stream.accumulator -= 1;
                     
-                    const newChar = charSet[Math.floor(Math.random() * charSet.length)];
-                    stream.chars.push({ y: stream.headY, text: newChar, opacity: 1.0 });
+                    if (!stoppingRef.current) {
+                        const newChar = charSet[Math.floor(Math.random() * charSet.length)];
+                        stream.chars.push({ y: stream.headY, text: newChar, opacity: 1.0 });
+                    }
                     stream.headY++;
 
                     if (stream.headY * fontSize > canvas.height + 200 && Math.random() > 0.95) {
-                        stream.headY = Math.floor(Math.random() * -20);
-                        stream.chars = [];
+                        if (!stoppingRef.current) {
+                            stream.headY = Math.floor(Math.random() * -20);
+                            stream.chars = [];
+                        }
                     }
+                }
+
+                if (stream.chars.length > 0) {
+                    hasActiveChars = true;
                 }
 
                 for (let j = stream.chars.length - 1; j >= 0; j--) {
@@ -96,7 +111,7 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
 
                     ctx.globalAlpha = c.opacity;
                     // Make the leading character white and brighter
-                    ctx.fillStyle = c.opacity > 0.95 ? '#ffffff' : actualColor; 
+                    ctx.fillStyle = (c.opacity > 0.95 && !stoppingRef.current) ? '#ffffff' : actualColor; 
                     
                     const xPos = i * fontSize + fontSize / 2;
                     const yPos = c.y * fontSize;
@@ -106,12 +121,17 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
             }
             
             ctx.globalAlpha = 1.0;
+            
+            if (stoppingRef.current && !hasActiveChars) {
+                return;
+            }
+            
+            timeoutId = setTimeout(loop, 30);
         };
 
         let timeoutId;
         const loop = () => {
             draw();
-            timeoutId = setTimeout(loop, 30); // ~33fps
         };
         
         loop();
