@@ -9,7 +9,7 @@ let cachedSettings = null;
 // Start fetching immediately when the module loads
 const prefetchSettings = () => {
     if (!cachedSettingsPromise) {
-        cachedSettingsPromise = fetch('/api/settings/public')
+        cachedSettingsPromise = fetch(`/api/settings/public?t=${Date.now()}`)
             .then(res => res.json())
             .then(data => {
                 cachedSettings = data;

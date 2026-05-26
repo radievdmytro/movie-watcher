@@ -414,7 +414,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                 fetch('/api/admin/users'),
                 fetch('/api/admin/sync-status'),
                 fetch('/api/admin/crawler-settings'),
-                fetch('/api/settings/public'),
+                fetch(`/api/settings/public?t=${Date.now()}`),
                 fetchRecentScraped()
             ]);
             
