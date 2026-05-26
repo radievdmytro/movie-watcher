@@ -3,6 +3,27 @@ import MatrixRain from './MatrixRain';
 import MatrixRain2D from './MatrixRain2D';
 import { APP_SLOGAN } from '../config';
 
+let cachedSettingsPromise = null;
+let cachedSettings = null;
+
+// Start fetching immediately when the module loads
+const prefetchSettings = () => {
+    if (!cachedSettingsPromise) {
+        cachedSettingsPromise = fetch('/api/settings/public')
+            .then(res => res.json())
+            .then(data => {
+                cachedSettings = data;
+                return data;
+            })
+            .catch(err => {
+                console.error('Failed to load matrix phrases:', err);
+                return null;
+            });
+    }
+    return cachedSettingsPromise;
+};
+prefetchSettings();
+
 function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     const [results, setResults] = useState(() => Array.isArray(preloadedTrailers) ? preloadedTrailers : []);
     const [loading, setLoading] = useState(() => preloadedTrailers === null);
@@ -14,15 +35,13 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     const [settingsLoaded, setSettingsLoaded] = useState(false);
 
     useEffect(() => {
-        fetch('/api/settings/public')
-            .then(res => res.json())
-            .then(data => {
+        prefetchSettings().then(data => {
+            if (data) {
                 if (data.matrixPhrases) setMatrixPhrases(data.matrixPhrases);
                 if (data.useSloganInMatrix !== undefined) setUseSloganInMatrix(data.useSloganInMatrix);
                 if (data.matrixAnimationType) setMatrixAnimationType(data.matrixAnimationType);
-            })
-            .catch(err => console.error('Failed to load matrix phrases:', err))
-            .finally(() => setSettingsLoaded(true));
+            }
+        }).finally(() => setSettingsLoaded(true));
     }, []);
 
     // Block body scrolling
@@ -173,7 +192,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                             {loading && (
                                 <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '16px', overflow: 'hidden', minHeight: '300px' }}>
                                     {settingsLoaded && (
-                                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', animation: 'fadeIn 0.8s ease-out' }}>
+                                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
                                             {matrixAnimationType === '3D' ? (
                                                 <MatrixRain textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
                                             ) : (
