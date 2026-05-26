@@ -139,7 +139,8 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [selectedFastMovies, setSelectedFastMovies] = useState([]);
     const [selectedDetailedMovies, setSelectedDetailedMovies] = useState([]);
     const [refreshState, setRefreshState] = useState({ isRefreshing: false, progress: 0, total: 0, type: null });
-    const [systemSettings, setSystemSettings] = useState({ matrixPhrases: ['searching trailers', 'preparing video', 'please wait'] });
+    const [systemSettings, setSystemSettings] = useState({ matrixPhrases: ['searching trailers', 'preparing video', 'please wait'], useSloganInMatrix: true });
+    const [matrixPhrasesRaw, setMatrixPhrasesRaw] = useState('');
     const [savingSettings, setSavingSettings] = useState(false);
     const [showBrokenFast, setShowBrokenFast] = useState(false);
     const [showBrokenDetailed, setShowBrokenDetailed] = useState(false);
@@ -438,7 +439,11 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
             if (settingsRes && settingsRes.ok) {
                 const settingsData = await settingsRes.json();
                 if (settingsData.matrixPhrases) {
-                    setSystemSettings(settingsData);
+                    setSystemSettings({
+                        matrixPhrases: settingsData.matrixPhrases,
+                        useSloganInMatrix: settingsData.useSloganInMatrix !== undefined ? settingsData.useSloganInMatrix : true
+                    });
+                    setMatrixPhrasesRaw(settingsData.matrixPhrases.join(', '));
                 }
             }
         } catch (err) {
@@ -590,7 +595,8 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                     'Authorization': `Bearer ${localStorage.getItem('token')}` 
                 },
                 body: JSON.stringify({
-                    matrixPhrases: systemSettings.matrixPhrases
+                    matrixPhrases: matrixPhrasesRaw.split(',').map(s => s.trim()).filter(Boolean),
+                    useSloganInMatrix: systemSettings.useSloganInMatrix
                 })
             });
             if (!res.ok) throw new Error('Failed to save settings');
@@ -2129,12 +2135,21 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                     <h3 style={{ margin: '0 0 15px 0', color: '#fff', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         ⚙️ Настройки анимации (3D Матрица)
                     </h3>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#fff', fontSize: '0.95rem', marginBottom: '15px', cursor: 'pointer' }}>
+                        <input 
+                            type="checkbox" 
+                            checked={systemSettings.useSloganInMatrix}
+                            onChange={(e) => setSystemSettings({ ...systemSettings, useSloganInMatrix: e.target.checked })}
+                            style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#3b82f6' }}
+                        />
+                        Использовать слоган сайта в анимации матрицы
+                    </label>
                     <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '15px' }}>
-                        Слова и фразы, которые будут падать во время поиска трейлера. (Разделяйте запятыми)
+                        Дополнительные слова и фразы, которые будут падать во время поиска трейлера. (Разделяйте запятыми)
                     </p>
                     <textarea
-                        value={systemSettings.matrixPhrases.join(', ')}
-                        onChange={(e) => setSystemSettings({ ...systemSettings, matrixPhrases: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+                        value={matrixPhrasesRaw}
+                        onChange={(e) => setMatrixPhrasesRaw(e.target.value)}
                         placeholder="searching trailers, preparing video, please wait"
                         style={{
                             width: '100%',

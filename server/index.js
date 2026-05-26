@@ -3200,7 +3200,8 @@ app.get('/api/settings/public', (req, res) => {
     try {
         const { getSetting } = require('./db');
         const matrixPhrases = getSetting('matrixPhrases', ['searching trailers', 'preparing video', 'please wait']);
-        res.json({ matrixPhrases });
+        const useSloganInMatrix = getSetting('useSloganInMatrix', true);
+        res.json({ matrixPhrases, useSloganInMatrix });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch settings' });
@@ -3210,9 +3211,12 @@ app.get('/api/settings/public', (req, res) => {
 app.post('/api/admin/settings', authenticateToken, requireAdmin, (req, res) => {
     try {
         const { setSetting } = require('./db');
-        const { matrixPhrases } = req.body;
+        const { matrixPhrases, useSloganInMatrix } = req.body;
         if (matrixPhrases !== undefined) {
             setSetting('matrixPhrases', matrixPhrases);
+        }
+        if (useSloganInMatrix !== undefined) {
+            setSetting('useSloganInMatrix', useSloganInMatrix);
         }
         res.json({ success: true });
     } catch (err) {

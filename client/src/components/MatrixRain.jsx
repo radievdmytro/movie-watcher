@@ -10,10 +10,11 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
         let animationFrameId;
 
         // Split slogan into individual words, characters, and the full string to simulate "lines of text"
-        const words = textSource.split(' ').filter(w => w.trim().length > 0);
-        words.push(textSource, ...customPhrases); 
-        const chars = Array.from(new Set(textSource.split('').filter(c => c.trim().length > 0)));
-        const textElements = [...words, ...chars];
+        const words = textSource ? textSource.split(' ').filter(w => w.trim().length > 0) : [];
+        if (textSource) words.push(textSource);
+        words.push(...customPhrases); 
+        const chars = textSource ? Array.from(new Set(textSource.split('').filter(c => c.trim().length > 0))) : [];
+        const textElements = [...words, ...chars].filter(t => t && t.trim().length > 0);
 
         const resizeCanvas = () => {
             if (canvas.parentElement) {
