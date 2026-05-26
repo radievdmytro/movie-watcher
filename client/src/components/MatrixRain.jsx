@@ -62,11 +62,8 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
         }
 
         const draw = () => {
-            // Fade out previous frame by reducing opacity, keeping canvas transparent
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.globalCompositeOperation = 'source-over';
+            // Clear the canvas completely for 3D particles (no trails needed)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
@@ -146,7 +143,9 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
                 height: '100%', 
                 opacity: 0.9,
                 pointerEvents: 'none',
-                zIndex: 0
+                zIndex: 0,
+                WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 90%)',
+                maskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 90%)'
             }} 
         />
     );

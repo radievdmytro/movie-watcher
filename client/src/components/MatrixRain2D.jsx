@@ -47,11 +47,9 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
 
         const draw = () => {
             initDrops();
-            // Fade out previous frame by reducing opacity, keeping canvas transparent
-            ctx.globalCompositeOperation = 'destination-out';
+            // Translucent black background to create trail effect
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.globalCompositeOperation = 'source-over';
 
             // Resolve CSS variable if needed
             let actualColor = color;
@@ -102,9 +100,11 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
                 left: 0, 
                 width: '100%', 
                 height: '100%', 
-                opacity: 0.6, // Increased visibility
+                opacity: 0.8,
                 pointerEvents: 'none',
-                zIndex: 0
+                zIndex: 0,
+                WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 90%)',
+                maskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 90%)'
             }} 
         />
     );
