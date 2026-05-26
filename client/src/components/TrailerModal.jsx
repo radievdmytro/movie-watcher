@@ -173,7 +173,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                             {loading && (
                                 <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '16px', overflow: 'hidden', minHeight: '300px' }}>
                                     {settingsLoaded && (
-                                        <div style={{ animation: 'fadeIn 0.8s ease-out' }}>
+                                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', animation: 'fadeIn 0.8s ease-out' }}>
                                             {matrixAnimationType === '3D' ? (
                                                 <MatrixRain textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
                                             ) : (
