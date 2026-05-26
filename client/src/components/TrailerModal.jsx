@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
-    const [results, setResults] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [results, setResults] = useState(() => Array.isArray(preloadedTrailers) ? preloadedTrailers : []);
+    const [loading, setLoading] = useState(() => preloadedTrailers === null);
+    const [error, setError] = useState(() => preloadedTrailers instanceof Error ? preloadedTrailers.message : null);
     const [activeVideoId, setActiveVideoId] = useState(null);
 
     // Block body scrolling

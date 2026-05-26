@@ -960,7 +960,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     justifyContent: 'center',
                                     gap: '8px',
                                     transition: 'all 0.2s ease',
-                                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
+                                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                                    animation: (Array.isArray(preloadedTrailers) && preloadedTrailers.length > 0) ? 'shimmerGold 1.5s ease-out 1' : 'none'
                                 }}
                                 onMouseEnter={(e) => {
                                     e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
@@ -2538,6 +2539,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 @keyframes scaleIn { from { transform: scale(0.9) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
                 @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                @keyframes shimmerGold { 0% { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); color: #ccc; } 30% { box-shadow: 0 0 30px rgba(212, 175, 55, 0.8); background: rgba(212, 175, 55, 0.3); border-color: rgba(212, 175, 55, 1); color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); } 100% { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); color: #ccc; } }
             `}</style>
         </div>,
         document.body
