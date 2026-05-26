@@ -75,7 +75,8 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
                 if (stream.accumulator >= 1) {
                     stream.accumulator -= 1;
                     
-                    if (!stoppingRef.current) {
+                    // Only stop spawning if we are stopping AND the head is off screen
+                    if (!stoppingRef.current || stream.headY * fontSize <= canvas.height + 100) {
                         const newChar = charSet[Math.floor(Math.random() * charSet.length)];
                         stream.chars.push({ y: stream.headY, text: newChar, opacity: 1.0 });
                     }
@@ -85,6 +86,8 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
                         if (!stoppingRef.current) {
                             stream.headY = Math.floor(Math.random() * -20);
                             stream.chars = [];
+                        } else {
+                            // If stopping, just let it continue to infinity, chars off screen will eventually fade
                         }
                     }
                 }
