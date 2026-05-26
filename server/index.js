@@ -3309,3 +3309,29 @@ async function startApp() {
 }
 
 startApp();
+
+// Add YouTube search endpoint
+const yts = require('yt-search');
+app.get('/api/youtube/search', authenticateToken, async (req, res) => {
+    try {
+        const query = req.query.q;
+        if (!query) {
+            return res.status(400).json({ error: 'Query parameter q is required' });
+        }
+        
+        const r = await yts(query);
+        const videos = r.videos.slice(0, 5).map(v => ({
+            id: v.videoId,
+            title: v.title,
+            thumbnail: v.thumbnail,
+            duration: v.timestamp,
+            views: v.views,
+            author: v.author.name
+        }));
+        
+        res.json({ results: videos });
+    } catch (err) {
+        console.error('YouTube search failed:', err);
+        res.status(500).json({ error: 'Failed to search YouTube' });
+    }
+});
