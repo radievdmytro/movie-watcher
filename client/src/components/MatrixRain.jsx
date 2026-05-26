@@ -14,27 +14,50 @@ export default function MatrixRain({ textSource, color = '#D4AF37' }) {
         if (charSet.length === 0) charSet.push('0', '1'); // fallback
 
         const resizeCanvas = () => {
-            canvas.width = canvas.parentElement.offsetWidth;
-            canvas.height = canvas.parentElement.offsetHeight;
+            if (canvas.parentElement) {
+                canvas.width = canvas.parentElement.offsetWidth;
+                canvas.height = canvas.parentElement.offsetHeight;
+            }
         };
 
+        const resizeObserver = new ResizeObserver(() => {
+            resizeCanvas();
+        });
+        
+        if (canvas.parentElement) {
+            resizeObserver.observe(canvas.parentElement);
+        }
         resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
 
         const fontSize = 16;
-        let columns = canvas.width / fontSize;
+        let columns = 0;
         let drops = [];
         
-        for (let x = 0; x < columns; x++) {
-            drops[x] = 1;
-        }
+        const initDrops = () => {
+            const newColumns = Math.floor(canvas.width / fontSize);
+            if (newColumns > columns) {
+                for (let x = columns; x < newColumns; x++) {
+                    // Initialize drops randomly across the entire height so the effect is instantly visible
+                    drops[x] = Math.floor(Math.random() * (canvas.height / fontSize));
+                }
+                columns = newColumns;
+            }
+        };
 
         const draw = () => {
+            initDrops();
             // Translucent black background to create trail effect
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = color;
+            // Resolve CSS variable if needed
+            let actualColor = color;
+            if (color.startsWith('var(')) {
+                const varName = color.match(/var\(([^)]+)\)/)[1];
+                actualColor = getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#D4AF37';
+            }
+            
+            ctx.fillStyle = actualColor;
             ctx.font = `${fontSize}px monospace`;
 
             for (let i = 0; i < drops.length; i++) {
@@ -51,12 +74,8 @@ export default function MatrixRain({ textSource, color = '#D4AF37' }) {
                 
                 drops[i]++;
             }
-            
-            animationFrameId = requestAnimationFrame(draw);
         };
 
-        // Instead of setInterval, we can throttle requestAnimationFrame or just let it run
-        // Matrix rain usually looks better with a slight delay, so let's use a timeout loop
         let timeoutId;
         const loop = () => {
             draw();
@@ -66,9 +85,8 @@ export default function MatrixRain({ textSource, color = '#D4AF37' }) {
         loop();
 
         return () => {
-            window.removeEventListener('resize', resizeCanvas);
+            resizeObserver.disconnect();
             clearTimeout(timeoutId);
-            cancelAnimationFrame(animationFrameId);
         };
     }, [textSource, color]);
 
@@ -81,7 +99,7 @@ export default function MatrixRain({ textSource, color = '#D4AF37' }) {
                 left: 0, 
                 width: '100%', 
                 height: '100%', 
-                opacity: 0.3, // Subtle background effect
+                opacity: 0.6, // Increased visibility
                 pointerEvents: 'none',
                 zIndex: 0
             }} 
