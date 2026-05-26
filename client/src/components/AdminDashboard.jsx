@@ -602,6 +602,10 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                 })
             });
             if (!res.ok) throw new Error('Failed to save settings');
+            
+            // Invalidate frontend cache for matrix settings
+            window.dispatchEvent(new Event('matrixSettingsUpdated'));
+            
             setAdminFeedback({ id: 'settings', type: 'success', message: 'Настройки успешно сохранены!' });
             setTimeout(() => setAdminFeedback({ id: null, type: '', message: '' }), 3000);
         } catch (err) {

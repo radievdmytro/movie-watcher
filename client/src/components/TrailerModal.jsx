@@ -24,6 +24,11 @@ const prefetchSettings = () => {
 };
 prefetchSettings();
 
+window.addEventListener('matrixSettingsUpdated', () => {
+    cachedSettingsPromise = null;
+    prefetchSettings();
+});
+
 function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     const [results, setResults] = useState(() => Array.isArray(preloadedTrailers) ? preloadedTrailers : []);
     const [loading, setLoading] = useState(() => preloadedTrailers === null);
