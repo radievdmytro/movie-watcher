@@ -197,6 +197,14 @@ const initDb = () => {
   `);
   db.exec('CREATE INDEX IF NOT EXISTS idx_crawled_pages_cat ON crawled_pages(category)');
 
+  // System Settings Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS system_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
+
   // Migration for user_id in movies
   try {
     db.exec("ALTER TABLE movies ADD COLUMN user_id INTEGER");
@@ -345,4 +353,30 @@ const initDb = () => {
   }
 };
 
-module.exports = { db, initDb };
+const getSetting = (key, defaultValue = null) => {
+  try {
+    const row = db.prepare('SELECT value FROM system_settings WHERE key = ?').get(key);
+    if (!row) return defaultValue;
+    try {
+      return JSON.parse(row.value);
+    } catch (e) {
+      return row.value;
+    }
+  } catch (err) {
+    console.error(`Failed to get setting ${key}:`, err);
+    return defaultValue;
+  }
+};
+
+const setSetting = (key, value) => {
+  try {
+    const valStr = typeof value === 'object' ? JSON.stringify(value) : value;
+    db.prepare('INSERT INTO system_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?').run(key, valStr, valStr);
+    return true;
+  } catch (err) {
+    console.error(`Failed to set setting ${key}:`, err);
+    return false;
+  }
+};
+
+module.exports = { db, initDb, getSetting, setSetting };

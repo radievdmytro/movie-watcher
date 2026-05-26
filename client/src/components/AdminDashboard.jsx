@@ -139,6 +139,8 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [selectedFastMovies, setSelectedFastMovies] = useState([]);
     const [selectedDetailedMovies, setSelectedDetailedMovies] = useState([]);
     const [refreshState, setRefreshState] = useState({ isRefreshing: false, progress: 0, total: 0, type: null });
+    const [systemSettings, setSystemSettings] = useState({ matrixPhrases: ['searching trailers', 'preparing video', 'please wait'] });
+    const [savingSettings, setSavingSettings] = useState(false);
     const [showBrokenFast, setShowBrokenFast] = useState(false);
     const [showBrokenDetailed, setShowBrokenDetailed] = useState(false);
     const [bulkRefreshDelay, setBulkRefreshDelay] = useState(() => parseInt(localStorage.getItem('admin_bulkRefreshDelay')) || 2);
@@ -406,11 +408,12 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
         setLoading(true);
         setError(null);
         try {
-            const [statsRes, usersRes, syncRes, crawlerRes] = await Promise.all([
+            const [statsRes, usersRes, syncRes, crawlerRes, settingsRes] = await Promise.all([
                 fetch('/api/admin/stats'),
                 fetch('/api/admin/users'),
                 fetch('/api/admin/sync-status'),
                 fetch('/api/admin/crawler-settings'),
+                fetch('/api/settings/public'),
                 fetchRecentScraped()
             ]);
             
@@ -431,6 +434,12 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
             }
             if (crawlerRes.ok) {
                 setCrawlerSettings(await crawlerRes.json());
+            }
+            if (settingsRes && settingsRes.ok) {
+                const settingsData = await settingsRes.json();
+                if (settingsData.matrixPhrases) {
+                    setSystemSettings(settingsData);
+                }
             }
         } catch (err) {
             console.error('Failed to fetch admin stats:', err);
@@ -568,6 +577,29 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
         } catch (err) {
             setAdminFeedback({ id: user.id, type: 'error', message: `Error: ${err.message}` });
             setTimeout(() => setAdminFeedback({ id: null, type: '', message: '' }), 4000);
+        }
+    };
+
+    const handleSaveSettings = async () => {
+        setSavingSettings(true);
+        try {
+            const res = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                },
+                body: JSON.stringify({
+                    matrixPhrases: systemSettings.matrixPhrases
+                })
+            });
+            if (!res.ok) throw new Error('Failed to save settings');
+            setAdminFeedback({ id: 'settings', type: 'success', message: 'Настройки успешно сохранены!' });
+            setTimeout(() => setAdminFeedback({ id: null, type: '', message: '' }), 3000);
+        } catch (err) {
+            setAdminFeedback({ id: 'settings', type: 'error', message: err.message });
+        } finally {
+            setSavingSettings(false);
         }
     };
 
@@ -2083,6 +2115,68 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                             </div>
                         )
                     )}
+                </div>
+            )}
+
+            {!loading && !selectedUser && (
+                <div style={{
+                    marginTop: '40px',
+                    padding: '20px',
+                    background: '#1a1a2e',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                    <h3 style={{ margin: '0 0 15px 0', color: '#fff', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        ⚙️ Настройки анимации (3D Матрица)
+                    </h3>
+                    <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '15px' }}>
+                        Слова и фразы, которые будут падать во время поиска трейлера. (Разделяйте запятыми)
+                    </p>
+                    <textarea
+                        value={systemSettings.matrixPhrases.join(', ')}
+                        onChange={(e) => setSystemSettings({ ...systemSettings, matrixPhrases: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+                        placeholder="searching trailers, preparing video, please wait"
+                        style={{
+                            width: '100%',
+                            minHeight: '80px',
+                            background: '#0f0f1a',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            color: '#fff',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            fontSize: '0.9rem',
+                            resize: 'vertical',
+                            marginBottom: '15px'
+                        }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <button
+                            onClick={handleSaveSettings}
+                            disabled={savingSettings}
+                            style={{
+                                background: '#3b82f6',
+                                color: '#fff',
+                                border: 'none',
+                                padding: '10px 20px',
+                                borderRadius: '8px',
+                                cursor: savingSettings ? 'not-allowed' : 'pointer',
+                                fontWeight: 'bold',
+                                opacity: savingSettings ? 0.7 : 1,
+                                transition: '0.2s'
+                            }}
+                        >
+                            {savingSettings ? 'Сохранение...' : '💾 Сохранить фразы'}
+                        </button>
+                        {adminFeedback.id === 'settings' && (
+                            <span style={{
+                                color: adminFeedback.type === 'error' ? '#ff4444' : '#00C851',
+                                fontSize: '0.9rem',
+                                animation: 'fadeIn 0.3s'
+                            }}>
+                                {adminFeedback.message}
+                            </span>
+                        )}
+                    </div>
                 </div>
             )}
 

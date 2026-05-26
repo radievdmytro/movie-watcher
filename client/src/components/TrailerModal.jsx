@@ -6,6 +6,16 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     const [loading, setLoading] = useState(() => preloadedTrailers === null);
     const [error, setError] = useState(() => preloadedTrailers instanceof Error ? preloadedTrailers.message : null);
     const [activeVideoId, setActiveVideoId] = useState(null);
+    const [matrixPhrases, setMatrixPhrases] = useState(['searching trailers', 'preparing video', 'please wait']);
+
+    useEffect(() => {
+        fetch('/api/settings/public')
+            .then(res => res.json())
+            .then(data => {
+                if (data.matrixPhrases) setMatrixPhrases(data.matrixPhrases);
+            })
+            .catch(err => console.error('Failed to load matrix phrases:', err));
+    }, []);
 
     // Block body scrolling
     useEffect(() => {
@@ -154,7 +164,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                         <>
                             {loading && (
                                 <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '16px', overflow: 'hidden', minHeight: '300px' }}>
-                                    <MatrixRain textSource={APP_SLOGAN} color="var(--accent-gold)" />
+                                    <MatrixRain textSource={APP_SLOGAN} color="var(--accent-gold)" customPhrases={matrixPhrases} />
                                     <div style={{
                                         position: 'relative',
                                         zIndex: 1,

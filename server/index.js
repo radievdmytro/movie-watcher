@@ -3195,6 +3195,32 @@ app.post('/api/admin/scraped-movies/refresh', authenticateToken, requireAdmin, a
     }
 });
 
+// System Settings API
+app.get('/api/settings/public', (req, res) => {
+    try {
+        const { getSetting } = require('./db');
+        const matrixPhrases = getSetting('matrixPhrases', ['searching trailers', 'preparing video', 'please wait']);
+        res.json({ matrixPhrases });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+});
+
+app.post('/api/admin/settings', authenticateToken, requireAdmin, (req, res) => {
+    try {
+        const { setSetting } = require('./db');
+        const { matrixPhrases } = req.body;
+        if (matrixPhrases !== undefined) {
+            setSetting('matrixPhrases', matrixPhrases);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to update settings' });
+    }
+});
+
 // Crawler settings endpoints (admin-only)
 app.get('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, res) => {
     try {
