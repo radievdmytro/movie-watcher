@@ -1920,7 +1920,7 @@ app.get('/share/movie/:id', (req, res) => {
         if (!movie) return res.status(404).send('Movie not found');
         
         const title = `${movie.title} (${movie.year})`;
-        const description = `⭐️ ${movie.rating || '-'} | 🎭 ${movie.genres || '-'}\n\n${movie.description || ''}`;
+        const description = `⭐️ ${movie.rating || '-'} | 🎭 ${movie.genres || '-'}&#10;&#10;${movie.description ? movie.description.replace(/\n/g, '&#10;') : ''}`;
         
         const html = `<!DOCTYPE html>
 <html>
@@ -1928,6 +1928,8 @@ app.get('/share/movie/:id', (req, res) => {
     <meta property="og:title" content="${title.replace(/"/g, '&quot;')}" />
     <meta property="og:description" content="${description.replace(/"/g, '&quot;')}" />
     <meta property="og:image" content="${movie.poster_url}" />
+    <meta property="og:type" content="video.movie" />
+    <meta property="og:site_name" content="Movie Watcher" />
     <meta name="twitter:card" content="summary_large_image" />
     <script>
         window.location.href = "https://radievdmytro.github.io/movie-watcher/?movie=${req.params.id}";
