@@ -89,7 +89,7 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
             resizeObserver.disconnect();
             clearTimeout(timeoutId);
         };
-    }, [textSource, color]);
+    }, [textSource, color, customPhrases.join(',')]);
 
     return (
         <canvas 

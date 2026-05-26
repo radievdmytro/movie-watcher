@@ -131,7 +131,7 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
             resizeObserver.disconnect();
             cancelAnimationFrame(animationFrameId);
         };
-    }, [textSource, color]);
+    }, [textSource, color, customPhrases.join(',')]);
 
     return (
         <canvas 
