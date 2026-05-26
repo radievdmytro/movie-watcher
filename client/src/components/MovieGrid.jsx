@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import MovieDetailsModal from './MovieDetailsModal';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import DigitalDisintegration from './DigitalDisintegration';
 
 const Checkbox = ({ checked, onChange, style }) => (
     <label className="custom-checkbox" style={style} onClick={(e) => e.stopPropagation()}>
@@ -871,6 +872,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 return next;
             });
         }
+    };
+
+    const [hidingGlobalMovies, setHidingGlobalMovies] = useState(new Set());
+
+    const initiateHideGlobalMovie = (link) => {
+        setHidingGlobalMovies(prev => new Set([...prev, link]));
+        // The actual handleHideGlobalMovie will be called by DigitalDisintegration onAnimationComplete
     };
 
     const handleHideGlobalMovie = async (link) => {
@@ -3024,6 +3032,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     setHoveredDeleteLink(null);
                                 }}
                             >
+                                <DigitalDisintegration 
+                                    isHiding={hidingGlobalMovies.has(movie.link)} 
+                                    onAnimationComplete={() => handleHideGlobalMovie(movie.link)}
+                                >
                                 {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
                                     <div
                                         key={ripple.id}
@@ -3074,7 +3086,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     {searchDb === 'cache' && (
                                         <GlobalHideButton
                                             link={movie.link}
-                                            onHide={handleHideGlobalMovie}
+                                            onHide={initiateHideGlobalMovie}
                                             onHoverEnter={() => setHoveredHideGlobalLink(movie.link)}
                                             onHoverLeave={() => setHoveredHideGlobalLink(null)}
                                         />
@@ -3418,6 +3430,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         </div>
                                     </div>
                                 </div>
+                                </DigitalDisintegration>
                             </motion.div>
                         );
                     })}
@@ -3897,7 +3910,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     key={movie.link || idx}
                                     layout
                                     transition={{ layout: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } }}
-                                    className="movie-card glass-panel"
+                                    className="movie-card"
                                     onClick={() => {
                                         const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
                                         if (libMovie) {
@@ -3926,19 +3939,30 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         borderRadius: '16px',
                                         overflow: 'hidden',
                                         aspectRatio: '2/3',
-                                        boxShadow: hoveredCardLink === movie.link
-                                            ? '0 6px 20px rgba(168, 85, 247, 0.25)'
-                                            : '0 4px 20px rgba(0,0,0,0.3)',
-                                        border: hoveredCardLink === movie.link
-                                            ? '1px solid rgba(168, 85, 247, 0.5)'
-                                            : '1px solid rgba(255,255,255,0.06)',
-                                        background: 'rgba(255,255,255,0.02)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
                                         animation: 'fadeIn 0.4s ease',
-                                        cursor: 'pointer'
                                     }}
                                 >
+                                    <DigitalDisintegration 
+                                        isHiding={hidingGlobalMovies.has(movie.link)} 
+                                        onAnimationComplete={() => handleHideGlobalMovie(movie.link)}
+                                        style={{
+                                            height: '100%',
+                                            width: '100%',
+                                            position: 'relative',
+                                            borderRadius: '16px',
+                                            overflow: 'hidden',
+                                            boxShadow: hoveredCardLink === movie.link
+                                                ? '0 6px 20px rgba(168, 85, 247, 0.25)'
+                                                : '0 4px 20px rgba(0,0,0,0.3)',
+                                            border: hoveredCardLink === movie.link
+                                                ? '1px solid rgba(168, 85, 247, 0.5)'
+                                                : '1px solid rgba(255,255,255,0.06)',
+                                            background: 'rgba(255,255,255,0.02)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
                                     {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
                                         <div
                                             key={ripple.id}
@@ -3976,7 +4000,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     }} />
                                     <GlobalHideButton
                                         link={movie.link}
-                                        onHide={handleHideGlobalMovie}
+                                        onHide={initiateHideGlobalMovie}
                                         onHoverEnter={() => setHoveredHideGlobalLink(movie.link)}
                                         onHoverLeave={() => setHoveredHideGlobalLink(null)}
                                     />
@@ -4325,6 +4349,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             </div>
                                         </div>
                                     </div>
+                                </DigitalDisintegration>
                                 </motion.div>
                             );
                         })}
