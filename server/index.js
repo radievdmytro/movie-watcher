@@ -1132,7 +1132,7 @@ app.get('/api/movies', authenticateToken, (req, res) => {
     try {
         const stmt = db.prepare(`
             SELECT * FROM (
-                SELECT m.id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
+                SELECT m.id, m.user_id, m.title, m.original_title, m.year, m.link, m.rating, m.description, m.poster_url, 
                        m.genres, m.actors, m.director, m.writers, m.country, m.duration, m.voice_acting, m.type, 
                        m.user_rating, m.notes, m.notes_public, m.status, m.created_at, m.created_at AS updated_at,
                        (
