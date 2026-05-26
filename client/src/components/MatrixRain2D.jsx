@@ -47,8 +47,8 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
 
         const draw = () => {
             initDrops();
-            // Translucent black background to create trail effect
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            // Translucent background for trail effect matching modal background
+            ctx.fillStyle = 'rgba(25, 25, 25, 0.1)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Resolve CSS variable if needed

@@ -62,8 +62,8 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
         }
 
         const draw = () => {
-            // Dark translucent background for motion blur effect
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            // Dark translucent background for motion blur effect matching modal background
+            ctx.fillStyle = 'rgba(25, 25, 25, 0.4)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             const centerX = canvas.width / 2;
