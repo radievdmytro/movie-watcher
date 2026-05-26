@@ -142,6 +142,45 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     // Trailer modal state
     const [isTrailerModalOpen, setIsTrailerModalOpen] = useState(false);
     const [trailerSearchQuery, setTrailerSearchQuery] = useState('');
+    const [preloadedTrailers, setPreloadedTrailers] = useState(null);
+
+
+    useEffect(() => {
+        if (!movie) return;
+        let typeStr = 'фильм';
+        if (movie.genres && movie.genres.toLowerCase().includes('аниме')) {
+            typeStr = 'аниме';
+        } else if (movie.genres && movie.genres.toLowerCase().includes('мультфильм')) {
+            typeStr = 'мультфильм';
+        } else if (movie.type === 'series') {
+            typeStr = 'сериал';
+        }
+        
+        const queryTokens = [typeStr, movie.title, movie.year, 'трейлер'].filter(Boolean);
+        const query = queryTokens.join(' ');
+        setTrailerSearchQuery(query);
+    }, [movie]);
+
+    useEffect(() => {
+        if (!trailerSearchQuery) return;
+        let active = true;
+        const fetchTrailers = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(trailerSearchQuery)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Failed to fetch trailers');
+                const data = await res.json();
+                if (active) setPreloadedTrailers(data.results || []);
+            } catch (err) {
+                console.error(err);
+                if (active) setPreloadedTrailers(new Error('Could not load trailers'));
+            }
+        };
+        fetchTrailers();
+        return () => { active = false; };
+    }, [trailerSearchQuery]);
 
     const handleCacheSearchClick = async (type, value) => {
         setCacheSearch({ type, value, movies: [], loading: true });
@@ -2486,6 +2525,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             {isTrailerModalOpen && (
                 <TrailerModal 
                     searchQuery={trailerSearchQuery}
+                    preloadedTrailers={preloadedTrailers}
                     onClose={(e) => {
                         if (e) e.stopPropagation();
                         setIsTrailerModalOpen(false);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-function TrailerModal({ searchQuery, onClose }) {
+function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -16,6 +16,18 @@ function TrailerModal({ searchQuery, onClose }) {
     }, []);
 
     useEffect(() => {
+        if (preloadedTrailers !== undefined && preloadedTrailers !== null) {
+            if (preloadedTrailers instanceof Error) {
+                setError(preloadedTrailers.message);
+                setLoading(false);
+            } else {
+                setResults(preloadedTrailers);
+                setLoading(false);
+                setError(null);
+            }
+            return;
+        }
+
         if (!searchQuery) return;
         
         const fetchTrailers = async () => {
@@ -40,7 +52,7 @@ function TrailerModal({ searchQuery, onClose }) {
         };
         
         fetchTrailers();
-    }, [searchQuery]);
+    }, [searchQuery, preloadedTrailers]);
 
     return (
         <div style={{
