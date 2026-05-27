@@ -46,10 +46,14 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
         ? "Trailers found." 
         : "Trailers successfully found.";
 
+    const getSearchText = () => typeof window !== 'undefined' && window.innerWidth <= 768
+        ? "Searching trailers"
+        : "Searching trailers...";
+
     const [typewriterText, setTypewriterText] = useState(() => 
         (preloadedTrailers !== undefined && preloadedTrailers !== null && !(preloadedTrailers instanceof Error))
             ? getSuccessText()
-            : "Searching trailers..."
+            : getSearchText()
     );
     const [isTypewriterExiting, setIsTypewriterExiting] = useState(false);
     const [typewriterDone, setTypewriterDone] = useState(false);
