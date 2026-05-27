@@ -1670,7 +1670,7 @@ body.hide-header-search .app-header {
     
     pointer-events: none;
     z-index: 10;
-    animation: modalRippleSmoothExpand 3.0s ease-out forwards;
+    animation: modalRippleSmoothExpand 1.5s ease-out forwards;
 }
 
 .modal-edge-glow {
