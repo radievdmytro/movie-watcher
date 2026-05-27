@@ -238,6 +238,78 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     const [confirmDeleteReviewId, setConfirmDeleteReviewId] = useState(null);
     const [editReviewFeedback, setEditReviewFeedback] = useState({ id: null, type: '', message: '' });
     const [copiedShare, setCopiedShare] = useState(false);
+    const [isRefreshingData, setIsRefreshingData] = useState(false);
+
+    const isAdmin = useMemo(() => {
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.username?.toLowerCase() === 'radev';
+            }
+        } catch (e) {}
+        return false;
+    }, []);
+
+    const handleRefreshData = async () => {
+        if (isRefreshingData || !movie?.link) return;
+        setIsRefreshingData(true);
+        const token = localStorage.getItem('token');
+        try {
+            // First, trigger a refresh on the backend (re-scrapes HDRezka)
+            await fetch('/api/admin/scraped-movies/refresh', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ links: [movie.link] })
+            });
+
+            // Now re-fetch the updated details to show in UI immediately
+            const searchRes = await fetch('/api/movies/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ query: movie.link })
+            });
+            const searchData = await searchRes.json();
+            if (searchData && searchData.data) {
+                const details = searchData.data;
+                setLiveDetails(details);
+                
+                // If it's a library movie, update the DB
+                if (propMovie.id) {
+                    await fetch(`/api/movies/${propMovie.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({
+                            title: details.title,
+                            original_title: details.original_title,
+                            year: details.year,
+                            rating: details.rating,
+                            description: details.description,
+                            poster_url: details.poster_url,
+                            genres: details.genres,
+                            actors: details.actors,
+                            director: details.director,
+                            writers: details.writers,
+                            country: details.country,
+                            duration: details.duration,
+                            type: details.type
+                        })
+                    });
+                    if (onUpdate) onUpdate(propMovie.id, details);
+                } else if (onUpdate) {
+                    onUpdate(null, details);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to refresh data', e);
+            alert('Refresh failed: ' + e.message);
+        } finally {
+            setIsRefreshingData(false);
+        }
+    };
 
     const handleShare = async () => {
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -868,6 +940,17 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             {copiedShare ? '✔ Copied' : '🔗 Share'}
                         </button>
                     )}
+                    {!isMobile && isAdmin && (
+                        <button
+                            onClick={handleRefreshData}
+                            disabled={isRefreshingData}
+                            className="btn btn-ghost"
+                            title="Обновить данные фильма"
+                            style={{ padding: '6px 12px', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: isRefreshingData ? '#aaa' : '#fff', cursor: isRefreshingData ? 'wait' : 'pointer' }}
+                        >
+                            {isRefreshingData ? '⏳' : '🔄 Refresh'}
+                        </button>
+                    )}
                     <button
                         onClick={onClose}
                         className="btn btn-ghost"
@@ -1330,6 +1413,28 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         >
                                             {copiedShare ? '✔ Copied' : '🔗 Share'}
                                         </button>
+                                        {isAdmin && (
+                                            <button
+                                                onClick={handleRefreshData}
+                                                disabled={isRefreshingData}
+                                                className="btn"
+                                                style={{ 
+                                                    padding: '5px 10px', 
+                                                    fontSize: '0.78rem', 
+                                                    borderRadius: '6px', 
+                                                    background: 'rgba(255,255,255,0.04)', 
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    color: isRefreshingData ? '#aaa' : '#fff',
+                                                    fontWeight: '600',
+                                                    cursor: isRefreshingData ? 'wait' : 'pointer',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px'
+                                                }}
+                                            >
+                                                {isRefreshingData ? '⏳' : '🔄 Refresh'}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
