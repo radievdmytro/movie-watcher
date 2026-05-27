@@ -235,16 +235,16 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                 )}
 
                                 {!loading && !error && results.length > 0 && (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
+                                    <div key={matrixAnimationType} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
                                     {results.map((video, index) => {
                                         const animationName = matrixAnimationType === '3D' ? 'trailerFlyIn3D' : 'trailerDropIn2D';
-                                        const delay = index * 0.15; // slightly faster than 0.2s for snappier feel, but close to request
+                                        const delay = index * 0.18; // 20% slower delay between cards
                                         return (
                                         <div
                                             key={video.id}
                                             style={{
                                                 opacity: 0,
-                                                animation: `${animationName} 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
+                                                animation: `${animationName} 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`, // 30% slower appearance
                                                 animationDelay: `${delay}s`,
                                                 height: '100%'
                                             }}
