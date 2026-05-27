@@ -1652,8 +1652,8 @@ body.hide-header-search .app-header {
 /* MODAL RIPPLE EFFECT */
 .modal-watch-ripple {
     position: absolute;
-    width: 3000px;
-    height: 3000px;
+    width: 4000px;
+    height: 4000px;
     border-radius: 50%;
     transform: translate(-50%, -50%) scale(0);
     
@@ -1662,8 +1662,8 @@ body.hide-header-search .app-header {
     
     background: color-mix(in srgb, currentColor 25%, transparent);
     
-    mask-image: radial-gradient(circle, black 0%, black 20%, transparent 60%);
-    -webkit-mask-image: radial-gradient(circle, black 0%, black 20%, transparent 60%);
+    mask-image: radial-gradient(circle, black 0%, black 20%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle, black 0%, black 20%, transparent 80%);
     
     mask-repeat: no-repeat;
     -webkit-mask-repeat: no-repeat;
