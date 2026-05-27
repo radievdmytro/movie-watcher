@@ -71,6 +71,8 @@ export default function MatrixRain({ textSource, color = '#D4AF37', customPhrase
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (particles.length === 0) {
+                // Loop idles instead of dying, so it can restart if stopping becomes false
+                animationFrameId = requestAnimationFrame(draw);
                 return;
             }
 

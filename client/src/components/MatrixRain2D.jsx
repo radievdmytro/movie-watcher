@@ -126,6 +126,8 @@ export default function MatrixRain2D({ textSource, color = '#D4AF37', customPhra
             ctx.globalAlpha = 1.0;
             
             if (stoppingRef.current && !hasActiveChars) {
+                // Loop idles instead of dying, so it can restart if stopping becomes false
+                timeoutId = setTimeout(loop, 30);
                 return;
             }
             
