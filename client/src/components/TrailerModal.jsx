@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MatrixRain from './MatrixRain';
 import MatrixRain2D from './MatrixRain2D';
 import { APP_SLOGAN } from '../config';
+import TypewriterLoader from './TypewriterLoader';
 
 let cachedSettingsPromise = null;
 let cachedSettings = null;
@@ -207,19 +208,10 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                 </div>
                             )}
 
-                            <div style={{ position: 'relative', zIndex: 1, minHeight: '100%' }}>
-                                {loading && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '16px', overflow: 'hidden', minHeight: '300px' }}>
-                                        <div style={{
-                                            position: 'relative',
-                                            zIndex: 1,
-                                            width: '40px', height: '40px',
-                                            border: '3px solid rgba(255,255,255,0.1)',
-                                            borderTopColor: 'var(--accent-gold)',
-                                            borderRadius: '50%',
-                                            animation: 'spin 1s linear infinite'
-                                        }}></div>
-                                        <span style={{ position: 'relative', zIndex: 1, color: '#aaa', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>Searching trailers...</span>
+                            <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                {(!showResults && !error) && (
+                                    <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                        <TypewriterLoader isExiting={!loading} />
                                     </div>
                                 )}
 
