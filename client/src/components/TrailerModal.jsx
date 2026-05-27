@@ -223,15 +223,15 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                 { (loading || (!error && results.length > 0)) && (
                                     <div style={{ 
                                         position: 'sticky', 
-                                        bottom: '20px', 
-                                        top: loading ? 'auto' : 'auto', // Keep it at bottom
-                                        marginTop: loading ? '300px' : '40px', // Fallback for short content
+                                        top: 0, 
                                         left: 0, right: 0, 
                                         display: 'flex', 
                                         justifyContent: 'center',
                                         pointerEvents: 'none',
                                         zIndex: 10,
-                                        paddingBottom: '20px'
+                                        paddingTop: '10px',
+                                        paddingBottom: '20px',
+                                        marginBottom: '20px'
                                     }}>
                                         <div style={{ pointerEvents: 'auto', background: 'rgba(25,25,25,0.8)', padding: '10px 20px', borderRadius: '12px', backdropFilter: 'blur(5px)' }}>
                                             <TypewriterLoader text={loading ? "Searching trailers..." : "Trailers successfully found."} />
