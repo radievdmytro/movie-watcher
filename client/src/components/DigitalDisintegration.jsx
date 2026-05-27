@@ -33,9 +33,9 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
                         span.style.pointerEvents = 'none';
                         span.style.zIndex = '999999';
                         
-                        const targetX = Math.random() * 600 - 300;
-                        const targetY = -(Math.random() * 450 + 150);
-                        const duration = 1.0 + Math.random() * 0.5;
+                        const targetX = Math.random() * 1200 - 600;
+                        const targetY = -(Math.random() * 900 + 300);
+                        const duration = 2.0 + Math.random() * 1.0;
                         const delay = Math.random() * 0.2;
                         
                         span.animate([
