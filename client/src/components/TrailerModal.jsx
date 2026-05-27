@@ -208,9 +208,9 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                 </div>
                             )}
 
-                            <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ position: 'relative', zIndex: 1, minHeight: '100%' }}>
                                 {loading && (
-                                    <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
                                         <TypewriterLoader />
                                     </div>
                                 )}
