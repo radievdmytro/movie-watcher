@@ -233,7 +233,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                         paddingBottom: '20px',
                                         marginBottom: '20px'
                                     }}>
-                                        <div style={{ pointerEvents: 'auto', background: 'rgba(25,25,25,0.8)', padding: '10px 20px', borderRadius: '12px', backdropFilter: 'blur(5px)' }}>
+                                        <div style={{ pointerEvents: 'auto', padding: '10px 20px' }}>
                                             <TypewriterLoader text={loading ? "Searching trailers..." : "Trailers successfully found."} />
                                         </div>
                                     </div>
