@@ -1740,11 +1740,23 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     border: '1px solid rgba(212, 175, 55, 0.2)',
                     transition: 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)'
                 }}>
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <div 
+                        style={{ position: 'relative', flexShrink: 0, cursor: 'pointer', transition: 'transform 0.2s' }} 
+                        onClick={() => setCompareDetailsMovie(preview)}
+                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    >
                         <img src={preview.poster_url} alt="" style={{ width: '120px', borderRadius: '8px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)' }} />
                     </div>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        <h3 style={{ marginTop: 0, fontSize: '1.4rem' }}>{preview.title} <span style={{ color: 'var(--accent-gold)', fontSize: '1rem', marginLeft: '5px' }}>{preview.year}</span></h3>
+                        <h3 
+                            onClick={() => setCompareDetailsMovie(preview)} 
+                            style={{ marginTop: 0, fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-gold)'}
+                            onMouseLeave={e => e.currentTarget.style.color = 'inherit'}
+                        >
+                            {preview.title} <span style={{ color: 'var(--accent-gold)', fontSize: '1rem', marginLeft: '5px' }}>{preview.year}</span>
+                        </h3>
                         <div style={{ display: 'flex', gap: '10px', fontSize: '0.85rem', color: '#888', marginBottom: '15px' }}>
                             {preview.rating && <span style={{ background: '#333', padding: '2px 6px', borderRadius: '4px', color: '#fff' }}>★ {preview.rating}</span>}
                             <span>{preview.genres}</span>
@@ -1786,8 +1798,9 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                 {expandPreviewText ? 'Show less ▲' : 'Read more ▼'}
                             </div>
                         </div>
-                        <div style={{ marginTop: '20px', display: 'flex', gap: '15px' }}>
+                        <div style={{ marginTop: '20px', display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                             <button onClick={handleAdd} className="btn btn-primary" style={{ padding: '10px 30px' }}>Add to Library</button>
+                            <button onClick={() => setCompareDetailsMovie(preview)} className="btn btn-ghost" style={{ border: '1px solid rgba(255,255,255,0.2)' }}>Detailed</button>
                             <button onClick={() => setPreview(null)} className="btn btn-ghost">Cancel</button>
                         </div>
                     </div>
