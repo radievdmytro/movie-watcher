@@ -3012,18 +3012,23 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 style={{
                                     position: 'relative',
                                     overflow: hidingGlobalMovies.has(movie.link) ? 'visible' : 'hidden',
-                                    border: isHighlighted
-                                        ? '2px solid var(--accent-gold)'
-                                        : selectedIds.includes(movie.id)
+                                    border: hidingGlobalMovies.has(movie.link)
+                                        ? '1px solid transparent'
+                                        : isHighlighted
                                             ? '2px solid var(--accent-gold)'
-                                            : hoveredCardLink === movie.link
-                                                ? '1px solid rgba(3, 218, 198, 0.4)'
-                                                : '1px solid rgba(255,255,255,0.05)',
-                                    boxShadow: hoveredCardLink === movie.link
-                                        ? '0 6px 20px rgba(3, 218, 198, 0.15)'
-                                        : '0 4px 20px rgba(0,0,0,0.3)',
+                                            : selectedIds.includes(movie.id)
+                                                ? '2px solid var(--accent-gold)'
+                                                : hoveredCardLink === movie.link
+                                                    ? '1px solid rgba(3, 218, 198, 0.4)'
+                                                    : '1px solid rgba(255,255,255,0.05)',
+                                    boxShadow: hidingGlobalMovies.has(movie.link)
+                                        ? 'none'
+                                        : hoveredCardLink === movie.link
+                                            ? '0 6px 20px rgba(3, 218, 198, 0.15)'
+                                            : '0 4px 20px rgba(0,0,0,0.3)',
                                     aspectRatio: '2/3',
-                                    borderRadius: '8px'
+                                    borderRadius: '8px',
+                                    transition: 'border 0.3s ease, box-shadow 0.3s ease'
                                 }}
                                 onMouseEnter={() => setHoveredCardLink(movie.link)}
                                 onMouseLeave={() => {
@@ -3951,13 +3956,18 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             position: 'relative',
                                             borderRadius: '16px',
                                             overflow: hidingGlobalMovies.has(movie.link) ? 'visible' : 'hidden',
-                                            boxShadow: hoveredCardLink === movie.link
-                                                ? '0 6px 20px rgba(168, 85, 247, 0.25)'
-                                                : '0 4px 20px rgba(0,0,0,0.3)',
-                                            border: hoveredCardLink === movie.link
-                                                ? '1px solid rgba(168, 85, 247, 0.5)'
-                                                : '1px solid rgba(255,255,255,0.06)',
+                                            boxShadow: hidingGlobalMovies.has(movie.link)
+                                                ? 'none'
+                                                : hoveredCardLink === movie.link
+                                                    ? '0 6px 20px rgba(168, 85, 247, 0.25)'
+                                                    : '0 4px 20px rgba(0,0,0,0.3)',
+                                            border: hidingGlobalMovies.has(movie.link)
+                                                ? '1px solid transparent'
+                                                : hoveredCardLink === movie.link
+                                                    ? '1px solid rgba(168, 85, 247, 0.5)'
+                                                    : '1px solid rgba(255,255,255,0.06)',
                                             background: 'rgba(255,255,255,0.02)',
+                                            transition: 'border 0.3s ease, box-shadow 0.3s ease',
                                             display: 'flex',
                                             flexDirection: 'column',
                                             cursor: 'pointer'
