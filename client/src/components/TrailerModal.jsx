@@ -101,7 +101,18 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     }, [searchQuery, preloadedTrailers]);
 
     return (
-        <div style={{
+        <>
+            <style>{`
+                @keyframes trailerFlyIn3D {
+                    from { opacity: 0; transform: translate3d(0, 40px, -50px) rotateX(-10deg); }
+                    to { opacity: 1; transform: translate3d(0, 0, 0) rotateX(0); }
+                }
+                @keyframes trailerDropIn2D {
+                    from { opacity: 0; transform: translateY(-20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
+            <div style={{
             position: 'fixed',
             top: 0, left: 0, right: 0, bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.85)',
@@ -305,6 +316,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 </div>
             </div>
         </div>
+        </>
     );
 }
 
