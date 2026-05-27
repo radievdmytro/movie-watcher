@@ -377,7 +377,6 @@ const CardRatingButton = ({ movie, onUpdateRating, posterSize = 220 }) => {
             style={{
                 position: 'relative',
                 width: '100%',
-                marginBottom: '6px',
                 zIndex: 10
             }}
         >
@@ -3284,9 +3283,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 {movie.status === 'watched' && (movie.id === null || !movie.user_rating) && (
                                                     <motion.div
                                                         key="rating-button"
-                                                        initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden' }}
-                                                        animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1 }}
-                                                        exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95 }}
+                                                        initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden', marginBottom: 0 }}
+                                                        animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1, marginBottom: 6 }}
+                                                        exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden', marginBottom: 0 }}
                                                         transition={{ duration: 0.8, ease: [0.1, 0.8, 0.2, 1] }}
                                                     >
                                                         <CardRatingButton
@@ -4118,9 +4117,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 })() && (
                                                     <motion.div
                                                         key="rating-button"
-                                                        initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden' }}
-                                                        animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1 }}
-                                                        exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95 }}
+                                                        initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden', marginBottom: 0 }}
+                                                        animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1, marginBottom: 6 }}
+                                                        exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden', marginBottom: 0 }}
                                                         transition={{ duration: 0.8, ease: [0.1, 0.8, 0.2, 1] }}
                                                     >
                                                         <CardRatingButton
