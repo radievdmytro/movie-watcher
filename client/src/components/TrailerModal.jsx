@@ -66,29 +66,20 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
             const animationDurationMs = 800;
             const totalAnimationTimeMs = (results.length - 1) * cardDelayMs + animationDurationMs;
             
-            // Wait 3 seconds after all results were shown
-            const delayBeforeErasingMs = totalAnimationTimeMs + 3000;
+            // 3 seconds after all cards have appeared → full disintegration (no erase step)
+            const delayMs = totalAnimationTimeMs + 3000;
             
-            const eraseTimer = setTimeout(() => {
-                setTypewriterText("");
-                
-                // "Trailers successfully found." has 27 chars, erasing at 40ms/char
-                const eraseDurationMs = 27 * 40 + 200;
-                const exitTimer = setTimeout(() => {
-                    setIsTypewriterExiting(true);
-                    // Pixel scatter animation lasts up to ~3s (0.6s delay + 2.2s duration), then mark as done
-                    const doneTimer = setTimeout(() => {
-                        setTypewriterDone(true);
-                    }, 3000);
-                    return () => clearTimeout(doneTimer);
-                }, eraseDurationMs);
-                
-                return () => clearTimeout(exitTimer);
-            }, delayBeforeErasingMs);
+            const disintegrateTimer = setTimeout(() => {
+                setIsTypewriterDisintegrating(true);
+                // charDisintegrate max: 0.8s delay + 1.55s duration ≈ 2.4s
+                // pixelScatter max:    0.8s delay + 2.2s duration  ≈ 3.0s
+                const doneTimer = setTimeout(() => {
+                    setTypewriterDone(true);
+                }, 3200);
+                return () => clearTimeout(doneTimer);
+            }, delayMs);
             
-            return () => {
-                clearTimeout(eraseTimer);
-            };
+            return () => clearTimeout(disintegrateTimer);
         }
     }, [loading, results]);
 
@@ -284,7 +275,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                         transition: 'opacity 0.1s'
                                     }}>
                                         <div style={{ pointerEvents: 'none', padding: '10px 20px' }}>
-                                            <TypewriterLoader text={typewriterText} isExiting={isTypewriterExiting} />
+                                            <TypewriterLoader text={typewriterText} isDisintegrating={isTypewriterDisintegrating} />
                                         </div>
                                     </div>
                                 )}
