@@ -1474,12 +1474,12 @@ body.hide-header-search .app-header {
     pointer-events: none;
     z-index: 55;
     
-    /* RGB Split with a slight glow on the card inner edges */
+    /* RGB Split with a slight glow on the card inner edges (barely noticeable) */
     box-shadow: 
-        inset 5px 0 20px rgba(255, 0, 128, 0.8),
-        inset -5px 0 20px rgba(0, 255, 255, 0.8),
-        inset 0 5px 20px rgba(255, 0, 128, 0.5),
-        inset 0 -5px 20px rgba(0, 255, 255, 0.5);
+        inset 2px 0 10px rgba(255, 0, 128, 0.3),
+        inset -2px 0 10px rgba(0, 255, 255, 0.3),
+        inset 0 2px 10px rgba(255, 0, 128, 0.2),
+        inset 0 -2px 10px rgba(0, 255, 255, 0.2);
         
     mask-image: radial-gradient(circle, transparent 20%, black 50%, transparent 80%);
     -webkit-mask-image: radial-gradient(circle, transparent 20%, black 50%, transparent 80%);
