@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useDeferredValue, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useDeferredValue, useCallback, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import MovieDetailsModal from './MovieDetailsModal';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
@@ -3044,7 +3044,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     onAnimationComplete={() => handleHideGlobalMovie(movie.link)}
                                 >
                                 {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
-                                    <React.Fragment key={ripple.id}>
+                                    <Fragment key={ripple.id}>
                                         <div
                                             className="watch-ripple"
                                             style={{
@@ -3062,7 +3062,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 animationDelay: `${ripple.delay || 0}s`
                                             }}
                                         />
-                                    </React.Fragment>
+                                    </Fragment>
                                 ))}
                                 {isDeleting && (
                                     <motion.div
@@ -3988,7 +3988,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         }}
                                     >
                                     {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
-                                        <React.Fragment key={ripple.id}>
+                                        <Fragment key={ripple.id}>
                                             <div
                                                 className="watch-ripple"
                                                 style={{
@@ -4006,7 +4006,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     animationDelay: `${ripple.delay || 0}s`
                                                 }}
                                             />
-                                        </React.Fragment>
+                                        </Fragment>
                                     ))}
                                     {/* Poster Image */}
                                     <img
