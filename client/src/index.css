@@ -1652,20 +1652,16 @@ body.hide-header-search .app-header {
 /* MODAL RIPPLE EFFECT */
 .modal-watch-ripple {
     position: absolute;
-    width: 2px;
-    height: 2px;
-    border-radius: 50%;
-    transform: translate(-50%, -50%) scale(0);
-    backdrop-filter: blur(10px) saturate(2.6) brightness(3.2) contrast(1.4);
-    -webkit-backdrop-filter: blur(10px) saturate(2.6) brightness(3.2) contrast(1.4);
+    inset: 0;
+    border-radius: inherit;
     
-    background: rgba(var(--ripple-color), 0.6);
-    box-shadow: 
-        inset 0 0 80px rgba(255, 255, 255, 0.6),
-        0 0 80px rgba(var(--ripple-color), 1.0);
+    backdrop-filter: blur(8px) saturate(2.0) brightness(1.5) contrast(1.1);
+    -webkit-backdrop-filter: blur(8px) saturate(2.0) brightness(1.5) contrast(1.1);
     
-    mask-image: radial-gradient(circle, transparent 0%, black 50%, transparent 100%);
-    -webkit-mask-image: radial-gradient(circle, transparent 0%, black 50%, transparent 100%);
+    background: rgba(var(--ripple-color), 0.25);
+    
+    mask-image: radial-gradient(circle, black 0%, black 20%, transparent 60%);
+    -webkit-mask-image: radial-gradient(circle, black 0%, black 20%, transparent 60%);
     
     mask-repeat: no-repeat;
     -webkit-mask-repeat: no-repeat;
@@ -1695,17 +1691,20 @@ body.hide-header-search .app-header {
 
 @keyframes modalRippleExpand {
     0% {
-        transform: translate(-50%, -50%) scale(0);
-        opacity: 1;
+        mask-size: 0px 0px;
+        mask-position: calc(var(--ripple-x)) calc(var(--ripple-y));
+        -webkit-mask-size: 0px 0px;
+        -webkit-mask-position: calc(var(--ripple-x)) calc(var(--ripple-y));
+        opacity: 0;
     }
     15% {
-        opacity: 1;
-    }
-    80% {
-        opacity: 0.8;
+        opacity: 0.6;
     }
     100% {
-        transform: translate(-50%, -50%) scale(1500); 
+        mask-size: 3000px 3000px;
+        mask-position: calc(var(--ripple-x) - 1500px) calc(var(--ripple-y) - 1500px);
+        -webkit-mask-size: 3000px 3000px;
+        -webkit-mask-position: calc(var(--ripple-x) - 1500px) calc(var(--ripple-y) - 1500px);
         opacity: 0;
     }
 }
