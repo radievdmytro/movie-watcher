@@ -1670,7 +1670,7 @@ body.hide-header-search .app-header {
     
     pointer-events: none;
     z-index: 10;
-    animation: modalRippleSmoothExpand 3.0s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+    animation: modalRippleSmoothExpand 3.0s ease-out forwards;
 }
 
 .modal-edge-glow {
@@ -1685,7 +1685,7 @@ body.hide-header-search .app-header {
     clip-path: circle(0px at var(--ripple-x) var(--ripple-y));
     -webkit-clip-path: circle(0px at var(--ripple-x) var(--ripple-y));
     
-    animation: modalEdgeGlowSmoothExpand 3.0s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+    animation: modalEdgeGlowSmoothExpand 3.0s ease-out forwards;
 }
 
 @keyframes modalRippleSmoothExpand {
@@ -1693,7 +1693,7 @@ body.hide-header-search .app-header {
         transform: translate(-50%, -50%) scale(0);
         opacity: 0;
     }
-    15% {
+    50% {
         opacity: 0.6;
     }
     100% {
@@ -1708,7 +1708,7 @@ body.hide-header-search .app-header {
         -webkit-clip-path: circle(0px at var(--ripple-x) var(--ripple-y));
         opacity: 0;
     }
-    10% {
+    50% {
         opacity: 1;
     }
     100% {
