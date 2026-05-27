@@ -536,7 +536,11 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
     const addModalRipple = (x, y, color) => {
         const id = Date.now() + Math.random();
-        setModalRipples(prev => [...prev, { id, x, y, color }]);
+        
+        // Rapid clicks will now instantly replace the old ripple. 
+        // This prevents multiple overlapping backdrop-filters from causing massive GPU flickering and crossfade artifacts.
+        setModalRipples([{ id, x, y, color }]);
+        
         setTimeout(() => {
             setModalRipples(prev => prev.filter(r => r.id !== id));
         }, 3200);
