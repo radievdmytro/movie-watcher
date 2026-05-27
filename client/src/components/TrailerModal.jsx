@@ -218,7 +218,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                             borderRadius: '50%',
                                             animation: 'spin 1s linear infinite'
                                         }}></div>
-                                        <span style={{ position: 'relative', zIndex: 1, color: '#aaa', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>Searching YouTube...</span>
+                                        <span style={{ position: 'relative', zIndex: 1, color: '#aaa', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>Searching trailers...</span>
                                     </div>
                                 )}
 
