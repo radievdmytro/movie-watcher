@@ -3144,8 +3144,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     opacity: 1, 
                                                     y: 0,
                                                     transition: { 
-                                                        y: { type: "spring", stiffness: 180, damping: 12, mass: 1.2 },
-                                                        opacity: { duration: 0.6 }
+                                                        y: { type: "spring", stiffness: 180, damping: 12, mass: 1.2, delay: 0.2 },
+                                                        opacity: { duration: 0.6, delay: 0.2 }
                                                     }
                                                 }}
                                                 exit={{ 
