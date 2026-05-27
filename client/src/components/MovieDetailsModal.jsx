@@ -902,7 +902,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     {/* Modal Ripple Container */}
                     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: 'inherit', pointerEvents: 'none', zIndex: 50 }}>
                         {modalRipples.map(ripple => (
-                            <div key={ripple.id} style={{ position: 'absolute', inset: 0, borderRadius: 'inherit', '--ripple-color': ripple.color, '--ripple-x': `${ripple.x}px`, '--ripple-y': `${ripple.y}px` }}>
+                            <div key={ripple.id} style={{ '--ripple-color': ripple.color, '--ripple-x': `${ripple.x}px`, '--ripple-y': `${ripple.y}px` }}>
                                 <div
                                     className="modal-watch-ripple"
                                     style={{
