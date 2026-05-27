@@ -42,9 +42,13 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     const [matrixAnimationType, setMatrixAnimationType] = useState('3D');
     const [settingsLoaded, setSettingsLoaded] = useState(false);
     
+    const getSuccessText = () => typeof window !== 'undefined' && window.innerWidth <= 768 
+        ? "Trailers found." 
+        : "Trailers successfully found.";
+
     const [typewriterText, setTypewriterText] = useState(() => 
         (preloadedTrailers !== undefined && preloadedTrailers !== null && !(preloadedTrailers instanceof Error))
-            ? "Trailers successfully found."
+            ? getSuccessText()
             : "Searching trailers..."
     );
     const [isTypewriterExiting, setIsTypewriterExiting] = useState(false);
@@ -70,10 +74,11 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
             const delayBeforeErasingMs = totalAnimationTimeMs + 3000;
             
             const eraseTimer = setTimeout(() => {
+                const currentTextLength = window.innerWidth <= 768 ? 15 : 28;
                 setTypewriterText("");
                 
-                // "Trailers successfully found." has 27 chars, erasing at 40ms/char
-                const eraseDurationMs = 27 * 40 + 200;
+                // Erasing at 40ms/char
+                const eraseDurationMs = currentTextLength * 40 + 200;
                 const exitTimer = setTimeout(() => {
                     setIsTypewriterExiting(true);
                     const doneTimer = setTimeout(() => {
@@ -108,7 +113,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 setLoading(false);
                 setError(null);
                 if (preloadedTrailers.length > 0) {
-                    setTypewriterText("Trailers successfully found.");
+                    setTypewriterText(getSuccessText());
                 }
             }
             return;
@@ -130,7 +135,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 const data = await res.json();
                 setResults(data.results || []);
                 if (data.results && data.results.length > 0) {
-                    setTypewriterText("Trailers successfully found.");
+                    setTypewriterText(getSuccessText());
                 }
             } catch (err) {
                 console.error(err);
