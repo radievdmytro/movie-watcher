@@ -41,6 +41,13 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     const [useSloganInMatrix, setUseSloganInMatrix] = useState(true);
     const [matrixAnimationType, setMatrixAnimationType] = useState('3D');
     const [settingsLoaded, setSettingsLoaded] = useState(false);
+    
+    const [typewriterText, setTypewriterText] = useState(() => 
+        (preloadedTrailers !== undefined && preloadedTrailers !== null && !(preloadedTrailers instanceof Error))
+            ? "Trailers successfully found."
+            : "Searching trailers..."
+    );
+    const [isTypewriterExiting, setIsTypewriterExiting] = useState(false);
 
     useEffect(() => {
         prefetchSettings().then(data => {
@@ -51,6 +58,32 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
             }
         }).finally(() => setSettingsLoaded(true));
     }, []);
+
+    useEffect(() => {
+        if (!loading && results.length > 0) {
+            const cardDelayMs = 180;
+            const animationDurationMs = 800;
+            const totalAnimationTimeMs = (results.length - 1) * cardDelayMs + animationDurationMs;
+            
+            // Wait 3 seconds after all results were shown
+            const delayBeforeErasingMs = totalAnimationTimeMs + 3000;
+            
+            const eraseTimer = setTimeout(() => {
+                setTypewriterText("");
+                
+                const eraseDurationMs = 27 * 40 + 200; // "Trailers successfully found." has 27 chars, erasing takes 40ms/char
+                const fadeOutTimer = setTimeout(() => {
+                    setIsTypewriterExiting(true);
+                }, eraseDurationMs);
+                
+                return () => clearTimeout(fadeOutTimer);
+            }, delayBeforeErasingMs);
+            
+            return () => {
+                clearTimeout(eraseTimer);
+            };
+        }
+    }, [loading, results]);
 
     // Block body scrolling
     useEffect(() => {
@@ -70,6 +103,9 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 setResults(preloadedTrailers);
                 setLoading(false);
                 setError(null);
+                if (preloadedTrailers.length > 0) {
+                    setTypewriterText("Trailers successfully found.");
+                }
             }
             return;
         }
@@ -89,6 +125,9 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 
                 const data = await res.json();
                 setResults(data.results || []);
+                if (data.results && data.results.length > 0) {
+                    setTypewriterText("Trailers successfully found.");
+                }
             } catch (err) {
                 console.error(err);
                 setError('Could not load trailers at this time.');
@@ -233,8 +272,8 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                         paddingBottom: '20px',
                                         marginBottom: '20px'
                                     }}>
-                                        <div style={{ pointerEvents: 'auto', padding: '10px 20px' }}>
-                                            <TypewriterLoader text={loading ? "Searching trailers..." : "Trailers successfully found."} />
+                                        <div style={{ pointerEvents: isTypewriterExiting ? 'none' : 'auto', padding: '10px 20px' }}>
+                                            <TypewriterLoader text={typewriterText} isExiting={isTypewriterExiting} />
                                         </div>
                                     </div>
                                 )}
