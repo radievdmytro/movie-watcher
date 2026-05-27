@@ -564,7 +564,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
     const addRipple = (identifier, x, y, isWatchedAction = true) => {
         const id1 = Date.now() + Math.random();
-        const color = isWatchedAction ? '3, 218, 198' : '255, 152, 0'; // Mint vs Orange
+        const color = isWatchedAction ? '255, 0, 128' : '255, 0, 128'; // Pink wave
         setRipples(prev => [...prev, { id: id1, identifier, x, y, color, delay: 0 }]);
         setTimeout(() => {
             setRipples(prev => prev.filter(r => r.id !== id1));
@@ -3012,7 +3012,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 className={`glass-panel movie-card${isHighlighted ? ' movie-highlight-pulse' : ''}`}
                                 style={{
                                     position: 'relative',
-                                    overflow: hidingGlobalMovies.has(movie.link) ? 'visible' : 'hidden',
+                                    overflow: 'visible',
                                     border: hidingGlobalMovies.has(movie.link)
                                         ? '1px solid transparent'
                                         : isHighlighted
@@ -3038,30 +3038,39 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     setHoveredDeleteLink(null);
                                 }}
                             >
+                                {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
+                                    <div
+                                        key={`glow-${ripple.id}`}
+                                        className="card-edge-glow"
+                                        style={{
+                                            '--click-x': `${ripple.x}px`,
+                                            '--click-y': `${ripple.y}px`,
+                                            animationDelay: `${ripple.delay || 0}s`
+                                        }}
+                                    />
+                                ))}
                                 <DigitalDisintegration 
                                     isHiding={hidingGlobalMovies.has(movie.link)} 
                                     onAnimationComplete={() => handleHideGlobalMovie(movie.link)}
+                                    style={{
+                                        position: 'relative',
+                                        width: '100%',
+                                        height: '100%',
+                                        borderRadius: 'inherit',
+                                        overflow: hidingGlobalMovies.has(movie.link) ? 'visible' : 'hidden'
+                                    }}
                                 >
                                 {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
-                                    <Fragment key={ripple.id}>
-                                        <div
-                                            className="watch-ripple"
-                                            style={{
-                                                left: ripple.x,
-                                                top: ripple.y,
-                                                animationDelay: `${ripple.delay || 0}s`,
-                                                '--ripple-color': ripple.color
-                                            }}
-                                        />
-                                        <div
-                                            className="card-edge-glow"
-                                            style={{
-                                                '--click-x': `${ripple.x}px`,
-                                                '--click-y': `${ripple.y}px`,
-                                                animationDelay: `${ripple.delay || 0}s`
-                                            }}
-                                        />
-                                    </Fragment>
+                                    <div
+                                        key={`wave-${ripple.id}`}
+                                        className="watch-ripple"
+                                        style={{
+                                            left: ripple.x,
+                                            top: ripple.y,
+                                            animationDelay: `${ripple.delay || 0}s`,
+                                            '--ripple-color': ripple.color
+                                        }}
+                                    />
                                 ))}
                                 {isDeleting && (
                                     <motion.div
@@ -3955,11 +3964,22 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     style={{
                                         position: 'relative',
                                         borderRadius: '16px',
-                                        overflow: hidingGlobalMovies.has(movie.link) ? 'visible' : 'hidden',
+                                        overflow: 'visible',
                                         aspectRatio: '2/3',
                                         animation: 'fadeIn 0.4s ease',
                                     }}
                                 >
+                                    {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
+                                        <div
+                                            key={`glow-${ripple.id}`}
+                                            className="card-edge-glow"
+                                            style={{
+                                                '--click-x': `${ripple.x}px`,
+                                                '--click-y': `${ripple.y}px`,
+                                                animationDelay: `${ripple.delay || 0}s`
+                                            }}
+                                        />
+                                    ))}
                                     <DigitalDisintegration 
                                         isHiding={hidingGlobalMovies.has(movie.link)} 
                                         onAnimationComplete={() => handleHideGlobalMovie(movie.link)}
@@ -3987,25 +4007,16 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         }}
                                     >
                                     {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
-                                        <Fragment key={ripple.id}>
-                                            <div
-                                                className="watch-ripple"
-                                                style={{
-                                                    left: ripple.x,
-                                                    top: ripple.y,
-                                                    animationDelay: `${ripple.delay || 0}s`,
-                                                    '--ripple-color': ripple.color
-                                                }}
-                                            />
-                                            <div
-                                                className="card-edge-glow"
-                                                style={{
-                                                    '--click-x': `${ripple.x}px`,
-                                                    '--click-y': `${ripple.y}px`,
-                                                    animationDelay: `${ripple.delay || 0}s`
-                                                }}
-                                            />
-                                        </Fragment>
+                                        <div
+                                            key={`wave-${ripple.id}`}
+                                            className="watch-ripple"
+                                            style={{
+                                                left: ripple.x,
+                                                top: ripple.y,
+                                                animationDelay: `${ripple.delay || 0}s`,
+                                                '--ripple-color': ripple.color
+                                            }}
+                                        />
                                     ))}
                                     {/* Poster Image */}
                                     <img

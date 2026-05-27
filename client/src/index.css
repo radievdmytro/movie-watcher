@@ -1474,13 +1474,8 @@ body.hide-header-search .app-header {
     pointer-events: none;
     z-index: 55;
     
-    /* RGB Split with a slight glow on the card inner edges (barely noticeable) */
-    box-shadow: 
-        inset 2px 0 10px rgba(255, 0, 128, 0.3),
-        inset -2px 0 10px rgba(0, 255, 255, 0.3),
-        inset 0 2px 10px rgba(255, 0, 128, 0.2),
-        inset 0 -2px 10px rgba(0, 255, 255, 0.2);
-        
+    /* Expanding mask on the oversized wrapper */
+    /* We must offset the center of the mask by 40px because the wrapper is shifted by -40px relative to the card */
     mask-image: radial-gradient(circle, transparent 20%, black 50%, transparent 80%);
     -webkit-mask-image: radial-gradient(circle, transparent 20%, black 50%, transparent 80%);
     mask-repeat: no-repeat;
@@ -1489,19 +1484,50 @@ body.hide-header-search .app-header {
     animation: edgeGlowExpand 0.7s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
 }
 
+.card-edge-glow::after {
+    content: '';
+    position: absolute;
+    /* Put the actual box exactly on the card edges (reverses the -40px inset) */
+    inset: 40px; 
+    border-radius: 16px; /* Match card border radius */
+    
+    /* Chromatic Aberration / Light scatter bleeding outside the card */
+    box-shadow: 
+        -4px 0 8px rgba(255, 0, 128, 1),
+        -10px 0 10px rgba(255, 0, 0, 0.9),
+        -16px 0 15px rgba(0, 255, 0, 0.8),
+        -22px 0 20px rgba(0, 100, 255, 0.7),
+        
+        4px 0 8px rgba(255, 0, 128, 1),
+        10px 0 10px rgba(255, 0, 0, 0.9),
+        16px 0 15px rgba(0, 255, 0, 0.8),
+        22px 0 20px rgba(0, 100, 255, 0.7),
+        
+        0 -4px 8px rgba(255, 0, 128, 1),
+        0 -10px 10px rgba(255, 0, 0, 0.9),
+        0 -16px 15px rgba(0, 255, 0, 0.8),
+        0 -22px 20px rgba(0, 100, 255, 0.7),
+        
+        0 4px 8px rgba(255, 0, 128, 1),
+        0 10px 10px rgba(255, 0, 0, 0.9),
+        0 16px 15px rgba(0, 255, 0, 0.8),
+        0 22px 20px rgba(0, 100, 255, 0.7);
+}
+
 @keyframes edgeGlowExpand {
     0% {
         mask-size: 0px 0px;
-        mask-position: var(--click-x) var(--click-y);
+        mask-position: calc(var(--click-x) + 40px) calc(var(--click-y) + 40px);
         -webkit-mask-size: 0px 0px;
-        -webkit-mask-position: var(--click-x) var(--click-y);
+        -webkit-mask-position: calc(var(--click-x) + 40px) calc(var(--click-y) + 40px);
         opacity: 1;
     }
     100% {
+        /* Keep it 1000px so we shift by half of that (500px) */
         mask-size: 1000px 1000px;
-        mask-position: calc(var(--click-x) - 500px) calc(var(--click-y) - 500px);
+        mask-position: calc(var(--click-x) + 40px - 500px) calc(var(--click-y) + 40px - 500px);
         -webkit-mask-size: 1000px 1000px;
-        -webkit-mask-position: calc(var(--click-x) - 500px) calc(var(--click-y) - 500px);
+        -webkit-mask-position: calc(var(--click-x) + 40px - 500px) calc(var(--click-y) + 40px - 500px);
         opacity: 0;
     }
 }
