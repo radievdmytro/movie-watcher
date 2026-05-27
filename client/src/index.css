@@ -1664,8 +1664,8 @@ body.hide-header-search .app-header {
         inset 0 0 80px rgba(255, 255, 255, 0.6),
         0 0 80px rgba(var(--ripple-color), 1.0);
     
-    mask-image: radial-gradient(circle, transparent 40%, black 55%, transparent 70%);
-    -webkit-mask-image: radial-gradient(circle, transparent 40%, black 55%, transparent 70%);
+    mask-image: radial-gradient(circle, transparent 0%, black 50%, transparent 100%);
+    -webkit-mask-image: radial-gradient(circle, transparent 0%, black 50%, transparent 100%);
     
     mask-repeat: no-repeat;
     -webkit-mask-repeat: no-repeat;
