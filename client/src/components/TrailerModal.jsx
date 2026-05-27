@@ -104,12 +104,12 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
         <>
             <style>{`
                 @keyframes trailerFlyIn3D {
-                    from { opacity: 0; transform: translate3d(0, 40px, -50px) rotateX(-10deg); }
-                    to { opacity: 1; transform: translate3d(0, 0, 0) rotateX(0); }
+                    0% { opacity: 0; transform: scale(0.6) translateZ(-100px) translateY(50px) rotateX(-15deg); }
+                    100% { opacity: 1; transform: scale(1) translateZ(0) translateY(0) rotateX(0); }
                 }
                 @keyframes trailerDropIn2D {
-                    from { opacity: 0; transform: translateY(-20px); }
-                    to { opacity: 1; transform: translateY(0); }
+                    0% { opacity: 0; transform: translateY(-40px); }
+                    100% { opacity: 1; transform: translateY(0); }
                 }
             `}</style>
             <div style={{
