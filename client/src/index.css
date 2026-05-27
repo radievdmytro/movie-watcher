@@ -1454,14 +1454,10 @@ body.hide-header-search .app-header {
     backdrop-filter: blur(4px) saturate(1.3) brightness(1.15);
     -webkit-backdrop-filter: blur(4px) saturate(1.3) brightness(1.15);
     
-    /* Make the tint very visible */
     background: rgba(var(--ripple-color), 0.15);
     box-shadow: 
         inset 0 0 40px rgba(var(--ripple-color), 0.4),
-        0 0 40px rgba(var(--ripple-color), 0.5),
-        /* RGB Split with glow that naturally hits the card edges */
-        -15px 0 25px rgba(255, 0, 128, 0.6), 
-        15px 0 25px rgba(0, 255, 255, 0.6);
+        0 0 40px rgba(var(--ripple-color), 0.5);
     
     /* Create a ring shape again to make the center completely transparent */
     mask-image: radial-gradient(circle, transparent 40%, black 55%, transparent 70%);
@@ -1470,6 +1466,44 @@ body.hide-header-search .app-header {
     pointer-events: none;
     z-index: 50;
     animation: rippleExpand 1.2s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+}
+
+.card-edge-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 55;
+    
+    /* RGB Split with a slight glow on the card inner edges */
+    box-shadow: 
+        inset 5px 0 20px rgba(255, 0, 128, 0.8),
+        inset -5px 0 20px rgba(0, 255, 255, 0.8),
+        inset 0 5px 20px rgba(255, 0, 128, 0.5),
+        inset 0 -5px 20px rgba(0, 255, 255, 0.5);
+        
+    mask-image: radial-gradient(circle, transparent 20%, black 50%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle, transparent 20%, black 50%, transparent 80%);
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+    
+    animation: edgeGlowExpand 1.2s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes edgeGlowExpand {
+    0% {
+        mask-size: 0px 0px;
+        mask-position: var(--click-x) var(--click-y);
+        -webkit-mask-size: 0px 0px;
+        -webkit-mask-position: var(--click-x) var(--click-y);
+        opacity: 1;
+    }
+    100% {
+        mask-size: 1000px 1000px;
+        mask-position: calc(var(--click-x) - 500px) calc(var(--click-y) - 500px);
+        -webkit-mask-size: 1000px 1000px;
+        -webkit-mask-position: calc(var(--click-x) - 500px) calc(var(--click-y) - 500px);
+        opacity: 0;
+    }
 }
 
 @keyframes rippleExpand {

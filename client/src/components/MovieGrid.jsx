@@ -3044,16 +3044,25 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     onAnimationComplete={() => handleHideGlobalMovie(movie.link)}
                                 >
                                 {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
-                                    <div
-                                        key={ripple.id}
-                                        className="watch-ripple"
-                                        style={{
-                                            left: ripple.x,
-                                            top: ripple.y,
-                                            animationDelay: `${ripple.delay || 0}s`,
-                                            '--ripple-color': ripple.color
-                                        }}
-                                    />
+                                    <React.Fragment key={ripple.id}>
+                                        <div
+                                            className="watch-ripple"
+                                            style={{
+                                                left: ripple.x,
+                                                top: ripple.y,
+                                                animationDelay: `${ripple.delay || 0}s`,
+                                                '--ripple-color': ripple.color
+                                            }}
+                                        />
+                                        <div
+                                            className="card-edge-glow"
+                                            style={{
+                                                '--click-x': `${ripple.x}px`,
+                                                '--click-y': `${ripple.y}px`,
+                                                animationDelay: `${ripple.delay || 0}s`
+                                            }}
+                                        />
+                                    </React.Fragment>
                                 ))}
                                 {isDeleting && (
                                     <motion.div
@@ -3979,16 +3988,25 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         }}
                                     >
                                     {ripples.filter(r => r.identifier === (movie.id || movie.link)).map(ripple => (
-                                        <div
-                                            key={ripple.id}
-                                            className="watch-ripple"
-                                            style={{
-                                                left: ripple.x,
-                                                top: ripple.y,
-                                                animationDelay: `${ripple.delay || 0}s`,
-                                                '--ripple-color': ripple.color
-                                            }}
-                                        />
+                                        <React.Fragment key={ripple.id}>
+                                            <div
+                                                className="watch-ripple"
+                                                style={{
+                                                    left: ripple.x,
+                                                    top: ripple.y,
+                                                    animationDelay: `${ripple.delay || 0}s`,
+                                                    '--ripple-color': ripple.color
+                                                }}
+                                            />
+                                            <div
+                                                className="card-edge-glow"
+                                                style={{
+                                                    '--click-x': `${ripple.x}px`,
+                                                    '--click-y': `${ripple.y}px`,
+                                                    animationDelay: `${ripple.delay || 0}s`
+                                                }}
+                                            />
+                                        </React.Fragment>
                                     ))}
                                     {/* Poster Image */}
                                     <img
