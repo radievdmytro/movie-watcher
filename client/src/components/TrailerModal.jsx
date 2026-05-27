@@ -76,10 +76,10 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 const eraseDurationMs = 27 * 40 + 200;
                 const exitTimer = setTimeout(() => {
                     setIsTypewriterExiting(true);
-                    // Pixel scatter animation lasts ~1s, then mark as done
+                    // Pixel scatter animation lasts up to ~3s (0.6s delay + 2.2s duration), then mark as done
                     const doneTimer = setTimeout(() => {
                         setTypewriterDone(true);
-                    }, 1000);
+                    }, 3000);
                     return () => clearTimeout(doneTimer);
                 }, eraseDurationMs);
                 

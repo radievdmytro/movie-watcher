@@ -97,14 +97,16 @@ export default function TypewriterLoader({ text = "Searching trailers...", isExi
                 
                 {isExiting ? (
                     <span className="typewriter-pixel-disintegration-container" style={{ position: 'relative', display: 'inline-block', width: '16px', height: '32px', marginLeft: '4px', verticalAlign: 'middle' }}>
-                        {Array.from({ length: 24 }).map((_, i) => {
+                        {Array.from({ length: 36 }).map((_, i) => {
                             const x = Math.random() * 16;
                             const y = Math.random() * 32;
-                            const dx = (Math.random() - 0.5) * 80; // scatter horizontal
-                            const dy = -Math.random() * 60 - 10; // scatter upwards
-                            const size = Math.floor(Math.random() * 3) + 2; // 2px to 4px
-                            const delay = Math.random() * 0.15; // staggered start
-                            const duration = 0.5 + Math.random() * 0.4; // 0.5s to 0.9s duration
+                            const angle = Math.random() * Math.PI * 2; // full 360°
+                            const distance = 60 + Math.random() * 100; // 60–160px travel
+                            const dx = Math.cos(angle) * distance;
+                            const dy = Math.sin(angle) * distance - 30; // bias upward
+                            const size = Math.floor(Math.random() * 3) + 1; // 1px to 3px
+                            const delay = Math.random() * 0.6; // wide stagger 0–0.6s
+                            const duration = 1.4 + Math.random() * 0.8; // 1.4s to 2.2s
                             
                             return (
                                 <span 
@@ -116,9 +118,10 @@ export default function TypewriterLoader({ text = "Searching trailers...", isExi
                                         width: `${size}px`,
                                         height: `${size}px`,
                                         backgroundColor: 'var(--accent-gold, #ff9900)',
-                                        boxShadow: '0 0 4px var(--accent-gold, #ff9900)',
+                                        boxShadow: `0 0 ${size + 2}px var(--accent-gold, #ff9900)`,
                                         borderRadius: '1px',
-                                        animation: `pixelScatter ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delay}s forwards`,
+                                        // ease-in: slow start → accelerate → gone
+                                        animation: `pixelScatter ${duration}s cubic-bezier(0.4, 0, 1, 1) ${delay}s both`,
                                         '--dx': `${dx}px`,
                                         '--dy': `${dy}px`,
                                     }}
