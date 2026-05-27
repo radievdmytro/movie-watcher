@@ -1629,28 +1629,39 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             {activeTab === 'reviews' && (
                                 <div style={{ animation: 'fadeIn 0.25s ease-out', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                     {/* Congratulations Alert Banner for marking Watched */}
-                                    {showWatchedPrompt && !readOnly && !isTrashMode && (
+                                    {!readOnly && !isTrashMode && (
                                         <div style={{
-                                            background: 'rgba(3, 218, 198, 0.08)',
-                                            border: '1px solid rgba(3, 218, 198, 0.25)',
-                                            padding: '15px 20px',
-                                            borderRadius: '8px',
-                                            color: '#fff',
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            fontSize: '0.95rem'
+                                            display: 'grid',
+                                            gridTemplateRows: showWatchedPrompt ? '1fr' : '0fr',
+                                            opacity: showWatchedPrompt ? 1 : 0,
+                                            marginBottom: showWatchedPrompt ? '0px' : '-20px',
+                                            pointerEvents: showWatchedPrompt ? 'auto' : 'none',
+                                            transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
                                         }}>
-                                            <div>
-                                                <span style={{ fontSize: '1.2rem', marginRight: '10px' }}>🎉</span>
-                                                <strong>Congratulations!</strong> You have watched this movie! Rate it and write a review below.
+                                            <div style={{ overflow: 'hidden' }}>
+                                                <div style={{
+                                                    background: 'rgba(3, 218, 198, 0.08)',
+                                                    border: '1px solid rgba(3, 218, 198, 0.25)',
+                                                    padding: '15px 20px',
+                                                    borderRadius: '8px',
+                                                    color: '#fff',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    fontSize: '0.95rem'
+                                                }}>
+                                                    <div>
+                                                        <span style={{ fontSize: '1.2rem', marginRight: '10px' }}>🎉</span>
+                                                        <strong>Congratulations!</strong> You have watched this movie! Rate it and write a review below.
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setShowWatchedPrompt(false)}
+                                                        style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '1.2rem' }}
+                                                    >
+                                                        &times;
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <button
-                                                onClick={() => setShowWatchedPrompt(false)}
-                                                style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '1.2rem' }}
-                                            >
-                                                &times;
-                                            </button>
                                         </div>
                                     )}
 
