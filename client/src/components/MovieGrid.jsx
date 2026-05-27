@@ -564,11 +564,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
     const addRipple = (identifier, x, y, isWatchedAction = true) => {
         const id1 = Date.now() + Math.random();
-        const color = isWatchedAction ? '255, 0, 128' : '255, 0, 128'; // Pink wave
+        const color = isWatchedAction ? '0, 255, 200' : '255, 120, 0'; // Vibrant Mint vs Vibrant Orange
         setRipples(prev => [...prev, { id: id1, identifier, x, y, color, delay: 0 }]);
         setTimeout(() => {
             setRipples(prev => prev.filter(r => r.id !== id1));
-        }, 1600);
+        }, 2000);
     };
     const [hideWatched, setHideWatched] = useState(() => {
         const stored = localStorage.getItem('movieGrid_hideWatched');
