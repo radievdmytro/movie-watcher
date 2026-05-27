@@ -4,6 +4,12 @@
     justify-content: center;
     width: 100%;
     height: 100%;
+    /* Simple opacity fade — no blur, no transform */
+    transition: opacity 0.9s ease;
+}
+
+.typewriter-container.exiting {
+    opacity: 0;
 }
 
 .typewriter-text {
@@ -74,75 +80,6 @@
 
 @keyframes blinker {
     50% {
-        opacity: 0;
-    }
-}
-
-/* Each character explodes outward in its own direction */
-@keyframes charDisintegrate {
-    0% {
-        transform: translate(0, 0) scale(1);
-        filter: blur(0px);
-        opacity: 1;
-    }
-    /* Slow start — barely moves */
-    12% {
-        transform: translate(
-            calc(var(--cdx) * 0.03),
-            calc(var(--cdy) * 0.03)
-        ) scale(1);
-        filter: blur(0.5px);
-        opacity: 1;
-    }
-    /* Accelerating */
-    45% {
-        transform: translate(
-            calc(var(--cdx) * 0.25),
-            calc(var(--cdy) * 0.25)
-        ) scale(0.8);
-        filter: blur(3px);
-        opacity: 0.75;
-    }
-    /* Fading fast */
-    75% {
-        opacity: 0.25;
-        filter: blur(6px);
-    }
-    100% {
-        transform: translate(var(--cdx), var(--cdy)) scale(0);
-        filter: blur(10px);
-        opacity: 0;
-    }
-}
-
-/* Pixel sparks fly off */
-@keyframes pixelScatter {
-    0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 1;
-    }
-    /* Slow start — barely moves, stays bright */
-    15% {
-        transform: translate(
-            calc(var(--dx) * 0.04),
-            calc(var(--dy) * 0.04)
-        ) scale(1);
-        opacity: 1;
-    }
-    /* Mid acceleration */
-    50% {
-        transform: translate(
-            calc(var(--dx) * 0.3),
-            calc(var(--dy) * 0.3)
-        ) scale(0.7);
-        opacity: 0.8;
-    }
-    /* Fading out fast at the end */
-    80% {
-        opacity: 0.3;
-    }
-    100% {
-        transform: translate(var(--dx), var(--dy)) scale(0);
         opacity: 0;
     }
 }

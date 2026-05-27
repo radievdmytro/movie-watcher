@@ -47,7 +47,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
             ? "Trailers successfully found."
             : "Searching trailers..."
     );
-    const [isTypewriterDisintegrating, setIsTypewriterDisintegrating] = useState(false);
+    const [isTypewriterExiting, setIsTypewriterExiting] = useState(false);
     const [typewriterDone, setTypewriterDone] = useState(false);
 
     useEffect(() => {
@@ -66,20 +66,26 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
             const animationDurationMs = 800;
             const totalAnimationTimeMs = (results.length - 1) * cardDelayMs + animationDurationMs;
             
-            // 3 seconds after all cards have appeared → full disintegration (no erase step)
-            const delayMs = totalAnimationTimeMs + 3000;
+            // Wait 3 seconds after all results were shown
+            const delayBeforeErasingMs = totalAnimationTimeMs + 3000;
             
-            const disintegrateTimer = setTimeout(() => {
-                setIsTypewriterDisintegrating(true);
-                // charDisintegrate max: 0.8s delay + 1.55s duration ≈ 2.4s
-                // pixelScatter max:    0.8s delay + 2.2s duration  ≈ 3.0s
-                const doneTimer = setTimeout(() => {
-                    setTypewriterDone(true);
-                }, 3200);
-                return () => clearTimeout(doneTimer);
-            }, delayMs);
+            const eraseTimer = setTimeout(() => {
+                setTypewriterText("");
+                
+                // "Trailers successfully found." has 27 chars, erasing at 40ms/char
+                const eraseDurationMs = 27 * 40 + 200;
+                const exitTimer = setTimeout(() => {
+                    setIsTypewriterExiting(true);
+                    const doneTimer = setTimeout(() => {
+                        setTypewriterDone(true);
+                    }, 1000); // 1 second for the fade transition to finish
+                    return () => clearTimeout(doneTimer);
+                }, eraseDurationMs);
+                
+                return () => clearTimeout(exitTimer);
+            }, delayBeforeErasingMs);
             
-            return () => clearTimeout(disintegrateTimer);
+            return () => clearTimeout(eraseTimer);
         }
     }, [loading, results]);
 
@@ -275,7 +281,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                         transition: 'opacity 0.1s'
                                     }}>
                                         <div style={{ pointerEvents: 'none', padding: '10px 20px' }}>
-                                            <TypewriterLoader text={typewriterText} isDisintegrating={isTypewriterDisintegrating} />
+                                            <TypewriterLoader text={typewriterText} isExiting={isTypewriterExiting} />
                                         </div>
                                     </div>
                                 )}
