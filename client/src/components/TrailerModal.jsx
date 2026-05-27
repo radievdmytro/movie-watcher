@@ -48,6 +48,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
             : "Searching trailers..."
     );
     const [isTypewriterExiting, setIsTypewriterExiting] = useState(false);
+    const [typewriterDone, setTypewriterDone] = useState(false);
 
     useEffect(() => {
         prefetchSettings().then(data => {
@@ -71,12 +72,18 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
             const eraseTimer = setTimeout(() => {
                 setTypewriterText("");
                 
-                const eraseDurationMs = 27 * 40 + 200; // "Trailers successfully found." has 27 chars, erasing takes 40ms/char
-                const fadeOutTimer = setTimeout(() => {
+                // "Trailers successfully found." has 27 chars, erasing at 40ms/char
+                const eraseDurationMs = 27 * 40 + 200;
+                const exitTimer = setTimeout(() => {
                     setIsTypewriterExiting(true);
+                    // Pixel scatter animation lasts ~1s, then mark as done
+                    const doneTimer = setTimeout(() => {
+                        setTypewriterDone(true);
+                    }, 1000);
+                    return () => clearTimeout(doneTimer);
                 }, eraseDurationMs);
                 
-                return () => clearTimeout(fadeOutTimer);
+                return () => clearTimeout(exitTimer);
             }, delayBeforeErasingMs);
             
             return () => {
@@ -270,9 +277,13 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                         zIndex: 10,
                                         paddingTop: '10px',
                                         paddingBottom: '20px',
-                                        marginBottom: '20px'
+                                        marginBottom: '20px',
+                                        // Keep in layout even after done — just invisible
+                                        opacity: typewriterDone ? 0 : 1,
+                                        visibility: typewriterDone ? 'hidden' : 'visible',
+                                        transition: 'opacity 0.1s'
                                     }}>
-                                        <div style={{ pointerEvents: isTypewriterExiting ? 'none' : 'auto', padding: '10px 20px' }}>
+                                        <div style={{ pointerEvents: 'none', padding: '10px 20px' }}>
                                             <TypewriterLoader text={typewriterText} isExiting={isTypewriterExiting} />
                                         </div>
                                     </div>
