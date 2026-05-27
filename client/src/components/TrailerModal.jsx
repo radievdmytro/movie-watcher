@@ -236,7 +236,10 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
 
                                 {!loading && !error && results.length > 0 && (
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
-                                    {results.map(video => (
+                                    {results.map((video, index) => {
+                                        const animationName = matrixAnimationType === '3D' ? 'trailerFlyIn3D' : 'trailerDropIn2D';
+                                        const delay = index * 0.15; // slightly faster than 0.2s for snappier feel, but close to request
+                                        return (
                                         <div 
                                             key={video.id}
                                             onClick={() => setActiveVideoId(video.id)}
@@ -248,7 +251,10 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                                 border: '1px solid rgba(255,255,255,0.05)',
                                                 transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
                                                 display: 'flex',
-                                                flexDirection: 'column'
+                                                flexDirection: 'column',
+                                                opacity: 0,
+                                                animation: `${animationName} 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
+                                                animationDelay: `${delay}s`
                                             }}
                                             onMouseEnter={e => {
                                                 e.currentTarget.style.transform = 'translateY(-4px)';
@@ -289,7 +295,8 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                             </div>

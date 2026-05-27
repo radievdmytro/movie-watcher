@@ -1723,3 +1723,27 @@ body.hide-header-search .app-header {
         opacity: 0;
     }
 }
+
+@keyframes trailerFlyIn3D {
+    0% {
+        opacity: 0;
+        filter: blur(12px);
+        transform: scale(0.6);
+    }
+    100% {
+        opacity: 1;
+        filter: blur(0px);
+        transform: scale(1);
+    }
+}
+
+@keyframes trailerDropIn2D {
+    0% {
+        opacity: 0;
+        transform: translateY(-40px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
