@@ -240,33 +240,39 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                         const animationName = matrixAnimationType === '3D' ? 'trailerFlyIn3D' : 'trailerDropIn2D';
                                         const delay = index * 0.15; // slightly faster than 0.2s for snappier feel, but close to request
                                         return (
-                                        <div 
+                                        <div
                                             key={video.id}
-                                            onClick={() => setActiveVideoId(video.id)}
                                             style={{
-                                                background: 'rgba(0,0,0,0.3)',
-                                                borderRadius: '12px',
-                                                overflow: 'hidden',
-                                                cursor: 'pointer',
-                                                border: '1px solid rgba(255,255,255,0.05)',
-                                                transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
-                                                display: 'flex',
-                                                flexDirection: 'column',
                                                 opacity: 0,
                                                 animation: `${animationName} 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
-                                                animationDelay: `${delay}s`
-                                            }}
-                                            onMouseEnter={e => {
-                                                e.currentTarget.style.transform = 'translateY(-4px)';
-                                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-                                                e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.4)';
-                                            }}
-                                            onMouseLeave={e => {
-                                                e.currentTarget.style.transform = 'none';
-                                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
-                                                e.currentTarget.style.boxShadow = 'none';
+                                                animationDelay: `${delay}s`,
+                                                height: '100%'
                                             }}
                                         >
+                                            <div 
+                                                onClick={() => setActiveVideoId(video.id)}
+                                                style={{
+                                                    background: 'rgba(0,0,0,0.3)',
+                                                    borderRadius: '12px',
+                                                    overflow: 'hidden',
+                                                    cursor: 'pointer',
+                                                    border: '1px solid rgba(255,255,255,0.05)',
+                                                    transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    height: '100%'
+                                                }}
+                                                onMouseEnter={e => {
+                                                    e.currentTarget.style.transform = 'translateY(-4px)';
+                                                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                                                    e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.4)';
+                                                }}
+                                                onMouseLeave={e => {
+                                                    e.currentTarget.style.transform = 'none';
+                                                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+                                                    e.currentTarget.style.boxShadow = 'none';
+                                                }}
+                                            >
                                             <div style={{ position: 'relative', paddingTop: '56.25%' }}>
                                                 <img 
                                                     src={video.thumbnail} 
@@ -294,6 +300,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                                     <span>{video.views > 1000 ? Math.floor(video.views / 1000) + 'k views' : video.views + ' views'}</span>
                                                 </div>
                                             </div>
+                                        </div>
                                         </div>
                                         );
                                     })}
