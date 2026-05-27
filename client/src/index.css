@@ -1682,8 +1682,11 @@ body.hide-header-search .app-header {
                 inset 0 0 30px rgba(var(--ripple-color), 0.5);
     z-index: 20;
     
-    mask-image: radial-gradient(circle, black 0%, black 60%, transparent 100%);
-    -webkit-mask-image: radial-gradient(circle, black 0%, black 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, transparent 40%, black 60%, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 40%, black 60%, black 100%);
+    
+    mask-size: 100% 300%;
+    -webkit-mask-size: 100% 300%;
     
     mask-repeat: no-repeat;
     -webkit-mask-repeat: no-repeat;
@@ -1707,20 +1710,16 @@ body.hide-header-search .app-header {
 
 @keyframes modalEdgeGlowSmoothExpand {
     0% {
-        mask-size: 0px 0px;
-        mask-position: calc(var(--ripple-x)) calc(var(--ripple-y));
-        -webkit-mask-size: 0px 0px;
-        -webkit-mask-position: calc(var(--ripple-x)) calc(var(--ripple-y));
+        mask-position: 0% 0%;
+        -webkit-mask-position: 0% 0%;
         opacity: 0;
     }
     50% {
         opacity: 1;
     }
     100% {
-        mask-size: 3000px 3000px;
-        mask-position: calc(var(--ripple-x) - 1500px) calc(var(--ripple-y) - 1500px);
-        -webkit-mask-size: 3000px 3000px;
-        -webkit-mask-position: calc(var(--ripple-x) - 1500px) calc(var(--ripple-y) - 1500px);
+        mask-position: 0% 100%;
+        -webkit-mask-position: 0% 100%;
         opacity: 0;
     }
 }
