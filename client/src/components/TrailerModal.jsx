@@ -118,14 +118,16 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '16px',
                 width: '100%',
-                maxWidth: '900px',
-                height: '85vh',
+                maxWidth: loading ? '600px' : '900px',
+                height: 'auto',
+                minHeight: loading ? '400px' : 'unset',
                 maxHeight: '90vh',
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
                 overflow: 'hidden',
-                animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                transition: 'max-width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), min-height 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)'
             }} onClick={e => e.stopPropagation()}>
                 
                 {/* Header */}
@@ -201,9 +203,9 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                             {settingsLoaded && (
                                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 }}>
                                     {matrixAnimationType === '3D' ? (
-                                        <MatrixRain stopping={!loading} textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
+                                        <MatrixRain stopping={showResults} textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
                                     ) : (
-                                        <MatrixRain2D stopping={!loading} textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
+                                        <MatrixRain2D stopping={showResults} textSource={useSloganInMatrix ? APP_SLOGAN : ''} color="var(--accent-gold)" customPhrases={matrixPhrases} />
                                     )}
                                 </div>
                             )}
