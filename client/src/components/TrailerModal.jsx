@@ -117,13 +117,15 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '16px',
                 width: '100%',
-                maxWidth: '900px',
+                maxWidth: loading ? '450px' : '900px',
+                height: loading ? '320px' : '85vh',
                 maxHeight: '90vh',
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
                 overflow: 'hidden',
-                animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                transition: 'max-width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)'
             }} onClick={e => e.stopPropagation()}>
                 
                 {/* Header */}
@@ -208,7 +210,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
 
                             <div style={{ position: 'relative', zIndex: 1, minHeight: '100%' }}>
                                 {loading && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '16px', overflow: 'hidden', minHeight: '300px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '16px', overflow: 'hidden' }}>
                                         <div style={{
                                             position: 'relative',
                                             zIndex: 1,
