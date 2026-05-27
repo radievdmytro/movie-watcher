@@ -1458,7 +1458,10 @@ body.hide-header-search .app-header {
     background: rgba(var(--ripple-color), 0.15);
     box-shadow: 
         inset 0 0 40px rgba(var(--ripple-color), 0.4),
-        0 0 40px rgba(var(--ripple-color), 0.5);
+        0 0 40px rgba(var(--ripple-color), 0.5),
+        /* RGB Split with glow that naturally hits the card edges */
+        -15px 0 25px rgba(255, 0, 128, 0.6), 
+        15px 0 25px rgba(0, 255, 255, 0.6);
     
     /* Create a ring shape again to make the center completely transparent */
     mask-image: radial-gradient(circle, transparent 40%, black 55%, transparent 70%);
@@ -1466,7 +1469,7 @@ body.hide-header-search .app-header {
     
     pointer-events: none;
     z-index: 50;
-    animation: rippleExpand 1s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+    animation: rippleExpand 1.2s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
 }
 
 @keyframes rippleExpand {
