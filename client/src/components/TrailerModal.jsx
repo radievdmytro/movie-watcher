@@ -41,6 +41,18 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     const [useSloganInMatrix, setUseSloganInMatrix] = useState(true);
     const [matrixAnimationType, setMatrixAnimationType] = useState('3D');
     const [settingsLoaded, setSettingsLoaded] = useState(false);
+    const [showResults, setShowResults] = useState(() => Array.isArray(preloadedTrailers));
+
+    useEffect(() => {
+        if (!loading && !error && results.length > 0) {
+            const timer = setTimeout(() => {
+                setShowResults(true);
+            }, 600); // Wait for modal expansion transition
+            return () => clearTimeout(timer);
+        } else if (loading) {
+            setShowResults(false);
+        }
+    }, [loading, error, results.length]);
 
     useEffect(() => {
         prefetchSettings().then(data => {
@@ -229,7 +241,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                     </div>
                                 )}
 
-                                {!loading && !error && results.length > 0 && (
+                                {showResults && !error && results.length > 0 && (
                                     <div key={matrixAnimationType} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
                                     {results.map((video, index) => {
                                         const animationName = matrixAnimationType === '3D' ? 'trailerFlyIn3D' : 'trailerDropIn2D';
