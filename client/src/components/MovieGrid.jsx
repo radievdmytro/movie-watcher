@@ -3011,7 +3011,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 className={`glass-panel movie-card${isHighlighted ? ' movie-highlight-pulse' : ''}`}
                                 style={{
                                     position: 'relative',
-                                    overflow: 'hidden',
+                                    overflow: hidingGlobalMovies.has(movie.link) ? 'visible' : 'hidden',
                                     border: isHighlighted
                                         ? '2px solid var(--accent-gold)'
                                         : selectedIds.includes(movie.id)
@@ -3937,7 +3937,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     style={{
                                         position: 'relative',
                                         borderRadius: '16px',
-                                        overflow: 'hidden',
+                                        overflow: hidingGlobalMovies.has(movie.link) ? 'visible' : 'hidden',
                                         aspectRatio: '2/3',
                                         animation: 'fadeIn 0.4s ease',
                                     }}
@@ -3950,7 +3950,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             width: '100%',
                                             position: 'relative',
                                             borderRadius: '16px',
-                                            overflow: 'hidden',
+                                            overflow: hidingGlobalMovies.has(movie.link) ? 'visible' : 'hidden',
                                             boxShadow: hoveredCardLink === movie.link
                                                 ? '0 6px 20px rgba(168, 85, 247, 0.25)'
                                                 : '0 4px 20px rgba(0,0,0,0.3)',

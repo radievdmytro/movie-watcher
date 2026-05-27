@@ -60,7 +60,7 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
                 }
                 transition={{ duration: 0.3 }}
                 className={phase > 0 && phase < 3 ? 'glitch-anim' : ''}
-                style={{ width: '100%', height: '100%', position: 'relative' }}
+                style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', borderRadius: 'inherit' }}
             >
                 {/* Clone the children but hide overflow if needed, wait children are the movie card */}
                 {children}
