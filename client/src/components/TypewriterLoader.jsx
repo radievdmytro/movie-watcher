@@ -27,9 +27,11 @@ export default function TypewriterLoader({ text = "Searching trailers...", isExi
             if (phase === 'erasing') {
                 await new Promise(r => setTimeout(r, 300));
             } else if (currentText.length === 0) {
-                // 1. Initial blink only if starting from empty
-                setPhase('initial-blink');
-                await new Promise(r => setTimeout(r, 1000));
+                // 1. Initial blink only if starting from empty AND we are searching
+                if (text.includes("Searching")) {
+                    setPhase('initial-blink');
+                    await new Promise(r => setTimeout(r, 1000));
+                }
             }
 
             if (!isMounted) return;
