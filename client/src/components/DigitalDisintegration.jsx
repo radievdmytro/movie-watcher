@@ -88,15 +88,15 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
                     key={p.id}
                     initial={{ 
                         opacity: 1, 
-                        x: `${p.x}%`, 
-                        y: `${p.y}%`, 
+                        x: 0,
+                        y: 0,
                         scale: Math.random() * 0.5 + 0.5,
                         rotate: 0
                     }}
                     animate={{ 
                         opacity: 0, 
-                        x: `${p.x + p.targetX}%`, 
-                        y: `${p.y + p.targetY}%`,
+                        x: p.targetX, 
+                        y: p.targetY,
                         scale: 0,
                         rotate: Math.random() * 180 - 90
                     }}
@@ -107,6 +107,8 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
                     }}
                     style={{
                         position: 'absolute',
+                        left: `${p.x}%`,
+                        top: `${p.y}%`,
                         color: 'var(--neon-cyan)',
                         textShadow: '0 0 8px var(--electric-blue), 0 0 12px var(--neon-cyan)',
                         fontWeight: 'bold',
