@@ -7,6 +7,18 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
 
     useEffect(() => {
         if (isHiding) {
+            // Check if mobile device to avoid performance lag
+            const isMobile = window.innerWidth <= 768;
+
+            if (isMobile) {
+                // Fast simple animation for mobile
+                setPhase(4); // Trigger fade/scale out directly
+                const t = setTimeout(() => {
+                    if (onAnimationComplete) onAnimationComplete();
+                }, 300);
+                return () => clearTimeout(t);
+            }
+
             // Start Phase 1
             setPhase(1);
 
