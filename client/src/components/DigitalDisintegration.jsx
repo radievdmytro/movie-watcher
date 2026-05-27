@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style, className }) => {
     const [phase, setPhase] = useState(0); // 0: Idle, 1: Glitch & Bloom, 2: Slice & Noise, 3: Particles & Fade
-    const [particles, setParticles] = useState([]);
+    const wrapperRef = useRef(null);
 
     useEffect(() => {
         if (isHiding) {
@@ -17,27 +17,47 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
             const t2 = setTimeout(() => {
                 setPhase(3);
                 
-                // Generate 1 and 0 particles
-                const newParticles = [];
-                for (let i = 0; i < 20; i++) {
-                    newParticles.push({
-                        id: i,
-                        text: Math.random() > 0.5 ? '1' : '0',
-                        x: Math.random() * 100, // random start X %
-                        y: Math.random() * 100, // random start Y %
-                        targetX: Math.random() * 600 - 300, // fly 3x further horizontally
-                        targetY: -(Math.random() * 450 + 150), // fly 3x further up
-                        delay: Math.random() * 0.2,
-                        duration: 1.0 + Math.random() * 0.5 // longer life
-                    });
+                if (wrapperRef.current) {
+                    const rect = wrapperRef.current.getBoundingClientRect();
+                    for (let i = 0; i < 20; i++) {
+                        const span = document.createElement('span');
+                        span.textContent = Math.random() > 0.5 ? '1' : '0';
+                        span.style.position = 'fixed';
+                        span.style.left = `${rect.left + Math.random() * rect.width}px`;
+                        span.style.top = `${rect.top + Math.random() * rect.height}px`;
+                        span.style.color = 'var(--neon-cyan)';
+                        span.style.textShadow = '0 0 8px var(--electric-blue), 0 0 12px var(--neon-cyan)';
+                        span.style.fontWeight = 'bold';
+                        span.style.fontFamily = 'monospace';
+                        span.style.fontSize = '1.2rem';
+                        span.style.pointerEvents = 'none';
+                        span.style.zIndex = '999999';
+                        
+                        const targetX = Math.random() * 600 - 300;
+                        const targetY = -(Math.random() * 450 + 150);
+                        const duration = 1.0 + Math.random() * 0.5;
+                        const delay = Math.random() * 0.2;
+                        
+                        span.animate([
+                            { opacity: 1, transform: `translate(0px, 0px) scale(${Math.random() * 0.5 + 0.5}) rotate(0deg)` },
+                            { opacity: 0, transform: `translate(${targetX}px, ${targetY}px) scale(0) rotate(${Math.random() * 180 - 90}deg)` }
+                        ], {
+                            duration: duration * 1000,
+                            delay: delay * 1000,
+                            easing: 'ease-out',
+                            fill: 'forwards'
+                        });
+                        
+                        document.body.appendChild(span);
+                        setTimeout(() => span.remove(), (duration + delay) * 1000 + 100);
+                    }
                 }
-                setParticles(newParticles);
             }, 500);
 
-            // Finish (increased from 1000 to allow particles to live longer)
+            // Finish (trigger layout collapse 100ms after particles spawn)
             const t3 = setTimeout(() => {
                 if (onAnimationComplete) onAnimationComplete();
-            }, 1500);
+            }, 600);
 
             return () => {
                 clearTimeout(t1);
@@ -48,7 +68,7 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
     }, [isHiding, onAnimationComplete]);
 
     return (
-        <div className={`disintegration-wrapper ${className || ''}`} style={{ width: '100%', height: '100%', position: 'relative', ...style }}>
+        <div ref={wrapperRef} className={`disintegration-wrapper ${className || ''}`} style={{ width: '100%', height: '100%', position: 'relative', ...style }}>
             
             {/* The main content */}
             <motion.div
@@ -81,47 +101,6 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
                     </>
                 )}
             </motion.div>
-
-            {/* Emitted Particles (1s and 0s) */}
-            {phase >= 3 && particles.map(p => (
-                <motion.span
-                    key={p.id}
-                    initial={{ 
-                        opacity: 1, 
-                        x: 0,
-                        y: 0,
-                        scale: Math.random() * 0.5 + 0.5,
-                        rotate: 0
-                    }}
-                    animate={{ 
-                        opacity: 0, 
-                        x: p.targetX, 
-                        y: p.targetY,
-                        scale: 0,
-                        rotate: Math.random() * 180 - 90
-                    }}
-                    transition={{ 
-                        duration: p.duration, 
-                        delay: p.delay,
-                        ease: "easeOut"
-                    }}
-                    style={{
-                        position: 'absolute',
-                        left: `${p.x}%`,
-                        top: `${p.y}%`,
-                        color: 'var(--neon-cyan)',
-                        textShadow: '0 0 8px var(--electric-blue), 0 0 12px var(--neon-cyan)',
-                        fontWeight: 'bold',
-                        fontFamily: 'monospace',
-                        fontSize: '1.2rem',
-                        pointerEvents: 'none',
-                        zIndex: 30
-                    }}
-                >
-                    {p.text}
-                </motion.span>
-            ))}
-
         </div>
     );
 };
