@@ -2,37 +2,64 @@ import React, { useState, useEffect } from 'react';
 import './TypewriterLoader.css';
 
 export default function TypewriterLoader({ text = "Searching trailers...", isExiting }) {
-    const [displayedLength, setDisplayedLength] = useState(0);
-    const [phase, setPhase] = useState('initial-blink'); // initial-blink, typing, post-blink, wave
+    const [displayedText, setDisplayedText] = useState("");
+    const [phase, setPhase] = useState('initial-blink'); // initial-blink, typing, post-blink, wave, erasing
 
     useEffect(() => {
         let isMounted = true;
+        let currentText = displayedText;
 
         const runAnimation = async () => {
-            // 1. Initial blink (2 blinks, 500ms each = 1000ms)
-            if (!isMounted) return;
-            setPhase('initial-blink');
-            await new Promise(r => setTimeout(r, 1000));
-            
-            // 2. Typing (1.5 seconds total)
-            if (!isMounted) return;
-            setPhase('typing');
-            
-            const typeDelay = 1500 / text.length;
-            for (let i = 1; i <= text.length; i++) {
-                if (!isMounted) return;
-                await new Promise(r => setTimeout(r, typeDelay));
-                setDisplayedLength(i);
+            // If there's already text and it's different from the target text, erase it first
+            if (currentText.length > 0 && currentText !== text) {
+                setPhase('erasing');
+                while (currentText.length > 0) {
+                    if (!isMounted) return;
+                    await new Promise(r => setTimeout(r, 40)); // Fast erase
+                    currentText = currentText.slice(0, -1);
+                    setDisplayedText(currentText);
+                }
             }
-            
-            // 3. Post blink (3 blinks = 1500ms)
+
             if (!isMounted) return;
+            
+            // If we just erased, wait a tiny bit
+            if (phase === 'erasing') {
+                await new Promise(r => setTimeout(r, 300));
+            } else if (currentText.length === 0) {
+                // 1. Initial blink only if starting from empty
+                setPhase('initial-blink');
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
+            if (!isMounted) return;
+            
+            // Only type if we need to
+            if (currentText !== text) {
+                setPhase('typing');
+                const typeDelay = 1500 / text.length;
+                
+                while (currentText.length < text.length) {
+                    if (!isMounted) return;
+                    await new Promise(r => setTimeout(r, typeDelay));
+                    currentText = text.slice(0, currentText.length + 1);
+                    setDisplayedText(currentText);
+                }
+            }
+
+            if (!isMounted) return;
+            // 3. Post blink
             setPhase('post-blink');
             await new Promise(r => setTimeout(r, 1500));
             
-            // 4. Wave effect
+            // 4. Wave effect (only if text says "Searching trailers...")
             if (!isMounted) return;
-            setPhase('wave');
+            if (text.includes("Searching")) {
+                setPhase('wave');
+            } else {
+                // Keep blinking if it's a success message
+                setPhase('initial-blink');
+            }
         };
         
         runAnimation();
@@ -40,11 +67,11 @@ export default function TypewriterLoader({ text = "Searching trailers...", isExi
         return () => {
             isMounted = false;
         };
-    }, [text]);
+    }, [text]); // Re-run when target text changes
 
     // Determine blinker class
     let blinkerClass = 'blinking';
-    if (phase === 'typing') blinkerClass = 'solid';
+    if (phase === 'typing' || phase === 'erasing') blinkerClass = 'solid';
     else if (phase === 'wave') blinkerClass = 'hidden';
 
     return (
@@ -52,9 +79,7 @@ export default function TypewriterLoader({ text = "Searching trailers...", isExi
             <div className="typewriter-text">
                 <span style={{ color: 'var(--accent-gold, #ff9900)', marginRight: '12px' }}>{'>'}</span>
                 
-                {text.split('').map((char, index) => {
-                    if (index >= displayedLength) return null;
-                    
+                {displayedText.split('').map((char, index) => {
                     return (
                         <span 
                             key={index} 
