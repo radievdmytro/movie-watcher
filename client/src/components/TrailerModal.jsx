@@ -40,6 +40,18 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
     const [useSloganInMatrix, setUseSloganInMatrix] = useState(true);
     const [matrixAnimationType, setMatrixAnimationType] = useState('3D');
     const [settingsLoaded, setSettingsLoaded] = useState(false);
+    const [showResults, setShowResults] = useState(() => Array.isArray(preloadedTrailers));
+
+    useEffect(() => {
+        if (!loading && !error && results.length > 0) {
+            const timer = setTimeout(() => {
+                setShowResults(true);
+            }, 600); // Wait for modal expansion transition
+            return () => clearTimeout(timer);
+        } else if (loading) {
+            setShowResults(false);
+        }
+    }, [loading, error, results.length]);
 
     useEffect(() => {
         prefetchSettings().then(data => {
@@ -117,15 +129,15 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '16px',
                 width: '100%',
-                maxWidth: '900px',
-                height: 'auto',
-                maxHeight: '85vh',
-                minHeight: loading ? '320px' : 'unset',
+                maxWidth: loading ? '450px' : '900px',
+                height: loading ? '320px' : '85vh',
+                maxHeight: '90vh',
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
                 overflow: 'hidden',
-                animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                transition: 'max-width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)'
             }} onClick={e => e.stopPropagation()}>
                 
                 {/* Header */}
@@ -236,7 +248,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                     </div>
                                 )}
 
-                                {!loading && !error && results.length > 0 && (
+                                {showResults && !error && results.length > 0 && (
                                     <div key={matrixAnimationType} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
                                     {results.map((video, index) => {
                                         const animationName = matrixAnimationType === '3D' ? 'trailerFlyIn3D' : 'trailerDropIn2D';
