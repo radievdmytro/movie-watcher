@@ -1423,7 +1423,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         {/* Tab Content Display */}
                         <div style={{ flex: 1, marginBottom: '30px' }}>
                             {activeTab === 'about' && (
-                                <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
+                                <div style={{ animation: 'blurFadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
                                     {isLoadingDetails && (
                                         <div style={{
                                             display: 'flex',
@@ -1627,7 +1627,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             )}
 
                             {activeTab === 'reviews' && (
-                                <div style={{ animation: 'fadeIn 0.25s ease-out', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                <div style={{ animation: 'blurFadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                     {/* Congratulations Alert Banner for marking Watched */}
                                     {!readOnly && !isTrashMode && (
                                         <div style={{
@@ -2615,6 +2615,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
             <style>{`
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes blurFadeIn { from { opacity: 0; filter: blur(10px); transform: scale(0.98); } to { opacity: 1; filter: blur(0px); transform: scale(1); } }
                 @keyframes scaleIn { from { transform: scale(0.9) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
                 @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
