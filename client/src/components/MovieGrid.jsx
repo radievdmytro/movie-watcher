@@ -563,11 +563,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [ripples, setRipples] = useState([]);
 
     const addRipple = (identifier, x, y) => {
-        const id = Date.now() + Math.random();
-        setRipples(prev => [...prev, { id, identifier, x, y }]);
+        const id1 = Date.now() + Math.random();
+        const id2 = Date.now() + Math.random();
+        setRipples(prev => [...prev, { id: id1, identifier, x, y, delay: 0 }, { id: id2, identifier, x, y, delay: 0.15 }]);
         setTimeout(() => {
-            setRipples(prev => prev.filter(r => r.id !== id));
-        }, 900);
+            setRipples(prev => prev.filter(r => r.id !== id1 && r.id !== id2));
+        }, 1400);
     };
     const [hideWatched, setHideWatched] = useState(() => {
         const stored = localStorage.getItem('movieGrid_hideWatched');
@@ -3047,7 +3048,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         className="watch-ripple"
                                         style={{
                                             left: ripple.x,
-                                            top: ripple.y
+                                            top: ripple.y,
+                                            animationDelay: `${ripple.delay || 0}s`
                                         }}
                                     />
                                 ))}
@@ -3979,7 +3981,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             className="watch-ripple"
                                             style={{
                                                 left: ripple.x,
-                                                top: ripple.y
+                                                top: ripple.y,
+                                                animationDelay: `${ripple.delay || 0}s`
                                             }}
                                         />
                                     ))}
