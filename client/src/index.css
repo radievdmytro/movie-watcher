@@ -1465,7 +1465,7 @@ body.hide-header-search .app-header {
     
     pointer-events: none;
     z-index: 50;
-    animation: rippleExpand 1.3s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+    animation: rippleExpand 0.7s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
 }
 
 .card-edge-glow {
@@ -1486,7 +1486,7 @@ body.hide-header-search .app-header {
     mask-repeat: no-repeat;
     -webkit-mask-repeat: no-repeat;
     
-    animation: edgeGlowExpand 1.3s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+    animation: edgeGlowExpand 0.7s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
 }
 
 @keyframes edgeGlowExpand {
