@@ -118,8 +118,9 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 borderRadius: '16px',
                 width: '100%',
                 maxWidth: '900px',
-                height: '85vh',
-                maxHeight: '90vh',
+                height: 'auto',
+                maxHeight: '85vh',
+                minHeight: loading ? '320px' : 'unset',
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
@@ -181,7 +182,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                 </div>
 
                 {/* Content */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: activeVideoId ? 0 : '24px', position: 'relative', minHeight: 0 }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '24px', position: 'relative', minHeight: loading ? '260px' : 0 }}>
                     {activeVideoId ? (
                         <div style={{ width: '100%', height: '100%', minHeight: '500px', backgroundColor: '#000' }}>
                             <iframe 
