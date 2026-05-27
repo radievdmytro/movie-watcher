@@ -47,7 +47,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
             ? "Trailers successfully found."
             : "Searching trailers..."
     );
-    const [isTypewriterExiting, setIsTypewriterExiting] = useState(false);
+    const [isTypewriterDisintegrating, setIsTypewriterDisintegrating] = useState(false);
     const [typewriterDone, setTypewriterDone] = useState(false);
 
     useEffect(() => {
