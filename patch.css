@@ -1,0 +1,17 @@
+@keyframes rippleExpand {
+    0% { 
+        transform: translate(-50%, -50%) scale(0); 
+        opacity: 1;
+        backdrop-filter: blur(8px) saturate(2.0) brightness(2.5) contrast(1.1);
+        -webkit-backdrop-filter: blur(8px) saturate(2.0) brightness(2.5) contrast(1.1);
+    }
+    50% {
+        opacity: 1;
+    }
+    100% { 
+        transform: translate(-50%, -50%) scale(2.0); 
+        opacity: 0; 
+        backdrop-filter: blur(0px) saturate(1.0) brightness(1.0) contrast(1.0);
+        -webkit-backdrop-filter: blur(0px) saturate(1.0) brightness(1.0) contrast(1.0);
+    }
+}

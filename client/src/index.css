@@ -1465,7 +1465,7 @@ body.hide-header-search .app-header {
     
     pointer-events: none;
     z-index: 50;
-    animation: rippleExpand 1.15s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+    animation: rippleExpand 1.4s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
 }
 
 .card-edge-glow {
@@ -1481,7 +1481,7 @@ body.hide-header-search .app-header {
     mask-repeat: no-repeat;
     -webkit-mask-repeat: no-repeat;
     
-    animation: edgeGlowExpand 1.15s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+    animation: edgeGlowExpand 1.4s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
 }
 
 .card-edge-glow::after {
@@ -1510,10 +1510,10 @@ body.hide-header-search .app-header {
     }
     100% {
         /* Keep it 1000px so we shift by half of that (500px) */
-        mask-size: 1000px 1000px;
-        mask-position: calc(var(--click-x) + 40px - 500px) calc(var(--click-y) + 40px - 500px);
-        -webkit-mask-size: 1000px 1000px;
-        -webkit-mask-position: calc(var(--click-x) + 40px - 500px) calc(var(--click-y) + 40px - 500px);
+        mask-size: 1200px 1200px;
+        mask-position: calc(var(--click-x) + 40px - 600px) calc(var(--click-y) + 40px - 600px);
+        -webkit-mask-size: 1200px 1200px;
+        -webkit-mask-position: calc(var(--click-x) + 40px - 600px) calc(var(--click-y) + 40px - 600px);
         opacity: 0;
     }
 }
@@ -1521,14 +1521,21 @@ body.hide-header-search .app-header {
 @keyframes rippleExpand {
     0% { 
         transform: translate(-50%, -50%) scale(0); 
-        opacity: 0.8; 
+        opacity: 1; 
+        backdrop-filter: blur(8px) saturate(2.0) brightness(2.5) contrast(1.1);
+        -webkit-backdrop-filter: blur(8px) saturate(2.0) brightness(2.5) contrast(1.1);
     }
-    50% {
-        opacity: 0.6;
+    70% {
+        opacity: 0.9;
+        backdrop-filter: blur(8px) saturate(2.0) brightness(2.5) contrast(1.1);
+        -webkit-backdrop-filter: blur(8px) saturate(2.0) brightness(2.5) contrast(1.1);
     }
     100% { 
-        transform: translate(-50%, -50%) scale(1.5); 
+        transform: translate(-50%, -50%) scale(2.0); 
         opacity: 0; 
+        /* Smoothly fade out the filters so the top gradient returns without a jump! */
+        backdrop-filter: blur(0px) saturate(1.0) brightness(1.0) contrast(1.0);
+        -webkit-backdrop-filter: blur(0px) saturate(1.0) brightness(1.0) contrast(1.0);
     }
 }
 
