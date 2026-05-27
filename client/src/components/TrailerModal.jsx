@@ -163,6 +163,24 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                     0% { opacity: 0; transform: translateY(-40px); }
                     100% { opacity: 1; transform: translateY(0); }
                 }
+                .typewriter-wrapper {
+                    padding-top: 10px;
+                    padding-bottom: 20px;
+                    margin-bottom: 20px;
+                    height: 52px; /* Set a fixed height so transition works */
+                }
+                @media (max-width: 768px) {
+                    .typewriter-wrapper {
+                        transition: height 0.5s ease-in-out, margin 0.5s ease-in-out, padding 0.5s ease-in-out, opacity 0.1s !important;
+                    }
+                    .typewriter-wrapper.done {
+                        height: 0;
+                        padding-top: 0;
+                        padding-bottom: 0;
+                        margin-bottom: 0;
+                        overflow: hidden;
+                    }
+                }
             `}</style>
             <div style={{
             position: 'fixed',
@@ -273,7 +291,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
 
                             <div style={{ position: 'relative', zIndex: 1, minHeight: '100%' }}>
                                 { (loading || (!error && results.length > 0)) && (
-                                    <div style={{ 
+                                    <div className={`typewriter-wrapper ${typewriterDone ? 'done' : ''}`} style={{ 
                                         position: 'sticky', 
                                         top: 0, 
                                         left: 0, right: 0, 
@@ -281,10 +299,7 @@ function TrailerModal({ searchQuery, preloadedTrailers, onClose }) {
                                         justifyContent: 'center',
                                         pointerEvents: 'none',
                                         zIndex: 10,
-                                        paddingTop: '10px',
-                                        paddingBottom: '20px',
-                                        marginBottom: '20px',
-                                        // Keep in layout even after done — just invisible
+                                        // Keep in layout even after done — just invisible (except on mobile where it collapses via CSS)
                                         opacity: typewriterDone ? 0 : 1,
                                         visibility: typewriterDone ? 'hidden' : 'visible',
                                         transition: 'opacity 0.1s'
