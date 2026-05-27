@@ -25,19 +25,19 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
                         text: Math.random() > 0.5 ? '1' : '0',
                         x: Math.random() * 100, // random start X %
                         y: Math.random() * 100, // random start Y %
-                        targetX: Math.random() * 200 - 100, // fly up/left/right
-                        targetY: -(Math.random() * 150 + 50),
+                        targetX: Math.random() * 600 - 300, // fly 3x further horizontally
+                        targetY: -(Math.random() * 450 + 150), // fly 3x further up
                         delay: Math.random() * 0.2,
-                        duration: 0.5 + Math.random() * 0.5
+                        duration: 1.0 + Math.random() * 0.5 // longer life
                     });
                 }
                 setParticles(newParticles);
             }, 500);
 
-            // Finish
+            // Finish (increased from 1000 to allow particles to live longer)
             const t3 = setTimeout(() => {
                 if (onAnimationComplete) onAnimationComplete();
-            }, 1000);
+            }, 1500);
 
             return () => {
                 clearTimeout(t1);
