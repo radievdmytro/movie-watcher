@@ -3272,7 +3272,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     style={{
                                                         fontSize: '0.75rem', color: '#ddd',
                                                         lineHeight: '1.3',
-                                                        margin: '4px 0 2px'
+                                                        margin: '4px 0 0',
+                                                        paddingBottom: '2px'
                                                     }}
                                                 >
                                                     {movie.description}
@@ -3283,9 +3284,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 {movie.status === 'watched' && (movie.id === null || !movie.user_rating) && (
                                                     <motion.div
                                                         key="rating-button"
-                                                        initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden', marginBottom: 0 }}
-                                                        animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1, marginBottom: 6 }}
-                                                        exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden', marginBottom: 0 }}
+                                                        initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden' }}
+                                                        animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1 }}
+                                                        exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden' }}
                                                         transition={{ duration: 0.8, ease: [0.1, 0.8, 0.2, 1] }}
                                                     >
                                                         <CardRatingButton
@@ -4117,9 +4118,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 })() && (
                                                     <motion.div
                                                         key="rating-button"
-                                                        initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden', marginBottom: 0 }}
-                                                        animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1, marginBottom: 6 }}
-                                                        exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden', marginBottom: 0 }}
+                                                        initial={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden' }}
+                                                        animate={{ opacity: 1, filter: 'blur(0px)', height: 'auto', scale: 1 }}
+                                                        exit={{ opacity: 0, filter: 'blur(8px)', height: 0, scale: 0.95, overflow: 'hidden' }}
                                                         transition={{ duration: 0.8, ease: [0.1, 0.8, 0.2, 1] }}
                                                     >
                                                         <CardRatingButton
