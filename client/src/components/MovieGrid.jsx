@@ -562,10 +562,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [localRatings, setLocalRatings] = useState({});
     const [ripples, setRipples] = useState([]);
 
-    const addRipple = (identifier, x, y) => {
+    const addRipple = (identifier, x, y, isWatchedAction = true) => {
         const id1 = Date.now() + Math.random();
         const id2 = Date.now() + Math.random();
-        setRipples(prev => [...prev, { id: id1, identifier, x, y, delay: 0 }, { id: id2, identifier, x, y, delay: 0.15 }]);
+        const color = isWatchedAction ? '3, 218, 198' : '255, 152, 0'; // Mint vs Orange
+        setRipples(prev => [...prev, { id: id1, identifier, x, y, color, delay: 0 }, { id: id2, identifier, x, y, color, delay: 0.15 }]);
         setTimeout(() => {
             setRipples(prev => prev.filter(r => r.id !== id1 && r.id !== id2));
         }, 1400);
@@ -3049,7 +3050,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         style={{
                                             left: ripple.x,
                                             top: ripple.y,
-                                            animationDelay: `${ripple.delay || 0}s`
+                                            animationDelay: `${ripple.delay || 0}s`,
+                                            '--ripple-color': ripple.color
                                         }}
                                     />
                                 ))}
@@ -3368,7 +3370,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                             const cardRect = e.currentTarget.closest('.movie-card').getBoundingClientRect();
                                                             const x = rect.left + rect.width / 2 - cardRect.left;
                                                             const y = rect.top + rect.height / 2 - cardRect.top;
-                                                            addRipple(movie.id || movie.link, x, y);
+                                                            const isWatching = movie.status !== 'watched';
+                                                            addRipple(movie.id || movie.link, x, y, isWatching);
 
                                                             if (movie.status !== 'watched') {
                                                                 await onUpdate(movie.id || null, { status: 'watched', link: movie.link });
@@ -3982,7 +3985,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             style={{
                                                 left: ripple.x,
                                                 top: ripple.y,
-                                                animationDelay: `${ripple.delay || 0}s`
+                                                animationDelay: `${ripple.delay || 0}s`,
+                                                '--ripple-color': ripple.color
                                             }}
                                         />
                                     ))}
