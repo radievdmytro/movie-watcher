@@ -85,8 +85,6 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
                 {/* Clone the children but hide overflow if needed, wait children are the movie card */}
                 {children}
 
-                {/* Overlays */}
-                {phase >= 1 && <div className="cyan-bloom"></div>}
             </motion.div>
         </div>
     );
