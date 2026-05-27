@@ -532,8 +532,30 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         }
     };
 
-    const handleStatusToggle = async () => {
+    const [modalRipples, setModalRipples] = useState([]);
+
+    const addModalRipple = (x, y, color) => {
+        const id = Date.now() + Math.random();
+        setModalRipples(prev => [...prev, { id, x, y, color }]);
+        setTimeout(() => {
+            setModalRipples(prev => prev.filter(r => r.id !== id));
+        }, 3200);
+    };
+
+    const handleStatusToggle = async (e) => {
         const newStatus = localStatus === 'watched' ? 'want_to_watch' : 'watched';
+        
+        if (e && e.clientX) {
+            const container = e.currentTarget.closest('.glass-panel');
+            if (container) {
+                const rect = container.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const color = localStatus === 'watched' ? '255, 152, 0' : '3, 218, 198';
+                addModalRipple(x, y, color);
+            }
+        }
+
         const previousStatus = localStatus;
         setLocalStatus(newStatus);
         try {
@@ -869,7 +891,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         width: '100%',
                         height: '100%',
                         maxHeight: 'inherit',
-                        overflowY: 'hidden', 
+                        overflow: 'hidden', 
                         position: 'relative',
                         display: 'flex', 
                         flexDirection: 'column',
@@ -877,6 +899,21 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         border: '1px solid rgba(255, 255, 255, 0.15)'
                     }}
                 >
+                    {/* Modal Ripple Container */}
+                    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: 'inherit', pointerEvents: 'none', zIndex: 50 }}>
+                        {modalRipples.map(ripple => (
+                            <div key={ripple.id} style={{ '--ripple-color': ripple.color, '--ripple-x': `${ripple.x}px`, '--ripple-y': `${ripple.y}px` }}>
+                                <div
+                                    className="modal-watch-ripple"
+                                    style={{
+                                        left: ripple.x,
+                                        top: ripple.y
+                                    }}
+                                />
+                                <div className="modal-edge-glow" />
+                            </div>
+                        ))}
+                    </div>
 
                 {movie.source_collection_name && (
                     <div style={{
