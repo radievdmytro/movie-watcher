@@ -87,19 +87,6 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
 
                 {/* Overlays */}
                 {phase >= 1 && <div className="cyan-bloom"></div>}
-                
-                {/* Slices that look like parts of the image tearing away */}
-                {phase >= 2 && (
-                    <>
-                        <div className="digital-slice">
-                           <div style={{ background: 'var(--electric-blue)', width: '100%', height: '100%', opacity: 0.3 }} />
-                        </div>
-                        <div className="digital-slice-2">
-                           <div style={{ background: 'var(--neon-cyan)', width: '100%', height: '100%', opacity: 0.3 }} />
-                        </div>
-                        <div className="digital-noise-overlay show-noise"></div>
-                    </>
-                )}
             </motion.div>
         </div>
     );
