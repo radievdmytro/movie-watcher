@@ -8,10 +8,17 @@
 }
 
 .typewriter-container.exiting {
+    transform: scale(1.02);
+    transition: transform 0.6s ease;
+}
+
+.typewriter-container.exiting .typewriter-prompt,
+.typewriter-container.exiting .typewriter-char {
     filter: blur(12px);
     opacity: 0;
-    transform: scale(1.05);
+    transition: filter 0.6s ease, opacity 0.6s ease;
 }
+
 
 .typewriter-text {
     font-family: 'Courier New', Courier, monospace;
@@ -81,6 +88,17 @@
 
 @keyframes blinker {
     50% {
+        opacity: 0;
+    }
+}
+
+@keyframes pixelScatter {
+    0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(var(--dx), var(--dy)) scale(0);
         opacity: 0;
     }
 }

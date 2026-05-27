@@ -79,7 +79,7 @@ export default function TypewriterLoader({ text = "Searching trailers...", isExi
     return (
         <div className={`typewriter-container ${isExiting ? 'exiting' : ''}`}>
             <div className="typewriter-text">
-                <span style={{ color: 'var(--accent-gold, #ff9900)', marginRight: '12px' }}>{'>'}</span>
+                <span className="typewriter-prompt" style={{ color: 'var(--accent-gold, #ff9900)', marginRight: '12px' }}>{'>'}</span>
                 
                 {displayedText.split('').map((char, index) => {
                     return (
@@ -95,7 +95,40 @@ export default function TypewriterLoader({ text = "Searching trailers...", isExi
                     );
                 })}
                 
-                <span className={`typewriter-blinker ${blinkerClass}`}></span>
+                {isExiting ? (
+                    <span className="typewriter-pixel-disintegration-container" style={{ position: 'relative', display: 'inline-block', width: '16px', height: '32px', marginLeft: '4px', verticalAlign: 'middle' }}>
+                        {Array.from({ length: 24 }).map((_, i) => {
+                            const x = Math.random() * 16;
+                            const y = Math.random() * 32;
+                            const dx = (Math.random() - 0.5) * 80; // scatter horizontal
+                            const dy = -Math.random() * 60 - 10; // scatter upwards
+                            const size = Math.floor(Math.random() * 3) + 2; // 2px to 4px
+                            const delay = Math.random() * 0.15; // staggered start
+                            const duration = 0.5 + Math.random() * 0.4; // 0.5s to 0.9s duration
+                            
+                            return (
+                                <span 
+                                    key={i}
+                                    style={{
+                                        position: 'absolute',
+                                        left: `${x}px`,
+                                        top: `${y}px`,
+                                        width: `${size}px`,
+                                        height: `${size}px`,
+                                        backgroundColor: 'var(--accent-gold, #ff9900)',
+                                        boxShadow: '0 0 4px var(--accent-gold, #ff9900)',
+                                        borderRadius: '1px',
+                                        animation: `pixelScatter ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delay}s forwards`,
+                                        '--dx': `${dx}px`,
+                                        '--dy': `${dy}px`,
+                                    }}
+                                />
+                            );
+                        })}
+                    </span>
+                ) : (
+                    <span className={`typewriter-blinker ${blinkerClass}`}></span>
+                )}
             </div>
         </div>
     );
