@@ -537,9 +537,15 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     const addModalRipple = (x, y, color) => {
         const id = Date.now() + Math.random();
         
-        // Rapid clicks will now instantly replace the old ripple. 
-        // This prevents multiple overlapping backdrop-filters from causing massive GPU flickering and crossfade artifacts.
-        setModalRipples([{ id, x, y, color }]);
+        setModalRipples(prev => {
+            if (prev.length > 0) {
+                // Smooth color transition: Keep the existing ripple (same id, x, y) 
+                // so the animation continues without restarting, but update the color.
+                return [{ ...prev[0], color }];
+            }
+            // Start a new ripple
+            return [{ id, x, y, color }];
+        });
         
         setTimeout(() => {
             setModalRipples(prev => prev.filter(r => r.id !== id));
@@ -906,7 +912,18 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     {/* Modal Ripple Container */}
                     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: 'inherit', pointerEvents: 'none', zIndex: 50 }}>
                         {modalRipples.map(ripple => (
-                            <div key={ripple.id} style={{ position: 'absolute', inset: 0, borderRadius: 'inherit', '--ripple-color': ripple.color, '--ripple-x': `${ripple.x}px`, '--ripple-y': `${ripple.y}px` }}>
+                            <div 
+                                key={ripple.id} 
+                                style={{ 
+                                    position: 'absolute', 
+                                    inset: 0, 
+                                    borderRadius: 'inherit', 
+                                    color: `rgb(${ripple.color})`,
+                                    transition: 'color 0.5s ease-out',
+                                    '--ripple-x': `${ripple.x}px`, 
+                                    '--ripple-y': `${ripple.y}px` 
+                                }}
+                            >
                                 <div
                                     className="modal-watch-ripple"
                                     style={{
