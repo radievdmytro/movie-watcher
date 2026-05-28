@@ -2663,10 +2663,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     {/* Expanded Filters Panel */}
                     <div ref={filterPanelRef} className={`expanded-filters-panel ${showFilters ? 'is-open' : ''}`} style={{ position: 'relative' }}>
                         {filterRipple && showFilters && (
-                            <>
-                                <div className="filter-inner-ripple" style={{ left: filterRipple.x, top: filterRipple.y }} key={`inner-${filterRipple.id}`} onAnimationEnd={() => setFilterRipple(null)} />
-                                <div className="filter-edge-glow" style={{ '--click-x': `${filterRipple.x}px`, '--click-y': `${filterRipple.y}px` }} key={`edge-${filterRipple.id}`} />
-                            </>
+                            <div className="filter-edge-glow" style={{ '--click-x': `${filterRipple.x}px`, '--click-y': `${filterRipple.y}px` }} key={`edge-${filterRipple.id}`} onAnimationEnd={() => setFilterRipple(null)} />
                         )}
                         <div className="filters-grid" style={{
                             display: 'grid',
