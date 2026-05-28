@@ -3135,7 +3135,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         return (
                             <motion.div
                                 key={movie.id}
-                                layout
+                                layout={!isMobile}
                                 animate={motionAnimate}
                                 transition={motionTransition}
                                 data-movie-id={movie.id}
@@ -4121,7 +4121,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             return (
                                 <motion.div
                                     key={movie.link || idx}
-                                    layout
+                                    layout={!isMobile}
                                     transition={{ layout: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } }}
                                     className="movie-card"
                                     onClick={() => {
