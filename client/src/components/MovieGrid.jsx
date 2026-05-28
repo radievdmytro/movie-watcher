@@ -842,8 +842,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             });
             if (res.ok || res.status === 409) {
                 setAddedLinks(prev => new Set([...prev, link]));
-                setJustAddedLink(link);
-                setTimeout(() => setJustAddedLink(null), 1000);
                 if (onUpdate) {
                     onUpdate(null);
                 }
@@ -4054,7 +4052,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             inset: 0,
                                             zIndex: 5,
                                             pointerEvents: 'none',
-                                            animation: 'purpleTintFadeOut 1s forwards'
+                                            animation: 'purpleTintFadeOut 1.4s forwards'
                                         }} />
                                     )}
                                     
@@ -4245,6 +4243,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                  disabled={isAdding}
                                                                  onMouseEnter={() => setHoveredButtonLink(movie.link)}
                                                                  onMouseLeave={() => setHoveredButtonLink(null)}
+                                                                 onMouseDown={(e) => {
+                                                                     if (!isAdding && !isAdded) {
+                                                                         setJustAddedLink(movie.link);
+                                                                         setTimeout(() => setJustAddedLink(null), 1400);
+                                                                     }
+                                                                 }}
                                                                  onClick={async (e) => {
                                                                      e.stopPropagation();
                                                                      if (isAdding) return;
