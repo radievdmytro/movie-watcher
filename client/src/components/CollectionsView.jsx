@@ -1279,11 +1279,19 @@ function CollectionsView({ onBack }) {
                                 </div>
 
                                 {/* Expanded Movie List */}
+                                <AnimatePresence initial={false}>
                                 {isExpanded && (
-                                    <div style={{
-                                        padding: '25px', borderTop: '1px solid rgba(255,255,255,0.05)',
-                                        background: 'rgba(0,0,0,0.2)', animation: 'slideDown 0.3s ease-out'
-                                    }}>
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.35, ease: "easeInOut" }}
+                                        style={{ overflow: 'hidden' }}
+                                    >
+                                        <div style={{
+                                            padding: '25px', borderTop: '1px solid rgba(255,255,255,0.05)',
+                                            background: 'rgba(0,0,0,0.2)'
+                                        }}>
                                         {!expandedCollection ? (
                                             <div style={{ textAlign: 'center', color: '#555' }}>Loading movies...</div>
                                         ) : expandedCollection.movies.length === 0 ? (
@@ -1549,8 +1557,10 @@ function CollectionsView({ onBack }) {
                                             </div>
                                             </>
                                         )}
-                                    </div>
+                                        </div>
+                                    </motion.div>
                                 )}
+                                </AnimatePresence>
                             </div>
                         );
                     })}
