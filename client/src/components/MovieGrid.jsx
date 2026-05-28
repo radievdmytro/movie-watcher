@@ -824,7 +824,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     };
 
     const [showFilters, setShowFilters] = useState(false);
-    const [filterRipple, setFilterRipple] = useState(null);
     const filterPanelRef = useRef(null);
     const [showAllGenres, setShowAllGenres] = useState(false);
     const [visibleCount, setVisibleCount] = useState(30);
@@ -2320,17 +2319,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
                         <button
                             className="btn btn-ghost"
-                            onClick={(e) => {
-                                if (!showFilters && filterPanelRef.current) {
-                                    const rect = filterPanelRef.current.getBoundingClientRect();
-                                    setFilterRipple({
-                                        x: e.clientX - rect.left,
-                                        y: e.clientY - rect.top,
-                                        id: Date.now()
-                                    });
-                                }
-                                setShowFilters(!showFilters);
-                            }}
+                            onClick={() => setShowFilters(!showFilters)}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '8px',
                                 color: showFilters || filterGenres.length > 0 || filterRating[0] > 0 || filterRating[1] < 10 || filterDirectors.length > 0 || filterActors.length > 0 ? 'var(--accent-gold)' : 'inherit',
@@ -2662,9 +2651,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
                     {/* Expanded Filters Panel */}
                     <div ref={filterPanelRef} className={`expanded-filters-panel ${showFilters ? 'is-open' : ''}`} style={{ position: 'relative' }}>
-                        {filterRipple && showFilters && (
-                            <div className="filter-edge-glow" style={{ '--click-x': `${filterRipple.x}px`, '--click-y': `${filterRipple.y}px` }} key={`edge-${filterRipple.id}`} onAnimationEnd={() => setFilterRipple(null)} />
-                        )}
+
                         <div className="filters-grid" style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
