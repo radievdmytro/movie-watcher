@@ -904,14 +904,22 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     animation: 'scaleIn 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)'
                 }}
             >
+                {/* Smooth top gradient overlay for action buttons to prevent sharp edges */}
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, height: isMobile ? '110px' : '130px',
+                    background: 'linear-gradient(to bottom, rgba(14,14,14,0.95) 0%, rgba(14,14,14,0.7) 40%, transparent 100%)',
+                    borderTopLeftRadius: isMobile ? '20px' : '24px',
+                    borderTopRightRadius: isMobile ? '20px' : '24px',
+                    zIndex: 99,
+                    pointerEvents: 'none'
+                }} />
+
                 {/* Header / Close Button fixed relative to the outer container, so it NEVER scrolls! */}
                 <div style={{ 
                     position: 'absolute', 
                     top: 0, 
                     right: 0, 
-                    padding: isMobile ? '12px 12px 32px 50px' : '15px 15px 50px 80px', 
-                    background: 'radial-gradient(ellipse at top right, rgba(18,18,18,0.95) 0%, rgba(18,18,18,0.7) 45%, rgba(18,18,18,0) 100%)',
-                    borderTopRightRadius: isMobile ? '20px' : '24px',
+                    padding: isMobile ? '12px' : '15px', 
                     display: 'flex', 
                     gap: '10px', 
                     alignItems: 'center', 
