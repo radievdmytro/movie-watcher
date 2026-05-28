@@ -1771,22 +1771,6 @@ body.hide-header-search .app-header {
         inset 0 0 12px 8px rgba(255, 215, 0, 0.7);
 }
 
-.filter-inner-ripple {
-    position: absolute;
-    width: 600px;
-    height: 600px;
-    border-radius: 50%;
-    transform: translate(-50%, -50%) scale(0);
-    background: rgba(212, 175, 55, 0.2);
-    box-shadow: 
-        inset 0 0 80px rgba(255, 255, 255, 0.3),
-        0 0 80px rgba(212, 175, 55, 0.3);
-    mask-image: radial-gradient(circle, transparent 40%, black 55%, transparent 70%);
-    -webkit-mask-image: radial-gradient(circle, transparent 40%, black 55%, transparent 70%);
-    pointer-events: none;
-    z-index: 50;
-    animation: rippleExpand 1.5s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
-}
 
 @keyframes filterEdgeGlowExpand {
     0% {
