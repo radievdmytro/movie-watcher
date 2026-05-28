@@ -2660,8 +2660,14 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         }}>
                             {/* Genre Selection */}
                             <div style={{ gridColumn: '1 / -1' }}>
-                                {/* Desktop Genres */}
-                                <div className="desktop-genres-row">
+                                {availableGenres.length === 0 ? (
+                                    <div style={{ color: '#888', fontSize: '0.9rem', fontStyle: 'italic', padding: '15px 0', textAlign: 'center', lineHeight: '1.5' }}>
+                                        Список жанров формируется из вашей личной коллекции. Добавьте свои первые фильмы, чтобы увидеть и попробовать удобную фильтрацию!
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Desktop Genres */}
+                                        <div className="desktop-genres-row">
                                     <div style={{
                                         fontSize: '0.85rem', color: '#888', marginBottom: '10px',
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center'
@@ -2836,6 +2842,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         </div>
                                     )}
                                 </div>
+                                    </>
+                                )}
                             </div>
 
                             {/* Rating & Year Row */}
@@ -2909,29 +2917,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         />
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* Directors & Actors Row */}
-                            <div className="mobile-row-layout" style={{ gridColumn: '1 / -1', display: 'contents' }}>
-                                {/* Director Filter */}
-                                <MultiSelectAutocomplete
-                                    label="Directors"
-                                    placeholder="Type or select directors..."
-                                    options={availableDirectors}
-                                    selected={filterDirectors}
-                                    onChange={setFilterDirectors}
-                                    accentColor="var(--accent-gold)"
-                                />
-
-                                {/* Actor Filter */}
-                                <MultiSelectAutocomplete
-                                    label="Actors"
-                                    placeholder="Type or select actors..."
-                                    options={availableActors}
-                                    selected={filterActors}
-                                    onChange={setFilterActors}
-                                    accentColor="var(--accent-gold)"
-                                />
                             </div>
 
                             {/* Reset Actions */}
