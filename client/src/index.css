@@ -1006,13 +1006,9 @@ body.hide-header-search .app-header {
   }
 
   .compact-controls-row {
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    scrollbar-width: none !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
     padding-bottom: 2px;
-  }
-  .compact-controls-row::-webkit-scrollbar {
-    display: none !important;
   }
 }
 

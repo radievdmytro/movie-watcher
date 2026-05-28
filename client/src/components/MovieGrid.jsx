@@ -2331,11 +2331,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     {/* Row 2: Super Compact Controls (Type switch, View Mode, Hide Watched) */}
                     <div className="compact-controls-row" style={{
                         display: 'flex',
-                        justifyContent: 'space-between',
+                        justifyContent: 'center',
                         alignItems: 'center',
                         gap: '10px',
                         width: '100%',
-                        flexWrap: 'nowrap'
+                        flexWrap: 'wrap'
                     }}>
                         {/* Type Switcher */}
                         <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
