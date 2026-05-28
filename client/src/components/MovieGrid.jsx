@@ -2000,7 +2000,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                             fontWeight: searchFields[field.id] ? '600' : '500',
                                                             transition: 'all 0.2s',
                                                             whiteSpace: 'nowrap',
-                                                            borderColor: searchFields[field.id] ? 'rgba(168, 85, 247, 0.4)' : 'transparent'
+                                                            borderColor: searchFields[field.id] ? 'rgba(168, 85, 247, 0.4)' : 'rgba(255, 255, 255, 0.1)'
                                                         }}
                                                     >
                                                         {field.label}
@@ -2038,7 +2038,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 fontWeight: searchFields[field.id] ? '600' : '500',
                                                 transition: 'all 0.2s',
                                                 whiteSpace: 'nowrap',
-                                                borderColor: searchFields[field.id] ? 'rgba(168, 85, 247, 0.4)' : 'transparent'
+                                                borderColor: searchFields[field.id] ? 'rgba(168, 85, 247, 0.4)' : 'rgba(255, 255, 255, 0.1)'
                                             }}
                                             title={`Toggle search by ${field.label}`}
                                         >
