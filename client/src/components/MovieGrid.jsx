@@ -609,7 +609,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 const cardRect = cardEl.getBoundingClientRect();
                 const x = rect.left + rect.width / 2 - cardRect.left;
                 const y = rect.top + rect.height / 2 - cardRect.top;
-                addRipple(movieId || movieLink, x, y, 'rate', opacity, totalDurationMs);
+                addRipple(movieId || movieLink, x, y, 'rate', opacity, totalDurationMs * 2);
             }
         }
 
