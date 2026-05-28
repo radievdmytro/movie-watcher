@@ -939,7 +939,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 userSelect: 'none',
                                 fontWeight: '500',
                                 pointerEvents: 'auto',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                                boxShadow: '0 6px 16px rgba(0,0,0,0.85), 0 2px 4px rgba(0,0,0,0.5)'
                             }}
                         >
                             <div style={{
@@ -961,7 +961,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
                             onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                             className="btn btn-ghost"
-                            style={{ display: 'flex', alignItems: 'center', padding: '0 12px', height: '32px', boxSizing: 'border-box', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid transparent', color: copiedShare ? '#03dac6' : '#fff', pointerEvents: 'auto', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+                            style={{ display: 'flex', alignItems: 'center', padding: '0 12px', height: '32px', boxSizing: 'border-box', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid transparent', color: copiedShare ? '#03dac6' : '#fff', pointerEvents: 'auto', transition: 'all 0.2s', boxShadow: '0 6px 16px rgba(0,0,0,0.85), 0 2px 4px rgba(0,0,0,0.5)' }}
                         >
                             {copiedShare ? '✔ Copied' : '🔗 Share'}
                         </button>
@@ -974,7 +974,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             disabled={isRefreshingData}
                             className="btn btn-ghost"
                             title="Обновить данные фильма"
-                            style={{ display: 'flex', alignItems: 'center', padding: '0 12px', height: '32px', boxSizing: 'border-box', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid transparent', color: isRefreshingData ? '#aaa' : '#fff', cursor: isRefreshingData ? 'wait' : 'pointer', pointerEvents: 'auto', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+                            style={{ display: 'flex', alignItems: 'center', padding: '0 12px', height: '32px', boxSizing: 'border-box', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid transparent', color: isRefreshingData ? '#aaa' : '#fff', cursor: isRefreshingData ? 'wait' : 'pointer', pointerEvents: 'auto', transition: 'all 0.2s', boxShadow: '0 6px 16px rgba(0,0,0,0.85), 0 2px 4px rgba(0,0,0,0.5)' }}
                         >
                             {isRefreshingData ? '⏳' : '🔄 Refresh'}
                         </button>
@@ -994,7 +994,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                            boxShadow: '0 6px 16px rgba(0,0,0,0.85), 0 2px 4px rgba(0,0,0,0.5)',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
                             pointerEvents: 'auto'
