@@ -865,11 +865,10 @@ body.hide-header-search .app-header {
   position: sticky;
   top: calc(var(--header-h, 90px) + 19px);
   z-index: 100;
-  background: rgba(12, 12, 12, 0.98);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  /* background and border removed per user request */
 }
 
 @media (max-width: 768px) {
