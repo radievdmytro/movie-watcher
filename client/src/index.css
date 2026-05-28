@@ -912,23 +912,15 @@ body.hide-header-search .app-header {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* On desktop, make it an absolute overlay under the sticky panel */
+/* On desktop, keep normal static flow to push movies down smoothly */
 @media (min-width: 769px) {
   .expanded-filters-panel.is-open {
-    position: absolute;
-    top: 100%;
-    left: max(20px, calc(50vw - 580px));
-    right: max(20px, calc(50vw - 580px));
-    z-index: 150;
-    margin-top: 0;
-    border-top: none;
-    border-radius: 0 0 12px 12px;
-    background: rgba(12, 12, 12, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.85);
-    padding: 25px 30px;
-    width: auto;
+    margin-top: 15px;
+    padding: 20px 25px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
   }
 }
 
