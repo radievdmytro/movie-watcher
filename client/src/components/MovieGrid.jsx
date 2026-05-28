@@ -449,7 +449,7 @@ const CardRatingButton = ({ movie, onUpdateRating, posterSize = 220 }) => {
                                     }}
                                     onClick={async (e) => {
                                         e.stopPropagation();
-                                        await onUpdateRating(starValue);
+                                        await onUpdateRating(starValue, e);
                                     }}
                                     style={{
                                         cursor: 'pointer',
@@ -561,7 +561,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [localRatings, setLocalRatings] = useState({});
     const [ripples, setRipples] = useState([]);
 
-    const addRipple = (identifier, x, y, actionType = 'watched') => {
+    const addRipple = (identifier, x, y, actionType = 'watched', customOpacity = null, customDuration = null) => {
         const id1 = Date.now() + Math.random();
         
         // Handle legacy boolean calls
@@ -572,16 +572,55 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         if (actionType === 'unwatched') color = '255, 120, 0';
         else if (actionType === 'add_to_library') color = '168, 85, 247'; // Purple
         else if (actionType === 'remove_from_library') color = '239, 68, 68'; // Red
+        else if (actionType === 'rate') color = '255, 193, 7'; // Yellow
 
-        setRipples(prev => [...prev, { id: id1, identifier, x, y, color, delay: 0, actionType }]);
+        const duration = customDuration || 3200;
+
+        setRipples(prev => [...prev, { id: id1, identifier, x, y, color, delay: 0, actionType, customOpacity, customDuration: duration }]);
         setTimeout(() => {
             setRipples(prev => prev.filter(r => r.id !== id1));
-        }, 3200);
+        }, duration);
     };
     const [hideWatched, setHideWatched] = useState(() => {
         const stored = localStorage.getItem('movieGrid_hideWatched');
         return stored !== null ? JSON.parse(stored) : false;
     });
+
+    const handleRatingAnimation = (e, ratingVal, movieLink, movieId) => {
+        let opacity = 0.50;
+        if (ratingVal === 6) opacity = 0.55;
+        else if (ratingVal === 7) opacity = 0.60;
+        else if (ratingVal === 8) opacity = 0.65;
+        else if (ratingVal >= 9) opacity = 0.70;
+
+        let durationOut = 1.1; // 1-5
+        if (ratingVal === 6) durationOut = 1.2;
+        else if (ratingVal === 7) durationOut = 1.3;
+        else if (ratingVal === 8) durationOut = 1.4;
+        else if (ratingVal === 9) durationOut = 1.5;
+        else if (ratingVal === 10) durationOut = 1.6;
+
+        const totalDurationMs = (0.2 + durationOut) * 1000;
+
+        if (e && e.currentTarget) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const cardEl = e.currentTarget.closest('.movie-card');
+            if (cardEl) {
+                const cardRect = cardEl.getBoundingClientRect();
+                const x = rect.left + rect.width / 2 - cardRect.left;
+                const y = rect.top + rect.height / 2 - cardRect.top;
+                addRipple(movieId || movieLink, x, y, 'rate', opacity, totalDurationMs);
+            }
+        }
+
+        setTintRatingInfo({ link: movieLink, opacity, durationOut, stage: 'in' });
+        setTimeout(() => {
+            setTintRatingInfo(prev => prev && prev.link === movieLink ? { ...prev, stage: 'out' } : prev);
+        }, 200);
+        setTimeout(() => {
+            setTintRatingInfo(prev => prev && prev.link === movieLink && prev.stage === 'out' ? null : prev);
+        }, totalDurationMs);
+    };
     const [hideWatchedInGlobal, setHideWatchedInGlobal] = useState(() => {
         const stored = localStorage.getItem('movieGrid_hideWatchedInGlobal');
         return stored !== null ? JSON.parse(stored) : false;
@@ -629,6 +668,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [justUnwatchedLink, setJustUnwatchedLink] = useState(null);
     const [tintWatchedLink, setTintWatchedLink] = useState(null);
     const [tintUnwatchedLink, setTintUnwatchedLink] = useState(null);
+    const [tintRatingInfo, setTintRatingInfo] = useState(null);
     const [justAddedLink, setJustAddedLink] = useState(null);
     const [justRemovedLink, setJustRemovedLink] = useState(null);
     const [hoveredDeleteLink, setHoveredDeleteLink] = useState(null);
@@ -3082,7 +3122,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             left: ripple.x,
                                             top: ripple.y,
                                             animationDelay: `${ripple.delay || 0}s`,
-                                            '--ripple-color': ripple.color
+                                            '--ripple-color': ripple.color,
+                                            ...(ripple.customOpacity !== null && { '--ripple-opacity': ripple.customOpacity }),
+                                            ...(ripple.customDuration && { animationDuration: `${ripple.customDuration}ms` })
                                         }}
                                     />
                                 ))}
@@ -3124,6 +3166,14 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         <div style={{
                                             position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
                                             animation: 'unwatchedTintFadeOut 1.6s forwards'
+                                        }} />
+                                    )}
+                                    {tintRatingInfo?.link === movie.link && (
+                                        <div style={{
+                                            position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+                                            backgroundColor: 'rgb(255, 193, 7)',
+                                            opacity: tintRatingInfo.stage === 'in' ? tintRatingInfo.opacity : 0,
+                                            transition: tintRatingInfo.stage === 'in' ? 'opacity 0.2s ease-out' : `opacity ${tintRatingInfo.durationOut}s ease-in-out`
                                         }} />
                                     )}
                                     <div style={{
@@ -3319,7 +3369,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         <CardRatingButton
                                                             movie={movie}
                                                             posterSize={posterSize}
-                                                            onUpdateRating={async (ratingVal) => {
+                                                            onUpdateRating={async (ratingVal, e) => {
+                                                                handleRatingAnimation(e, ratingVal, movie.link, movie.id);
                                                                 await onUpdate(movie.id || null, { user_rating: ratingVal, link: movie.link });
                                                             }}
                                                         />
@@ -4057,7 +4108,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 left: ripple.x,
                                                 top: ripple.y,
                                                 animationDelay: `${ripple.delay || 0}s`,
-                                                '--ripple-color': ripple.color
+                                                '--ripple-color': ripple.color,
+                                                ...(ripple.customOpacity !== null && { '--ripple-opacity': ripple.customOpacity }),
+                                                ...(ripple.customDuration && { animationDuration: `${ripple.customDuration}ms` })
                                             }}
                                         />
                                     ))}
@@ -4103,6 +4156,14 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         <div style={{
                                             position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
                                             animation: 'unwatchedTintFadeOut 1.6s forwards'
+                                        }} />
+                                    )}
+                                    {tintRatingInfo?.link === movie.link && (
+                                        <div style={{
+                                            position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+                                            backgroundColor: 'rgb(255, 193, 7)',
+                                            opacity: tintRatingInfo.stage === 'in' ? tintRatingInfo.opacity : 0,
+                                            transition: tintRatingInfo.stage === 'in' ? 'opacity 0.2s ease-out' : `opacity ${tintRatingInfo.durationOut}s ease-in-out`
                                         }} />
                                     )}
                                     
@@ -4221,8 +4282,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         <CardRatingButton
                                                             movie={allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link)) || { ...movie, user_rating: localRatings[movie.link] }}
                                                             posterSize={posterSize}
-                                                            onUpdateRating={async (ratingVal) => {
+                                                            onUpdateRating={async (ratingVal, e) => {
                                                                 const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                                                handleRatingAnimation(e, ratingVal, movie.link, libMovie?.id || movie.id);
                                                                 setLocalRatings(prev => ({ ...prev, [movie.link]: ratingVal }));
                                                                 if (libMovie) {
                                                                     await onUpdate(libMovie.id, { user_rating: ratingVal, link: movie.link });
