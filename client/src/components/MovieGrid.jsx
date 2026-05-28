@@ -2972,7 +2972,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         ))}
                     </div>
                 ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                <motion.div 
+                    initial={isWatchedView && watchedViewMode === 'folders' && activeFolder ? { height: 0, opacity: 0 } : false}
+                    animate={isWatchedView && watchedViewMode === 'folders' && activeFolder ? { height: 'auto', opacity: 1 } : {}}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                    style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}
+                >
                     {/* Collection creation toast */}
                     {collectionToast && (
                         <div style={{
@@ -3634,7 +3639,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         <div ref={sentinelRef} style={{ height: '50px', width: '100%', gridColumn: '1 / -1' }} />
                     )}
                 </motion.div>
-                </div>
+                </motion.div>
                 )
             ) : (
                 <div className="movie-table-container">
@@ -3650,7 +3655,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             ))}
                         </div>
                     ) : (
-                    <div className="glass-panel" style={{ overflowX: 'auto', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                    <motion.div 
+                        initial={isWatchedView && watchedViewMode === 'folders' && activeFolder ? { height: 0, opacity: 0 } : false}
+                        animate={isWatchedView && watchedViewMode === 'folders' && activeFolder ? { height: 'auto', opacity: 1 } : {}}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                        className="glass-panel" 
+                        style={{ overflowX: 'auto', display: 'flex', flexDirection: 'column', position: 'relative', overflowY: 'hidden' }}
+                    >
                         {/* Collection creation toast (Table View) */}
                         {collectionToast && (
                             <div style={{
@@ -3939,7 +3950,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     )}
                     </div>
                     )}
-                </div>
+                </motion.div>
             )}
 
             {movies.length < 5 && !isTrashMode && (
