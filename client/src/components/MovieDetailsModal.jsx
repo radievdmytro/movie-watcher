@@ -889,7 +889,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 background: 'rgba(0, 0, 0, 0.85)',
                 backdropFilter: 'blur(10px)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                zIndex: 11000, padding: isMobile ? '12px' : '20px',
+                zIndex: 400000, padding: isMobile ? '12px' : '20px',
                 animation: 'fadeIn 0.3s ease-out'
             }}
         >
