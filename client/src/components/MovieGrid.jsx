@@ -4323,6 +4323,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                          setClickedCheckmarkLink(movie.link);
                                                          setUpdatingCheckmarkLink(movie.link);
                                                          
+                                                         const rect = e.currentTarget.getBoundingClientRect();
+                                                         const cardRect = e.currentTarget.closest('.movie-card').getBoundingClientRect();
+                                                         const x = rect.left + rect.width / 2 - cardRect.left;
+                                                         const y = rect.top + rect.height / 2 - cardRect.top;
+                                                         const isWatching = !isMovieWatched;
+                                                         addRipple(movie.id || movie.link, x, y, isWatching);
+                                                         
                                                          try {
                                                              const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
                                                              if (isMovieWatched) {
