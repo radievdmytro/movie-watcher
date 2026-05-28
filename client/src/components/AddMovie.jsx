@@ -34,6 +34,14 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
     
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [hoveredCollectionLink, setHoveredCollectionLink] = useState(null);
+    const isAdmin = useMemo(() => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return false;
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.username?.toLowerCase() === 'radev';
+        } catch (e) { return false; }
+    }, []);
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', handleResize);
@@ -46,7 +54,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
     const [compareDetailsMovie, setCompareDetailsMovie] = useState(null);
 
     const handleCompareClick = () => {
-        const maxLimit = isMobile ? 2 : 3;
+        const maxLimit = 4;
 
         if (totalCompareCount === 0) {
             setLogs([{ msg: `⚠ Select at least one movie to compare`, type: 'error' }]);
@@ -289,7 +297,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
         };
     }, [fullPageResults, searchResults]);
 
-    const handleBatchImport = async (urls) => {
+    const handleBatchImport = async (urls, targetStatus = undefined) => {
         let successCount = 0;
         const newLogs = [];
         setIsFadingLogs(false);
@@ -309,7 +317,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ url })
+                    body: JSON.stringify({ url, status: targetStatus })
                 });
                 const data = await res.json();
 
@@ -460,6 +468,46 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
         setFullPageResults(false);
         setShowResultsPanel(false);
         setTimeout(() => setSearchResults(null), 400);
+    };
+
+    const handleWatchedSelected = async () => {
+        const links = [...selectedLinks];
+        if (!links.length) return;
+        await handleBatchImport(links, 'watched');
+        setSelectedLinks(new Set());
+        setFullPageResults(false);
+        setShowResultsPanel(false);
+        setTimeout(() => setSearchResults(null), 400);
+    };
+
+    const handleRefreshSelected = async () => {
+        const links = [...selectedLinks];
+        if (!links.length) return;
+        setLoading(true);
+        setIsFadingLogs(false);
+        setLogs([{ msg: 'Refreshing data from HDRezka...', type: 'info' }]);
+        try {
+            const token = localStorage.getItem('token');
+            await fetch('/api/admin/scraped-movies/refresh', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ links })
+            });
+            setLogs([{ msg: '✓ Refresh successful', type: 'success' }]);
+            // Re-trigger search to show fresh data
+            if (query) {
+                setTimeout(() => handleSearch(true, false), 500);
+            }
+        } catch (e) {
+            setLogs([{ msg: '✗ Refresh failed', type: 'error' }]);
+        } finally {
+            setLoading(false);
+            setTimeout(() => setIsFadingLogs(true), 4000);
+            setSelectedLinks(new Set());
+        }
     };
 
     const handleBulkAddToCollection = async () => {
@@ -1655,29 +1703,41 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                             display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                             background: 'rgba(18,18,18,0.95)', flexShrink: 0
                         }}>
-                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                {totalCompareCount >= 2 && totalCompareCount <= (isMobile ? 2 : 3) && (
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                {isAdmin && selectedLinks.size > 0 && (
+                                    <button onClick={handleRefreshSelected} className="btn btn-ghost" style={{
+                                        padding: '8px 20px', borderRadius: '20px',
+                                        border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem'
+                                    }}>🔄 Refresh ({selectedLinks.size})</button>
+                                )}
+                                {selectedLinks.size > 0 && (
+                                    <button onClick={handleWatchedSelected} className="btn btn-ghost" style={{
+                                        padding: '8px 20px', borderRadius: '20px',
+                                        border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem'
+                                    }}>👀 Watched ({selectedLinks.size})</button>
+                                )}
+                                {selectedLinks.size > 0 && (
+                                    <button onClick={handleBulkAddToCollection} className="btn btn-ghost" style={{
+                                        padding: '8px 28px', borderRadius: '20px',
+                                        border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', fontSize: '0.9rem'
+                                    }}>📁 To collection ({selectedLinks.size})</button>
+                                )}
+                                {totalCompareCount >= 2 && totalCompareCount <= 4 && (
                                     <button onClick={handleCompareClick} className="btn btn-ghost" style={{
                                         padding: '8px 20px', borderRadius: '20px',
                                         border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem'
                                     }}>⚖️ Compare ({totalCompareCount})</button>
                                 )}
-                                {totalCompareCount > (isMobile ? 2 : 3) && (
+                                {totalCompareCount > 4 && (
                                     <span style={{ fontSize: '0.85rem', color: '#888', fontStyle: 'italic', padding: '8px 0' }}>
-                                        Compare (max {isMobile ? 2 : 3})
+                                        Compare (max 4)
                                     </span>
                                 )}
                                 {selectedLinks.size > 0 && (
-                                    <>
-                                        <button onClick={handleAddSelected} className="btn btn-primary" style={{
-                                            padding: '8px 28px', borderRadius: '20px',
-                                            boxShadow: '0 2px 15px rgba(212,175,55,0.35)', fontSize: '0.9rem'
-                                        }}>✚ To library ({selectedLinks.size})</button>
-                                        <button onClick={handleBulkAddToCollection} className="btn btn-ghost" style={{
-                                            padding: '8px 28px', borderRadius: '20px',
-                                            border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', fontSize: '0.9rem'
-                                        }}>📁 To collection ({selectedLinks.size})</button>
-                                    </>
+                                    <button onClick={handleAddSelected} className="btn btn-primary" style={{
+                                        padding: '8px 28px', borderRadius: '20px',
+                                        boxShadow: '0 2px 15px rgba(212,175,55,0.35)', fontSize: '0.9rem'
+                                    }}>✚ To library ({selectedLinks.size})</button>
                                 )}
                             </div>
                         </div>
