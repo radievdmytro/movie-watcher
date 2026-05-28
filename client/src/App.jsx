@@ -583,7 +583,7 @@ function App() {
                 setMovies(prev => prev.filter(m => m.id !== id));
                 setSelectedIds(prev => prev.filter(sid => sid !== id));
                 if (selectedIds.length <= 1) setSelectionAnchor(null);
-                setDeletingIds([]);
+                setTimeout(() => setDeletingIds([]), 100);
             } catch (error) {
                 console.error('Delete failed:', error);
             }
@@ -618,7 +618,7 @@ function App() {
                 setMovies(prev => prev.filter(m => m.id !== id));
                 setSelectedIds(prev => prev.filter(sid => sid !== id));
                 if (selectedIds.length <= 1) setSelectionAnchor(null);
-                setDeletingIds([]);
+                setTimeout(() => setDeletingIds([]), 100);
             } catch (error) {
                 console.error('Delete failed:', error);
             }
@@ -658,7 +658,7 @@ function App() {
                             setMovies(prev => prev.filter(m => m.id !== id));
                             setSelectedIds(prev => prev.filter(sid => sid !== id));
                             if (selectedIds.length <= 1) setSelectionAnchor(null);
-                            setDeletingIds([]);
+                            setTimeout(() => setDeletingIds([]), 100);
                         } catch (error) {
                             console.error('Hide failed:', error);
                         }
@@ -676,7 +676,7 @@ function App() {
                     setMovies(prev => prev.filter(m => m.id !== id));
                     setSelectedIds(prev => prev.filter(sid => sid !== id));
                     if (selectedIds.length <= 1) setSelectionAnchor(null);
-                    setDeletingIds([]);
+                    setTimeout(() => setDeletingIds([]), 100);
                 } catch (error) {
                     console.error('Delete failed:', error);
                 }
@@ -741,7 +741,7 @@ function App() {
                                 setMovies(prev => prev.filter(m => !selectedIds.includes(m.id)));
                                 setSelectedIds([]);
                                 setSelectionAnchor(null);
-                                setDeletingIds([]);
+                                setTimeout(() => setDeletingIds([]), 100);
                             }, animDelay);
                         } catch (error) {
                             console.error('Hide failed:', error);
@@ -768,8 +768,11 @@ function App() {
                     });
 
                     // Clear animation state and refresh
-                    setDeletingIds([]);
-                    fetchMovies();
+                    setMovies(prev => prev.filter(m => !selectedIds.includes(m.id)));
+                    setSelectedIds([]);
+                    setSelectionAnchor(null);
+                    setTimeout(() => setDeletingIds([]), 100);
+                    fetchMovies(true);
                 } catch (error) {
                     console.error('Bulk delete failed', error);
                     setDeletingIds([]);
