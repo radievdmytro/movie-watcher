@@ -443,6 +443,7 @@ function CollectionsView({ onBack }) {
     }, []);
 
     const fetchCollectionDetails = async (id) => {
+        setExpandedCollection(null);
         try {
             const res = await fetch(`/api/collections/${id}`);
             const data = await res.json();
@@ -1062,8 +1063,7 @@ function CollectionsView({ onBack }) {
                         const isExpanded = expandedCollectionId === c.id;
                         const isAnimating = animatingCollectionId === c.id;
                         return (
-                            <motion.div
-                                layout
+                            <div
                                 id={`collection-card-${c.id}`}
                                 key={c.id}
                                 className={`glass-panel ${isAnimating ? 'shimmer-highlight' : ''}`}
@@ -1151,6 +1151,11 @@ function CollectionsView({ onBack }) {
                                             {activeTab === 'shared' && (
                                                 <span style={{ fontSize: '0.8rem', color: 'var(--accent-gold)', fontWeight: 500 }}>
                                                     👤 Sent by @{c.sender_username}
+                                                </span>
+                                            )}
+                                            {isExpanded && !expandedCollection && (
+                                                <span style={{ fontSize: '0.8rem', color: 'var(--accent-gold)', fontStyle: 'italic', animation: 'pulse 1.5s infinite' }}>
+                                                    Loading...
                                                 </span>
                                             )}
                                         </div>
@@ -1281,9 +1286,8 @@ function CollectionsView({ onBack }) {
 
                                 {/* Expanded Movie List */}
                                 <AnimatePresence initial={false}>
-                                {isExpanded && (
+                                {isExpanded && expandedCollection && (
                                     <motion.div
-                                        layout
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: 'auto', opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
@@ -1294,15 +1298,13 @@ function CollectionsView({ onBack }) {
                                             padding: '25px', borderTop: '1px solid rgba(255,255,255,0.05)',
                                             background: 'rgba(0,0,0,0.2)'
                                         }}>
-                                        {!expandedCollection ? (
-                                            <div style={{ textAlign: 'center', color: '#555' }}>Loading movies...</div>
-                                        ) : expandedCollection.movies.length === 0 ? (
+                                        {expandedCollection.movies.length === 0 ? (
                                             <div style={{ textAlign: 'center', color: '#555', fontStyle: 'italic' }}>
                                                 This collection has no movies.
                                             </div>
                                         ) : (
                                             <>
-                                                {expandedCollection && expandedCollection.movies.length > 0 && (
+                                                {expandedCollection.movies.length > 0 && (
                                                     <div style={{
                                                         display: 'flex', gap: '15px', alignItems: 'center',
                                                         marginBottom: '20px', padding: '12px 18px',
@@ -1563,7 +1565,7 @@ function CollectionsView({ onBack }) {
                                     </motion.div>
                                 )}
                                 </AnimatePresence>
-                            </motion.div>
+                            </div>
                         );
                     })}
                 </div>
