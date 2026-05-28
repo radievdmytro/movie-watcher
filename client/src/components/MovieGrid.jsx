@@ -628,6 +628,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [justWatchedLink, setJustWatchedLink] = useState(null);
     const [justUnwatchedLink, setJustUnwatchedLink] = useState(null);
     const [justAddedLink, setJustAddedLink] = useState(null);
+    const [justRemovedLink, setJustRemovedLink] = useState(null);
     const [hoveredDeleteLink, setHoveredDeleteLink] = useState(null);
     const [hoveredCollectionLink, setHoveredCollectionLink] = useState(null);
 
@@ -4055,6 +4056,15 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             animation: 'purpleTintFadeOut 1.4s forwards'
                                         }} />
                                     )}
+                                    {justRemovedLink === movie.link && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            inset: 0,
+                                            zIndex: 5,
+                                            pointerEvents: 'none',
+                                            animation: 'redTintFadeOut 1.6s forwards'
+                                        }} />
+                                    )}
                                     
                                     {/* Top Overlay Controls */}
                                     <div style={{
@@ -4244,9 +4254,14 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                  onMouseEnter={() => setHoveredButtonLink(movie.link)}
                                                                  onMouseLeave={() => setHoveredButtonLink(null)}
                                                                  onMouseDown={(e) => {
-                                                                     if (!isAdding && !isAdded) {
-                                                                         setJustAddedLink(movie.link);
-                                                                         setTimeout(() => setJustAddedLink(null), 1400);
+                                                                     if (!isAdding) {
+                                                                         if (!isAdded) {
+                                                                             setJustAddedLink(movie.link);
+                                                                             setTimeout(() => setJustAddedLink(null), 1400);
+                                                                         } else {
+                                                                             setJustRemovedLink(movie.link);
+                                                                             setTimeout(() => setJustRemovedLink(null), 1600);
+                                                                         }
                                                                      }
                                                                  }}
                                                                  onClick={async (e) => {
