@@ -992,8 +992,9 @@ function CollectionsView({ onBack }) {
                                             </div>
                                         )}
                                         <motion.button
-                                            whileHover={{ scale: 1.1, boxShadow: '0 8px 25px rgba(3, 218, 198, 0.6)' }}
+                                            whileHover={{ scale: 1.08, boxShadow: '0 3px 8px rgba(3, 218, 198, 0.5)' }}
                                             whileTap={{ scale: 0.95 }}
+                                            transition={{ type: 'tween', duration: 0.1, ease: 'easeOut' }}
                                             onClick={(e) => handleUnhideMovie(movie, e)}
                                             className="btn"
                                             style={{
