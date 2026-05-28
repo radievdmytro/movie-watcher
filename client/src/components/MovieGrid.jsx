@@ -3031,7 +3031,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 "grayscale(100%) brightness(1.5) contrast(1.5) blur(0px)", 
                                 "grayscale(100%) brightness(15) contrast(10) blur(2px)", 
                                 "grayscale(100%) brightness(20) contrast(10) blur(3px)", 
-                                "grayscale(100%) brightness(20) contrast(10) blur(5px)"
+                                "grayscale(100%) brightness(1) contrast(1) blur(0px)"
                             ],
                             boxShadow: [
                                 "0 4px 20px rgba(0,0,0,0.3)", 
@@ -3039,9 +3039,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 "-5px 0 10px rgba(255, 255, 255, 0.6), 5px 0 10px rgba(255, 255, 255, 0.6)", 
                                 "-15px 0 20px rgba(255, 255, 255, 1), 15px 0 20px rgba(255, 255, 255, 1)", 
                                 "-30px 0 30px rgba(255, 255, 255, 1), 30px 0 30px rgba(255, 255, 255, 1)", 
-                                "-30px 0 30px rgba(255, 255, 255, 0), 30px 0 30px rgba(255, 255, 255, 0)"
+                                "none"
                             ],
-                            backgroundColor: ["transparent", "transparent", "transparent", "white", "white", "rgba(255, 255, 255, 0)"]
+                            backgroundColor: ["transparent", "transparent", "transparent", "white", "white", "transparent"],
+                            display: ["flex", "flex", "flex", "flex", "flex", "none"]
                         } : undefined;
 
                         const staggerDelay = deletingIndex > 0 ? deletingIndex * 0.2 : 0;
