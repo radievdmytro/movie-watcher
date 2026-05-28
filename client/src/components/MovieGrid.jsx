@@ -3956,11 +3956,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     {visibleCount < finalDisplayMovies.length && (
                         <div ref={sentinelRef} style={{ height: '50px', width: '100%' }} />
                     )}
-                    </div>
-                    )}
                 </motion.div>
                 )}
                 </AnimatePresence>
+                </div>
             )}
 
             {movies.length < 5 && !isTrashMode && (
