@@ -3229,8 +3229,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 "-30px 0 30px rgba(255, 255, 255, 1), 30px 0 30px rgba(255, 255, 255, 1)", 
                                 "none"
                             ],
-                            backgroundColor: ["transparent", "transparent", "transparent", "white", "white", "transparent"],
-                            display: ["flex", "flex", "flex", "flex", "flex", "none"]
+                            backgroundColor: ["transparent", "transparent", "transparent", "white", "white", "transparent"]
                         } : undefined;
 
                         const staggerDelay = deletingIndex > 0 ? deletingIndex * 0.2 : 0;
