@@ -627,6 +627,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [updatingCheckmarkLink, setUpdatingCheckmarkLink] = useState(null);
     const [justWatchedLink, setJustWatchedLink] = useState(null);
     const [justUnwatchedLink, setJustUnwatchedLink] = useState(null);
+    const [justAddedLink, setJustAddedLink] = useState(null);
     const [hoveredDeleteLink, setHoveredDeleteLink] = useState(null);
     const [hoveredCollectionLink, setHoveredCollectionLink] = useState(null);
 
@@ -841,6 +842,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             });
             if (res.ok || res.status === 409) {
                 setAddedLinks(prev => new Set([...prev, link]));
+                setJustAddedLink(link);
+                setTimeout(() => setJustAddedLink(null), 1000);
                 if (onUpdate) {
                     onUpdate(null);
                 }
@@ -4045,6 +4048,15 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         }}
                                         loading="lazy"
                                     />
+                                    {justAddedLink === movie.link && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            inset: 0,
+                                            zIndex: 5,
+                                            pointerEvents: 'none',
+                                            animation: 'purpleTintFadeOut 1s forwards'
+                                        }} />
+                                    )}
                                     
                                     {/* Top Overlay Controls */}
                                     <div style={{
