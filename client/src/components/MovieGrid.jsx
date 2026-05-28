@@ -2497,7 +2497,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             </div>
 
                             {/* Hide/Show Watched Controls */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <button
                                     onClick={() => setHideWatched(!hideWatched)}
                                     disabled={isWatchedView}
@@ -2505,7 +2505,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '6px',
-                                        padding: '4px 10px',
+                                        padding: '4px 8px',
                                         borderRadius: '15px',
                                         fontSize: '0.75rem',
                                         fontWeight: '500',
@@ -2531,27 +2531,27 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     )}
                                 </button>
 
-                                {hideWatched && !guestLimitReached && (
-                                    <label style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                        fontSize: '0.75rem',
-                                        color: hideWatchedInGlobal ? 'var(--accent-gold)' : '#888',
-                                        cursor: isWatchedView ? 'not-allowed' : 'pointer',
-                                        opacity: isWatchedView ? 0.5 : 1,
-                                        transition: 'color 0.2s'
-                                    }} title="Also hide watched movies in global search">
-                                        <input
-                                            type="checkbox"
-                                            checked={hideWatchedInGlobal}
-                                            onChange={(e) => setHideWatchedInGlobal(e.target.checked)}
-                                            disabled={isWatchedView}
-                                            style={{ accentColor: 'var(--accent-gold)' }}
-                                        />
-                                        {isMobile ? 'Global' : 'in Global DB'}
-                                    </label>
-                                )}
+                                <label style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    fontSize: '0.75rem',
+                                    color: hideWatchedInGlobal ? 'var(--accent-gold)' : '#888',
+                                    cursor: isWatchedView ? 'not-allowed' : 'pointer',
+                                    opacity: (!hideWatched || guestLimitReached) ? 0 : (isWatchedView ? 0.5 : 1),
+                                    visibility: (!hideWatched || guestLimitReached) ? 'hidden' : 'visible',
+                                    pointerEvents: (!hideWatched || guestLimitReached) ? 'none' : 'auto',
+                                    transition: 'color 0.2s'
+                                }} title="Also hide watched movies in global search">
+                                    <input
+                                        type="checkbox"
+                                        checked={hideWatchedInGlobal}
+                                        onChange={(e) => setHideWatchedInGlobal(e.target.checked)}
+                                        disabled={isWatchedView}
+                                        style={{ accentColor: 'var(--accent-gold)' }}
+                                    />
+                                    {isMobile ? 'Global' : 'in Global DB'}
+                                </label>
                             </div>
                         </div>
                     </div>
