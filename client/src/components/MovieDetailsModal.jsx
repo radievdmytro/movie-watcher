@@ -904,16 +904,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     animation: 'scaleIn 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)'
                 }}
             >
-                {/* Smooth top gradient overlay for action buttons to prevent sharp edges */}
-                <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, height: isMobile ? '110px' : '130px',
-                    background: 'linear-gradient(to bottom, rgba(14,14,14,0.95) 0%, rgba(14,14,14,0.7) 40%, transparent 100%)',
-                    borderTopLeftRadius: isMobile ? '20px' : '24px',
-                    borderTopRightRadius: isMobile ? '20px' : '24px',
-                    zIndex: 99,
-                    pointerEvents: 'none'
-                }} />
-
                 {/* Header / Close Button fixed relative to the outer container, so it NEVER scrolls! */}
                 <div style={{ 
                     position: 'absolute', 
@@ -948,7 +938,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 transition: 'all 0.2s',
                                 userSelect: 'none',
                                 fontWeight: '500',
-                                pointerEvents: 'auto'
+                                pointerEvents: 'auto',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                             }}
                         >
                             <div style={{
@@ -970,7 +961,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
                             onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                             className="btn btn-ghost"
-                            style={{ display: 'flex', alignItems: 'center', padding: '0 12px', height: '32px', boxSizing: 'border-box', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid transparent', color: copiedShare ? '#03dac6' : '#fff', pointerEvents: 'auto', transition: 'all 0.2s' }}
+                            style={{ display: 'flex', alignItems: 'center', padding: '0 12px', height: '32px', boxSizing: 'border-box', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid transparent', color: copiedShare ? '#03dac6' : '#fff', pointerEvents: 'auto', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
                         >
                             {copiedShare ? '✔ Copied' : '🔗 Share'}
                         </button>
@@ -983,7 +974,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             disabled={isRefreshingData}
                             className="btn btn-ghost"
                             title="Обновить данные фильма"
-                            style={{ display: 'flex', alignItems: 'center', padding: '0 12px', height: '32px', boxSizing: 'border-box', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid transparent', color: isRefreshingData ? '#aaa' : '#fff', cursor: isRefreshingData ? 'wait' : 'pointer', pointerEvents: 'auto', transition: 'all 0.2s' }}
+                            style={{ display: 'flex', alignItems: 'center', padding: '0 12px', height: '32px', boxSizing: 'border-box', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid transparent', color: isRefreshingData ? '#aaa' : '#fff', cursor: isRefreshingData ? 'wait' : 'pointer', pointerEvents: 'auto', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
                         >
                             {isRefreshingData ? '⏳' : '🔄 Refresh'}
                         </button>
