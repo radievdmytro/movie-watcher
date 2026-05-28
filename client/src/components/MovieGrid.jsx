@@ -561,10 +561,19 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [localRatings, setLocalRatings] = useState({});
     const [ripples, setRipples] = useState([]);
 
-    const addRipple = (identifier, x, y, isWatchedAction = true) => {
+    const addRipple = (identifier, x, y, actionType = 'watched') => {
         const id1 = Date.now() + Math.random();
-        const color = isWatchedAction ? '0, 255, 200' : '255, 120, 0'; // Vibrant Mint vs Vibrant Orange
-        setRipples(prev => [...prev, { id: id1, identifier, x, y, color, delay: 0 }]);
+        
+        // Handle legacy boolean calls
+        if (actionType === true) actionType = 'watched';
+        if (actionType === false) actionType = 'unwatched';
+        
+        let color = '0, 255, 200'; // Vibrant Mint
+        if (actionType === 'unwatched') color = '255, 120, 0';
+        else if (actionType === 'add_to_library') color = '168, 85, 247'; // Purple
+        else if (actionType === 'remove_from_library') color = '239, 68, 68'; // Red
+
+        setRipples(prev => [...prev, { id: id1, identifier, x, y, color, delay: 0, actionType }]);
         setTimeout(() => {
             setRipples(prev => prev.filter(r => r.id !== id1));
         }, 3200);
@@ -3041,6 +3050,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     <div
                                         key={`glow-${ripple.id}`}
                                         className="card-edge-glow"
+                                        data-action-type={ripple.actionType}
                                         style={{
                                             '--click-x': `${ripple.x}px`,
                                             '--click-y': `${ripple.y}px`,
@@ -3063,6 +3073,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     <div
                                         key={`wave-${ripple.id}`}
                                         className="watch-ripple"
+                                        data-action-type={ripple.actionType}
                                         style={{
                                             left: ripple.x,
                                             top: ripple.y,
@@ -3973,6 +3984,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         <div
                                             key={`glow-${ripple.id}`}
                                             className="card-edge-glow"
+                                            data-action-type={ripple.actionType}
                                             style={{
                                                 '--click-x': `${ripple.x}px`,
                                                 '--click-y': `${ripple.y}px`,
@@ -4010,6 +4022,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         <div
                                             key={`wave-${ripple.id}`}
                                             className="watch-ripple"
+                                            data-action-type={ripple.actionType}
                                             style={{
                                                 left: ripple.x,
                                                 top: ripple.y,
@@ -4223,6 +4236,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                  onClick={async (e) => {
                                                                      e.stopPropagation();
                                                                      if (isAdding) return;
+                                                                     
+                                                                     const rect = e.currentTarget.getBoundingClientRect();
+                                                                     const cardRect = e.currentTarget.closest('.movie-card').getBoundingClientRect();
+                                                                     const x = rect.left + rect.width / 2 - cardRect.left;
+                                                                     const y = rect.top + rect.height / 2 - cardRect.top;
+                                                                     addRipple(movie.link, x, y, isAdded ? 'remove_from_library' : 'add_to_library');
+                                                                     
                                                                      if (isAdded) {
                                                                          const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link) && m.id !== null);
                                                                          if (libMovie) {
