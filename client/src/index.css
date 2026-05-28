@@ -865,10 +865,8 @@ body.hide-header-search .app-header {
   position: sticky;
   top: calc(var(--header-h, 90px) + 19px);
   z-index: 100;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--bg-primary);
   padding: 10px 0;
-  /* background and border removed per user request */
 }
 
 @media (max-width: 768px) {
