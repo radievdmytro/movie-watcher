@@ -3117,13 +3117,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     {tintWatchedLink === movie.link && (
                                         <div style={{
                                             position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
-                                            animation: 'watchedTintFadeOut 1.4s forwards'
+                                            animation: 'watchedTintFadeOut 1.6s forwards'
                                         }} />
                                     )}
                                     {tintUnwatchedLink === movie.link && (
                                         <div style={{
                                             position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
-                                            animation: 'unwatchedTintFadeOut 1.4s forwards'
+                                            animation: 'unwatchedTintFadeOut 1.6s forwards'
                                         }} />
                                     )}
                                     <div style={{
@@ -3407,10 +3407,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         
                                                         if (movie.status !== 'watched') {
                                                             setTintWatchedLink(movie.link);
-                                                            setTimeout(() => setTintWatchedLink(null), 1400);
+                                                            setTimeout(() => setTintWatchedLink(null), 1600);
                                                         } else {
                                                             setTintUnwatchedLink(movie.link);
-                                                            setTimeout(() => setTintUnwatchedLink(null), 1400);
+                                                            setTimeout(() => setTintUnwatchedLink(null), 1600);
                                                         }
                                                     }}
                                                     onClick={async (e) => {
@@ -4096,13 +4096,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     {tintWatchedLink === movie.link && (
                                         <div style={{
                                             position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
-                                            animation: 'watchedTintFadeOut 1.4s forwards'
+                                            animation: 'watchedTintFadeOut 1.6s forwards'
                                         }} />
                                     )}
                                     {tintUnwatchedLink === movie.link && (
                                         <div style={{
                                             position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
-                                            animation: 'unwatchedTintFadeOut 1.4s forwards'
+                                            animation: 'unwatchedTintFadeOut 1.6s forwards'
                                         }} />
                                     )}
                                     
@@ -4411,10 +4411,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                          if (isAdding || updatingCheckmarkLink === movie.link) return;
                                                          if (!isMovieWatched) {
                                                              setTintWatchedLink(movie.link);
-                                                             setTimeout(() => setTintWatchedLink(null), 1400);
+                                                             setTimeout(() => setTintWatchedLink(null), 1600);
                                                          } else {
                                                              setTintUnwatchedLink(movie.link);
-                                                             setTimeout(() => setTintUnwatchedLink(null), 1400);
+                                                             setTimeout(() => setTintUnwatchedLink(null), 1600);
                                                          }
                                                      }}
                                                      onClick={async (e) => {
