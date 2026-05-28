@@ -2338,7 +2338,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         flexWrap: 'wrap'
                     }}>
                         {/* Type Switcher */}
-                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)', order: isMobile ? 1 : 'unset' }}>
                             {[
                                 { id: 'all', label: 'All' },
                                 { id: 'movie', label: 'Movies' },
@@ -2368,15 +2368,14 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         </div>
                         
                         {/* User Rating Status Switcher */}
-                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)', order: isMobile ? 4 : 'unset' }}>
                             {[
-                                { id: 'all', label: 'All Ratings' },
                                 { id: 'rated', label: 'Rated' },
                                 { id: 'unrated', label: 'Unrated' }
                             ].map(status => (
                                 <button
                                     key={status.id}
-                                    onClick={() => setFilterUserRatingStatus(status.id)}
+                                    onClick={() => setFilterUserRatingStatus(prev => prev === status.id ? 'all' : status.id)}
                                     style={{
                                         padding: '4px 10px',
                                         borderRadius: '13px',
@@ -2396,7 +2395,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         </div>
 
                         {/* Search Fields Switcher */}
-                        <div className="desktop-genres-row" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div className="desktop-genres-row" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)', order: isMobile ? 6 : 'unset' }}>
                             {[
                                 { id: 'title', label: 'Title' },
                                 { id: 'actor', label: 'Actor' },
@@ -2426,8 +2425,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             ))}
                         </div>
 
-                        {/* View settings & Watched Toggle */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {isMobile && <div style={{ flexBasis: '100%', height: 0, order: 3 }}></div>}
+
+                        {/* View settings (Size & Grid/List Toggle) */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', order: isMobile ? 2 : 'unset' }}>
                             {/* Poster Size (Desktop only) */}
                             {viewMode === 'grid' && (
                                 <div className="desktop-genres-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '5px' }}>
@@ -2495,64 +2496,64 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                                 </button>
                             </div>
+                        </div>
 
-                            {/* Hide/Show Watched Controls */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <button
-                                    onClick={() => setHideWatched(!hideWatched)}
-                                    disabled={isWatchedView}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '4px 8px',
-                                        borderRadius: '15px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: '500',
-                                        cursor: isWatchedView ? 'not-allowed' : 'pointer',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        background: isWatchedView ? 'rgba(255,255,255,0.02)' : hideWatched ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.05)',
-                                        color: isWatchedView ? '#555' : hideWatched ? 'var(--accent-gold)' : '#888',
-                                        transition: 'all 0.2s',
-                                        whiteSpace: 'nowrap',
-                                        opacity: isWatchedView ? 0.5 : 1
-                                    }}
-                                >
-                                    {hideWatched ? (
-                                        <>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                                            <span>{isMobile ? 'Watched' : 'Hide Watched'}</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                                            <span>{isMobile ? 'Watched' : 'Show Watched'}</span>
-                                        </>
-                                    )}
-                                </button>
-
-                                <label style={{
+                        {/* Hide/Show Watched Controls */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', order: isMobile ? 5 : 'unset' }}>
+                            <button
+                                onClick={() => setHideWatched(!hideWatched)}
+                                disabled={isWatchedView}
+                                style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '4px',
+                                    gap: '6px',
+                                    padding: '4px 8px',
+                                    borderRadius: '15px',
                                     fontSize: '0.75rem',
-                                    color: hideWatchedInGlobal ? 'var(--accent-gold)' : '#888',
+                                    fontWeight: '500',
                                     cursor: isWatchedView ? 'not-allowed' : 'pointer',
-                                    opacity: (!hideWatched || guestLimitReached) ? 0 : (isWatchedView ? 0.5 : 1),
-                                    visibility: (!hideWatched || guestLimitReached) ? 'hidden' : 'visible',
-                                    pointerEvents: (!hideWatched || guestLimitReached) ? 'none' : 'auto',
-                                    transition: 'color 0.2s'
-                                }} title="Also hide watched movies in global search">
-                                    <input
-                                        type="checkbox"
-                                        checked={hideWatchedInGlobal}
-                                        onChange={(e) => setHideWatchedInGlobal(e.target.checked)}
-                                        disabled={isWatchedView}
-                                        style={{ accentColor: 'var(--accent-gold)' }}
-                                    />
-                                    {isMobile ? 'Global' : 'in Global DB'}
-                                </label>
-                            </div>
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    background: isWatchedView ? 'rgba(255,255,255,0.02)' : hideWatched ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.05)',
+                                    color: isWatchedView ? '#555' : hideWatched ? 'var(--accent-gold)' : '#888',
+                                    transition: 'all 0.2s',
+                                    whiteSpace: 'nowrap',
+                                    opacity: isWatchedView ? 0.5 : 1
+                                }}
+                            >
+                                {hideWatched ? (
+                                    <>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                                        <span>{isMobile ? 'Watched' : 'Hide Watched'}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        <span>{isMobile ? 'Watched' : 'Show Watched'}</span>
+                                    </>
+                                )}
+                            </button>
+
+                            <label style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.75rem',
+                                color: hideWatchedInGlobal ? 'var(--accent-gold)' : '#888',
+                                cursor: isWatchedView ? 'not-allowed' : 'pointer',
+                                opacity: (!hideWatched || guestLimitReached) ? 0 : (isWatchedView ? 0.5 : 1),
+                                visibility: (!hideWatched || guestLimitReached) ? 'hidden' : 'visible',
+                                pointerEvents: (!hideWatched || guestLimitReached) ? 'none' : 'auto',
+                                transition: 'color 0.2s'
+                            }} title="Also hide watched movies in global search">
+                                <input
+                                    type="checkbox"
+                                    checked={hideWatchedInGlobal}
+                                    onChange={(e) => setHideWatchedInGlobal(e.target.checked)}
+                                    disabled={isWatchedView}
+                                    style={{ accentColor: 'var(--accent-gold)' }}
+                                />
+                                {isMobile ? 'Global' : 'in Global DB'}
+                            </label>
                         </div>
                     </div>
 
