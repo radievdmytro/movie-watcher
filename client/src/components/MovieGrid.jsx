@@ -524,7 +524,7 @@ const GlobalHideButton = ({ link, onHide, offsetRight = 10, onHoverEnter, onHove
 
 const posterVariants = {
     initial: i => ({ 
-        x: -50 * i, 
+        x: -40 * i, 
         opacity: 0, 
         rotate: 0,
         y: 0
@@ -535,8 +535,9 @@ const posterVariants = {
         rotate: i % 2 === 0 ? 3 : -2,
         y: 0,
         transition: { 
-            duration: 0.4 + (i * 0.15),
-            ease: "easeOut"
+            duration: 0.5,
+            ease: [0.16, 1, 0.3, 1], // easeOutQuint
+            delay: i * 0.05
         }
     })
 };
@@ -568,7 +569,8 @@ const FolderCard = ({ groupName, movies, onClick }) => {
                         className="folder-preview-poster" 
                         style={{
                             marginLeft: i > 0 ? '-35px' : '0',
-                            zIndex: 10 - i
+                            zIndex: 10 - i,
+                            transition: 'none' // Prevent CSS transform transition from fighting with Framer Motion
                         }} 
                     />
                 ))}
