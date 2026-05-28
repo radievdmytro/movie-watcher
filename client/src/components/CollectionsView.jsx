@@ -1062,14 +1062,15 @@ function CollectionsView({ onBack }) {
                         const isExpanded = expandedCollectionId === c.id;
                         const isAnimating = animatingCollectionId === c.id;
                         return (
-                            <div
+                            <motion.div
+                                layout
                                 id={`collection-card-${c.id}`}
                                 key={c.id}
                                 className={`glass-panel ${isAnimating ? 'shimmer-highlight' : ''}`}
                                 style={{
                                     border: isExpanded || isAnimating ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.05)',
                                     borderRadius: '12px', overflow: 'hidden',
-                                    transition: 'all 0.3s ease'
+                                    transition: 'border 0.3s ease, background 0.3s ease'
                                 }}
                             >
                                 {/* Collection Card Header */}
@@ -1282,6 +1283,7 @@ function CollectionsView({ onBack }) {
                                 <AnimatePresence initial={false}>
                                 {isExpanded && (
                                     <motion.div
+                                        layout
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: 'auto', opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
@@ -1561,7 +1563,7 @@ function CollectionsView({ onBack }) {
                                     </motion.div>
                                 )}
                                 </AnimatePresence>
-                            </div>
+                            </motion.div>
                         );
                     })}
                 </div>
