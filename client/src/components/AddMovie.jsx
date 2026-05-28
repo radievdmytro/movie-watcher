@@ -1507,15 +1507,10 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                                         fontSize: isMobile ? '0.6rem' : '0.65rem', fontWeight: 'bold'
                                                     }}>✓ In Lib</div>
                                                 ) : (
-                                                    <div style={{
-                                                        position: 'absolute', top: '6px', right: '6px',
-                                                        width: isMobile ? '16px' : '22px', height: isMobile ? '16px' : '22px', borderRadius: '50%',
-                                                        background: sel ? 'var(--accent-gold)' : 'rgba(0,0,0,0.6)',
-                                                        border: `2px solid ${sel ? 'var(--accent-gold)' : 'rgba(255,255,255,0.4)'}`,
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        fontSize: isMobile ? '0.6rem' : '0.7rem', color: '#000', fontWeight: 'bold',
-                                                        transition: 'all 0.2s'
-                                                    }}>{sel ? '✓' : ''}</div>
+                                                    <label className="custom-checkbox" style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10 }} onClick={(e) => e.stopPropagation()}>
+                                                        <input type="checkbox" checked={sel} onChange={() => toggleSelect(item.link)} />
+                                                        <span className="checkmark"></span>
+                                                    </label>
                                                 )}
                                                 {item.rating && <div style={{ position: 'absolute', bottom: '4px', left: '4px', background: 'rgba(0,0,0,0.8)', padding: isMobile ? '1px 5px' : '2px 7px', borderRadius: '4px', fontSize: isMobile ? '0.65rem' : '0.75rem', color: '#fff' }}>★ {item.rating}</div>}
                                             </div>
