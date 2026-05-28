@@ -522,10 +522,43 @@ const GlobalHideButton = ({ link, onHide, offsetRight = 10, onHoverEnter, onHove
     </button>
 );
 
+const posterVariants = {
+    initial: i => ({ 
+        x: -50 * i, 
+        opacity: 0, 
+        rotate: 0,
+        y: 0
+    }),
+    animate: i => ({ 
+        x: 0, 
+        opacity: 1, 
+        rotate: i % 2 === 0 ? 3 : -2,
+        y: 0,
+        transition: { 
+            type: 'spring', 
+            stiffness: 350, 
+            damping: 25, 
+            delay: i * 0.08 
+        }
+    }),
+    hover: i => ({
+        x: 4, 
+        y: -2, 
+        rotate: 2,
+        transition: { duration: 0.2, ease: "easeOut" }
+    })
+};
+
 const FolderCard = ({ groupName, movies, onClick }) => {
     const previews = movies.slice(0, 5);
     return (
-        <div className="watched-folder-card" onClick={onClick}>
+        <motion.div 
+            className="watched-folder-card" 
+            onClick={onClick}
+            initial="initial"
+            animate="animate"
+            whileHover="hover"
+        >
             <div className="folder-header">
                 <div className="folder-title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
@@ -535,20 +568,21 @@ const FolderCard = ({ groupName, movies, onClick }) => {
             </div>
             <div className="folder-previews">
                 {previews.map((m, i) => (
-                    <img 
+                    <motion.img 
                         key={m.id || m.link || i} 
+                        custom={i}
+                        variants={posterVariants}
                         src={m.poster_url || 'https://via.placeholder.com/300x450?text=No+Poster'} 
                         alt="preview"
                         className="folder-preview-poster" 
                         style={{
                             marginLeft: i > 0 ? '-35px' : '0',
-                            zIndex: 10 - i,
-                            transform: `rotate(${i % 2 === 0 ? 3 : -2}deg)`
+                            zIndex: 10 - i
                         }} 
                     />
                 ))}
             </div>
-        </div>
+        </motion.div>
     );
 };
 
