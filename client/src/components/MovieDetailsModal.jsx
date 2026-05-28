@@ -726,7 +726,16 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 <button
                     onMouseEnter={() => setIsLibraryBtnHovered(true)}
                     onMouseLeave={() => setIsLibraryBtnHovered(false)}
-                    onClick={() => {
+                    onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const container = e.currentTarget.closest('.glass-panel');
+                        if (container) {
+                            const crect = container.getBoundingClientRect();
+                            const x = rect.left + rect.width / 2 - crect.left;
+                            const y = rect.top + rect.height / 2 - crect.top;
+                            addModalRipple(x, y, '239, 68, 68'); // Red
+                        }
+
                         const actualId = movie.id || libMovieId;
                         if (actualId && !isMobile) {
                             if (onDelete) {
@@ -769,7 +778,16 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         {libraryBtn}
                         {collBtn}
                         <button
-                            onClick={() => {
+                            onClick={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const container = e.currentTarget.closest('.glass-panel');
+                                if (container) {
+                                    const crect = container.getBoundingClientRect();
+                                    const x = rect.left + rect.width / 2 - crect.left;
+                                    const y = rect.top + rect.height / 2 - crect.top;
+                                    addModalRipple(x, y, '239, 68, 68'); // Red
+                                }
+
                                 const actualId = movie.id || libMovieId;
                                 if (actualId) {
                                     if (onDelete) {
@@ -813,7 +831,16 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
         const addBtn = (
             <button
-                onClick={() => {
+                onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const container = e.currentTarget.closest('.glass-panel');
+                    if (container) {
+                        const crect = container.getBoundingClientRect();
+                        const x = rect.left + rect.width / 2 - crect.left;
+                        const y = rect.top + rect.height / 2 - crect.top;
+                        addModalRipple(x, y, '168, 85, 247'); // Purple
+                    }
+
                     if (onAddMovie) {
                         onAddMovie(movie.link || movie.movie_link);
                     }
