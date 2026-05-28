@@ -2217,6 +2217,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     </div>
 
                     {/* Search DB Toggle replaced with a single premium, compact Checkbox */}
+                    {!isWatchedView && (
                     <div style={{
                         display: 'flex',
                         width: '100%',
@@ -2251,9 +2252,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             <span>Include Global Database matches in search results</span>
                         </label>
                     </div>
+                    )}
 
                     {/* Background Search Suggestion Banner */}
-                    {searchDb === 'library' && !autoSwitchToCache && deferredFilterQuery.trim().length >= 3 && backgroundCacheResults.length > 0 && (
+                    {!isWatchedView && searchDb === 'library' && !autoSwitchToCache && deferredFilterQuery.trim().length >= 3 && backgroundCacheResults.length > 0 && (
                         <div className="glass-panel" style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -2951,8 +2953,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             </>
 
             {viewMode === 'grid' ? (
-                isWatchedView && watchedViewMode === 'folders' && !activeFolder ? (
-                    <div className="folder-grid">
+                <AnimatePresence mode="wait">
+                {isWatchedView && watchedViewMode === 'folders' && !activeFolder ? (
+                    <motion.div 
+                        key="folders-grid"
+                        className="folder-grid"
+                        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                    >
                         {folderGroups?.map(group => (
                             <FolderCard 
                                 key={group.name} 
@@ -2961,9 +2968,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 onClick={() => setActiveFolder(group.name)} 
                             />
                         ))}
-                    </div>
+                    </motion.div>
                 ) : (
                 <motion.div 
+                    key="movies-grid"
                     initial={isWatchedView && watchedViewMode === 'folders' && activeFolder ? { height: 0, opacity: 0 } : false}
                     animate={isWatchedView && watchedViewMode === 'folders' && activeFolder ? { height: 'auto', opacity: 1 } : {}}
                     transition={{ duration: 0.4, ease: "easeInOut" }}
@@ -3631,11 +3639,17 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     )}
                 </motion.div>
                 </motion.div>
-                )
+                )}
+                </AnimatePresence>
             ) : (
                 <div className="movie-table-container">
+                    <AnimatePresence mode="wait">
                     {isWatchedView && watchedViewMode === 'folders' && !activeFolder ? (
-                        <div className="folder-grid">
+                        <motion.div 
+                            key="folders-list"
+                            className="folder-grid"
+                            exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                        >
                             {folderGroups?.map(group => (
                                 <FolderCard 
                                     key={group.name} 
@@ -3644,9 +3658,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     onClick={() => setActiveFolder(group.name)} 
                                 />
                             ))}
-                        </div>
+                        </motion.div>
                     ) : (
                     <motion.div 
+                        key="movies-list"
                         initial={isWatchedView && watchedViewMode === 'folders' && activeFolder ? { height: 0, opacity: 0 } : false}
                         animate={isWatchedView && watchedViewMode === 'folders' && activeFolder ? { height: 'auto', opacity: 1 } : {}}
                         transition={{ duration: 0.4, ease: "easeInOut" }}
@@ -3942,6 +3957,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     </div>
                     )}
                 </motion.div>
+                )}
+                </AnimatePresence>
             )}
 
             {movies.length < 5 && !isTrashMode && (
