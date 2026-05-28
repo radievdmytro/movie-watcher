@@ -1955,52 +1955,59 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 </button>
                             )}
 
-                            {showMobileSearchSettings && isMobile && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '100%',
-                                    right: '0',
-                                    marginTop: '8px',
-                                    background: '#151515',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    borderRadius: '12px',
-                                    padding: '8px',
-                                    zIndex: 10000,
-                                    boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
-                                    display: 'flex',
-                                    gap: '6px'
-                                }}>
-                                    {[
-                                        { id: 'title', label: 'Title' },
-                                        { id: 'actor', label: 'Actor' },
-                                        { id: 'director', label: 'Director' },
-                                        { id: 'year', label: 'Year' }
-                                    ].map(field => (
-                                        <button
-                                            key={field.id}
-                                            onMouseDown={(e) => {
-                                                e.preventDefault();
-                                                toggleSearchField(field.id);
-                                            }}
-                                            style={{
-                                                padding: '6px 12px',
-                                                borderRadius: '15px',
-                                                fontSize: '0.85rem',
-                                                cursor: 'pointer',
-                                                border: '1px solid transparent',
-                                                background: searchFields[field.id] ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.05)',
-                                                color: searchFields[field.id] ? '#c084fc' : '#888',
-                                                fontWeight: searchFields[field.id] ? '600' : '500',
-                                                transition: 'all 0.2s',
-                                                whiteSpace: 'nowrap',
-                                                borderColor: searchFields[field.id] ? 'rgba(168, 85, 247, 0.4)' : 'transparent'
-                                            }}
-                                        >
-                                            {field.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                            <AnimatePresence>
+                                {showMobileSearchSettings && isMobile && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                        transition={{ duration: 0.2, ease: "easeOut" }}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            right: '0',
+                                            marginTop: '8px',
+                                            background: '#151515',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            borderRadius: '12px',
+                                            padding: '8px',
+                                            zIndex: 10000,
+                                            boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
+                                            display: 'flex',
+                                            gap: '6px'
+                                        }}>
+                                        {[
+                                            { id: 'title', label: 'Title' },
+                                            { id: 'actor', label: 'Actor' },
+                                            { id: 'director', label: 'Director' },
+                                            { id: 'year', label: 'Year' }
+                                        ].map(field => (
+                                            <button
+                                                key={field.id}
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault();
+                                                    toggleSearchField(field.id);
+                                                }}
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: '15px',
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer',
+                                                    border: '1px solid transparent',
+                                                    background: searchFields[field.id] ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.05)',
+                                                    color: searchFields[field.id] ? '#c084fc' : '#888',
+                                                    fontWeight: searchFields[field.id] ? '600' : '500',
+                                                    transition: 'all 0.2s',
+                                                    whiteSpace: 'nowrap',
+                                                    borderColor: searchFields[field.id] ? 'rgba(168, 85, 247, 0.4)' : 'transparent'
+                                                }}
+                                            >
+                                                {field.label}
+                                            </button>
+                                        ))}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             {isSearchFocused && (
                                 searchSuggestions.movies.length > 0 ||
