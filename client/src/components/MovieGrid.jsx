@@ -2011,7 +2011,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     </AnimatePresence>
                                 </>
                             ) : (
-                                <div style={{ position: 'absolute', right: filterQuery ? '35px' : '10px', top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: '4px', zIndex: 10 }}>
+                                <div 
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    style={{ position: 'absolute', right: filterQuery ? '25px' : '0px', top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: '4px', zIndex: 10, padding: '10px', cursor: 'default' }}
+                                >
                                     {[
                                         { id: 'title', label: 'Title' },
                                         { id: 'actor', label: 'Actor' },
