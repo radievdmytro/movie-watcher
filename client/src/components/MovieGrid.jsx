@@ -709,6 +709,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [filterQuery, setFilterQuery] = useState('');
     const deferredFilterQuery = useDeferredValue(filterQuery);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [showMobileSearchSettings, setShowMobileSearchSettings] = useState(false);
     const [filterGenres, setFilterGenres] = useState(() => {
         try { const s = localStorage.getItem('mg_filterGenres'); if(s) return JSON.parse(s); } catch(e){}
         return [];
@@ -1922,9 +1923,83 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             />
                             {filterQuery && (
                                 <button
+                                    onMouseDown={(e) => e.preventDefault()}
                                     onClick={() => setFilterQuery('')}
-                                    style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}
+                                    style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#888', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5px' }}
                                 >&times;</button>
+                            )}
+
+                            {isMobile && (
+                                <button
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        setShowMobileSearchSettings(!showMobileSearchSettings);
+                                    }}
+                                    style={{
+                                        position: 'absolute',
+                                        right: filterQuery ? '35px' : '15px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'none',
+                                        border: 'none',
+                                        color: (searchFields.title && searchFields.actor && searchFields.director && searchFields.year) ? '#666' : 'var(--accent-gold)',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '5px',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                                </button>
+                            )}
+
+                            {showMobileSearchSettings && isMobile && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: '0',
+                                    marginTop: '8px',
+                                    background: '#151515',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '12px',
+                                    padding: '8px',
+                                    zIndex: 10000,
+                                    boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
+                                    display: 'flex',
+                                    gap: '6px'
+                                }}>
+                                    {[
+                                        { id: 'title', label: 'Title' },
+                                        { id: 'actor', label: 'Actor' },
+                                        { id: 'director', label: 'Director' },
+                                        { id: 'year', label: 'Year' }
+                                    ].map(field => (
+                                        <button
+                                            key={field.id}
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                toggleSearchField(field.id);
+                                            }}
+                                            style={{
+                                                padding: '6px 12px',
+                                                borderRadius: '15px',
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer',
+                                                border: '1px solid transparent',
+                                                background: searchFields[field.id] ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.05)',
+                                                color: searchFields[field.id] ? '#c084fc' : '#888',
+                                                fontWeight: searchFields[field.id] ? '600' : '500',
+                                                transition: 'all 0.2s',
+                                                whiteSpace: 'nowrap',
+                                                borderColor: searchFields[field.id] ? 'rgba(168, 85, 247, 0.4)' : 'transparent'
+                                            }}
+                                        >
+                                            {field.label}
+                                        </button>
+                                    ))}
+                                </div>
                             )}
 
                             {isSearchFocused && (
