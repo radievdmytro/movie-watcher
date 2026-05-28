@@ -1752,8 +1752,9 @@ body.hide-header-search .app-header {
     border-radius: inherit;
     pointer-events: none;
     z-index: 55;
-    mask-image: radial-gradient(circle, transparent 20%, black 50%, transparent 80%);
-    -webkit-mask-image: radial-gradient(circle, transparent 20%, black 50%, transparent 80%);
+    /* Use a very thin ring so it only lights up the actual border and doesn't look like a huge circle */
+    mask-image: radial-gradient(circle, transparent 48%, black 50%, transparent 52%);
+    -webkit-mask-image: radial-gradient(circle, transparent 48%, black 50%, transparent 52%);
     mask-repeat: no-repeat;
     -webkit-mask-repeat: no-repeat;
     animation: filterEdgeGlowExpand 1.5s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
