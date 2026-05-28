@@ -695,6 +695,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         return [1900, new Date().getFullYear() + 2];
     });
     const [filterType, setFilterType] = useState(() => localStorage.getItem('mg_filterType') || 'all');
+    const [filterUserRatingStatus, setFilterUserRatingStatus] = useState(() => localStorage.getItem('mg_filterUserRatingStatus') || 'all');
     const [searchFields, setSearchFields] = useState(() => {
         try {
             const saved = localStorage.getItem('searchFields');
@@ -818,7 +819,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         localStorage.setItem('mg_filterGenreMode', filterGenreMode);
         localStorage.setItem('mg_filterDirectors', JSON.stringify(filterDirectors));
         localStorage.setItem('mg_filterActors', JSON.stringify(filterActors));
-    }, [filterGenres, filterRating, filterYear, filterType, filterGenreMode, filterDirectors, filterActors]);
+        localStorage.setItem('mg_filterUserRatingStatus', filterUserRatingStatus);
+    }, [filterGenres, filterRating, filterYear, filterType, filterGenreMode, filterDirectors, filterActors, filterUserRatingStatus]);
 
     const [availableDirectors, setAvailableDirectors] = useState([]);
     const [availableActors, setAvailableActors] = useState([]);
@@ -1157,6 +1159,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 const isMovieWatched = movie.status === 'watched' || localWatchedLinks.has(movie.link);
                 if (!isWatchedView && hideWatched && isMovieWatched) return false;
 
+                // User Rating Status Filter
+                if (filterUserRatingStatus !== 'all') {
+                    if (filterUserRatingStatus === 'rated' && !movie.user_rating) return false;
+                    if (filterUserRatingStatus === 'unrated' && movie.user_rating) return false;
+                }
+
                 // Immediately hide from Watched View if marked unwatched locally
                 if (isWatchedView && localUnwatchedLinks.has(movie.link)) return false;
 
@@ -1179,7 +1187,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 return 0;
             })
             .map(item => item.movie);
-    }, [movies, sortField, sortDir, deferredFilterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields, localHiddenGlobalLinks, localUnwatchedLinks]);
+    }, [movies, sortField, sortDir, deferredFilterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterUserRatingStatus, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields, localHiddenGlobalLinks, localUnwatchedLinks]);
 
     const filteredOnboardingCacheMovies = useMemo(() => {
         if (guestLimitReached) return [];
@@ -2329,6 +2337,34 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 </button>
                             ))}
                         </div>
+                        
+                        {/* User Rating Status Switcher */}
+                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            {[
+                                { id: 'all', label: 'All Ratings' },
+                                { id: 'rated', label: 'Rated' },
+                                { id: 'unrated', label: 'Unrated' }
+                            ].map(status => (
+                                <button
+                                    key={status.id}
+                                    onClick={() => setFilterUserRatingStatus(status.id)}
+                                    style={{
+                                        padding: '4px 10px',
+                                        borderRadius: '13px',
+                                        fontSize: '0.75rem',
+                                        cursor: 'pointer',
+                                        border: 'none',
+                                        background: filterUserRatingStatus === status.id ? 'var(--accent-gold)' : 'transparent',
+                                        color: filterUserRatingStatus === status.id ? '#000' : '#888',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >
+                                    {status.label}
+                                </button>
+                            ))}
+                        </div>
 
                         {/* Search Fields Switcher */}
                         <div className="desktop-genres-row" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -2834,12 +2870,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
                             <div className="sort-tabs-row desktop-sort-tabs" style={{ gap: '8px' }}>
                                 <span style={{ color: '#666', flexShrink: 0 }}>Sort:</span>
-                                {['created_at', 'rating', 'year', 'title', 'status']
+                                {['created_at', 'rating', 'user_rating', 'year', 'title', 'status']
                                     .filter(field => !(field === 'status' && isWatchedView))
                                     .map(field => (
                                     <button key={field} className="btn-ghost" style={{ color: sortField === field ? 'var(--accent-gold)' : 'inherit', padding: '0 5px', fontSize: '0.9rem' }}
                                         onClick={() => handleSort(field)}
-                                    >{field === 'status' ? 'Watched' : field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ')} {sortField === field && (sortDir === 'asc' ? '↑' : '↓')}</button>
+                                    >{field === 'status' ? 'Watched' : field === 'user_rating' ? 'My Rating' : field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ')} {sortField === field && (sortDir === 'asc' ? '↑' : '↓')}</button>
                                 ))}
                             </div>
 
@@ -2874,6 +2910,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     <option value="created_at-asc" style={{ background: '#151515', color: '#fff' }}>Added (Oldest)</option>
                                     <option value="rating-desc" style={{ background: '#151515', color: '#fff' }}>Rating (High to Low)</option>
                                     <option value="rating-asc" style={{ background: '#151515', color: '#fff' }}>Rating (Low to High)</option>
+                                    <option value="user_rating-desc" style={{ background: '#151515', color: '#fff' }}>My Rating (High to Low)</option>
+                                    <option value="user_rating-asc" style={{ background: '#151515', color: '#fff' }}>My Rating (Low to High)</option>
                                     <option value="year-desc" style={{ background: '#151515', color: '#fff' }}>Year (Newest)</option>
                                     <option value="year-asc" style={{ background: '#151515', color: '#fff' }}>Year (Oldest)</option>
                                     <option value="title-asc" style={{ background: '#151515', color: '#fff' }}>Title (A-Z)</option>
