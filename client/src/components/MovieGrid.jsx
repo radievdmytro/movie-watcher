@@ -535,17 +535,9 @@ const posterVariants = {
         rotate: i % 2 === 0 ? 3 : -2,
         y: 0,
         transition: { 
-            type: 'spring', 
-            stiffness: 350, 
-            damping: 25, 
-            delay: i * 0.08 
+            duration: 0.4 + (i * 0.15),
+            ease: "easeOut"
         }
-    }),
-    hover: i => ({
-        x: 4, 
-        y: -2, 
-        rotate: 2,
-        transition: { duration: 0.2, ease: "easeOut" }
     })
 };
 
@@ -557,7 +549,6 @@ const FolderCard = ({ groupName, movies, onClick }) => {
             onClick={onClick}
             initial="initial"
             animate="animate"
-            whileHover="hover"
         >
             <div className="folder-header">
                 <div className="folder-title">
