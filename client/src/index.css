@@ -675,7 +675,7 @@ input {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  border-image: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.06) 15%, rgba(255, 255, 255, 0.06) 85%, transparent 100%) 1;
+  border-image: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.06) max(0px, calc(50vw - 600px)), rgba(255, 255, 255, 0.06) min(100%, calc(50vw + 600px)), transparent 100%) 1;
   transform: translateY(0);
   /* All inner sizes transition smoothly */
   transition:
@@ -870,7 +870,7 @@ body.hide-header-search .app-header {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  border-image: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.06) 15%, rgba(255, 255, 255, 0.06) 85%, transparent 100%) 1;
+  border-image: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.06) max(0px, calc(50vw - 600px)), rgba(255, 255, 255, 0.06) min(100%, calc(50vw + 600px)), transparent 100%) 1;
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
   padding: 10px calc(50vw - 50%);
