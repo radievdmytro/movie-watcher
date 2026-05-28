@@ -22,12 +22,9 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
             // Start Phase 1
             setPhase(1);
 
-            // Phase 2: slicing and noise
-            const t1 = setTimeout(() => setPhase(2), 250);
-
-            // Phase 3: Particles and dissolution
-            const t2 = setTimeout(() => {
-                setPhase(3);
+            // Phase 2: slicing and noise + start particles underneath
+            const t1 = setTimeout(() => {
+                setPhase(2);
                 
                 if (wrapperRef.current) {
                     const rect = wrapperRef.current.getBoundingClientRect();
@@ -43,33 +40,38 @@ const DigitalDisintegration = ({ isHiding, onAnimationComplete, children, style,
                         span.style.fontFamily = 'monospace';
                         span.style.fontSize = '1.2rem';
                         span.style.pointerEvents = 'none';
-                        span.style.zIndex = '999999';
+                        span.style.zIndex = '5'; // Lower z-index so it starts behind the card if possible
                         
                         const targetX = Math.random() * 1200 - 600;
                         const targetY = -(Math.random() * 900 + 300);
                         const duration = 2.0 + Math.random() * 1.0;
-                        const delay = Math.random() * 0.2;
                         
                         span.animate([
-                            { opacity: 1, transform: `translate(0px, 0px) scale(${Math.random() * 0.5 + 0.5}) rotate(0deg)` },
+                            { opacity: 0, transform: `translate(0px, 0px) scale(${Math.random() * 0.5 + 0.5}) rotate(0deg)` },
+                            { opacity: 1, transform: `translate(${targetX * 0.1}px, ${targetY * 0.1}px) scale(${Math.random() * 0.5 + 0.5}) rotate(${Math.random() * 30}deg)`, offset: 0.15 },
                             { opacity: 0, transform: `translate(${targetX}px, ${targetY}px) scale(0) rotate(${Math.random() * 180 - 90}deg)` }
                         ], {
                             duration: duration * 1000,
-                            delay: delay * 1000,
+                            delay: 0,
                             easing: 'ease-out',
                             fill: 'forwards'
                         });
                         
                         document.body.appendChild(span);
-                        setTimeout(() => span.remove(), (duration + delay) * 1000 + 100);
+                        setTimeout(() => span.remove(), duration * 1000 + 100);
                     }
                 }
-            }, 500);
+            }, 100);
 
-            // Finish (trigger layout collapse 100ms after particles spawn)
+            // Phase 3: dissolution
+            const t2 = setTimeout(() => {
+                setPhase(3);
+            }, 350);
+
+            // Finish (trigger layout collapse)
             const t3 = setTimeout(() => {
                 if (onAnimationComplete) onAnimationComplete();
-            }, 600);
+            }, 450);
 
             return () => {
                 clearTimeout(t1);
