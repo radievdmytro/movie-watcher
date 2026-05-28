@@ -3099,7 +3099,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         style={{
                                             '--click-x': `${ripple.x}px`,
                                             '--click-y': `${ripple.y}px`,
-                                            animationDelay: `${ripple.delay || 0}s`
+                                            animationDelay: `${ripple.delay || 0}s`,
+                                            ...(ripple.customDuration && { animationDuration: `${ripple.customDuration}ms` })
                                         }}
                                     />
                                 ))}
@@ -4070,7 +4071,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             style={{
                                                 '--click-x': `${ripple.x}px`,
                                                 '--click-y': `${ripple.y}px`,
-                                                animationDelay: `${ripple.delay || 0}s`
+                                                animationDelay: `${ripple.delay || 0}s`,
+                                                ...(ripple.customDuration && { animationDuration: `${ripple.customDuration}ms` })
                                             }}
                                         />
                                     ))}
