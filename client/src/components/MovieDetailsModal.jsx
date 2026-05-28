@@ -914,42 +914,55 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     borderTopRightRadius: isMobile ? '20px' : '24px',
                     display: 'flex', 
                     gap: '10px', 
-                    alignItems: 'flex-start', 
+                    alignItems: 'center', 
                     justifyContent: 'flex-end',
                     zIndex: 100,
                     pointerEvents: 'none'
                 }}>
                     {!isMobile && onSelectToggle && (
-                        <label style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px', 
-                            cursor: 'pointer', 
-                            background: isSelected ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255,255,255,0.05)', 
-                            border: isSelected ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.1)', 
-                            padding: '6px 12px', 
-                            borderRadius: '4px', 
-                            color: isSelected ? 'var(--accent-gold)' : '#fff', 
-                            fontSize: '0.9rem', 
-                            transition: 'all 0.2s',
-                            userSelect: 'none',
-                            fontWeight: '500',
-                            pointerEvents: 'auto'
-                        }}>
-                            <input 
-                                type="checkbox" 
-                                checked={isSelected} 
-                                onChange={onSelectToggle} 
-                                style={{ accentColor: 'var(--accent-gold)', width: '15px', height: '15px', cursor: 'pointer' }}
-                            />
-                            {isSelected ? '✓ Selected' : 'Select'}
-                        </label>
+                        <div 
+                            onClick={onSelectToggle}
+                            onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.15)' }}
+                            onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                            style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '8px', 
+                                cursor: 'pointer', 
+                                background: isSelected ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255,255,255,0.05)', 
+                                border: isSelected ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.1)', 
+                                padding: '0 12px', 
+                                height: '32px',
+                                boxSizing: 'border-box',
+                                borderRadius: '4px', 
+                                color: isSelected ? 'var(--accent-gold)' : '#fff', 
+                                fontSize: '0.9rem', 
+                                transition: 'all 0.2s',
+                                userSelect: 'none',
+                                fontWeight: '500',
+                                pointerEvents: 'auto'
+                            }}
+                        >
+                            <div style={{
+                                width: '14px', height: '14px', borderRadius: '3px',
+                                background: isSelected ? 'var(--accent-gold)' : 'rgba(255,255,255,0.1)',
+                                border: `1px solid ${isSelected ? 'var(--accent-gold)' : 'rgba(255,255,255,0.3)'}`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '10px', color: '#000', fontWeight: 'bold',
+                                transition: 'all 0.2s'
+                            }}>
+                                {isSelected ? '✓' : ''}
+                            </div>
+                            {isSelected ? 'Selected' : 'Select'}
+                        </div>
                     )}
                     {!isMobile && (
                         <button
                             onClick={handleShare}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                             className="btn btn-ghost"
-                            style={{ padding: '6px 12px', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: copiedShare ? '#03dac6' : '#fff', pointerEvents: 'auto' }}
+                            style={{ display: 'flex', alignItems: 'center', padding: '0 12px', height: '32px', boxSizing: 'border-box', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid transparent', color: copiedShare ? '#03dac6' : '#fff', pointerEvents: 'auto', transition: 'all 0.2s' }}
                         >
                             {copiedShare ? '✔ Copied' : '🔗 Share'}
                         </button>
@@ -957,10 +970,12 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                     {!isMobile && isAdmin && (
                         <button
                             onClick={handleRefreshData}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                             disabled={isRefreshingData}
                             className="btn btn-ghost"
                             title="Обновить данные фильма"
-                            style={{ padding: '6px 12px', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: isRefreshingData ? '#aaa' : '#fff', cursor: isRefreshingData ? 'wait' : 'pointer', pointerEvents: 'auto' }}
+                            style={{ display: 'flex', alignItems: 'center', padding: '0 12px', height: '32px', boxSizing: 'border-box', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid transparent', color: isRefreshingData ? '#aaa' : '#fff', cursor: isRefreshingData ? 'wait' : 'pointer', pointerEvents: 'auto', transition: 'all 0.2s' }}
                         >
                             {isRefreshingData ? '⏳' : '🔄 Refresh'}
                         </button>
@@ -1385,29 +1400,36 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                     {/* Mobile inline Select & Share Actions Row */}
                                     <div style={{ display: 'flex', gap: '8px', marginTop: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                                         {onSelectToggle && (
-                                            <label style={{ 
-                                                display: 'flex', 
-                                                alignItems: 'center', 
-                                                gap: '6px', 
-                                                cursor: 'pointer', 
-                                                background: isSelected ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.04)', 
-                                                border: isSelected ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.08)', 
-                                                padding: '5px 10px', 
-                                                borderRadius: '6px', 
-                                                color: isSelected ? 'var(--accent-gold)' : '#fff', 
-                                                fontSize: '0.78rem', 
-                                                transition: 'all 0.2s',
-                                                userSelect: 'none',
-                                                fontWeight: '600'
-                                            }}>
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={isSelected} 
-                                                    onChange={onSelectToggle} 
-                                                    style={{ accentColor: 'var(--accent-gold)', width: '13px', height: '13px', cursor: 'pointer' }}
-                                                />
-                                                {isSelected ? '✓ Selected' : 'Select'}
-                                            </label>
+                                            <div 
+                                                onClick={onSelectToggle}
+                                                style={{ 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '6px', 
+                                                    cursor: 'pointer', 
+                                                    background: isSelected ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.04)', 
+                                                    border: isSelected ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.08)', 
+                                                    padding: '5px 10px', 
+                                                    borderRadius: '6px', 
+                                                    color: isSelected ? 'var(--accent-gold)' : '#fff', 
+                                                    fontSize: '0.78rem', 
+                                                    transition: 'all 0.2s',
+                                                    userSelect: 'none',
+                                                    fontWeight: '600'
+                                                }}
+                                            >
+                                                <div style={{
+                                                    width: '12px', height: '12px', borderRadius: '3px',
+                                                    background: isSelected ? 'var(--accent-gold)' : 'rgba(255,255,255,0.1)',
+                                                    border: `1px solid ${isSelected ? 'var(--accent-gold)' : 'rgba(255,255,255,0.3)'}`,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '9px', color: '#000', fontWeight: 'bold',
+                                                    transition: 'all 0.2s'
+                                                }}>
+                                                    {isSelected ? '✓' : ''}
+                                                </div>
+                                                {isSelected ? 'Selected' : 'Select'}
+                                            </div>
                                         )}
                                         <button
                                             onClick={handleShare}
