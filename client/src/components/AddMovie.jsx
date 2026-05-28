@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import MovieComparisonModal from './MovieComparisonModal';
 import MovieDetailsModal from './MovieDetailsModal';
 import BulkImportModal from './BulkImportModal';
