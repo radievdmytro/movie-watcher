@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import MovieDetailsModal from './MovieDetailsModal';
 import MovieComparisonModal from './MovieComparisonModal';
 
@@ -921,108 +922,123 @@ function CollectionsView({ onBack }) {
                     </div>
                 ) : (
                     <div>
-                        {actionFeedback.id === 'hidden' && actionFeedback.message && (
-                            <div className="glass-panel" style={{
-                                marginBottom: '16px',
-                                padding: '12px 16px',
-                                color: actionFeedback.type === 'error' ? 'var(--danger)' : '#03dac6',
-                                fontWeight: 'bold',
-                                fontSize: '0.9rem'
-                            }}>
-                                {actionFeedback.message}
-                            </div>
-                        )}
-                        <div style={{
+                        <AnimatePresence>
+                            {actionFeedback.id === 'hidden' && actionFeedback.message && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                                    animate={{ opacity: 1, height: 'auto', marginBottom: 16 }}
+                                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                                    className="glass-panel" 
+                                    style={{
+                                        padding: '12px 16px',
+                                        color: actionFeedback.type === 'error' ? 'var(--danger)' : '#03dac6',
+                                        fontWeight: 'bold',
+                                        fontSize: '0.9rem',
+                                        overflow: 'hidden'
+                                    }}>
+                                    {actionFeedback.message}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                        <motion.div layout style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
                             gap: '20px'
                         }}>
-                            {hiddenMovies.map(movie => (
-                                <div
-                                    key={movie.movie_link}
-                                    className="glass-panel movie-card"
-                                    onClick={() => setSelectedMovie({
-                                        ...movie,
-                                        poster_url: movie.poster_url || movie.img,
-                                        readOnly: true
-                                    })}
-                                    style={{
-                                        position: 'relative',
-                                        cursor: 'pointer',
-                                        borderRadius: '8px',
-                                        overflow: 'hidden',
-                                        border: '1px solid rgba(255,255,255,0.05)',
-                                        aspectRatio: '2/3',
-                                        transition: 'transform 0.2s',
-                                        background: 'rgba(255,255,255,0.03)'
-                                    }}
-                                >
-                                    {movie.poster_url ? (
-                                        <img
-                                            src={movie.poster_url}
-                                            alt={movie.title}
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.8)' }}
-                                        />
-                                    ) : (
-                                        <div style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            padding: '16px',
-                                            textAlign: 'center',
-                                            color: '#777',
-                                            background: 'rgba(0,0,0,0.25)'
-                                        }}>
-                                            {movie.title}
-                                        </div>
-                                    )}
-                                    <button
-                                        onClick={(e) => handleUnhideMovie(movie, e)}
-                                        className="btn"
+                            <AnimatePresence>
+                                {hiddenMovies.map(movie => (
+                                    <motion.div
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.5 }}
+                                        transition={{ duration: 0.3 }}
+                                        key={movie.movie_link}
+                                        className="glass-panel movie-card"
+                                        onClick={() => setSelectedMovie({
+                                            ...movie,
+                                            poster_url: movie.poster_url || movie.img,
+                                            readOnly: true
+                                        })}
                                         style={{
-                                            position: 'absolute',
-                                            top: '10px',
-                                            right: '10px',
-                                            zIndex: 12,
-                                            background: 'rgba(3, 218, 198, 0.88)',
-                                            color: '#000',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            padding: '6px 10px',
-                                            fontSize: '0.78rem',
-                                            fontWeight: 'bold',
+                                            position: 'relative',
                                             cursor: 'pointer',
-                                            boxShadow: '0 6px 18px rgba(0,0,0,0.35)'
-                                        }}
-                                        title="Show in global recommendations and search again"
-                                    >
-                                        👁️ Unhide
-                                    </button>
-                                    <div style={{
-                                        position: 'absolute', bottom: 0, left: 0, width: '100%',
-                                        padding: '30px 10px 10px',
-                                        background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%)'
-                                    }}>
-                                        <h4 style={{
-                                            fontSize: '0.85rem',
-                                            color: '#fff',
-                                            margin: '0 0 2px 0',
-                                            textOverflow: 'ellipsis',
+                                            borderRadius: '8px',
                                             overflow: 'hidden',
-                                            whiteSpace: 'nowrap'
+                                            border: '1px solid rgba(255,255,255,0.05)',
+                                            aspectRatio: '2/3',
+                                            background: 'rgba(255,255,255,0.03)'
+                                        }}
+                                    >
+                                        {movie.poster_url ? (
+                                            <img
+                                                src={movie.poster_url}
+                                                alt={movie.title}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.8)' }}
+                                            />
+                                        ) : (
+                                            <div style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                padding: '16px',
+                                                textAlign: 'center',
+                                                color: '#777',
+                                                background: 'rgba(0,0,0,0.25)'
+                                            }}>
+                                                {movie.title}
+                                            </div>
+                                        )}
+                                        <motion.button
+                                            whileHover={{ scale: 1.1, boxShadow: '0 8px 25px rgba(3, 218, 198, 0.6)' }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={(e) => handleUnhideMovie(movie, e)}
+                                            className="btn"
+                                            style={{
+                                                position: 'absolute',
+                                                top: '10px',
+                                                right: '10px',
+                                                zIndex: 12,
+                                                background: 'rgba(3, 218, 198, 0.88)',
+                                                color: '#000',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                padding: '6px 10px',
+                                                fontSize: '0.78rem',
+                                                fontWeight: 'bold',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 6px 18px rgba(0,0,0,0.35)'
+                                            }}
+                                            title="Show in global recommendations and search again"
+                                        >
+                                            👁️ Unhide
+                                        </motion.button>
+                                        <div style={{
+                                            position: 'absolute', bottom: 0, left: 0, width: '100%',
+                                            padding: '30px 10px 10px',
+                                            background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%)'
                                         }}>
-                                            {movie.title}
-                                        </h4>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#aaa' }}>
-                                            <span>{movie.year || ''}</span>
-                                            <span style={{ color: 'var(--accent-gold)' }}>★ {movie.rating || '-'}</span>
+                                            <h4 style={{
+                                                fontSize: '0.85rem',
+                                                color: '#fff',
+                                                margin: '0 0 2px 0',
+                                                textOverflow: 'ellipsis',
+                                                overflow: 'hidden',
+                                                whiteSpace: 'nowrap'
+                                            }}>
+                                                {movie.title}
+                                            </h4>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#aaa' }}>
+                                                <span>{movie.year || ''}</span>
+                                                <span style={{ color: 'var(--accent-gold)' }}>★ {movie.rating || '-'}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </motion.div>
                     </div>
                 )
             ) : currentLoading ? (
