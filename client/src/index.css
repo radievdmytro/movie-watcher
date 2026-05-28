@@ -1744,3 +1744,15 @@ body.hide-header-search .app-header {
         -webkit-backdrop-filter: blur(0px); 
     }
 }
+
+@keyframes watchedTintFadeOut {
+    0% { background-color: rgba(3, 218, 198, 0); }
+    14% { background-color: rgba(3, 218, 198, 0.6); }
+    100% { background-color: rgba(3, 218, 198, 0); }
+}
+
+@keyframes unwatchedTintFadeOut {
+    0% { background-color: rgba(255, 152, 0, 0); }
+    14% { background-color: rgba(255, 152, 0, 0.6); }
+    100% { background-color: rgba(255, 152, 0, 0); }
+}

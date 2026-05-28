@@ -627,6 +627,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [updatingCheckmarkLink, setUpdatingCheckmarkLink] = useState(null);
     const [justWatchedLink, setJustWatchedLink] = useState(null);
     const [justUnwatchedLink, setJustUnwatchedLink] = useState(null);
+    const [tintWatchedLink, setTintWatchedLink] = useState(null);
+    const [tintUnwatchedLink, setTintUnwatchedLink] = useState(null);
     const [justAddedLink, setJustAddedLink] = useState(null);
     const [justRemovedLink, setJustRemovedLink] = useState(null);
     const [hoveredDeleteLink, setHoveredDeleteLink] = useState(null);
@@ -3112,6 +3114,18 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             objectFit: 'cover'
                                         }}
                                     />
+                                    {tintWatchedLink === movie.link && (
+                                        <div style={{
+                                            position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+                                            animation: 'watchedTintFadeOut 1.4s forwards'
+                                        }} />
+                                    )}
+                                    {tintUnwatchedLink === movie.link && (
+                                        <div style={{
+                                            position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+                                            animation: 'unwatchedTintFadeOut 1.4s forwards'
+                                        }} />
+                                    )}
                                     <div style={{
                                         position: 'absolute', inset: 0,
                                         background: hoveredHideGlobalLink === movie.link ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
@@ -3384,6 +3398,20 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         boxShadow: 'none'
+                                                    }}
+                                                    onMouseDown={(e) => {
+                                                        const isBtnHovered = hoveredButtonLink === movie.link;
+                                                        const isCardHovered = hoveredCardLink === movie.link;
+                                                        const showDetailsText = isCardHovered && !isBtnHovered;
+                                                        if (showDetailsText || hoveredDeleteLink === movie.link || hoveredCollectionLink === movie.link) return;
+                                                        
+                                                        if (movie.status !== 'watched') {
+                                                            setTintWatchedLink(movie.link);
+                                                            setTimeout(() => setTintWatchedLink(null), 1400);
+                                                        } else {
+                                                            setTintUnwatchedLink(movie.link);
+                                                            setTimeout(() => setTintUnwatchedLink(null), 1400);
+                                                        }
                                                     }}
                                                     onClick={async (e) => {
                                                         e.stopPropagation();
@@ -4065,6 +4093,18 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             animation: 'redTintFadeOut 1.6s forwards'
                                         }} />
                                     )}
+                                    {tintWatchedLink === movie.link && (
+                                        <div style={{
+                                            position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+                                            animation: 'watchedTintFadeOut 1.4s forwards'
+                                        }} />
+                                    )}
+                                    {tintUnwatchedLink === movie.link && (
+                                        <div style={{
+                                            position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+                                            animation: 'unwatchedTintFadeOut 1.4s forwards'
+                                        }} />
+                                    )}
                                     
                                     {/* Top Overlay Controls */}
                                     <div style={{
@@ -4366,6 +4406,16 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                      onMouseLeave={() => {
                                                          setHoveredCheckmarkLink(null);
                                                          setClickedCheckmarkLink(null);
+                                                     }}
+                                                     onMouseDown={(e) => {
+                                                         if (isAdding || updatingCheckmarkLink === movie.link) return;
+                                                         if (!isMovieWatched) {
+                                                             setTintWatchedLink(movie.link);
+                                                             setTimeout(() => setTintWatchedLink(null), 1400);
+                                                         } else {
+                                                             setTintUnwatchedLink(movie.link);
+                                                             setTimeout(() => setTintUnwatchedLink(null), 1400);
+                                                         }
                                                      }}
                                                      onClick={async (e) => {
                                                          e.stopPropagation();
