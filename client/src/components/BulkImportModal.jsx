@@ -16,22 +16,28 @@ export default function BulkImportModal({ isOpen, onClose, onMovieAdded }) {
     }, []);
 
     useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-            document.documentElement.style.overflow = 'hidden';
-            abortRef.current = false;
-        } else {
-            document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
+        if (!isOpen) {
             if (!importing) {
                 setText('');
                 setLogs([]);
                 setProgress({ current: 0, total: 0 });
             }
+            return;
         }
+
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        const originalOverflow = document.body.style.overflow;
+        const originalPaddingRight = document.body.style.paddingRight;
+
+        document.body.style.overflow = 'hidden';
+        if (scrollbarWidth > 0) {
+            document.body.style.paddingRight = `${scrollbarWidth}px`;
+        }
+        abortRef.current = false;
+
         return () => {
-            document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
+            document.body.style.overflow = originalOverflow;
+            document.body.style.paddingRight = originalPaddingRight;
         };
     }, [isOpen, importing]);
 

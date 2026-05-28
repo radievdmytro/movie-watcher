@@ -33,18 +33,25 @@ export default function MovieComparisonModal({
     }, []);
 
     useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-            document.documentElement.style.overflow = 'hidden';
-            setActiveLinks(movieLinks || []);
-        } else {
-            document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
+        if (!isOpen) {
             setActiveLinks([]);
+            return;
         }
+
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        const originalOverflow = document.body.style.overflow;
+        const originalPaddingRight = document.body.style.paddingRight;
+
+        document.body.style.overflow = 'hidden';
+        if (scrollbarWidth > 0) {
+            document.body.style.paddingRight = `${scrollbarWidth}px`;
+        }
+        
+        setActiveLinks(movieLinks || []);
+
         return () => {
-            document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
+            document.body.style.overflow = originalOverflow;
+            document.body.style.paddingRight = originalPaddingRight;
         };
     }, [isOpen, movieLinks]);
 

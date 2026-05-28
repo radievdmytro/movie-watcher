@@ -113,10 +113,18 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
 
     // Block page scrolling behind the modal while open
     useEffect(() => {
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
         const originalOverflow = document.body.style.overflow;
+        const originalPaddingRight = document.body.style.paddingRight;
+
         document.body.style.overflow = 'hidden';
+        if (scrollbarWidth > 0) {
+            document.body.style.paddingRight = `${scrollbarWidth}px`;
+        }
+
         return () => {
             document.body.style.overflow = originalOverflow;
+            document.body.style.paddingRight = originalPaddingRight;
         };
     }, []);
 
@@ -380,11 +388,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         }
     }, []);
 
-    // Lock body scroll when modal is open
+    // Handle Escape key
     useEffect(() => {
-        document.body.style.overflow = 'hidden';
-        
-        // Handle Escape key
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
                 if (isPosterZoomed) {
@@ -401,7 +406,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         document.addEventListener('keydown', handleKeyDown);
         
         return () => {
-            document.body.style.overflow = '';
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [onClose, isPosterZoomed, cacheSearch, isTrailerModalOpen]);

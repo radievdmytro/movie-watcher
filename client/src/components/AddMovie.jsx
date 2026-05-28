@@ -287,13 +287,25 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
 
     // Block body scrolling when full-page search results are open
     useEffect(() => {
+        let originalOverflow = '';
+        let originalPaddingRight = '';
+
         if (fullPageResults && searchResults) {
+            originalOverflow = document.body.style.overflow;
+            originalPaddingRight = document.body.style.paddingRight;
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
             document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
+            if (scrollbarWidth > 0) {
+                document.body.style.paddingRight = `${scrollbarWidth}px`;
+            }
         }
+
         return () => {
-            document.body.style.overflow = '';
+            if (fullPageResults && searchResults) {
+                document.body.style.overflow = originalOverflow;
+                document.body.style.paddingRight = originalPaddingRight;
+            }
         };
     }, [fullPageResults, searchResults]);
 
