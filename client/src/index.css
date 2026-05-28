@@ -1344,12 +1344,8 @@ body.hide-header-search .app-header {
   border-radius: 8px;
   border: 2px solid #222;
   box-shadow: -4px 0 12px rgba(0,0,0,0.5);
-  transition: transform 0.3s ease;
 }
 
-.watched-folder-card:hover .folder-preview-poster {
-  transform: translateX(4px) translateY(-2px) rotate(2deg);
-}
 
 .folder-back-btn {
   display: inline-flex;
