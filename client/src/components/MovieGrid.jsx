@@ -4053,7 +4053,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             inset: 0,
                                             zIndex: 5,
                                             pointerEvents: 'none',
-                                            animation: 'purpleTintFadeOut 1.4s forwards'
+                                            animation: 'purpleTintFadeOut 1.5s forwards'
                                         }} />
                                     )}
                                     {justRemovedLink === movie.link && (
@@ -4257,7 +4257,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                                      if (!isAdding) {
                                                                          if (!isAdded) {
                                                                              setJustAddedLink(movie.link);
-                                                                             setTimeout(() => setJustAddedLink(null), 1400);
+                                                                             setTimeout(() => setJustAddedLink(null), 1500);
                                                                          } else {
                                                                              setJustRemovedLink(movie.link);
                                                                              setTimeout(() => setJustRemovedLink(null), 1600);
