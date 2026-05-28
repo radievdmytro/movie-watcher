@@ -523,21 +523,21 @@ const GlobalHideButton = ({ link, onHide, offsetRight = 10, onHoverEnter, onHove
 );
 
 const posterVariants = {
-    initial: i => ({ 
-        x: -40 * i, 
+    initial: { 
+        x: -30, 
         opacity: 0, 
-        rotate: 0,
-        y: 0
-    }),
+        rotate: 2,
+        y: 10
+    },
     animate: i => ({ 
         x: 0, 
         opacity: 1, 
-        rotate: i % 2 === 0 ? 3 : -2,
+        rotate: 2, 
         y: 0,
         transition: { 
-            duration: 0.5,
-            ease: [0.16, 1, 0.3, 1], // easeOutQuint
-            delay: i * 0.05
+            duration: 0.35,
+            ease: "easeOut",
+            delay: i * 0.08
         }
     })
 };
