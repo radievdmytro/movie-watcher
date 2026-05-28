@@ -905,7 +905,20 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 }}
             >
                 {/* Header / Close Button fixed relative to the outer container, so it NEVER scrolls! */}
-                <div style={{ position: 'absolute', top: isMobile ? '12px' : '15px', right: isMobile ? '12px' : '15px', display: 'flex', gap: '10px', alignItems: 'center', zIndex: 100 }}>
+                <div style={{ 
+                    position: 'absolute', 
+                    top: 0, 
+                    right: 0, 
+                    padding: isMobile ? '12px 12px 32px 50px' : '15px 15px 50px 80px', 
+                    background: 'radial-gradient(ellipse at top right, rgba(18,18,18,0.95) 0%, rgba(18,18,18,0.7) 45%, rgba(18,18,18,0) 100%)',
+                    borderTopRightRadius: isMobile ? '20px' : '24px',
+                    display: 'flex', 
+                    gap: '10px', 
+                    alignItems: 'flex-start', 
+                    justifyContent: 'flex-end',
+                    zIndex: 100,
+                    pointerEvents: 'none'
+                }}>
                     {!isMobile && onSelectToggle && (
                         <label style={{ 
                             display: 'flex', 
@@ -920,7 +933,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             fontSize: '0.9rem', 
                             transition: 'all 0.2s',
                             userSelect: 'none',
-                            fontWeight: '500'
+                            fontWeight: '500',
+                            pointerEvents: 'auto'
                         }}>
                             <input 
                                 type="checkbox" 
@@ -935,7 +949,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         <button
                             onClick={handleShare}
                             className="btn btn-ghost"
-                            style={{ padding: '6px 12px', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: copiedShare ? '#03dac6' : '#fff' }}
+                            style={{ padding: '6px 12px', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: copiedShare ? '#03dac6' : '#fff', pointerEvents: 'auto' }}
                         >
                             {copiedShare ? '✔ Copied' : '🔗 Share'}
                         </button>
@@ -946,7 +960,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             disabled={isRefreshingData}
                             className="btn btn-ghost"
                             title="Обновить данные фильма"
-                            style={{ padding: '6px 12px', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: isRefreshingData ? '#aaa' : '#fff', cursor: isRefreshingData ? 'wait' : 'pointer' }}
+                            style={{ padding: '6px 12px', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: isRefreshingData ? '#aaa' : '#fff', cursor: isRefreshingData ? 'wait' : 'pointer', pointerEvents: 'auto' }}
                         >
                             {isRefreshingData ? '⏳' : '🔄 Refresh'}
                         </button>
@@ -968,7 +982,8 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             justifyContent: 'center',
                             boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                             cursor: 'pointer',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            pointerEvents: 'auto'
                         }}
                         title="Close Modal"
                         onMouseEnter={e => { e.currentTarget.style.border = '1px solid var(--accent-gold)'; e.currentTarget.style.color = 'var(--accent-gold)'; }}
