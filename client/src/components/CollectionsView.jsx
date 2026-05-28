@@ -1399,15 +1399,18 @@ function CollectionsView({ onBack }) {
                                                     gap: '20px'
                                                 }}>
 
-                                                {expandedCollection.movies.map(movie => (
-                                                    <div
+                                                {expandedCollection.movies.map((movie, index) => (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, scale: 0.8 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        transition={{ duration: 0.3, delay: index * 0.1 }}
                                                         key={movie.id}
                                                         className="glass-panel movie-card"
                                                         onClick={() => setSelectedMovie(movie)}
                                                         style={{
                                                             position: 'relative', cursor: 'pointer', borderRadius: '8px',
                                                             overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)',
-                                                            aspectRatio: '2/3', transition: 'transform 0.2s'
+                                                            aspectRatio: '2/3'
                                                         }}
                                                     >
                                                         <img
@@ -1541,7 +1544,7 @@ function CollectionsView({ onBack }) {
                                                                 <span style={{ color: 'var(--accent-gold)' }}>★ {movie.rating || '-'}</span>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    </motion.div>
                                                 ))}
                                             </div>
                                             </>
