@@ -1152,7 +1152,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
                 // Rating Filter
                 const rating = parseFloat(movie.rating) || 0;
-                if (rating < filterRating[0] || rating > filterRating[1]) return false;
+                if (rating !== 0 && (rating < filterRating[0] || rating > filterRating[1])) return false;
 
                 // Year Filter
                 if (movie.year < filterYear[0] || movie.year > filterYear[1]) return false;
@@ -1267,7 +1267,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
             // Rating Filter
             const rating = parseFloat(movie.rating) || 0;
-            if (rating < filterRating[0] || rating > filterRating[1]) return false;
+            if (rating !== 0 && (rating < filterRating[0] || rating > filterRating[1])) return false;
 
             // Year Filter
             if (movie.year < filterYear[0] || movie.year > filterYear[1]) return false;
