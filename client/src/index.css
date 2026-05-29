@@ -1808,3 +1808,4 @@ body.hide-header-search .app-header {
     100% { background-color: rgba(255, 152, 0, 0); }
 }
 
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }

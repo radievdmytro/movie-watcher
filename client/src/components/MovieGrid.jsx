@@ -4350,25 +4350,37 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
                             return cardNode;
                         })}
+
+                        {isLiveSearching && Array.from({ length: 12 }).map((_, idx) => (
+                            <motion.div
+                                key={`skeleton-${idx}`}
+                                className="movie-card"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                style={{
+                                    position: 'relative',
+                                    borderRadius: '16px',
+                                    overflow: 'hidden',
+                                    aspectRatio: '2/3',
+                                    background: 'rgba(255, 255, 255, 0.02)',
+                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                    display: 'flex',
+                                    flexDirection: 'column'
+                                }}
+                            >
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0, left: 0, right: 0, bottom: 0,
+                                    background: 'linear-gradient(90deg, transparent 0%, rgba(212, 175, 55, 0.08) 50%, transparent 100%)',
+                                    backgroundSize: '200% 100%',
+                                    animation: 'shimmer 1.5s infinite linear'
+                                }}></div>
+                            </motion.div>
+                        ))}
                     </motion.div>
 
-                    {isLiveSearching && (
-                        <div style={{
-                            gridColumn: '1 / -1',
-                            padding: '20px',
-                            textAlign: 'center',
-                            color: 'var(--accent-gold)',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '10px'
-                        }}>
-                            <div className="loading-spinner" style={{ width: '20px', height: '20px', borderTopColor: 'var(--accent-gold)' }}></div>
-                            Searching HDRezka live...
-                        </div>
-                    )}
-                    
                     {/* Onboarding Infinite Scroll Sentinel or Guest CTA */}
                     {isGuest && !hasMoreOnboarding && filteredOnboardingCacheMovies.length > 0 ? (
                         <div style={{
