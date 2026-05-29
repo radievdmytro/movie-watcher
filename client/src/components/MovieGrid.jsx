@@ -727,9 +727,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [searchFields, setSearchFields] = useState(() => {
         try {
             const saved = localStorage.getItem('searchFields');
-            if (saved) return JSON.parse(saved);
+            if (saved) return { ...{ title: true, actor: true, director: true, year: true, description: false }, ...JSON.parse(saved) };
         } catch (e) {}
-        return { title: true, actor: true, director: true, year: true };
+        return { title: true, actor: true, director: true, year: true, description: false };
     });
 
     const toggleSearchField = (field) => {
@@ -1086,6 +1086,9 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 // 5. Actor match
                 if (searchFields.actor && movie.actors && movie.actors.toLowerCase().includes(q)) score += 100;
 
+                // 6. Description match
+                if (searchFields.description && movie.description && movie.description.toLowerCase().includes(q)) score += 50;
+
                 // Word-by-word matches (for multi-word search queries)
                 const words = q.split(/\s+/).filter(w => w.length > 1);
                 if (words.length > 1) {
@@ -1095,6 +1098,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         if (searchFields.year && movie.year && movie.year.toString().includes(word)) score += 60;
                         if (searchFields.director && movie.director && movie.director.toLowerCase().includes(word)) score += 20;
                         if (searchFields.actor && movie.actors && movie.actors.toLowerCase().includes(word)) score += 10;
+                        if (searchFields.description && movie.description && movie.description.toLowerCase().includes(word)) score += 5;
                     });
                 }
 
@@ -1946,7 +1950,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             transform: 'translateY(-50%)',
                                             background: 'none',
                                             border: 'none',
-                                            color: (searchFields.title && searchFields.actor && searchFields.director && searchFields.year) ? '#666' : 'var(--accent-gold)',
+                                            color: (searchFields.title && searchFields.actor && searchFields.director && searchFields.year && !searchFields.description) ? '#666' : 'var(--accent-gold)',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1983,7 +1987,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     { id: 'title', label: 'Title' },
                                                     { id: 'actor', label: 'Actor' },
                                                     { id: 'director', label: 'Director' },
-                                                    { id: 'year', label: 'Year' }
+                                                    { id: 'year', label: 'Year' },
+                                                    { id: 'description', label: 'Description' }
                                                 ].map(field => (
                                                     <button
                                                         key={field.id}
@@ -2021,7 +2026,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         { id: 'title', label: 'Title' },
                                         { id: 'actor', label: 'Actor' },
                                         { id: 'director', label: 'Director' },
-                                        { id: 'year', label: 'Year' }
+                                        { id: 'year', label: 'Year' },
+                                        { id: 'description', label: 'Description' }
                                     ].map(field => (
                                         <button
                                             key={field.id}

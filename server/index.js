@@ -773,6 +773,10 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
                 conditions.push('year LIKE ?');
                 params.push(q);
             }
+            if (fieldsObj.description) {
+                conditions.push('description LIKE ?');
+                params.push(q);
+            }
             
             if (conditions.length > 0) {
                 sql += ` AND (${conditions.join(' OR ')})`;
