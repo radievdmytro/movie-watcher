@@ -735,6 +735,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const toggleSearchField = (field) => {
         setSearchFields(prev => {
             const next = { ...prev, [field]: !prev[field] };
+            // Ensure at least one field is active. If all are false, default to title.
+            const allFalse = !Object.values(next).some(Boolean);
+            if (allFalse) {
+                next.title = true;
+            }
             localStorage.setItem('searchFields', JSON.stringify(next));
             return next;
         });
