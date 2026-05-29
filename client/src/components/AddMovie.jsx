@@ -878,22 +878,28 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
 
                 {/* Animated Search Status inside search bar */}
                 <div style={{
-                    opacity: searchStatus ? 1 : 0,
-                    maxWidth: searchStatus ? '150px' : '0px',
-                    overflow: 'hidden',
-                    transition: 'opacity 0.4s ease, max-width 0.4s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    marginRight: searchStatus ? '8px' : '0px',
-                    pointerEvents: 'none',
-                    whiteSpace: 'nowrap'
+                    position: 'relative',
+                    width: 0,
+                    height: 0,
+                    overflow: 'visible'
                 }}>
-                    <span className="shimmer-text-effect" style={{
-                        fontSize: isMobile ? '0.75rem' : '0.85rem',
-                        fontWeight: 500
+                    <div style={{
+                        position: 'absolute',
+                        right: '15px',
+                        opacity: searchStatus ? 1 : 0,
+                        transition: 'opacity 0.6s ease',
+                        pointerEvents: 'none',
+                        whiteSpace: 'nowrap'
                     }}>
-                        {searchStatus || lastSearchStatusRef.current}
-                    </span>
+                        <span className="shimmer-text-effect" style={{
+                            fontSize: isMobile ? '0.75rem' : '0.85rem',
+                            fontWeight: 500
+                        }}>
+                            {searchStatus || lastSearchStatusRef.current}
+                        </span>
+                    </div>
                 </div>
 
                 <button
