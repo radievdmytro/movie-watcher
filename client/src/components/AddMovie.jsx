@@ -31,6 +31,8 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
     const [selectedLinks, setSelectedLinks] = useState(new Set());
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
     const [fullPageResults, setFullPageResults] = useState(false);
+    const [searchRipple, setSearchRipple] = useState(null);
+    const searchBarRef = useRef(null);
     
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [hoveredCollectionLink, setHoveredCollectionLink] = useState(null);
@@ -780,7 +782,9 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
             </div>
 
             {/* Search Bar Container - High Z-Index to stay on top */}
-            <div style={{
+            <div 
+                ref={searchBarRef}
+                style={{
                 display: 'flex',
                 background: 'var(--bg-card)',
                 borderRadius: '30px',
@@ -795,7 +799,20 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
             }}
                 onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent-gold)'}
                 onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+                onMouseDown={(e) => {
+                    if (searchBarRef.current) {
+                        const rect = searchBarRef.current.getBoundingClientRect();
+                        setSearchRipple({
+                            x: e.clientX - rect.left,
+                            y: e.clientY - rect.top,
+                            id: Date.now()
+                        });
+                    }
+                }}
             >
+                {searchRipple && (
+                    <div className="filter-edge-glow" style={{ '--click-x': `${searchRipple.x}px`, '--click-y': `${searchRipple.y}px` }} key={`search-edge-${searchRipple.id}`} onAnimationEnd={() => setSearchRipple(null)} />
+                )}
                 {!isMobile && (
                     <div style={{ padding: '0 15px', display: 'flex', alignItems: 'center', color: '#666' }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
