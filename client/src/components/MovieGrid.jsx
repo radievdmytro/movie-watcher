@@ -842,6 +842,16 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [availableDirectors, setAvailableDirectors] = useState([]);
     const [availableActors, setAvailableActors] = useState([]);
 
+    // Sort state specifically for global DB browsing (separate from library sort)
+    const [globalSortField, setGlobalSortField] = useState(() => localStorage.getItem('mg_globalSortField') || 'random');
+    const [globalSortDir, setGlobalSortDir] = useState(() => localStorage.getItem('mg_globalSortDir') || 'desc');
+
+    useEffect(() => { localStorage.setItem('mg_globalSortField', globalSortField); }, [globalSortField]);
+    useEffect(() => { localStorage.setItem('mg_globalSortDir', globalSortDir); }, [globalSortDir]);
+
+    // Genres list from global cache (for filter UI when browsing global DB)
+    const [globalCacheGenres, setGlobalCacheGenres] = useState([]);
+
     const searchDb = includeGlobalDb ? 'cache' : 'library'; // 'library' or 'cache'
     const autoSwitchToCache = includeGlobalDb;
     const [cacheMoviesResults, setCacheMoviesResults] = useState([]);
@@ -855,15 +865,19 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [isLiveSearching, setIsLiveSearching] = useState(false);
     const [showAutoSwitchToast, setShowAutoSwitchToast] = useState(false);
     const [globalHideError, setGlobalHideError] = useState('');
+    // Track which global movie links are currently being enriched
+    const [enrichingLinks, setEnrichingLinks] = useState(new Set());
 
     // Custom Onboarding / Cache Directory for sparse libraries
     const [onboardingCacheMovies, setOnboardingCacheMovies] = useState([]);
+    const [onboardingTotal, setOnboardingTotal] = useState(null);
     const [onboardingSeed] = useState(() => Math.random().toString(36).substring(2, 15));
     const [onboardingCacheStats, setOnboardingCacheStats] = useState({ totalCached: 0 });
     const [onboardingOffset, setOnboardingOffset] = useState(0);
     const [isOnboardingLoading, setIsOnboardingLoading] = useState(false);
     const [hasMoreOnboarding, setHasMoreOnboarding] = useState(true);
     const onboardingSentinelRef = useRef(null);
+
 
     const uniqueBackgroundCacheResults = useMemo(() => {
         if (!backgroundCacheResults.length) return [];
@@ -1670,7 +1684,14 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             .then(res => res.json())
             .then(data => setAvailableActors(data))
             .catch(err => console.error('Failed to fetch actors:', err));
+
+        // Fetch global cache genres for filter panel when browsing global DB
+        fetch('/api/cache/genres')
+            .then(res => res.json())
+            .then(data => setGlobalCacheGenres(data))
+            .catch(() => {}); // Silently fail — not critical
     }, []);
+
 
     const ratingDistribution = useMemo(() => {
         const bins = new Array(20).fill(0);
@@ -1739,7 +1760,29 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         }
     }, [visibleCount, finalDisplayMovies.length, hasMoreBgCache, isBgCacheSearching, searchDb, backgroundCacheResults.length, loadMoreBgSearch]);
 
-    // Fetch Stats and Onboarding Cache Movies
+    // Helper: build directory query params from current filters
+    const buildDirectoryParams = useCallback((extraOffset = 0) => {
+        const params = new URLSearchParams();
+        params.set('limit', '50');
+        params.set('offset', extraOffset);
+        params.set('seed', onboardingSeed);
+        if (globalSortField !== 'random') {
+            params.set('sort', globalSortField);
+            params.set('order', globalSortDir);
+        }
+        if (filterRating[0] > 0) params.set('ratingMin', filterRating[0]);
+        if (filterRating[1] < 10) params.set('ratingMax', filterRating[1]);
+        if (filterYear[0] > 1900) params.set('yearMin', filterYear[0]);
+        if (filterYear[1] < new Date().getFullYear() + 2) params.set('yearMax', filterYear[1]);
+        if (filterGenres.length > 0) params.set('genres', filterGenres.join(','));
+        if (filterGenreMode !== 'include') params.set('genreMode', filterGenreMode);
+        if (filterDirectors.length > 0) params.set('directors', filterDirectors.join(','));
+        if (filterActors.length > 0) params.set('actors', filterActors.join(','));
+        if (filterType !== 'all') params.set('type', filterType);
+        return params.toString();
+    }, [onboardingSeed, globalSortField, globalSortDir, filterRating, filterYear, filterGenres, filterGenreMode, filterDirectors, filterActors, filterType]);
+
+    // Fetch Stats and Onboarding Cache Movies (re-fetches when filters or sort change)
     useEffect(() => {
         if (isTrashMode) return;
 
@@ -1751,23 +1794,34 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         })
             .then(res => res.ok ? res.json() : { totalCached: 2500 })
             .then(data => setOnboardingCacheStats(data))
-            .catch(err => console.error("Error fetching cache stats:", err));
+            .catch(err => console.error('Error fetching cache stats:', err));
 
-        // Fetch first page of cached movies
+        // Reset and fetch first page with current filters
+        setOnboardingCacheMovies([]);
+        setOnboardingOffset(0);
+        setHasMoreOnboarding(true);
+        setOnboardingTotal(null);
         setIsOnboardingLoading(true);
-        fetch(`/api/cache/directory?limit=50&offset=0&seed=${onboardingSeed}`, {
+
+        const qs = buildDirectoryParams(0);
+        fetch(`/api/cache/directory?${qs}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
-            .then(res => res.ok ? res.json() : [])
+            .then(res => res.ok ? res.json() : { movies: [], total: 0 })
             .then(data => {
-                setOnboardingCacheMovies(data);
-                setOnboardingOffset(50);
-                if (data.length < 50) setHasMoreOnboarding(false);
+                // Support both old array response and new {movies, total} response
+                const movies = Array.isArray(data) ? data : (data.movies || []);
+                const total = typeof data.total === 'number' ? data.total : null;
+                setOnboardingCacheMovies(movies);
+                setOnboardingOffset(movies.length);
+                setOnboardingTotal(total);
+                if (movies.length < 50) setHasMoreOnboarding(false);
             })
-            .catch(err => console.error("Error fetching onboarding cache:", err))
+            .catch(err => console.error('Error fetching onboarding cache:', err))
             .finally(() => setIsOnboardingLoading(false));
 
-    }, [movies.length, isTrashMode, onboardingSeed]);
+    }, [movies.length, isTrashMode, buildDirectoryParams]);
+
 
     // Onboarding Infinite Scroll Observer
     useEffect(() => {
@@ -1777,34 +1831,84 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             if (entries[0].isIntersecting) {
                 setIsOnboardingLoading(true);
                 const token = localStorage.getItem('token');
-                fetch(`/api/cache/directory?limit=50&offset=${onboardingOffset}&seed=${onboardingSeed}`, {
+                const qs = buildDirectoryParams(onboardingOffset);
+                fetch(`/api/cache/directory?${qs}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
-                    .then(res => res.ok ? res.json() : [])
+                    .then(res => res.ok ? res.json() : { movies: [], total: 0 })
                     .then(data => {
-                        if (data.length > 0) {
+                        const newMovies = Array.isArray(data) ? data : (data.movies || []);
+                        if (newMovies.length > 0) {
                             setOnboardingCacheMovies(prev => {
                                 const existingLinks = new Set(prev.map(m => m.link));
-                                const newMovies = data.filter(m => !existingLinks.has(m.link));
-                                return [...prev, ...newMovies];
+                                return [...prev, ...newMovies.filter(m => !existingLinks.has(m.link))];
                             });
-                            setOnboardingOffset(prev => prev + 50);
+                            setOnboardingOffset(prev => prev + newMovies.length);
                         }
-                        if (data.length < 50) {
-                            setHasMoreOnboarding(false);
-                        }
+                        if (newMovies.length < 50) setHasMoreOnboarding(false);
                     })
-                    .catch(err => console.error("Error loading more onboarding cache:", err))
+                    .catch(err => console.error('Error loading more onboarding cache:', err))
                     .finally(() => setIsOnboardingLoading(false));
             }
         }, { rootMargin: '1500px', threshold: 0.1 });
 
-        if (onboardingSentinelRef.current) {
-            observer.observe(onboardingSentinelRef.current);
-        }
-
+        if (onboardingSentinelRef.current) observer.observe(onboardingSentinelRef.current);
         return () => observer.disconnect();
-    }, [movies.length, isTrashMode, onboardingOffset, hasMoreOnboarding, isOnboardingLoading]);
+    }, [movies.length, isTrashMode, onboardingOffset, hasMoreOnboarding, isOnboardingLoading, buildDirectoryParams]);
+
+    // Auto-enrichment: when a page of global movies loads, enrich the ones missing details
+    useEffect(() => {
+        if (!onboardingCacheMovies.length || isTrashMode) return;
+
+        // Find movies that lack enriched data (description or genres+actors missing)
+        const needsEnrich = onboardingCacheMovies
+            .filter(m => !enrichingLinks.has(m.link) && (!m.genres || !m.description))
+            .slice(-50) // Only check the last batch loaded
+            .map(m => m.link);
+
+        if (needsEnrich.length === 0) return;
+
+        // Mark them as enriching
+        setEnrichingLinks(prev => new Set([...prev, ...needsEnrich]));
+
+        const token = localStorage.getItem('token');
+        fetch('/api/cache/enrich-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ links: needsEnrich })
+        })
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (!data || !data.results) return;
+                // Merge enriched data into existing onboarding movies
+                const enrichedMap = new Map();
+                data.results.forEach(r => {
+                    if (r.ok && r.data) enrichedMap.set(r.link, r.data);
+                });
+                if (enrichedMap.size === 0) return;
+
+                setOnboardingCacheMovies(prev => prev.map(m => {
+                    const enriched = enrichedMap.get(m.link);
+                    if (!enriched) return m;
+                    return {
+                        ...m,
+                        rating: enriched.rating ?? m.rating,
+                        misc: enriched.genres || m.misc,
+                        description: enriched.description || m.description,
+                    };
+                }));
+            })
+            .catch(() => {})
+            .finally(() => {
+                setEnrichingLinks(prev => {
+                    const next = new Set(prev);
+                    needsEnrich.forEach(l => next.delete(l));
+                    return next;
+                });
+            });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [onboardingCacheMovies.length, isTrashMode]);
+
 
     const handleSort = (field, forceDir) => {
         if (forceDir) {
@@ -2226,11 +2330,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         }}>
                             {/* Genre Selection */}
                             <div style={{ gridColumn: '1 / -1' }}>
-                                {availableGenres.length === 0 ? (
+                                {/* When browsing global DB (no search query), show global genres; else show library genres */}
+                                {((!deferredFilterQuery && globalCacheGenres.length > 0) ? globalCacheGenres : availableGenres).length === 0 ? (
                                     <div style={{ color: '#888', fontSize: '0.9rem', fontStyle: 'italic', padding: '15px 0', textAlign: 'center', lineHeight: '1.5' }}>
                                         Список жанров формируется из вашей личной коллекции. Добавьте свои первые фильмы, чтобы увидеть и попробовать удобную фильтрацию!
                                     </div>
                                 ) : (
+
                                     <>
                                         {/* Desktop Genres */}
                                         <div className="desktop-genres-row">
@@ -2261,25 +2367,28 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                        {(showAllGenres ? availableGenres : availableGenres.slice(0, 15)).map(genre => {
-                                            const isSelected = filterGenres.includes(genre);
-                                            return (
-                                                <button
-                                                    key={genre}
-                                                    onClick={() => setFilterGenres(isSelected ? filterGenres.filter(g => g !== genre) : [...filterGenres, genre])}
-                                                    style={{
-                                                        padding: '4px 12px', borderRadius: '15px', fontSize: '0.8rem', cursor: 'pointer',
-                                                        background: isSelected ? (filterGenreMode === 'include' ? 'var(--accent-gold)' : 'var(--danger)') : 'rgba(255,255,255,0.05)',
-                                                        color: isSelected ? (filterGenreMode === 'include' ? '#000' : '#fff') : '#888',
-                                                        border: isSelected ? `1px solid ${filterGenreMode === 'include' ? 'var(--accent-gold)' : 'var(--danger)'}` : '1px solid rgba(255,255,255,0.1)',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    {genre}
-                                                </button>
-                                            );
-                                        })}
-                                        {availableGenres.length > 15 && (
+                                        {(() => {
+                                            const activeGenres = (!deferredFilterQuery && globalCacheGenres.length > 0) ? globalCacheGenres : availableGenres;
+                                            return (showAllGenres ? activeGenres : activeGenres.slice(0, 15)).map(genre => {
+                                                const isSelected = filterGenres.includes(genre);
+                                                return (
+                                                    <button
+                                                        key={genre}
+                                                        onClick={() => setFilterGenres(isSelected ? filterGenres.filter(g => g !== genre) : [...filterGenres, genre])}
+                                                        style={{
+                                                            padding: '4px 12px', borderRadius: '15px', fontSize: '0.8rem', cursor: 'pointer',
+                                                            background: isSelected ? (filterGenreMode === 'include' ? 'var(--accent-gold)' : 'var(--danger)') : 'rgba(255,255,255,0.05)',
+                                                            color: isSelected ? (filterGenreMode === 'include' ? '#000' : '#fff') : '#888',
+                                                            border: isSelected ? `1px solid ${filterGenreMode === 'include' ? 'var(--accent-gold)' : 'var(--danger)'}` : '1px solid rgba(255,255,255,0.1)',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        {genre}
+                                                    </button>
+                                                );
+                                            });
+                                        })()}
+                                        {((!deferredFilterQuery && globalCacheGenres.length > 0) ? globalCacheGenres : availableGenres).length > 15 && (
                                             <button
                                                 onClick={() => setShowAllGenres(!showAllGenres)}
                                                 style={{
@@ -2290,10 +2399,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                     transition: 'all 0.2s'
                                                 }}
                                             >
-                                                {showAllGenres ? 'Show Less' : `+${availableGenres.length - 15} More`}
+                                                {showAllGenres ? 'Show Less' : `+${((!deferredFilterQuery && globalCacheGenres.length > 0) ? globalCacheGenres : availableGenres).length - 15} More`}
                                             </button>
                                         )}
                                     </div>
+
                                 </div>
 
                                 {/* Mobile Genres Dropdown */}
@@ -2352,7 +2462,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             }}
                                         >
                                             <option value="" disabled style={{ background: '#151515', color: '#666' }}>Toggle Genres...</option>
-                                            {availableGenres.map(genre => (
+                                            {((!deferredFilterQuery && globalCacheGenres.length > 0) ? globalCacheGenres : availableGenres).map(genre => (
                                                 <option
                                                     key={genre}
                                                     value={genre}
@@ -2484,9 +2594,61 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     </div>
                                 </div>
                             </div>
+                            {/* Global DB Sort Controls - shown only when browsing global database without search query */}
+                            {!deferredFilterQuery && (
+                                <div style={{ gridColumn: '1 / -1', marginTop: '4px' }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span>Сортировка глобальной базы</span>
+                                        {globalSortField !== 'random' && (
+                                            <button onClick={() => { setGlobalSortField('random'); setGlobalSortDir('desc'); }}
+                                                style={{ fontSize: '0.7rem', color: '#888', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                                                Сбросить
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                        {[
+                                            { key: 'random', label: '🎲 Случайный' },
+                                            { key: 'rating', label: '⭐ Рейтинг' },
+                                            { key: 'year', label: '📅 Год' },
+                                            { key: 'title', label: '🔤 Название' },
+                                        ].map(({ key, label }) => (
+                                            <button
+                                                key={key}
+                                                onClick={() => {
+                                                    if (globalSortField === key && key !== 'random') {
+                                                        setGlobalSortDir(d => d === 'asc' ? 'desc' : 'asc');
+                                                    } else {
+                                                        setGlobalSortField(key);
+                                                        setGlobalSortDir(key === 'title' ? 'asc' : 'desc');
+                                                    }
+                                                }}
+                                                style={{
+                                                    padding: '5px 14px',
+                                                    fontSize: '0.8rem',
+                                                    borderRadius: '20px',
+                                                    border: '1px solid',
+                                                    borderColor: globalSortField === key ? 'var(--accent-gold)' : 'rgba(255,255,255,0.1)',
+                                                    background: globalSortField === key ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.03)',
+                                                    color: globalSortField === key ? 'var(--accent-gold)' : '#aaa',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    fontWeight: globalSortField === key ? '600' : '400',
+                                                }}
+                                            >
+                                                {label}
+                                                {globalSortField === key && key !== 'random' && (
+                                                    <span style={{ marginLeft: '4px' }}>{globalSortDir === 'asc' ? '↑' : '↓'}</span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Reset Actions */}
                             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', gap: '15px' }}>
+
                                 <button
                                     className="btn-primary"
                                     onClick={() => performBgSearch()}

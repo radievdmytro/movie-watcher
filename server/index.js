@@ -584,52 +584,135 @@ function seedShuffle(array, seed) {
     return shuffled;
 }
 
-// Get paginated cache directory for sparse library view
+// Get paginated cache directory for global browsing — supports server-side filtering & sorting
 app.get('/api/cache/directory', authenticateToken, (req, res) => {
     try {
         let limit = parseInt(req.query.limit) || 50;
         const offset = parseInt(req.query.offset) || 0;
         const seed = req.query.seed || 'default_seed';
 
+        // Filter params
+        const ratingMin = req.query.ratingMin !== undefined && req.query.ratingMin !== '' ? parseFloat(req.query.ratingMin) : null;
+        const ratingMax = req.query.ratingMax !== undefined && req.query.ratingMax !== '' ? parseFloat(req.query.ratingMax) : null;
+        const yearMin = req.query.yearMin !== undefined && req.query.yearMin !== '' ? parseInt(req.query.yearMin) : null;
+        const yearMax = req.query.yearMax !== undefined && req.query.yearMax !== '' ? parseInt(req.query.yearMax) : null;
+        const genres = req.query.genres || '';
+        const genreMode = req.query.genreMode || 'include';
+        const directors = req.query.directors || '';
+        const actors = req.query.actors || '';
+        const type = req.query.type || 'all';
+        const sort = req.query.sort || 'random'; // 'random' | 'rating' | 'year' | 'title'
+        const order = req.query.order === 'asc' ? 'ASC' : 'DESC';
+
         // Enforce guest limit to 30 items max
         const isGuest = req.user && req.user.username && req.user.username.startsWith('guest_');
-        if (isGuest) {
-            if (offset >= 30) return res.json([]);
-            limit = Math.min(limit, 30 - offset);
+        if (isGuest && offset >= 30) return res.json([]);
+        if (isGuest) limit = Math.min(limit, 30 - offset);
+
+        // Determine if any real filter is active (not just rating 0-10 defaults)
+        const hasFilter = !!(
+            (ratingMin !== null && ratingMin > 0) ||
+            (ratingMax !== null && ratingMax < 10) ||
+            yearMin !== null || yearMax !== null ||
+            genres || directors || actors || (type && type !== 'all') ||
+            sort !== 'random'
+        );
+
+        if (!hasFilter) {
+            // Legacy path: seeded-random weighted by rating (original behaviour, no extra SQL overhead)
+            let sql = `SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+                FROM scraped_movies_cache WHERE poster_url IS NOT NULL AND title IS NOT NULL`;
+            const rows = db.prepare(sql).all();
+            const visibleRows = filterHiddenGlobalMovies(rows, req.user.id);
+            const rnd = seedRandom(seed);
+            const scoredMovies = visibleRows.map(row => ({
+                movie: row,
+                score: (parseFloat(row.rating) || 5.5) + rnd() * 6.0
+            }));
+            scoredMovies.sort((a, b) => b.score - a.score);
+            return res.json(scoredMovies.slice(offset, offset + limit).map(i => i.movie));
         }
 
-        // 1. Fetch all eligible cached movies
-        const rows = db.prepare(`
-            SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
-            FROM scraped_movies_cache
-            WHERE poster_url IS NOT NULL AND title IS NOT NULL
-        `).all();
+        // Filtered + sorted SQL path
+        let sql = `SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            FROM scraped_movies_cache WHERE poster_url IS NOT NULL AND title IS NOT NULL`;
+        const params = [];
+
+        // Rating filter — always include unrated movies (rating IS NULL) when filtering
+        if (ratingMin !== null && ratingMin > 0) {
+            sql += ' AND (rating IS NULL OR rating >= ?)';
+            params.push(ratingMin);
+        }
+        if (ratingMax !== null && ratingMax < 10) {
+            sql += ' AND (rating IS NULL OR rating <= ?)';
+            params.push(ratingMax);
+        }
+
+        // Year filter
+        if (yearMin !== null) { sql += ' AND year >= ?'; params.push(yearMin); }
+        if (yearMax !== null) { sql += ' AND year <= ?'; params.push(yearMax); }
+
+        // Genre filter
+        if (genres) {
+            const genreList = genres.split(',').map(g => g.trim()).filter(Boolean);
+            if (genreList.length > 0) {
+                if (genreMode === 'include') {
+                    genreList.forEach(g => { sql += ' AND cyrillic_like(misc, ?)'; params.push(`%${g}%`); });
+                } else {
+                    genreList.forEach(g => { sql += ' AND NOT cyrillic_like(misc, ?)'; params.push(`%${g}%`); });
+                }
+            }
+        }
+
+        // Director filter
+        if (directors) {
+            const dirList = directors.split(',').map(d => d.trim()).filter(Boolean);
+            if (dirList.length > 0) {
+                const conds = dirList.map(() => 'cyrillic_like(director, ?)').join(' OR ');
+                sql += ` AND (${conds})`;
+                dirList.forEach(d => params.push(`%${d}%`));
+            }
+        }
+
+        // Actor filter
+        if (actors) {
+            const actList = actors.split(',').map(a => a.trim()).filter(Boolean);
+            if (actList.length > 0) {
+                const conds = actList.map(() => 'cyrillic_like(actors, ?)').join(' OR ');
+                sql += ` AND (${conds})`;
+                actList.forEach(a => params.push(`%${a}%`));
+            }
+        }
+
+        // Type filter
+        if (type && type !== 'all') {
+            const cartoonCond = "(misc LIKE '%мульт%' OR misc LIKE '%анимац%' OR link LIKE '%/cartoons/%')";
+            const animeCond = "(misc LIKE '%аниме%' OR link LIKE '%/animation/%')";
+            if (type === 'cartoon') sql += ` AND ${cartoonCond}`;
+            else if (type === 'anime') sql += ` AND ${animeCond}`;
+            else if (type === 'movie') sql += ` AND type = 'movie' AND NOT ${cartoonCond} AND NOT ${animeCond}`;
+            else if (type === 'series') sql += ` AND type = 'series' AND NOT ${cartoonCond} AND NOT ${animeCond}`;
+        }
+
+        // Sorting
+        const sortMap = { rating: 'rating', year: 'year', title: 'title' };
+        const sortCol = sortMap[sort];
+        if (sortCol) {
+            // NULL last for DESC, NULL first for ASC
+            sql += ` ORDER BY CASE WHEN ${sortCol} IS NULL THEN 1 ELSE 0 END, ${sortCol} ${order}`;
+        } else {
+            sql += ' ORDER BY updated_at DESC';
+        }
+
+        // Count for pagination
+        const countSql = sql.replace(/^SELECT .* FROM/, 'SELECT COUNT(*) as cnt FROM').replace(/ORDER BY.*$/, '');
+        const { cnt } = db.prepare(countSql).get(...params);
+
+        sql += ` LIMIT ${limit} OFFSET ${offset}`;
+        const rows = db.prepare(sql).all(...params);
         const visibleRows = filterHiddenGlobalMovies(rows, req.user.id);
 
-        // 2. Initialize seedable random generator
-        const rnd = seedRandom(seed);
-
-        // 3. Map each movie to a score with a seedable random offset
-        // Higher rated movies will naturally have higher scores, but random offset up to 6.0 introduces beautiful variety
-        const scoredMovies = visibleRows.map(row => {
-            const r = parseFloat(row.rating) || 5.5; // fallback rating for unrated movies
-            const randomOffset = rnd() * 6.0;
-            return {
-                movie: row,
-                score: r + randomOffset
-            };
-        });
-
-        // 4. Sort by score in descending order
-        scoredMovies.sort((a, b) => b.score - a.score);
-
-        // 5. Extract sorted movies
-        const sorted = scoredMovies.map(item => item.movie);
-
-        // 6. Slice according to limit and offset
-        const sliced = sorted.slice(offset, offset + limit);
-
-        res.json(sliced);
+        res.json({ movies: visibleRows, total: cnt });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -827,7 +910,16 @@ app.get('/api/cache/search', authenticateToken, async (req, res) => {
             offset = parseInt(req.query.offset) || 0;
         }
         
-        sql += ` ORDER BY updated_at DESC LIMIT ${limit} OFFSET ${offset}`;
+        // Sorting
+        const allowedSorts = { rating: 'rating', year: 'year', title: 'title', updated_at: 'updated_at' };
+        const sortField = allowedSorts[req.query.sort] || 'updated_at';
+        const sortOrder = req.query.order === 'asc' ? 'ASC' : 'DESC';
+        if (sortField === 'rating' || sortField === 'year') {
+            sql += ` ORDER BY CASE WHEN ${sortField} IS NULL THEN 1 ELSE 0 END, ${sortField} ${sortOrder}`;
+        } else {
+            sql += ` ORDER BY ${sortField} ${sortOrder}`;
+        }
+        sql += ` LIMIT ${limit} OFFSET ${offset}`;
         
         const start = performance.now();
         const stmt = db.prepare(sql);
@@ -840,6 +932,79 @@ app.get('/api/cache/search', authenticateToken, async (req, res) => {
         console.error('Cache search failed:', err);
         res.status(500).json({ error: err.message });
     }
+});
+
+// Get all distinct genres from global cache (for filter UI)
+app.get('/api/cache/genres', authenticateToken, (req, res) => {
+    try {
+        const rows = db.prepare(`
+            SELECT DISTINCT genres FROM scraped_movies_cache
+            WHERE genres IS NOT NULL AND genres != ''
+        `).all();
+
+        const genreSet = new Set();
+        for (const row of rows) {
+            if (!row.genres) continue;
+            row.genres.split(',').forEach(g => {
+                const trimmed = g.trim();
+                if (trimmed) genreSet.add(trimmed);
+            });
+        }
+
+        const sorted = [...genreSet].sort((a, b) => a.localeCompare(b, 'ru'));
+        res.json(sorted);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Enrich a batch of global cache movies with full details from HDRezka
+// Fetches description, actors, director, genres etc. for shallow entries
+app.post('/api/cache/enrich-batch', authenticateToken, async (req, res) => {
+    const { links } = req.body;
+    if (!Array.isArray(links) || links.length === 0) {
+        return res.status(400).json({ error: 'links[] array required' });
+    }
+
+    // Limit batch size to protect server
+    const batchLinks = links.slice(0, 20);
+
+    // Parallel enrichment with concurrency limit of 5
+    const CONCURRENCY = 5;
+    const results = [];
+
+    for (let i = 0; i < batchLinks.length; i += CONCURRENCY) {
+        const chunk = batchLinks.slice(i, i + CONCURRENCY);
+        const settled = await Promise.allSettled(
+            chunk.map(async (link) => {
+                // Skip if already enriched (has description and genres)
+                const existing = db.prepare(
+                    'SELECT description, genres, actors, director, rating FROM scraped_movies_cache WHERE link = ?'
+                ).get(link);
+
+                if (existing && existing.description && existing.genres && existing.actors) {
+                    return { link, ...existing, cached: true };
+                }
+
+                const details = await getMovieDetails(link, getUserHeaders(req));
+                if (details) {
+                    saveToCache(details);
+                    return details;
+                }
+                return null;
+            })
+        );
+
+        settled.forEach((result, idx) => {
+            if (result.status === 'fulfilled' && result.value) {
+                results.push({ link: batchLinks[i + idx], data: result.value, ok: true });
+            } else {
+                results.push({ link: batchLinks[i + idx], ok: false });
+            }
+        });
+    }
+
+    res.json({ results });
 });
 
 const getUserHeaders = (req) => {

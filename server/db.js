@@ -159,6 +159,10 @@ const initDb = () => {
   db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_link ON scraped_movies_cache(link)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_title ON scraped_movies_cache(title)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_original_title ON scraped_movies_cache(original_title)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_rating ON scraped_movies_cache(rating)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_year ON scraped_movies_cache(year)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_scraped_cache_type ON scraped_movies_cache(type)');
+
 
   // Create YouTube search cache table
   db.exec(`
