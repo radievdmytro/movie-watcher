@@ -1297,14 +1297,33 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
             // Search query filter (if active)
             if (deferredFilterQuery && searchDb !== 'cache') {
-                const q = deferredFilterQuery.toLowerCase().trim();
-                const titleMatch = searchFields.title && ((movie.title && movie.title.toLowerCase().includes(q)) || (movie.original_title && movie.original_title.toLowerCase().includes(q)));
-                const yearMatch = searchFields.year && movie.year && movie.year.toString().includes(q);
-                const directorMatch = searchFields.director && movie.director && movie.director.toLowerCase().includes(q);
-                const actorMatch = searchFields.actor && movie.actors && movie.actors.toLowerCase().includes(q);
-                const descMatch = searchFields.description && movie.misc && movie.misc.toLowerCase().includes(q); // wait, description is 'misc' in cache, actually description isn't in scraped_movies_cache but the DB cyrillic search works on backend! So locally we might not have 'description' in the object from the DB because the DB schema 'scraped_movies_cache' only has genres as 'misc'. Wait, it DOESN'T have a description field. But for now we can just allow it if it has isLiveResult or we just bypass filter if isLiveResult!
+                const q = deferredFilterQuery.toLowerCase().replace(/ё/g, 'е').trim();
+                
+                const matchField = (fieldValue, searchStr) => {
+                    if (!fieldValue) return false;
+                    const normalized = fieldValue.toString().toLowerCase().replace(/ё/g, 'е');
+                    return normalized.includes(searchStr);
+                };
 
-                if (!titleMatch && !yearMatch && !directorMatch && !actorMatch && !descMatch && !movie.isLiveResult) {
+                const titleMatch = searchFields.title && (matchField(movie.title, q) || matchField(movie.original_title, q));
+                const yearMatch = searchFields.year && movie.year && movie.year.toString() === q;
+                const directorMatch = searchFields.director && matchField(movie.director, q);
+                const actorMatch = searchFields.actor && matchField(movie.actors, q);
+                const descMatch = searchFields.description && matchField(movie.misc, q);
+
+                let wordMatch = false;
+                const words = q.split(/\s+/).filter(w => w.length > 1);
+                if (words.length > 1) {
+                    wordMatch = words.some(word => {
+                        return (searchFields.title && (matchField(movie.title, word) || matchField(movie.original_title, word))) ||
+                               (searchFields.year && matchField(movie.year, word)) ||
+                               (searchFields.director && matchField(movie.director, word)) ||
+                               (searchFields.actor && matchField(movie.actors, word)) ||
+                               (searchFields.description && matchField(movie.misc, word));
+                    });
+                }
+
+                if (!titleMatch && !yearMatch && !directorMatch && !actorMatch && !descMatch && !wordMatch && !movie.isLiveResult) {
                     return false;
                 }
             }
