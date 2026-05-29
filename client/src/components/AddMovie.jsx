@@ -26,6 +26,18 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
     const [searchFilterGenres, setSearchFilterGenres] = useState([]);
     const [searchFilterGenreMode, setSearchFilterGenreMode] = useState('include');
     const [searchFilterDescription, setSearchFilterDescription] = useState(false);
+    const [enableDropdown, setEnableDropdown] = useState(() => {
+        try {
+            const stored = localStorage.getItem('am_enableDropdown');
+            return stored !== null && stored !== 'undefined' ? JSON.parse(stored) : true;
+        } catch(e) {
+            return true;
+        }
+    });
+
+    useEffect(() => {
+        localStorage.setItem('am_enableDropdown', JSON.stringify(enableDropdown));
+    }, [enableDropdown]);
     const [showSearchFilters, setShowSearchFilters] = useState(false);
 
     const containerRef = useRef(null);
