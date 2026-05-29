@@ -33,6 +33,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
     const [fullPageResults, setFullPageResults] = useState(false);
     const [searchRipple, setSearchRipple] = useState(null);
     const searchBarRef = useRef(null);
+    const lastSearchStatusRef = useRef('');
     
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [hoveredCollectionLink, setHoveredCollectionLink] = useState(null);
@@ -54,6 +55,12 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
     const [isCompareOpen, setIsCompareOpen] = useState(false);
     const [compareLinks, setCompareLinks] = useState([]);
     const [compareDetailsMovie, setCompareDetailsMovie] = useState(null);
+
+    useEffect(() => {
+        if (searchStatus) {
+            lastSearchStatusRef.current = searchStatus;
+        }
+    }, [searchStatus]);
 
     const handleCompareClick = () => {
         const maxLimit = 4;
@@ -869,6 +876,26 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     />
                 )}
 
+                {/* Animated Search Status inside search bar */}
+                <div style={{
+                    opacity: searchStatus ? 1 : 0,
+                    maxWidth: searchStatus ? '150px' : '0px',
+                    overflow: 'hidden',
+                    transition: 'opacity 0.4s ease, max-width 0.4s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginRight: searchStatus ? '8px' : '0px',
+                    pointerEvents: 'none',
+                    whiteSpace: 'nowrap'
+                }}>
+                    <span className="shimmer-text-effect" style={{
+                        fontSize: isMobile ? '0.75rem' : '0.85rem',
+                        fontWeight: 500
+                    }}>
+                        {searchStatus || lastSearchStatusRef.current}
+                    </span>
+                </div>
+
                 <button
                     onClick={() => setShowSearchFilters(!showSearchFilters)}
                     style={{
@@ -964,11 +991,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     maskImage: 'linear-gradient(90deg, transparent 0%, black 40%, black 60%, transparent 100%)'
                 }} />
             </div>
-            {searchStatus && (
-                <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '4px', paddingLeft: '16px', transition: 'opacity 0.3s' }}>
-                    {searchStatus}
-                </div>
-            )}
+
 
 
 
