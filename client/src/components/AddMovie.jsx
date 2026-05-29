@@ -950,7 +950,8 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                         marginTop: inputLines > 1 ? '10px' : '0',
                         flexShrink: 0,
                         position: 'relative',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        minWidth: isMobile ? (extractUrls(query).length > 1 ? '75px' : '45px') : (extractUrls(query).length > 1 ? '140px' : '110px')
                     }}
                     onMouseOver={(e) => !loading && (e.currentTarget.style.transform = 'scale(1.05)')}
                     onMouseOut={(e) => !loading && (e.currentTarget.style.transform = 'scale(1)')}

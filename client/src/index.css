@@ -1225,18 +1225,17 @@ body.hide-header-search .app-header {
 }
 
 .shimmer-text-effect {
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.15) 40%, rgba(212,175,55,0.6) 50%, rgba(255,255,255,0.15) 60%, rgba(255,255,255,0.15) 100%);
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.15) 45%, rgba(212,175,55,0.6) 50%, rgba(255,255,255,0.15) 55%, rgba(255,255,255,0.15) 100%);
     background-size: 200% auto;
     color: transparent;
     -webkit-background-clip: text;
     background-clip: text;
-    animation: shimmer-text-anim 3.5s infinite linear;
+    animation: shimmer-text-anim 2.5s infinite linear;
 }
 
 @keyframes shimmer-text-anim {
-    to {
-        background-position: 200% center;
-    }
+    0% { background-position: 100% center; }
+    100% { background-position: -100% center; }
 }
 
 /* Active states for tabs */
