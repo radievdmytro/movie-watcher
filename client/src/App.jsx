@@ -93,6 +93,20 @@ function App() {
     const [headerScrolled, setHeaderScrolled] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
+    // Global Search State hoisted from unified search
+    const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+    const [globalSearchFields, setGlobalSearchFields] = useState(() => {
+        try {
+            const saved = localStorage.getItem('searchFields');
+            if (saved) return { ...{ title: true, actor: true, director: true, year: true, description: false }, ...JSON.parse(saved) };
+        } catch (e) {}
+        return { title: true, actor: true, director: true, year: true, description: false };
+    });
+    const [includeGlobalDb, setIncludeGlobalDb] = useState(() => {
+        const stored = localStorage.getItem('movieGrid_searchDb');
+        return stored === 'global' || stored === 'cache';
+    });
+
     // Guest Experience Tooltips and Modal States
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [showGuestTooltip, setShowGuestTooltip] = useState(false);
@@ -1189,6 +1203,12 @@ function App() {
                                     selectedLibraryIds={selectedIds}
                                     onGuestActivity={triggerGuestActivity}
                                     onAddToCollectionClick={setCollectionMovie}
+                                    globalSearchQuery={globalSearchQuery}
+                                    setGlobalSearchQuery={setGlobalSearchQuery}
+                                    globalSearchFields={globalSearchFields}
+                                    setGlobalSearchFields={setGlobalSearchFields}
+                                    includeGlobalDb={includeGlobalDb}
+                                    setIncludeGlobalDb={setIncludeGlobalDb}
                                 />
                         )}
 
@@ -1201,6 +1221,9 @@ function App() {
                                     allMovies={movies}
                                     historyList={historyList}
                                     onFetchHistory={fetchHistoryList}
+                                    globalSearchQuery={globalSearchQuery}
+                                    globalSearchFields={globalSearchFields}
+                                    includeGlobalDb={includeGlobalDb}
                                     onUpdate={handleUpdate}
                                     onDelete={handleDelete}
                                     selectedIds={selectedIds}

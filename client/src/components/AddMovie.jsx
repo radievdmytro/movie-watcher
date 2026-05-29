@@ -3,7 +3,7 @@ import MovieComparisonModal from './MovieComparisonModal';
 import MovieDetailsModal from './MovieDetailsModal';
 import BulkImportModal from './BulkImportModal';
 
-function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryIds = [], onGuestActivity, onAddToCollectionClick }) {
+function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryIds = [], onGuestActivity, onAddToCollectionClick, globalSearchQuery, setGlobalSearchQuery, globalSearchFields, setGlobalSearchFields, includeGlobalDb, setIncludeGlobalDb }) {
     const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
@@ -284,6 +284,12 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
         }, 300);
         return () => clearTimeout(timer);
     }, [query]);
+
+    // Sync local query to global query for MovieGrid
+    useEffect(() => {
+        const timer = setTimeout(() => setGlobalSearchQuery(query), 200);
+        return () => clearTimeout(timer);
+    }, [query, setGlobalSearchQuery]);
 
     // Close results when clicking outside
     useEffect(() => {
@@ -994,6 +1000,78 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                 </button>
             </div>
 
+
+            {/* Search Field Pills */}
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                marginTop: '10px',
+                flexWrap: 'wrap',
+                padding: '0 10px',
+                alignItems: 'center'
+            }}>
+                <span style={{ fontSize: '0.8rem', color: '#888', marginRight: '5px' }}>Искать в:</span>
+                {['title', 'actor', 'director', 'year', 'description'].map(field => (
+                    <button
+                        key={field}
+                        onClick={() => {
+                            if (setGlobalSearchFields) {
+                                setGlobalSearchFields(prev => {
+                                    const next = { ...prev, [field]: !prev[field] };
+                                    if (!Object.values(next).some(Boolean)) next.title = true;
+                                    localStorage.setItem('searchFields', JSON.stringify(next));
+                                    return next;
+                                });
+                            }
+                        }}
+                        style={{
+                            background: globalSearchFields?.[field] ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                            color: globalSearchFields?.[field] ? 'var(--accent-gold)' : '#aaa',
+                            border: `1px solid ${globalSearchFields?.[field] ? 'var(--accent-gold)' : 'rgba(255, 255, 255, 0.1)'}`,
+                            borderRadius: '12px',
+                            padding: '4px 12px',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            textTransform: 'capitalize',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                        }}
+                    >
+                        {globalSearchFields?.[field] && <span style={{ fontSize: '0.65rem' }}>✓</span>}
+                        {field}
+                    </button>
+                ))}
+                
+                {/* Global DB Checkbox */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', fontSize: '0.8rem', color: '#ccc', cursor: 'pointer' }}>
+                    <input 
+                        type="checkbox" 
+                        checked={includeGlobalDb || false}
+                        onChange={(e) => {
+                            if (setIncludeGlobalDb) {
+                                setIncludeGlobalDb(e.target.checked);
+                                localStorage.setItem('movieGrid_searchDb', e.target.checked ? 'global' : 'library');
+                            }
+                        }}
+                        style={{ accentColor: 'var(--accent-gold)' }}
+                    />
+                    Include Global DB
+                </label>
+
+                {/* Show Dropdown Panel Checkbox */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '10px', fontSize: '0.8rem', color: '#ccc', cursor: 'pointer' }}>
+                    <input 
+                        type="checkbox" 
+                        checked={enableDropdown}
+                        onChange={(e) => setEnableDropdown(e.target.checked)}
+                        style={{ accentColor: 'var(--accent-gold)' }}
+                    />
+                    Show Top Results Panel
+                </label>
+            </div>
+
             {/* Elegant glowing streaming progress bar */}
             <div style={{
                 width: '100%',
@@ -1242,9 +1320,9 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                 padding: '20px 16px 16px',
                 boxShadow: '0 15px 30px rgba(0,0,0,0.5)',
                 zIndex: 5,
-                opacity: showResultsPanel && searchResults && !fullPageResults ? 1 : 0,
-                transform: showResultsPanel && searchResults && !fullPageResults ? 'translateY(0)' : 'translateY(-12px)',
-                pointerEvents: showResultsPanel && searchResults && !fullPageResults ? 'auto' : 'none',
+                opacity: enableDropdown && showResultsPanel && searchResults && !fullPageResults ? 1 : 0,
+                transform: enableDropdown && showResultsPanel && searchResults && !fullPageResults ? 'translateY(0)' : 'translateY(-12px)',
+                pointerEvents: enableDropdown && showResultsPanel && searchResults && !fullPageResults ? 'auto' : 'none',
                 transition: 'all 0.35s cubic-bezier(0.165,0.84,0.44,1)',
                 maxHeight: '420px', overflowY: 'auto'
             }}>
