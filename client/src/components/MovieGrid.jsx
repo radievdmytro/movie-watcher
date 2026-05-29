@@ -1772,15 +1772,18 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         }
         if (filterRating[0] > 0) params.set('ratingMin', filterRating[0]);
         if (filterRating[1] < 10) params.set('ratingMax', filterRating[1]);
-        if (filterYear[0] > 1900) params.set('yearMin', filterYear[0]);
-        if (filterYear[1] < new Date().getFullYear() + 2) params.set('yearMax', filterYear[1]);
+        // Only send year filter if user has explicitly narrowed it (not just the library default range).
+        // We detect this by checking if the year values differ significantly from the library bounds.
+        if (filterYear[0] > minBoundYear + 4) params.set('yearMin', filterYear[0]);
+        if (filterYear[1] < maxBoundYear - 4) params.set('yearMax', filterYear[1]);
         if (filterGenres.length > 0) params.set('genres', filterGenres.join(','));
         if (filterGenreMode !== 'include') params.set('genreMode', filterGenreMode);
         if (filterDirectors.length > 0) params.set('directors', filterDirectors.join(','));
         if (filterActors.length > 0) params.set('actors', filterActors.join(','));
         if (filterType !== 'all') params.set('type', filterType);
         return params.toString();
-    }, [onboardingSeed, globalSortField, globalSortDir, filterRating, filterYear, filterGenres, filterGenreMode, filterDirectors, filterActors, filterType]);
+    }, [onboardingSeed, globalSortField, globalSortDir, filterRating, filterYear, filterGenres, filterGenreMode, filterDirectors, filterActors, filterType, minBoundYear, maxBoundYear]);
+
 
     // Fetch Stats and Onboarding Cache Movies (re-fetches when filters or sort change)
     useEffect(() => {

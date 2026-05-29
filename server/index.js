@@ -648,21 +648,21 @@ app.get('/api/cache/directory', authenticateToken, (req, res) => {
             params.push(ratingMax);
         }
 
-        // Year filter
-        if (yearMin !== null) { sql += ' AND year >= ?'; params.push(yearMin); }
-        if (yearMax !== null) { sql += ' AND year <= ?'; params.push(yearMax); }
-
-        // Genre filter
+        // Genre filter — use actual column 'genres' (not alias 'misc' from SELECT)
         if (genres) {
             const genreList = genres.split(',').map(g => g.trim()).filter(Boolean);
             if (genreList.length > 0) {
                 if (genreMode === 'include') {
-                    genreList.forEach(g => { sql += ' AND cyrillic_like(misc, ?)'; params.push(`%${g}%`); });
+                    genreList.forEach(g => { sql += ' AND cyrillic_like(genres, ?)'; params.push(`%${g}%`); });
                 } else {
-                    genreList.forEach(g => { sql += ' AND NOT cyrillic_like(misc, ?)'; params.push(`%${g}%`); });
+                    genreList.forEach(g => { sql += ' AND NOT cyrillic_like(genres, ?)'; params.push(`%${g}%`); });
                 }
             }
         }
+
+        // Year filter
+        if (yearMin !== null) { sql += ' AND year >= ?'; params.push(yearMin); }
+        if (yearMax !== null) { sql += ' AND year <= ?'; params.push(yearMax); }
 
         // Director filter
         if (directors) {
@@ -684,10 +684,10 @@ app.get('/api/cache/directory', authenticateToken, (req, res) => {
             }
         }
 
-        // Type filter
+        // Type filter — use actual column 'genres' (not alias 'misc')
         if (type && type !== 'all') {
-            const cartoonCond = "(misc LIKE '%мульт%' OR misc LIKE '%анимац%' OR link LIKE '%/cartoons/%')";
-            const animeCond = "(misc LIKE '%аниме%' OR link LIKE '%/animation/%')";
+            const cartoonCond = "(genres LIKE '%мульт%' OR genres LIKE '%анимац%' OR link LIKE '%/cartoons/%')";
+            const animeCond = "(genres LIKE '%аниме%' OR link LIKE '%/animation/%')";
             if (type === 'cartoon') sql += ` AND ${cartoonCond}`;
             else if (type === 'anime') sql += ` AND ${animeCond}`;
             else if (type === 'movie') sql += ` AND type = 'movie' AND NOT ${cartoonCond} AND NOT ${animeCond}`;
@@ -704,9 +704,14 @@ app.get('/api/cache/directory', authenticateToken, (req, res) => {
             sql += ' ORDER BY updated_at DESC';
         }
 
-        // Count for pagination
-        const countSql = sql.replace(/^SELECT .* FROM/, 'SELECT COUNT(*) as cnt FROM').replace(/ORDER BY.*$/, '');
-        const { cnt } = db.prepare(countSql).get(...params);
+        // Count query — build from scratch using WHERE conditions (not regex on multiline SQL)
+        const wherePart = sql.replace(/^[\s\S]*?WHERE /, 'WHERE ').replace(/\s*ORDER BY[\s\S]*$/, '');
+        const countSql = `SELECT COUNT(*) as cnt FROM scraped_movies_cache ${wherePart}`;
+        let cnt = 0;
+        try {
+            const countRow = db.prepare(countSql).get(...params);
+            cnt = countRow ? countRow.cnt : 0;
+        } catch(e) { cnt = 0; }
 
         sql += ` LIMIT ${limit} OFFSET ${offset}`;
         const rows = db.prepare(sql).all(...params);
@@ -947,7 +952,10 @@ app.get('/api/cache/genres', authenticateToken, (req, res) => {
             if (!row.genres) continue;
             row.genres.split(',').forEach(g => {
                 const trimmed = g.trim();
-                if (trimmed) genreSet.add(trimmed);
+                // Skip empty, single chars, purely numeric values (years like 1896, 1902...)
+                if (!trimmed || trimmed.length < 2) return;
+                if (/^\d+$/.test(trimmed)) return; // skip years/numbers
+                genreSet.add(trimmed);
             });
         }
 
