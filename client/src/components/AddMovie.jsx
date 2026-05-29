@@ -3,7 +3,7 @@ import MovieComparisonModal from './MovieComparisonModal';
 import MovieDetailsModal from './MovieDetailsModal';
 import BulkImportModal from './BulkImportModal';
 
-function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryIds = [], onGuestActivity, onAddToCollectionClick, globalSearchQuery, setGlobalSearchQuery, globalSearchFields, setGlobalSearchFields, includeGlobalDb, setIncludeGlobalDb }) {
+function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryIds = [], onGuestActivity, onAddToCollectionClick, globalSearchQuery, setGlobalSearchQuery, globalSearchFields, setGlobalSearchFields }) {
     const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
@@ -1078,22 +1078,6 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     </button>
                 ))}
                 
-                {/* Global DB Checkbox */}
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', fontSize: '0.8rem', color: '#ccc', cursor: 'pointer' }}>
-                    <input 
-                        type="checkbox" 
-                        checked={includeGlobalDb || false}
-                        onChange={(e) => {
-                            if (setIncludeGlobalDb) {
-                                setIncludeGlobalDb(e.target.checked);
-                                localStorage.setItem('movieGrid_searchDb', e.target.checked ? 'global' : 'library');
-                            }
-                        }}
-                        style={{ accentColor: 'var(--accent-gold)' }}
-                    />
-                    Include Global DB
-                </label>
-
                 {/* Show Dropdown Panel Checkbox */}
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '10px', fontSize: '0.8rem', color: '#ccc', cursor: 'pointer' }}>
                     <input 

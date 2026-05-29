@@ -1995,79 +1995,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         </button>
                     </div>
 
-                    
 
-                    {/* Background Search Suggestion Banner */}
-                    {!isWatchedView && searchDb === 'library' && !autoSwitchToCache && deferredFilterQuery.trim().length >= 3 && backgroundCacheResults.length > 0 && (
-                        <div className="glass-panel" style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                            padding: '12px 18px',
-                            marginTop: '8px',
-                            marginBottom: '8px',
-                            borderRadius: '14px',
-                            border: '1px solid rgba(168, 85, 247, 0.3)',
-                            background: 'linear-gradient(90deg, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0.03) 100%)',
-                            boxShadow: '0 4px 20px rgba(168, 85, 247, 0.08), inset 0 0 10px rgba(168, 85, 247, 0.05)',
-                            animation: 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                            boxSizing: 'border-box',
-                            flexWrap: 'wrap',
-                            gap: '12px'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span style={{
-                                    fontSize: '1.2rem',
-                                    animation: 'pulse 1.8s infinite ease-in-out',
-                                    filter: 'drop-shadow(0 0 4px rgba(251, 191, 36, 0.6))'
-                                }}>💡</span>
-                                <span style={{
-                                    fontSize: '0.88rem',
-                                    color: '#e2e8f0',
-                                    lineHeight: '1.4'
-                                }}>
-                                    {finalDisplayMovies.length === 0
-                                        ? <>No matches in your library. </>
-                                        : <>Only <strong style={{ color: '#fff', textShadow: '0 0 8px rgba(255,255,255,0.2)' }}>{finalDisplayMovies.length}</strong> library matches. </>
-                                    }
-                                    Found <strong style={{ color: '#c084fc', textShadow: '0 0 8px rgba(192, 132, 252, 0.3)' }}>{backgroundCacheResults.length}</strong> movies in Global Database!
-                                    {backgroundSearchStats && (
-                                        <span style={{ fontSize: '0.75rem', opacity: 0.6, marginLeft: '8px', fontStyle: 'italic' }}>
-                                            (out of {backgroundSearchStats.total.toLocaleString()} in {backgroundSearchStats.timeMs}ms)
-                                        </span>
-                                    )}
-                                </span>
-                            </div>
-                            <button
-                                onClick={() => handleToggleAutoSwitch(true)}
-                                style={{
-                                    background: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)',
-                                    border: 'none',
-                                    color: '#fff',
-                                    cursor: 'pointer',
-                                    fontSize: '0.8rem',
-                                    fontWeight: '700',
-                                    padding: '6px 14px',
-                                    borderRadius: '30px',
-                                    outline: 'none',
-                                    boxShadow: '0 3px 10px rgba(168, 85, 247, 0.3)',
-                                    transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-                                    whiteSpace: 'nowrap'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'scale(1.04)';
-                                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(168, 85, 247, 0.45)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                    e.currentTarget.style.boxShadow = '0 3px 10px rgba(168, 85, 247, 0.3)';
-                                }}
-                            >
-                                🔮 Include Global Database Matches
-                            </button>
-                        </div>
-                    )}
 
                     {/* Row 2: Super Compact Controls (Type switch, View Mode, Hide Watched) */}
                     <div className="compact-controls-row" style={{

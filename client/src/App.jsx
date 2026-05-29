@@ -102,10 +102,6 @@ function App() {
         } catch (e) {}
         return { title: true, actor: true, director: true, year: true, description: false };
     });
-    const [includeGlobalDb, setIncludeGlobalDb] = useState(() => {
-        const stored = localStorage.getItem('movieGrid_searchDb');
-        return stored === 'global' || stored === 'cache';
-    });
 
     // Guest Experience Tooltips and Modal States
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -1207,8 +1203,8 @@ function App() {
                                     setGlobalSearchQuery={setGlobalSearchQuery}
                                     globalSearchFields={globalSearchFields}
                                     setGlobalSearchFields={setGlobalSearchFields}
-                                    includeGlobalDb={includeGlobalDb}
-                                    setIncludeGlobalDb={setIncludeGlobalDb}
+                                    enableDropdown={showTopResultsPanel}
+                                    setEnableDropdown={setShowTopResultsPanel}
                                 />
                         )}
 
@@ -1223,7 +1219,6 @@ function App() {
                                     onFetchHistory={fetchHistoryList}
                                     globalSearchQuery={globalSearchQuery}
                                     globalSearchFields={globalSearchFields}
-                                    includeGlobalDb={includeGlobalDb}
                                     onUpdate={handleUpdate}
                                     onDelete={handleDelete}
                                     selectedIds={selectedIds}
