@@ -944,22 +944,24 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                 </button>
             </div>
 
-            {/* Streaming progress bar */}
+            {/* Elegant glowing streaming progress bar */}
             <div style={{
-                height: '2px',
-                borderRadius: '2px',
-                background: 'rgba(255,255,255,0.05)',
-                overflow: 'hidden',
-                marginTop: '4px',
+                width: '100%',
+                marginTop: '2px',
                 opacity: searchStreaming ? 1 : 0,
-                transition: 'opacity 0.3s'
+                transition: 'opacity 0.5s ease',
+                display: 'flex',
+                justifyContent: 'center'
             }}>
                 <div style={{
-                    height: '100%',
-                    background: 'linear-gradient(90deg, var(--accent-gold) 0%, #ffe066 50%, var(--accent-gold) 100%)',
+                    width: '90%',
+                    height: '1px',
+                    background: 'linear-gradient(90deg, var(--accent-gold) 0%, #fffad4 50%, var(--accent-gold) 100%)',
                     backgroundSize: '200% 100%',
-                    animation: searchStreaming ? 'shimmer 1.4s infinite linear' : 'none',
-                    width: '100%'
+                    animation: searchStreaming ? 'shimmer 1.5s infinite linear' : 'none',
+                    boxShadow: '0 2px 14px 1px rgba(212, 175, 55, 0.8)',
+                    WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 40%, black 60%, transparent 100%)',
+                    maskImage: 'linear-gradient(90deg, transparent 0%, black 40%, black 60%, transparent 100%)'
                 }} />
             </div>
             {searchStatus && (
