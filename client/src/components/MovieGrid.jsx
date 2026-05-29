@@ -842,13 +842,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [availableDirectors, setAvailableDirectors] = useState([]);
     const [availableActors, setAvailableActors] = useState([]);
 
-    const [searchDb, setSearchDb] = useState('library'); // 'library' or 'cache'
+    const searchDb = includeGlobalDb ? 'cache' : 'library'; // 'library' or 'cache'
+    const autoSwitchToCache = includeGlobalDb;
     const [cacheMoviesResults, setCacheMoviesResults] = useState([]);
     const [isCacheLoading, setIsCacheLoading] = useState(false);
-
-    const [autoSwitchToCache, setAutoSwitchToCache] = useState(() => {
-        return localStorage.getItem('autoSwitchToCache') === 'true';
-    });
     const [backgroundCacheResults, setBackgroundCacheResults] = useState([]);
     const [backgroundSearchStats, setBackgroundSearchStats] = useState(null);
     const [isBgCacheSearching, setIsBgCacheSearching] = useState(false);
@@ -995,8 +992,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     };
 
     const handleToggleAutoSwitch = (checked) => {
-        setAutoSwitchToCache(checked);
-        localStorage.setItem('autoSwitchToCache', checked ? 'true' : 'false');
+        // No-op since we moved this to the top bar
     };
 
     useEffect(() => {
@@ -1058,36 +1054,42 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         let scored = movies.map(movie => {
             let score = 0;
             if (deferredFilterQuery) {
-                const q = deferredFilterQuery.toLowerCase().trim();
+                const q = deferredFilterQuery.toLowerCase().replace(/ё/g, 'е').trim();
+                
+                const matchField = (fieldValue, searchStr) => {
+                    if (!fieldValue) return false;
+                    const normalized = fieldValue.toString().toLowerCase().replace(/ё/g, 'е');
+                    return normalized.includes(searchStr);
+                };
 
                 // Importance priority matching weights:
                 // 1. Title match (most important)
-                if (searchFields.title && movie.title && movie.title.toLowerCase().includes(q)) score += 1000;
-                if (searchFields.title && movie.original_title && movie.original_title.toLowerCase().includes(q)) score += 800;
+                if (searchFields.title && matchField(movie.title, q)) score += 1000;
+                if (searchFields.title && matchField(movie.original_title, q)) score += 800;
 
                 // 2. Year match
                 if (searchFields.year && movie.year && movie.year.toString() === q) score += 600;
-                else if (searchFields.year && movie.year && movie.year.toString().includes(q)) score += 300;
+                else if (searchFields.year && matchField(movie.year, q)) score += 300;
 
                 // 4. Director match
-                if (searchFields.director && movie.director && movie.director.toLowerCase().includes(q)) score += 200;
+                if (searchFields.director && matchField(movie.director, q)) score += 200;
 
                 // 5. Actor match
-                if (searchFields.actor && movie.actors && movie.actors.toLowerCase().includes(q)) score += 100;
+                if (searchFields.actor && matchField(movie.actors, q)) score += 100;
 
                 // 6. Description match
-                if (searchFields.description && movie.description && movie.description.toLowerCase().includes(q)) score += 50;
+                if (searchFields.description && matchField(movie.description, q)) score += 50;
 
                 // Word-by-word matches (for multi-word search queries)
                 const words = q.split(/\s+/).filter(w => w.length > 1);
                 if (words.length > 1) {
                     words.forEach(word => {
-                        if (searchFields.title && movie.title && movie.title.toLowerCase().includes(word)) score += 100;
-                        if (searchFields.title && movie.original_title && movie.original_title.toLowerCase().includes(word)) score += 80;
-                        if (searchFields.year && movie.year && movie.year.toString().includes(word)) score += 60;
-                        if (searchFields.director && movie.director && movie.director.toLowerCase().includes(word)) score += 20;
-                        if (searchFields.actor && movie.actors && movie.actors.toLowerCase().includes(word)) score += 10;
-                        if (searchFields.description && movie.description && movie.description.toLowerCase().includes(word)) score += 5;
+                        if (searchFields.title && matchField(movie.title, word)) score += 100;
+                        if (searchFields.title && matchField(movie.original_title, word)) score += 80;
+                        if (searchFields.year && matchField(movie.year, word)) score += 60;
+                        if (searchFields.director && matchField(movie.director, word)) score += 20;
+                        if (searchFields.actor && matchField(movie.actors, word)) score += 10;
+                        if (searchFields.description && matchField(movie.description, word)) score += 5;
                     });
                 }
 
@@ -1416,12 +1418,38 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 const results = data.results || data || [];
                 setBackgroundCacheResults(results);
                 setBgCacheOffset(results.length);
-                setHasMoreBgCache(results.length >= 30);
-                setHasFiredLiveSearch(false);
+                
                 if (data.timeMs) {
                     setBackgroundSearchStats({ total: data.total, timeMs: data.timeMs });
                 } else {
                     setBackgroundSearchStats(null);
+                }
+
+                if (results.length < 30) {
+                    setHasMoreBgCache(false);
+                    // Trigger live search immediately if initial results are insufficient
+                    if (deferredFilterQuery && deferredFilterQuery.length >= 3) {
+                        setHasFiredLiveSearch(true);
+                        setIsLiveSearching(true);
+                        queryParams.append('live', 'true');
+                        fetch(`/api/cache/search?${queryParams.toString()}`)
+                            .then(r => r.ok ? r.json() : [])
+                            .then(liveData => {
+                                const liveResults = liveData.results || liveData || [];
+                                if (liveResults.length > 0) {
+                                    setBackgroundCacheResults(prv => {
+                                        const exist = new Set(prv.map(m => m.link));
+                                        const newLive = liveResults.filter(m => !exist.has(m.link));
+                                        return [...prv, ...newLive];
+                                    });
+                                }
+                            })
+                            .catch(console.error)
+                            .finally(() => setIsLiveSearching(false));
+                    }
+                } else {
+                    setHasMoreBgCache(true);
+                    setHasFiredLiveSearch(false);
                 }
             })
             .catch(err => {

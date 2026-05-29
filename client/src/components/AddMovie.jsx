@@ -661,16 +661,38 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
         // Year Filter
         if (year < searchFilterYear[0] || year > searchFilterYear[1]) return false;
 
-        // Title/Description Search Filter
-        if (!searchFilterDescription && query && query.length > 0) {
-            const qWords = query.toLowerCase().split(/\s+/).filter(Boolean);
-            const combinedTitle = ((item.title || '') + " " + (item.original_title || '')).toLowerCase();
-            const match = qWords.every(w => {
-                let stem = w;
-                if (w.length > 5) stem = w.substring(0, w.length - 2);
-                else if (w.length > 4) stem = w.substring(0, w.length - 1);
-                return combinedTitle.includes(stem);
-            });
+        // Global Search Fields Filter
+        if (query && query.length > 0) {
+            const q = query.toLowerCase().replace(/ё/g, 'е').trim();
+            const words = q.split(/\\s+/).filter(w => w.length > 1);
+            
+            const matchField = (fieldValue, searchStr) => {
+                if (!fieldValue) return false;
+                const normalized = fieldValue.toString().toLowerCase().replace(/ё/g, 'е');
+                if (normalized.includes(searchStr)) return true;
+                // For multi-word queries, if the full string doesn't match, try to match at least one significant word
+                // (Useful for "Иван Васильевич" matching "Иван")
+                if (words.length > 1 && words.some(w => normalized.includes(w))) return true;
+                return false;
+            };
+
+            let match = false;
+            // Use globalSearchFields if passed, otherwise default to title
+            const useTitle = globalSearchFields ? globalSearchFields.title : true;
+            const useYear = globalSearchFields ? globalSearchFields.year : false;
+            const useActor = globalSearchFields ? globalSearchFields.actor : false;
+            const useDirector = globalSearchFields ? globalSearchFields.director : false;
+            const useDescription = globalSearchFields ? globalSearchFields.description : false;
+
+            if (useTitle && (matchField(item.title, q) || matchField(item.original_title, q))) match = true;
+            if (useYear && matchField(item.year, q)) match = true;
+            if (useActor && matchField(item.actors || item.misc, q)) match = true;
+            if (useDirector && matchField(item.director, q)) match = true;
+            if (useDescription && matchField(item.description, q)) match = true;
+
+            // If the user's strict search fails, fallback to title matching to avoid dropping valid HDRezka results completely
+            if (!match && !useTitle && matchField(item.title, q)) match = true;
+
             if (!match) return false;
         }
 
