@@ -1203,8 +1203,6 @@ function App() {
                                     setGlobalSearchQuery={setGlobalSearchQuery}
                                     globalSearchFields={globalSearchFields}
                                     setGlobalSearchFields={setGlobalSearchFields}
-                                    enableDropdown={showTopResultsPanel}
-                                    setEnableDropdown={setShowTopResultsPanel}
                                 />
                         )}
 
