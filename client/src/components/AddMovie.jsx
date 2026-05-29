@@ -129,7 +129,8 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
         }
 
         const urls = extractUrls(q);
-        if (isAuto && (urls.length > 1 || q.length < 3)) return;
+        if (isAuto && (urls.length > 1 || q.length < 4)) return;
+        if (!isAuto && urls.length === 0 && q.length < 3) return;
 
         // Close any running SSE stream
         if (activeStreamRef.current) {
@@ -267,8 +268,8 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
             return;
         }
 
-        // Require at least 3 characters for auto-search text queries
-        if (q.length < 3) {
+        // Require at least 4 characters for auto-search text queries
+        if (q.length < 4) {
             setPreview(null);
             setSearchResults(null);
             setShowResultsPanel(false);
@@ -808,7 +809,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     if (searchBarRef.current) {
                         const rect = searchBarRef.current.getBoundingClientRect();
                         const isSearchBtn = e.target.closest('.search-submit-btn');
-                        const isError = isSearchBtn && query.trim().length === 0;
+                        const isError = isSearchBtn && query.trim().length < 3;
                         setSearchRipple({
                             x: e.clientX - rect.left,
                             y: e.clientY - rect.top,
