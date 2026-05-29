@@ -690,9 +690,9 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
         const params = [];
         
         // Backward compatibility
-        if (actor) { sql += ' AND actors LIKE ?'; params.push(`%${actor.trim()}%`); }
-        if (director) { sql += ' AND director LIKE ?'; params.push(`%${director.trim()}%`); }
-        if (genre) { sql += ' AND genres LIKE ?'; params.push(`%${genre.trim()}%`); }
+        if (actor) { sql += ' AND cyrillic_like(actors, ?)'; params.push(`%${actor.trim()}%`); }
+        if (director) { sql += ' AND cyrillic_like(director, ?)'; params.push(`%${director.trim()}%`); }
+        if (genre) { sql += ' AND cyrillic_like(genres, ?)'; params.push(`%${genre.trim()}%`); }
         if (year) { sql += ' AND year = ?'; params.push(parseInt(year) || year); }
         
         // Advanced Criteria
@@ -701,12 +701,12 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
             if (genreList.length > 0) {
                 if (genreMode === 'include') {
                     genreList.forEach(g => {
-                        sql += ' AND genres LIKE ?';
+                        sql += ' AND cyrillic_like(genres, ?)';
                         params.push(`%${g}%`);
                     });
                 } else {
                     genreList.forEach(g => {
-                        sql += ' AND genres NOT LIKE ?';
+                        sql += ' AND NOT cyrillic_like(genres, ?)';
                         params.push(`%${g}%`);
                     });
                 }
@@ -716,7 +716,7 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
         if (directors) {
             const dirList = directors.split(',').map(d => d.trim()).filter(Boolean);
             if (dirList.length > 0) {
-                const dirConds = dirList.map(() => 'director LIKE ?');
+                const dirConds = dirList.map(() => 'cyrillic_like(director, ?)');
                 sql += ` AND (${dirConds.join(' OR ')})`;
                 dirList.forEach(d => params.push(`%${d}%`));
             }
@@ -725,7 +725,7 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
         if (actors) {
             const actList = actors.split(',').map(a => a.trim()).filter(Boolean);
             if (actList.length > 0) {
-                const actConds = actList.map(() => 'actors LIKE ?');
+                const actConds = actList.map(() => 'cyrillic_like(actors, ?)');
                 sql += ` AND (${actConds.join(' OR ')})`;
                 actList.forEach(a => params.push(`%${a}%`));
             }
@@ -759,15 +759,15 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
             const conditions = [];
             
             if (fieldsObj.title !== false) {
-                conditions.push('title LIKE ?', 'original_title LIKE ?');
+                conditions.push('cyrillic_like(title, ?)', 'cyrillic_like(original_title, ?)');
                 params.push(q, q);
             }
             if (fieldsObj.actor !== false) {
-                conditions.push('actors LIKE ?');
+                conditions.push('cyrillic_like(actors, ?)');
                 params.push(q);
             }
             if (fieldsObj.director !== false) {
-                conditions.push('director LIKE ?');
+                conditions.push('cyrillic_like(director, ?)');
                 params.push(q);
             }
             if (fieldsObj.year !== false) {
@@ -775,7 +775,7 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
                 params.push(q);
             }
             if (fieldsObj.description) {
-                conditions.push('description LIKE ?');
+                conditions.push('cyrillic_like(description, ?)');
                 params.push(q);
             }
             
