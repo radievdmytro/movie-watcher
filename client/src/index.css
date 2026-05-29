@@ -921,13 +921,7 @@ body.hide-header-search .app-header {
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
-    animation: filterPanelContourFlash 1s ease-out;
   }
-}
-
-@keyframes filterPanelContourFlash {
-  0% { box-shadow: inset 0 0 10px 2px rgba(212, 175, 55, 0.6), inset 0 2px 10px rgba(0, 0, 0, 0.2); border-color: rgba(212, 175, 55, 0.8); }
-  100% { box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2); border-color: rgba(255, 255, 255, 0.08); }
 }
 
 /* On mobile, keep it normal static flow inside the sticky container */
@@ -941,13 +935,31 @@ body.hide-header-search .app-header {
     margin-bottom: 6px;
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.05);
-    animation: filterPanelContourFlashMobile 1s ease-out;
   }
 }
 
-@keyframes filterPanelContourFlashMobile {
-  0% { border-color: rgba(212, 175, 55, 0.8); box-shadow: inset 0 0 10px 2px rgba(212, 175, 55, 0.6); }
-  100% { border-color: rgba(255, 255, 255, 0.05); box-shadow: none; }
+/* ── Filter Panel Ripple Effect (Contour Only) ── */
+.filter-edge-glow {
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 55;
+    /* We only want a border glow, no background */
+    border: 2px solid rgba(212, 175, 55, 1);
+    box-shadow: inset 0 0 12px 3px rgba(212, 175, 55, 0.5), 0 0 12px 3px rgba(212, 175, 55, 0.5);
+    animation: filterEdgeGlowExpand 1s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes filterEdgeGlowExpand {
+    0% {
+        clip-path: circle(0px at var(--click-x) var(--click-y));
+        opacity: 1;
+    }
+    100% {
+        clip-path: circle(1500px at var(--click-x) var(--click-y));
+        opacity: 0;
+    }
 }
 
 /* ==========================================
