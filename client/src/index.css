@@ -962,6 +962,12 @@ body.hide-header-search .app-header {
     }
 }
 
+@keyframes searchBtnErrorPulse {
+    0% { opacity: 0; }
+    14% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
 /* ==========================================
    SORT TABS — horizontal scroll on narrow screens
    ========================================== */

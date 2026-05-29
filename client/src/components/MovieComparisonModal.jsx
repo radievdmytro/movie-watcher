@@ -302,21 +302,45 @@ export default function MovieComparisonModal({
                                                     {isMobile ? 'Подробнее' : 'Details →'}
                                                 </button>
                                             ) : owned ? (
-                                                <div style={{
-                                                    background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)',
-                                                    color: 'var(--accent-gold)', borderRadius: '10px', padding: '8px',
-                                                    fontSize: isMobile ? '0.75rem' : '0.8rem', fontWeight: 600, textAlign: 'center'
-                                                }}>
-                                                    📍 In library
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <div style={{
+                                                        flex: 1,
+                                                        background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)',
+                                                        color: 'var(--accent-gold)', borderRadius: '10px', padding: '8px',
+                                                        fontSize: isMobile ? '0.75rem' : '0.8rem', fontWeight: 600, textAlign: 'center',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                    }}>
+                                                        📍 In library
+                                                    </div>
+                                                    {onOpenMovie && (
+                                                        <button onClick={() => onOpenMovie(movie)} style={{
+                                                            flex: 1, padding: isMobile ? '6px 10px' : '8px 16px', background: 'rgba(255,255,255,0.05)',
+                                                            border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '10px', fontSize: isMobile ? '0.78rem' : '0.85rem',
+                                                            fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
+                                                        }} onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(-2px)'}} onMouseLeave={e => {e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'translateY(0)'}}>
+                                                            Details
+                                                        </button>
+                                                    )}
                                                 </div>
                                             ) : (
-                                                <button onClick={() => { onAddMovie?.(movie.link); }} style={{
-                                                    width: '100%', padding: isMobile ? '6px 10px' : '8px 16px', background: 'var(--accent-gold)',
-                                                    border: 'none', color: '#000', borderRadius: '10px', fontSize: isMobile ? '0.78rem' : '0.85rem',
-                                                    fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(212,175,55,0.2)'
-                                                }} onMouseEnter={e => e.target.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.target.style.transform = 'translateY(0)'}>
-                                                    ✚ Add
-                                                </button>
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <button onClick={() => { onAddMovie?.(movie.link); }} style={{
+                                                        flex: 1.5, padding: isMobile ? '6px 10px' : '8px 16px', background: 'var(--accent-gold)',
+                                                        border: 'none', color: '#000', borderRadius: '10px', fontSize: isMobile ? '0.78rem' : '0.85rem',
+                                                        fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(212,175,55,0.2)'
+                                                    }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                                                        ✚ Add
+                                                    </button>
+                                                    {onOpenMovie && (
+                                                        <button onClick={() => onOpenMovie(movie)} style={{
+                                                            flex: 1, padding: isMobile ? '6px 10px' : '8px 16px', background: 'rgba(255,255,255,0.05)',
+                                                            border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '10px', fontSize: isMobile ? '0.78rem' : '0.85rem',
+                                                            fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
+                                                        }} onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(-2px)'}} onMouseLeave={e => {e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'translateY(0)'}}>
+                                                            Details
+                                                        </button>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     </div>

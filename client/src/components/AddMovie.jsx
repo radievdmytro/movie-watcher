@@ -914,20 +914,33 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                         marginRight: '2px',
                         alignSelf: inputLines > 1 ? 'flex-start' : 'auto',
                         marginTop: inputLines > 1 ? '10px' : '0',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        position: 'relative',
+                        overflow: 'hidden'
                     }}
                     onMouseOver={(e) => !loading && (e.currentTarget.style.transform = 'scale(1.05)')}
                     onMouseOut={(e) => !loading && (e.currentTarget.style.transform = 'scale(1)')}
                 >
-                    {loading ? (
-                        <div style={{ width: '16px', height: '16px', border: '2px solid #000', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                    ) : (
-                        isMobile ? (
-                            extractUrls(query).length > 1 ? '📥 ALL' : '🔍'
-                        ) : (
-                            extractUrls(query).length > 1 ? 'IMPORT ALL' : 'SEARCH'
-                        )
+                    {searchRipple?.isError && (
+                        <div style={{
+                            position: 'absolute', inset: 0,
+                            background: 'rgba(255, 50, 50, 0.6)',
+                            animation: 'searchBtnErrorPulse 1.4s ease-out forwards',
+                            pointerEvents: 'none',
+                            zIndex: 1
+                        }} key={`btn-error-${searchRipple.id}`} />
                     )}
+                    <span style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                        {loading ? (
+                            <div style={{ width: '16px', height: '16px', border: '2px solid #000', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                        ) : (
+                            isMobile ? (
+                                extractUrls(query).length > 1 ? '📥 ALL' : '🔍'
+                            ) : (
+                                extractUrls(query).length > 1 ? 'IMPORT ALL' : 'SEARCH'
+                            )
+                        )}
+                    </span>
                 </button>
             </div>
 
