@@ -800,16 +800,27 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                 onMouseDown={(e) => {
                     if (searchBarRef.current) {
                         const rect = searchBarRef.current.getBoundingClientRect();
+                        const isSearchBtn = e.target.closest('.search-submit-btn');
+                        const isError = isSearchBtn && query.trim().length === 0;
                         setSearchRipple({
                             x: e.clientX - rect.left,
                             y: e.clientY - rect.top,
-                            id: Date.now()
+                            id: Date.now(),
+                            isError: isError
                         });
                     }
                 }}
             >
                 {searchRipple && (
-                    <div className="filter-edge-glow" style={{ '--click-x': `${searchRipple.x}px`, '--click-y': `${searchRipple.y}px` }} key={`search-edge-${searchRipple.id}`} onAnimationEnd={() => setSearchRipple(null)} />
+                    <div className="filter-edge-glow" 
+                         style={{ 
+                             '--click-x': `${searchRipple.x}px`, 
+                             '--click-y': `${searchRipple.y}px`,
+                             '--ripple-color': searchRipple.isError ? 'rgba(255, 50, 50, 1)' : 'rgba(212, 175, 55, 1)',
+                             '--ripple-glow': searchRipple.isError ? 'rgba(255, 50, 50, 0.5)' : 'rgba(212, 175, 55, 0.5)'
+                         }} 
+                         key={`search-edge-${searchRipple.id}`} 
+                         onAnimationEnd={() => setSearchRipple(null)} />
                 )}
                 {!isMobile && (
                     <div style={{ padding: '0 15px', display: 'flex', alignItems: 'center', color: '#666' }}>
@@ -884,6 +895,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                 </button>
 
                 <button
+                    className="search-submit-btn"
                     onClick={() => handleSearch(false, true)}
                     disabled={loading}
                     style={{
