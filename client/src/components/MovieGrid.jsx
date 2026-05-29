@@ -872,6 +872,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [isBgCacheSearching, setIsBgCacheSearching] = useState(false);
     const [bgCacheOffset, setBgCacheOffset] = useState(0);
     const [hasMoreBgCache, setHasMoreBgCache] = useState(false);
+    const [hasFiredLiveSearch, setHasFiredLiveSearch] = useState(false);
+    const [isLiveSearching, setIsLiveSearching] = useState(false);
     const [showAutoSwitchToast, setShowAutoSwitchToast] = useState(false);
     const [globalHideError, setGlobalHideError] = useState('');
 
