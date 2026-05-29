@@ -1168,19 +1168,19 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                 <button onClick={(e) => { e.stopPropagation(); handleAddSelected(); }}
                                     className="btn btn-primary"
-                                    style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap' }}>
-                                    ✚ To library ({selectedLinks.size})
+                                    style={{ fontSize: '0.72rem', padding: '4px 10px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap' }}>
+                                    ✚ Library ({selectedLinks.size})
                                 </button>
                                 <button onClick={(e) => { e.stopPropagation(); handleBulkAddToCollection(); }}
                                     className="btn btn-ghost"
-                                    style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap', border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)' }}>
-                                    📁 To collection ({selectedLinks.size})
+                                    style={{ fontSize: '0.72rem', padding: '4px 10px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap', border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)' }}>
+                                    📁 Collection ({selectedLinks.size})
                                 </button>
                                 {totalCompareCount >= 2 && totalCompareCount <= (isMobile ? 2 : 3) && (
                                     <button onClick={(e) => { e.stopPropagation(); handleCompareClick(); }}
                                         className="btn btn-ghost"
-                                        style={{ fontSize: '0.72rem', padding: '4px 12px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
-                                        ⚖️ Compare Selected ({totalCompareCount})
+                                        style={{ fontSize: '0.72rem', padding: '4px 10px', height: 'auto', borderRadius: '14px', whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
+                                        ⚖️ Compare ({totalCompareCount})
                                     </button>
                                 )}
                                 {totalCompareCount > (isMobile ? 2 : 3) && (
@@ -1730,38 +1730,38 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                 {isAdmin && selectedLinks.size > 0 && (
                                     <button onClick={handleRefreshSelected} className="btn btn-ghost" style={{
-                                        padding: '8px 20px', borderRadius: '20px',
-                                        border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem'
+                                        padding: '8px 14px', borderRadius: '20px',
+                                        border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem', whiteSpace: 'nowrap'
                                     }}>🔄 Refresh ({selectedLinks.size})</button>
                                 )}
                                 {selectedLinks.size > 0 && (
                                     <button onClick={handleWatchedSelected} className="btn btn-ghost" style={{
-                                        padding: '8px 20px', borderRadius: '20px',
-                                        border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem'
+                                        padding: '8px 14px', borderRadius: '20px',
+                                        border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem', whiteSpace: 'nowrap'
                                     }}>👀 Watched ({selectedLinks.size})</button>
                                 )}
                                 {selectedLinks.size > 0 && (
                                     <button onClick={handleBulkAddToCollection} className="btn btn-ghost" style={{
-                                        padding: '8px 28px', borderRadius: '20px',
-                                        border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', fontSize: '0.9rem'
-                                    }}>📁 To collection ({selectedLinks.size})</button>
+                                        padding: '8px 16px', borderRadius: '20px',
+                                        border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', fontSize: '0.9rem', whiteSpace: 'nowrap'
+                                    }}>📁 Collection ({selectedLinks.size})</button>
                                 )}
                                 {totalCompareCount >= 2 && totalCompareCount <= 4 && (
                                     <button onClick={handleCompareClick} className="btn btn-ghost" style={{
-                                        padding: '8px 20px', borderRadius: '20px',
-                                        border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem'
+                                        padding: '8px 14px', borderRadius: '20px',
+                                        border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '0.85rem', whiteSpace: 'nowrap'
                                     }}>⚖️ Compare ({totalCompareCount})</button>
                                 )}
                                 {totalCompareCount > 4 && (
-                                    <span style={{ fontSize: '0.85rem', color: '#888', fontStyle: 'italic', padding: '8px 0' }}>
+                                    <span style={{ fontSize: '0.85rem', color: '#888', fontStyle: 'italic', padding: '8px 0', whiteSpace: 'nowrap' }}>
                                         Compare (max 4)
                                     </span>
                                 )}
                                 {selectedLinks.size > 0 && (
                                     <button onClick={handleAddSelected} className="btn btn-primary" style={{
-                                        padding: '8px 28px', borderRadius: '20px',
-                                        boxShadow: '0 2px 15px rgba(212,175,55,0.35)', fontSize: '0.9rem'
-                                    }}>✚ To library ({selectedLinks.size})</button>
+                                        padding: '8px 16px', borderRadius: '20px',
+                                        boxShadow: '0 2px 15px rgba(212,175,55,0.35)', fontSize: '0.9rem', whiteSpace: 'nowrap'
+                                    }}>✚ Library ({selectedLinks.size})</button>
                                 )}
                             </div>
                         </div>
