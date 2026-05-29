@@ -25,6 +25,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
     const [searchFilterYear, setSearchFilterYear] = useState([1900, new Date().getFullYear() + 2]);
     const [searchFilterGenres, setSearchFilterGenres] = useState([]);
     const [searchFilterGenreMode, setSearchFilterGenreMode] = useState('include');
+    const [searchFilterDescription, setSearchFilterDescription] = useState(false);
     const [showSearchFilters, setShowSearchFilters] = useState(false);
 
     const containerRef = useRef(null);
@@ -639,7 +640,21 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                 if (item.type !== 'series' || isCartoon || isAnime) return false;
             }
         }
+        // Year Filter
         if (year < searchFilterYear[0] || year > searchFilterYear[1]) return false;
+
+        // Title/Description Search Filter
+        if (!searchFilterDescription && query && query.length > 0) {
+            const qWords = query.toLowerCase().split(/\s+/).filter(Boolean);
+            const combinedTitle = ((item.title || '') + " " + (item.original_title || '')).toLowerCase();
+            const match = qWords.every(w => {
+                let stem = w;
+                if (w.length > 5) stem = w.substring(0, w.length - 2);
+                else if (w.length > 4) stem = w.substring(0, w.length - 1);
+                return combinedTitle.includes(stem);
+            });
+            if (!match) return false;
+        }
 
         // Genre Filter
         if (searchFilterGenres.length > 0) {
@@ -1061,7 +1076,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                         </div>
 
                         {/* Row 2: Exclude Genres and Reset Row */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '10px', flexWrap: 'wrap' }}>
                             {/* Genre Exclusion */}
                             <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Exclude Genres</div>
@@ -1093,6 +1108,23 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                 </div>
                             </div>
 
+                            {/* Search in Description Checkbox */}
+                            <div style={{ alignSelf: 'flex-start', flex: 0.8, marginTop: '2px' }}>
+                                <label style={{ 
+                                    display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', 
+                                    fontSize: '0.75rem', color: searchFilterDescription ? 'var(--accent-gold)' : '#aaa',
+                                    transition: 'color 0.2s'
+                                }}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={searchFilterDescription} 
+                                        onChange={(e) => setSearchFilterDescription(e.target.checked)} 
+                                        style={{ accentColor: 'var(--accent-gold)' }}
+                                    />
+                                    Include Description (Slower)
+                                </label>
+                            </div>
+
                             {/* Reset Button */}
                             <div style={{ alignSelf: 'flex-end', paddingBottom: '2px' }}>
                                 <button
@@ -1103,6 +1135,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                         setSearchFilterYear([1950, 2030]);
                                         setSearchFilterGenres([]);
                                         setSearchFilterGenreMode('include');
+                                        setSearchFilterDescription(false);
                                     }}
                                 >Reset Filters</button>
                             </div>
