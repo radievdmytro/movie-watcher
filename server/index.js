@@ -705,9 +705,10 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
                         params.push(`%${g}%`);
                     });
                 } else {
-                    const genreConds = genreList.map(() => 'genres LIKE ?');
-                    sql += ` AND (${genreConds.join(' OR ')})`;
-                    genreList.forEach(g => params.push(`%${g}%`));
+                    genreList.forEach(g => {
+                        sql += ' AND genres NOT LIKE ?';
+                        params.push(`%${g}%`);
+                    });
                 }
             }
         }
@@ -730,8 +731,8 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
             }
         }
         
-        if (ratingMin !== undefined && ratingMin !== '') { sql += ' AND rating >= ?'; params.push(parseFloat(ratingMin)); }
-        if (ratingMax !== undefined && ratingMax !== '') { sql += ' AND rating <= ?'; params.push(parseFloat(ratingMax)); }
+        if (ratingMin !== undefined && ratingMin !== '') { sql += ' AND COALESCE(rating, 0) >= ?'; params.push(parseFloat(ratingMin)); }
+        if (ratingMax !== undefined && ratingMax !== '') { sql += ' AND COALESCE(rating, 0) <= ?'; params.push(parseFloat(ratingMax)); }
         if (yearMin !== undefined && yearMin !== '') { sql += ' AND year >= ?'; params.push(parseInt(yearMin)); }
         if (yearMax !== undefined && yearMax !== '') { sql += ' AND year <= ?'; params.push(parseInt(yearMax)); }
         
@@ -781,6 +782,12 @@ app.get('/api/cache/search', authenticateToken, (req, res) => {
             if (conditions.length > 0) {
                 sql += ` AND (${conditions.join(' OR ')})`;
             }
+        }
+        
+        // Exclude movies the user already has in their library to return only NEW movies from the global db
+        if (req.user && req.user.id) {
+            sql += ` AND link NOT IN (SELECT link FROM movies WHERE user_id = ? AND link IS NOT NULL AND deleted_at IS NULL)`;
+            params.push(req.user.id);
         }
         
         const isGuest = req.user && req.user.username && req.user.username.startsWith('guest_');
