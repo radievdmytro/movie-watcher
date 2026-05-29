@@ -1326,10 +1326,26 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 if (!titleMatch && !yearMatch && !directorMatch && !actorMatch && !descMatch && !wordMatch && !movie.isLiveResult) {
                     return false;
                 }
+                
+                movie._isExactMatch = titleMatch || yearMatch || directorMatch || actorMatch || descMatch || wordMatch;
+            } else {
+                movie._isExactMatch = true;
             }
 
             return true;
         });
+
+        if (deferredFilterQuery && searchDb !== 'cache') {
+            const exactMatches = [];
+            const partialMatches = [];
+            filtered.forEach(m => {
+                if (m._isExactMatch !== false) exactMatches.push(m);
+                else partialMatches.push(m);
+            });
+            return [...exactMatches, ...partialMatches];
+        }
+
+        return filtered;
     }, [onboardingCacheMovies, deferredFilterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType, searchFields, uniqueBackgroundCacheResults, localHiddenGlobalLinks, hideWatchedInGlobal]);
 
     const folderGroups = useMemo(() => {
@@ -3738,6 +3754,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             gap: '25px',
                         }}>
                         {filteredOnboardingCacheMovies.map((movie, idx) => {
+                            const isFirstPartialMatch = movie._isExactMatch === false && (idx === 0 || filteredOnboardingCacheMovies[idx - 1]._isExactMatch !== false);
                             const isAdded = addedLinks.has(movie.link) || libraryLinks.has(cleanLinkPath(movie.link));
                             const isAdding = addingLinks.has(movie.link);
                             const isMovieWatched = localWatchedLinks.has(movie.link) || 
@@ -3747,7 +3764,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             const userRating = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link))?.user_rating ||
                                                historyList.find(h => cleanLinkPath(h.movie_link) === cleanLinkPath(movie.link))?.user_rating;
 
-                            return (
+                            const cardNode = (
                                 <motion.div
                                     key={movie.link || idx}
                                     layout={!isMobile}
@@ -4313,6 +4330,25 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 </DigitalDisintegration>
                                 </motion.div>
                             );
+
+                            if (isFirstPartialMatch) {
+                                return (
+                                    <Fragment key={`frag-${movie.link || idx}`}>
+                                        <div style={{ gridColumn: '1 / -1', marginTop: '20px', marginBottom: '10px' }}>
+                                            <div className="cache-divider" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255, 255, 255, 0.15), transparent)' }}></div>
+                                                <span style={{ fontSize: '0.80rem', color: '#888', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                                    Частичное совпадение
+                                                </span>
+                                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255, 255, 255, 0.15), transparent)' }}></div>
+                                            </div>
+                                        </div>
+                                        {cardNode}
+                                    </Fragment>
+                                );
+                            }
+
+                            return cardNode;
                         })}
                     </motion.div>
 
