@@ -797,8 +797,6 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                 position: 'relative',
                 zIndex: 10
             }}
-                onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent-gold)'}
-                onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
                 onMouseDown={(e) => {
                     if (searchBarRef.current) {
                         const rect = searchBarRef.current.getBoundingClientRect();
