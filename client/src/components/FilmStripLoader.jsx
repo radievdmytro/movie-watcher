@@ -1,22 +1,41 @@
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const STRIP_COUNT = 25; // карточек в ленте
+const CENTER_INTERVAL_MS = 180; // смена центрального постера (0.18 сек)
 
 const FilmStripLoader = ({ movies = [] }) => {
-    // Select 5 random posters from movies to show around the center.
-    // If we don't have enough movies, just repeat.
-    const posters = useMemo(() => {
+    const [centerIdx, setCenterIdx] = useState(0);
+
+    // Перемешанный большой массив постеров для ленты (25 штук)
+    const stripPosters = useMemo(() => {
         if (!movies || movies.length === 0) return [];
-        const randomMovies = [...movies].sort(() => 0.5 - Math.random());
-        // We need around 7 posters to make the strip look continuous
+        const shuffled = [...movies].sort(() => 0.5 - Math.random());
         const selection = [];
-        for (let i = 0; i < 7; i++) {
-            selection.push(randomMovies[i % randomMovies.length].poster_url);
+        for (let i = 0; i < STRIP_COUNT; i++) {
+            selection.push(shuffled[i % shuffled.length].poster_url);
         }
         return selection;
     }, [movies]);
 
-    if (posters.length === 0) {
-        // Fallback skeleton if no library movies at all
+    // Отдельный перемешанный список для центра
+    const centerPosters = useMemo(() => {
+        if (!movies || movies.length === 0) return [];
+        return [...movies]
+            .sort(() => 0.5 - Math.random())
+            .map(m => m.poster_url);
+    }, [movies]);
+
+    // Быстрая смена центрального постера
+    useEffect(() => {
+        if (centerPosters.length === 0) return;
+        const interval = setInterval(() => {
+            setCenterIdx(prev => (prev + 1) % centerPosters.length);
+        }, CENTER_INTERVAL_MS);
+        return () => clearInterval(interval);
+    }, [centerPosters.length]);
+
+    if (stripPosters.length === 0) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px' }}>
                 <div style={{
@@ -30,8 +49,14 @@ const FilmStripLoader = ({ movies = [] }) => {
         );
     }
 
-    // Always put a random library poster in the center position (index 3)
-    const centerPoster = posters[3];
+    const currentCenterPoster = centerPosters[centerIdx];
+    // Каждая карточка 160px + 20px gap = 180px; 25 карточек = 4500px общая ширина
+    // Анимируем от 0 до -(25 * 180)px = -4500px за N секунд
+    const CARD_W = 160;
+    const GAP = 20;
+    const totalWidth = STRIP_COUNT * (CARD_W + GAP);
+    // ~180px/сек скорость → duration = totalWidth / 180
+    const stripDuration = totalWidth / 180;
 
     return (
         <div style={{
@@ -44,30 +69,22 @@ const FilmStripLoader = ({ movies = [] }) => {
             overflow: 'hidden',
             marginTop: '20px',
             marginBottom: '20px',
-            background: 'transparent'
         }}>
-            {/* The film strip container sliding left */}
-            <motion.div
-                initial={{ x: '15%' }}
-                animate={{ x: '-15%' }}
-                transition={{
-                    duration: 0.8,
-                    repeat: Infinity,
-                    repeatType: 'loop',
-                    ease: 'linear'
-                }}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '20px',
-                    position: 'absolute',
-                    filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.8))'
-                }}
-            >
-                {posters.map((url, idx) => (
+            {/* Плёнка: 25 карточек, прокрутка без конца через CSS animation */}
+            <div style={{
+                position: 'absolute',
+                display: 'flex',
+                alignItems: 'center',
+                gap: `${GAP}px`,
+                animation: `filmScroll ${stripDuration}s linear infinite`,
+                filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.8))',
+                willChange: 'transform',
+            }}>
+                {/* Дублируем массив дважды для бесшовного лупа */}
+                {[...stripPosters, ...stripPosters].map((url, idx) => (
                     <div key={idx} style={{
                         position: 'relative',
-                        width: '160px',
+                        width: `${CARD_W}px`,
                         height: '240px',
                         flexShrink: 0,
                         background: '#111',
@@ -77,81 +94,95 @@ const FilmStripLoader = ({ movies = [] }) => {
                         borderRadius: '4px',
                         overflow: 'hidden'
                     }}>
-                        {/* Film strip perforation holes (top and bottom) */}
+                        {/* Перфорация сверху */}
                         <div style={{
                             position: 'absolute', top: '-12px', left: 0, right: 0,
                             display: 'flex', justifyContent: 'space-around',
-                            animation: 'flicker 0.2s infinite alternate'
                         }}>
-                            {[1,2,3,4,5].map(i => <div key={i} style={{ width: '8px', height: '8px', background: '#222', borderRadius: '1px' }}></div>)}
+                            {[1,2,3,4,5].map(i => <div key={i} style={{ width: '8px', height: '8px', background: '#333', borderRadius: '1px' }}></div>)}
                         </div>
+                        {/* Перфорация снизу */}
                         <div style={{
                             position: 'absolute', bottom: '-12px', left: 0, right: 0,
                             display: 'flex', justifyContent: 'space-around',
-                            animation: 'flicker 0.2s infinite alternate-reverse'
                         }}>
-                            {[1,2,3,4,5].map(i => <div key={i} style={{ width: '8px', height: '8px', background: '#222', borderRadius: '1px' }}></div>)}
+                            {[1,2,3,4,5].map(i => <div key={i} style={{ width: '8px', height: '8px', background: '#333', borderRadius: '1px' }}></div>)}
                         </div>
 
-                        <img src={url} alt="film frame" style={{
+                        <img src={url} alt="" style={{
                             width: '100%', height: '100%', objectFit: 'cover',
-                            opacity: 0.5,
-                            filter: 'sepia(40%) contrast(1.2)'
+                            opacity: 0.45,
+                            filter: 'sepia(30%) contrast(1.15) brightness(0.9)'
                         }} />
                     </div>
                 ))}
-            </motion.div>
+            </div>
 
-            {/* Static center frame (glowing, representing the search focus) */}
+            {/* Центральный кадр — быстро меняет постер */}
             <div style={{
                 position: 'relative',
                 width: '180px',
                 height: '270px',
                 zIndex: 10,
                 background: '#000',
-                border: '10px solid #000',
+                border: '10px solid #111',
                 borderTopWidth: '18px',
                 borderBottomWidth: '18px',
                 borderRadius: '6px',
-                boxShadow: '0 0 40px rgba(212, 175, 55, 0.4), inset 0 0 20px rgba(212, 175, 55, 0.2)',
-                overflow: 'hidden'
+                boxShadow: '0 0 50px rgba(212, 175, 55, 0.5), 0 0 100px rgba(212, 175, 55, 0.15), inset 0 0 20px rgba(212, 175, 55, 0.15)',
+                overflow: 'hidden',
+                flexShrink: 0,
             }}>
+                {/* Перфорация центра */}
                 <div style={{
-                    position: 'absolute', top: '-14px', left: 0, right: 0,
+                    position: 'absolute', top: '-14px', left: 0, right: 0, zIndex: 2,
                     display: 'flex', justifyContent: 'space-around',
-                    animation: 'flicker 0.15s infinite alternate'
                 }}>
-                    {[1,2,3,4,5].map(i => <div key={i} style={{ width: '10px', height: '10px', background: '#333', borderRadius: '2px', boxShadow: '0 0 5px rgba(212, 175, 55, 0.5)' }}></div>)}
+                    {[1,2,3,4,5].map(i => <div key={i} style={{ width: '10px', height: '10px', background: '#444', borderRadius: '2px', boxShadow: '0 0 5px rgba(212, 175, 55, 0.6)' }}></div>)}
                 </div>
                 <div style={{
-                    position: 'absolute', bottom: '-14px', left: 0, right: 0,
+                    position: 'absolute', bottom: '-14px', left: 0, right: 0, zIndex: 2,
                     display: 'flex', justifyContent: 'space-around',
-                    animation: 'flicker 0.15s infinite alternate-reverse'
                 }}>
-                    {[1,2,3,4,5].map(i => <div key={i} style={{ width: '10px', height: '10px', background: '#333', borderRadius: '2px', boxShadow: '0 0 5px rgba(212, 175, 55, 0.5)' }}></div>)}
+                    {[1,2,3,4,5].map(i => <div key={i} style={{ width: '10px', height: '10px', background: '#444', borderRadius: '2px', boxShadow: '0 0 5px rgba(212, 175, 55, 0.6)' }}></div>)}
                 </div>
 
-                <img src={centerPoster} alt="center frame" style={{
-                    width: '100%', height: '100%', objectFit: 'cover',
-                    opacity: 0.8,
-                    filter: 'contrast(1.1)'
+                {/* Постер — мгновенная смена без анимации (эффект кинопроектора) */}
+                <img
+                    key={centerIdx}
+                    src={currentCenterPoster}
+                    alt=""
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%', height: '100%',
+                        objectFit: 'cover',
+                        opacity: 0.9,
+                    }}
+                />
+
+                {/* Мерцание проектора */}
+                <div style={{
+                    position: 'absolute', inset: 0, zIndex: 3,
+                    background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 3px)',
+                    pointerEvents: 'none',
+                    animation: 'projectorFlicker 0.08s steps(1) infinite',
                 }} />
 
-                {/* Glowing Search Icon Overlay */}
+                {/* Иконка поиска */}
                 <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.4)',
+                    position: 'absolute', inset: 0, zIndex: 4,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.3)',
                 }}>
                     <motion.div
-                        initial={{ scale: 0.8, opacity: 0.5 }}
-                        animate={{ scale: 1.1, opacity: 1 }}
-                        transition={{ duration: 0.8, repeat: Infinity, repeatType: 'reverse' }}
+                        animate={{ scale: [0.9, 1.05, 0.9], opacity: [0.7, 1, 0.7] }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                     >
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.8))' }}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+                            stroke="var(--accent-gold)" strokeWidth="2.5"
+                            strokeLinecap="round" strokeLinejoin="round"
+                            style={{ filter: 'drop-shadow(0 0 10px rgba(212, 175, 55, 0.9))' }}>
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
@@ -160,9 +191,14 @@ const FilmStripLoader = ({ movies = [] }) => {
             </div>
 
             <style>{`
-                @keyframes flicker {
-                    0% { opacity: 0.8; }
-                    100% { opacity: 0.3; }
+                @keyframes filmScroll {
+                    from { transform: translateX(0); }
+                    to   { transform: translateX(-${totalWidth + GAP}px); }
+                }
+                @keyframes projectorFlicker {
+                    0%   { opacity: 0; }
+                    50%  { opacity: 1; }
+                    100% { opacity: 0; }
                 }
             `}</style>
         </div>
