@@ -87,7 +87,7 @@ async function requestWithRetry(urlPath, options = {}, retries = 3) {
             const response = await axios.get(activeUrl, {
                 ...options,
                 headers,
-                timeout: 6000 // reduced from 8s to 6s
+                timeout: 8000
             });
             return response;
         } catch (err) {
@@ -152,6 +152,11 @@ async function searchMovies(query, customHeaders = {}) {
         const searchPath = `/search/?do=search&subaction=search&q=${encodeURIComponent(query)}`;
         const { data } = await requestWithRetry(searchPath, { headers: customHeaders });
         const $ = cheerio.load(data);
+        const pageTitle = $('title').text().toLowerCase();
+
+        if (pageTitle.includes('just a moment') || pageTitle.includes('attention required')) {
+            throw new Error('Cloudflare Challenge Blocked Search');
+        }
 
         const results = parseMovieList($);
         console.log(`[Scraper] Search found ${results.length} results`);
@@ -196,9 +201,18 @@ async function getMovieDetails(url, customHeaders = {}) {
     try {
         const { data } = await requestWithRetry(url, { headers: customHeaders });
         const $ = cheerio.load(data);
+        const pageTitle = $('title').text().toLowerCase();
+
+        if (pageTitle.includes('just a moment') || pageTitle.includes('attention required')) {
+            throw new Error('Cloudflare Challenge Blocked Details');
+        }
 
         const original_title = $('.b-post__origtitle').text().trim();
         const title = $('.b-post__title h1').text().trim();
+
+        if (!title) {
+            throw new Error('Failed to extract movie title - possible HDRezka layout change or block');
+        }
         const trailer_id = $('.show-trailer').attr('data-id') || null;
 
         const getTableValue = (label) => {
@@ -408,6 +422,12 @@ async function scrapeCatalogPage(path) {
     try {
         const { data } = await requestWithRetry(path);
         const $ = cheerio.load(data);
+        const pageTitle = $('title').text().toLowerCase();
+
+        if (pageTitle.includes('just a moment') || pageTitle.includes('attention required')) {
+            throw new Error('Cloudflare Challenge Blocked Catalog Scrape');
+        }
+
         return parseMovieList($);
     } catch (error) {
         console.error(`Catalog Page Scrape Error (${path}):`, error.message);
