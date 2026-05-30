@@ -3372,20 +3372,17 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                                                     fontSize: isMobile ? '0.65rem' : '0.8rem',
                                                     backdropFilter: 'blur(4px)',
                                                     display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '2px'
+                                                    flexDirection: 'column',
+                                                    alignItems: 'flex-start',
+                                                    gap: '1px'
                                                 }}>
-                                                    {movie.rating && movie.rating !== '—' && (
-                                                        <span style={{ display: 'flex', alignItems: 'center' }}>
-                                                            ★ {movie.rating} <span style={{ fontSize: '0.55rem', color: '#888', marginLeft: '3px', marginTop: '1px' }}>HD</span>
-                                                        </span>
-                                                    )}
-                                                    {movie.tmdb_rating && (
-                                                        <span style={{ display: 'flex', alignItems: 'center', marginLeft: (movie.rating && movie.rating !== '—') ? '6px' : '0' }}>
-                                                            ★ {movie.tmdb_rating} <span style={{ fontSize: '0.55rem', color: '#888', marginLeft: '3px', marginTop: '1px' }}>TMDB</span>
-                                                        </span>
-                                                    )}
-                                                    {(!movie.rating || movie.rating === '—') && !movie.tmdb_rating && '-'}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                                        {movie.rating && movie.rating !== '—' && (
+                                                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                                                                ★ {movie.rating} <span style={{ fontSize: '0.55rem', color: '#888', marginLeft: '3px', marginTop: '1px' }}>HD</span>
+                                                            </span>
+                                                        )}
+                                                        {(!movie.rating || movie.rating === '—') && !movie.tmdb_rating && '-'}
                                                     {movie.user_rating && (
                                                         <span style={{
                                                             color: '#03dac6',
@@ -3394,6 +3391,12 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                                                             marginLeft: isMobile ? '1px' : '2px'
                                                         }}>
                                                             👤 {isMobile ? '' : '★ '}{movie.user_rating}
+                                                        </span>
+                                                    )}
+                                                    </div>
+                                                    {movie.tmdb_rating && (
+                                                        <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', color: '#888' }}>
+                                                            ★ {movie.tmdb_rating} <span style={{ fontSize: '0.55rem', marginLeft: '3px', marginTop: '1px' }}>TMDB</span>
                                                         </span>
                                                     )}
                                                 </div>
@@ -3917,15 +3920,15 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                                     </td>
                                     <td style={{ padding: '15px', color: 'var(--accent-gold)', fontWeight: 'bold' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                 {movie.rating && movie.rating !== '—' && (
                                                     <span style={{ display: 'flex', alignItems: 'center' }}>
                                                         ★ {movie.rating} <span style={{ fontSize: '0.65rem', color: '#888', marginLeft: '3px', marginTop: '1px' }}>HD</span>
                                                     </span>
                                                 )}
                                                 {movie.tmdb_rating && (
-                                                    <span style={{ display: 'flex', alignItems: 'center' }}>
-                                                        ★ {movie.tmdb_rating} <span style={{ fontSize: '0.65rem', color: '#888', marginLeft: '3px', marginTop: '1px' }}>TMDB</span>
+                                                    <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', color: '#888' }}>
+                                                        ★ {movie.tmdb_rating} <span style={{ fontSize: '0.65rem', marginLeft: '3px', marginTop: '1px' }}>TMDB</span>
                                                     </span>
                                                 )}
                                                 {(!movie.rating || movie.rating === '—') && !movie.tmdb_rating && '-'}
@@ -4422,26 +4425,28 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
 
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#ccc', marginTop: '3px' }}>
                                                 <span>{movie.year}</span>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                                                    {movie.rating && movie.rating !== '—' && (
-                                                        <span style={{ display: 'flex', alignItems: 'center' }}>
-                                                            ★ {movie.rating} <span style={{ fontSize: '0.55rem', color: '#888', marginLeft: '3px', marginTop: '1px' }}>HD</span>
-                                                        </span>
-                                                    )}
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                                        {movie.rating && movie.rating !== '—' && (
+                                                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                                                                ★ {movie.rating} <span style={{ fontSize: '0.55rem', color: '#888', marginLeft: '3px', marginTop: '1px' }}>HD</span>
+                                                            </span>
+                                                        )}
+                                                        {(!movie.rating || movie.rating === '—') && !movie.tmdb_rating && '-'}
+                                                        {userRating && (
+                                                            <span style={{
+                                                                color: '#03dac6',
+                                                                borderLeft: '1px solid #444',
+                                                                paddingLeft: '5px',
+                                                                marginLeft: '2px'
+                                                            }}>
+                                                                👤 ★ {userRating}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     {movie.tmdb_rating && (
-                                                        <span style={{ display: 'flex', alignItems: 'center', marginLeft: (movie.rating && movie.rating !== '—') ? '6px' : '0' }}>
-                                                            ★ {movie.tmdb_rating} <span style={{ fontSize: '0.55rem', color: '#888', marginLeft: '3px', marginTop: '1px' }}>TMDB</span>
-                                                        </span>
-                                                    )}
-                                                    {(!movie.rating || movie.rating === '—') && !movie.tmdb_rating && '-'}
-                                                    {userRating && (
-                                                        <span style={{
-                                                            color: '#03dac6',
-                                                            borderLeft: '1px solid #444',
-                                                            paddingLeft: '5px',
-                                                            marginLeft: '2px'
-                                                        }}>
-                                                            👤 ★ {userRating}
+                                                        <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.65rem', color: '#888' }}>
+                                                            ★ {movie.tmdb_rating} <span style={{ fontSize: '0.55rem', marginLeft: '3px', marginTop: '1px' }}>TMDB</span>
                                                         </span>
                                                     )}
                                                 </div>
