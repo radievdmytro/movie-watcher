@@ -866,6 +866,7 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
     const [hasMoreBgCache, setHasMoreBgCache] = useState(false);
     const [hasFiredLiveSearch, setHasFiredLiveSearch] = useState(false);
     const [isLiveSearching, setIsLiveSearching] = useState(false);
+    const [isQueryChanging, setIsQueryChanging] = useState(false);
     const [showAutoSwitchToast, setShowAutoSwitchToast] = useState(false);
     const [globalHideError, setGlobalHideError] = useState('');
     // Track which global movie links are currently being enriched
@@ -1640,6 +1641,17 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
         };
     }, [deferredFilterQuery, searchDb, hasActiveFilter, performBgSearch, cacheUpdateTrigger]);
 
+    // Show FilmStripLoader while search is settling — covers the async gap between
+    // query change and isBgCacheSearching / isLiveSearching becoming true
+    useEffect(() => {
+        if (!globalSearchQuery || !globalSearchQuery.trim()) {
+            setIsQueryChanging(false);
+            return;
+        }
+        setIsQueryChanging(true);
+        const t = setTimeout(() => setIsQueryChanging(false), 4000);
+        return () => clearTimeout(t);
+    }, [globalSearchQuery]);
 
     const { minBoundYear, maxBoundYear } = useMemo(() => {
         if (!movies.length) return { minBoundYear: 1900, maxBoundYear: new Date().getFullYear() + 2 };
@@ -3098,6 +3110,9 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                             </button>
                         </div>
                     )}
+                    {finalDisplayMovies.length === 0 && (isBgCacheSearching || isCacheLoading || isLiveSearching || isQueryChanging) && (
+                        <FilmStripLoader movies={movies} />
+                    )}
                     <motion.div
                         className="movie-grid-container"
                         ref={gridRef}
@@ -3802,7 +3817,7 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                                 </tr>
                             </thead>
                             <tbody>
-                                {finalDisplayMovies.length === 0 && (isBgCacheSearching || isCacheLoading) && (
+                                {finalDisplayMovies.length === 0 && (isBgCacheSearching || isCacheLoading || isLiveSearching || isQueryChanging) && (
                                     <tr>
                                         <td colSpan="6" style={{ padding: '40px 0' }}>
                                             <FilmStripLoader movies={movies} />
