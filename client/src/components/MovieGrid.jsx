@@ -1900,6 +1900,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         return () => observer.disconnect();
     }, [isTrashMode, onboardingOffset, hasMoreOnboarding, isOnboardingLoading, buildDirectoryParams]);
 
+    const attemptedEnrichLinks = useRef(new Set());
+
     // Auto-enrichment: when a page of global movies loads, enrich the ones missing details
     useEffect(() => {
         if (isTrashMode) return;
@@ -1907,16 +1909,17 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         const allMovies = [...onboardingCacheMovies, ...backgroundCacheResults];
         if (!allMovies.length) return;
 
-        // Find movies that lack enriched data (description or genres+actors missing)
+        // Find movies that lack enriched data (description or genres+actors missing, OR rating missing)
         const needsEnrich = allMovies
-            .filter(m => !enrichingLinks.has(m.link) && (!m.genres || !m.description))
-            .slice(-50) // Only check the last batch loaded
+            .filter(m => !enrichingLinks.has(m.link) && !attemptedEnrichLinks.current.has(m.link) && (!m.genres || !m.description || m.rating === null || m.rating === undefined || m.rating === ''))
+            .slice(0, 50) // Use first 50 that need enrichment
             .map(m => m.link);
 
         if (needsEnrich.length === 0) return;
 
         // Mark them as enriching
         setEnrichingLinks(prev => new Set([...prev, ...needsEnrich]));
+        needsEnrich.forEach(link => attemptedEnrichLinks.current.add(link));
 
         const token = localStorage.getItem('token');
         fetch('/api/cache/enrich-batch', {

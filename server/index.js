@@ -1027,11 +1027,21 @@ app.post('/api/cache/enrich-batch', authenticateToken, async (req, res) => {
             chunk.map(async (link) => {
                 // Skip if already enriched (has description and genres)
                 const existing = db.prepare(
-                    'SELECT description, genres, actors, director, rating FROM scraped_movies_cache WHERE link = ?'
+                    'SELECT description, genres, actors, director, rating, updated_at FROM scraped_movies_cache WHERE link = ?'
                 ).get(link);
 
                 if (existing && existing.description !== null && existing.genres !== null && existing.actors !== null) {
-                    return { link, ...existing, cached: true };
+                    let isCacheValid = true;
+                    if (existing.rating === null || existing.rating === 0) {
+                        const updatedAt = existing.updated_at ? new Date(existing.updated_at + 'Z') : new Date(0);
+                        const daysSinceUpdate = (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60 * 24);
+                        if (daysSinceUpdate > 3) {
+                            isCacheValid = false;
+                        }
+                    }
+                    if (isCacheValid) {
+                        return { link, ...existing, cached: true };
+                    }
                 }
 
                 const details = await getMovieDetails(link, getUserHeaders(req));
