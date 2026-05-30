@@ -774,7 +774,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
     const totalCompareCount = combinedCompareLinks.length;
 
     return (
-        <div className="add-movie-root" style={{ marginBottom: isMobile ? '10px' : '12px', position: 'relative', zIndex: isPanelOpen ? 200001 : 200 }} ref={containerRef}>
+        <div className="add-movie-root" style={{ marginBottom: '0px', position: 'relative', zIndex: isPanelOpen ? 200001 : 200 }} ref={containerRef}>
             {/* Quick Access Menu Row - Placed BEFORE the search bar */}
             <div style={{
                 display: 'flex',
@@ -1974,10 +1974,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     </div>
             )}
 
-            {/* Helper text */}
-            <div className="add-movie-helper" style={{ paddingLeft: '20px', marginTop: '8px', fontSize: '0.8rem', color: '#666' }}>
-                Supported: HDRezka links (single or batch) & Movie Titles
-            </div>
+
 
             {/* Import Logs */}
             <div
