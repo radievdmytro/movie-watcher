@@ -1000,11 +1000,9 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                     transition: 'all 0.2s ease',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '4px',
-                                    height: '28px'
+                                    gap: '4px'
                                 }}
                             >
-                                {globalSearchFields?.[field] && <span style={{ fontSize: '0.65rem' }}>✓</span>}
                                 {field}
                             </button>
                         ))}
@@ -1102,7 +1100,6 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                 gap: '4px'
                             }}
                         >
-                            {globalSearchFields?.[field] && <span style={{ fontSize: '0.65rem' }}>✓</span>}
                             {field}
                         </button>
                     ))}
