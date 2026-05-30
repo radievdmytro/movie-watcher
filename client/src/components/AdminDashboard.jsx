@@ -947,13 +947,12 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                             outline: 'none',
                                             cursor: 'pointer'
                                         }}
-                                    >
-                                        <option value="15">15 movies / hour (~4 min delay - Ultra Safe)</option>
-                                        <option value="30">30 movies / hour (~2 min delay - Recommended without Proxy)</option>
-                                        <option value="45">45 movies / hour (~80 sec delay - Safe)</option>
-                                        <option value="60">60 movies / hour (~60 sec delay - Moderate Risk)</option>
-                                        <option value="120">120 movies / hour (~30 sec delay - Unsafe without Proxy)</option>
-                                        <option value="240">240 movies / hour (~15 sec delay - Max Speed, Proxy Required)</option>
+                                        <option value="60">60 movies / hour (~60 sec delay - Safe)</option>
+                                        <option value="120">120 movies / hour (~30 sec delay - Normal)</option>
+                                        <option value="240">240 movies / hour (~15 sec delay - Fast)</option>
+                                        <option value="600">600 movies / hour (~6 sec delay - TMDB Turbo)</option>
+                                        <option value="1200">1200 movies / hour (~3 sec delay - TMDB Ultra)</option>
+                                        <option value="3600">3600 movies / hour (1 sec delay - TMDB Max Speed)</option>
                                     </select>
                                 </div>
 
@@ -966,7 +965,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                     borderRadius: '8px',
                                     border: '1px solid rgba(255, 255, 255, 0.02)'
                                 }}>
-                                    💡 <strong>Smart Safety Measures:</strong> The crawler automatically injects a random <strong>±25% variation (jitter)</strong> between requests to randomize crawl timing, mimicking human browser interactions to bypass HDRezka mirroring restrictions.
+                                    💡 <strong>Smart Safety Measures:</strong> The crawler uses TMDB (40 req/sec allowed limit) for descriptions and only hits HDRezka 1 time per catalog page. High speeds like 3600/hr are now <strong>100% safe from bans!</strong>
                                 </div>
                             </div>
 
