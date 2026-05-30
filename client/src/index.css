@@ -453,6 +453,45 @@ input {
   border: 2px solid #000;
 }
 
+/* Search Field Pills */
+.search-field-pill {
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-transform: capitalize;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #aaa;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-field-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.search-field-pill:active {
+  transform: scale(0.95);
+}
+
+.search-field-pill.active {
+  background: rgba(212, 175, 55, 0.2);
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+}
+
+.search-field-pill.active:hover {
+  background: rgba(212, 175, 55, 0.3);
+  color: #ffd700;
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+}
+
 /* ==========================================
    MOBILE & RESPONSIVE MEDIA QUERIES
    ========================================== */

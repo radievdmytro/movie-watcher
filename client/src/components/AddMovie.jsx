@@ -978,6 +978,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                         {['title', 'actor', 'director', 'year', 'description'].map(field => (
                             <button
                                 key={field}
+                                className={`search-field-pill ${globalSearchFields?.[field] ? 'active' : ''}`}
                                 onClick={() => {
                                     if (setGlobalSearchFields) {
                                         setGlobalSearchFields(prev => {
@@ -987,20 +988,6 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                             return next;
                                         });
                                     }
-                                }}
-                                style={{
-                                    background: globalSearchFields?.[field] ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                                    color: globalSearchFields?.[field] ? 'var(--accent-gold)' : '#aaa',
-                                    border: `1px solid ${globalSearchFields?.[field] ? 'var(--accent-gold)' : 'rgba(255, 255, 255, 0.1)'}`,
-                                    borderRadius: '12px',
-                                    padding: '4px 10px',
-                                    fontSize: '0.75rem',
-                                    cursor: 'pointer',
-                                    textTransform: 'capitalize',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
                                 }}
                             >
                                 {field}
@@ -1075,6 +1062,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     {['title', 'actor', 'director', 'year', 'description'].map(field => (
                         <button
                             key={field}
+                            className={`search-field-pill ${globalSearchFields?.[field] ? 'active' : ''}`}
                             onClick={() => {
                                 if (setGlobalSearchFields) {
                                     setGlobalSearchFields(prev => {
@@ -1084,20 +1072,6 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                         return next;
                                     });
                                 }
-                            }}
-                            style={{
-                                background: globalSearchFields?.[field] ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                                color: globalSearchFields?.[field] ? 'var(--accent-gold)' : '#aaa',
-                                border: `1px solid ${globalSearchFields?.[field] ? 'var(--accent-gold)' : 'rgba(255, 255, 255, 0.1)'}`,
-                                borderRadius: '12px',
-                                padding: '4px 12px',
-                                fontSize: '0.75rem',
-                                cursor: 'pointer',
-                                textTransform: 'capitalize',
-                                transition: 'all 0.2s ease',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px'
                             }}
                         >
                             {field}

@@ -2285,8 +2285,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 {isMobile ? 'Global' : 'in Global DB'}
                             </label>
                         </div>
-                        </div>
-
                         {/* Filters Button (Right aligned inside Right Controls) */}
                         <div style={{ display: 'flex', order: isMobile ? 10 : 'unset' }}>
                             <button
@@ -2320,6 +2318,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     </span>
                                 )}
                             </button>
+                        </div>
                         </div>
                     </div>
                     {/* Expanded Filters Panel */}
