@@ -1045,11 +1045,11 @@ function App() {
                 }
             `}</style>
             <header className={`header glass-panel app-header${headerScrolled ? ' header-scrolled' : ''}`}>
-                <div className="container header-content">
+                <div className="container header-content" style={{ padding: '6px 15px', paddingBottom: '6px' }}>
                     {currentView !== 'shared_collection' && user && renderCacheBadge(true)}
-                    <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div 
-                            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
                             onClick={() => { 
                                 if (currentView !== 'shared_collection') setCurrentView('library');
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1059,8 +1059,8 @@ function App() {
                                 src="favicon.png" 
                                 alt="Radev Movie Selector Mascot" 
                                 style={{ 
-                                    width: '76px', 
-                                    height: '76px', 
+                                    width: '36px', 
+                                    height: '36px', 
                                     objectFit: 'contain',
                                     borderRadius: '0',
                                     border: 'none',
@@ -1070,7 +1070,7 @@ function App() {
                                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1) rotate(-5deg)'}
                                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
                             />
-                            <h1 className="gold logo" style={{ margin: 0, fontSize: '1.35rem', letterSpacing: '0.5px', lineHeight: '1.1', display: 'flex', flexDirection: 'column' }}>
+                            <h1 className="gold logo" style={{ margin: 0, fontSize: '1.15rem', letterSpacing: '0.5px', lineHeight: '1.1', display: 'flex', flexDirection: 'column' }}>
                                 <span>{APP_CONFIG.sloganPrefix}</span>
                                 <span className="gold" style={{ textTransform: 'capitalize' }}>{APP_CONFIG.sloganHighlight}</span>
                             </h1>
