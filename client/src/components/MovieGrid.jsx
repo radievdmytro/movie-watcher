@@ -3105,7 +3105,7 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                     )}
                     {finalDisplayMovies.length === 0 && (isBgCacheSearching || isCacheLoading || isLiveSearching || isQueryChanging) && (
                         <FilmStripLoader 
-                            movies={movies && movies.length > 0 ? movies : cacheMoviesResults} 
+                            movies={cacheMoviesResults && cacheMoviesResults.length > 0 ? cacheMoviesResults : movies} 
                             searchQuery={globalSearchQuery} 
                             liveResults={backgroundCacheResults} 
                         />
@@ -3818,7 +3818,7 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                                     <tr>
                                         <td colSpan="6" style={{ padding: '40px 0' }}>
                                             <FilmStripLoader 
-                                                movies={movies && movies.length > 0 ? movies : cacheMoviesResults} 
+                                                movies={cacheMoviesResults && cacheMoviesResults.length > 0 ? cacheMoviesResults : movies} 
                                                 searchQuery={globalSearchQuery} 
                                                 liveResults={backgroundCacheResults} 
                                             />
