@@ -4,17 +4,33 @@ import TrailerModal from './TrailerModal';
 import MatrixText from './MatrixText';
 
 const globalAttemptedUpdates = new Set();
-
+// Persist live details across re-opens so TMDB rating / genres don't disappear
+const globalLiveDetailsCache = new Map();
 
 function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched, onRemoveMovie, onHideMovie, onAddToCollection }) {
-    const [liveDetails, setLiveDetails] = useState(null);
+    const [liveDetails, setLiveDetails] = useState(() => {
+        if (propMovie?.link) return globalLiveDetailsCache.get(propMovie.link) || null;
+        return null;
+    });
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-    const movie = useMemo(() => propMovie ? { ...propMovie, ...liveDetails } : null, [propMovie, liveDetails]);
+    // Normalize propMovie: grids pass genres as 'misc' alias; normalize to 'genres' for consistency
+    const movie = useMemo(() => {
+        if (!propMovie) return null;
+        const base = { ...propMovie };
+        if (!base.genres && base.misc) base.genres = base.misc;
+        return { ...base, ...liveDetails };
+    }, [propMovie, liveDetails]);
 
     useEffect(() => {
         if (!propMovie || !propMovie.link) return;
         
+        // Restore cached details immediately when re-opening the same movie
+        const cached = globalLiveDetailsCache.get(propMovie.link);
+        if (cached) {
+            setLiveDetails(cached);
+        }
+
         // If we already tried fetching details for this movie during this app session, don't try again
         if (globalAttemptedUpdates.has(propMovie.link)) return;
 
@@ -42,6 +58,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                 if (data && data.data) {
                     const details = data.data;
                     setLiveDetails(details);
+                    globalLiveDetailsCache.set(propMovie.link, details);
                     
                     // If it's in the user's library, update it permanently!
                     if (propMovie.id) {
@@ -76,8 +93,6 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             })
             .catch(err => console.error('On-the-fly fetch failed:', err))
             .finally(() => setIsLoadingDetails(false));
-        } else {
-            setLiveDetails(null);
         }
     }, [propMovie]);
 
@@ -248,6 +263,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
     const [editReviewFeedback, setEditReviewFeedback] = useState({ id: null, type: '', message: '' });
     const [copiedShare, setCopiedShare] = useState(false);
     const [isRefreshingData, setIsRefreshingData] = useState(false);
+    const [isRefreshingTmdb, setIsRefreshingTmdb] = useState(false);
 
     const isAdmin = useMemo(() => {
         try {
@@ -259,6 +275,53 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         } catch (e) {}
         return false;
     }, []);
+
+    const handleRefreshTmdb = async () => {
+        if (isRefreshingTmdb || !movie?.link) return;
+        setIsRefreshingTmdb(true);
+        const token = localStorage.getItem('token');
+        try {
+            // Re-fetch details (which triggers TMDB enrichment on the backend)
+            const searchRes = await fetch('/api/movies/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ query: movie.link })
+            });
+            const searchData = await searchRes.json();
+            if (searchData && searchData.data) {
+                const details = searchData.data;
+                setLiveDetails(details);
+                globalLiveDetailsCache.set(propMovie.link, details);
+                // Remove from attempted so next open also benefits
+                globalAttemptedUpdates.delete(propMovie.link);
+
+                if (propMovie.id) {
+                    await fetch(`/api/movies/${propMovie.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({
+                            rating: details.rating,
+                            tmdb_rating: details.tmdb_rating,
+                            description: details.description,
+                            genres: details.genres,
+                            actors: details.actors,
+                            director: details.director,
+                            writers: details.writers,
+                            country: details.country,
+                            duration: details.duration,
+                        })
+                    });
+                    if (onUpdate) onUpdate(propMovie.id, details);
+                } else if (onUpdate) {
+                    onUpdate(null, details);
+                }
+            }
+        } catch (e) {
+            console.error('TMDB refresh failed', e);
+        } finally {
+            setIsRefreshingTmdb(false);
+        }
+    };
 
     const handleRefreshData = async () => {
         if (isRefreshingData || !movie?.link) return;
@@ -285,6 +348,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             if (searchData && searchData.data) {
                 const details = searchData.data;
                 setLiveDetails(details);
+                globalLiveDetailsCache.set(propMovie.link, details);
                 
                 // If it's a library movie, update the DB
                 if (propMovie.id) {
@@ -319,6 +383,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
             setIsRefreshingData(false);
         }
     };
+
 
     const handleShare = async () => {
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -1000,6 +1065,19 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                             {copiedShare ? '✔ Copied' : '🔗 Share'}
                         </button>
                     )}
+                    {!isMobile && (
+                        <button
+                            onClick={handleRefreshTmdb}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(1,180,228,0.15)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                            disabled={isRefreshingTmdb}
+                            className="btn btn-ghost"
+                            title="Обновить TMDB данные (рейтинг, описание, жанры)"
+                            style={{ display: 'flex', alignItems: 'center', padding: '0 12px', height: '32px', boxSizing: 'border-box', fontSize: '0.9rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: isRefreshingTmdb ? '1px solid rgba(1,180,228,0.4)' : '1px solid rgba(255,255,255,0.08)', color: isRefreshingTmdb ? '#01b4e4' : '#fff', cursor: isRefreshingTmdb ? 'wait' : 'pointer', pointerEvents: 'auto', transition: 'all 0.2s', boxShadow: '0 6px 16px rgba(0,0,0,0.85), 0 2px 4px rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+                        >
+                            {isRefreshingTmdb ? '⏳' : '🎬 TMDB'}
+                        </button>
+                    )}
                     {!isMobile && isAdmin && (
                         <button
                             onClick={handleRefreshData}
@@ -1524,6 +1602,27 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                                 {isRefreshingData ? '⏳' : '🔄 Refresh'}
                                             </button>
                                         )}
+                                        <button
+                                            onClick={handleRefreshTmdb}
+                                            disabled={isRefreshingTmdb}
+                                            className="btn"
+                                            title="Обновить TMDB данные"
+                                            style={{ 
+                                                padding: '5px 10px', 
+                                                fontSize: '0.78rem', 
+                                                borderRadius: '6px', 
+                                                background: 'rgba(255,255,255,0.04)', 
+                                                border: isRefreshingTmdb ? '1px solid rgba(1,180,228,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                                                color: isRefreshingTmdb ? '#01b4e4' : '#fff',
+                                                fontWeight: '600',
+                                                cursor: isRefreshingTmdb ? 'wait' : 'pointer',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                            }}
+                                        >
+                                            {isRefreshingTmdb ? '⏳' : '🎬 TMDB'}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
