@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const sharp = require('sharp');
 const { searchMovies, getMovieDetails, getCategoryMovies, getHdrezkaComments, scrapeCatalogPage } = require('./scraper');
+const knownCountries = require('./countries');
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -966,8 +967,9 @@ app.get('/api/cache/genres', authenticateToken, (req, res) => {
                 const trimmed = g.trim();
                 // Skip empty, single chars, purely numeric values (years like 1896, 1902...)
                 if (!trimmed || trimmed.length < 2) return;
-                if (/^(\d+|\d{4}-\d{4})$/.test(trimmed)) return; // skip years/ranges/numbers
-                if (countrySet.has(trimmed.toLowerCase())) return; // skip countries
+                if (/^\d{4}(\s*-\s*(\d{4}|\.\.\.)?)?$/.test(trimmed)) return; // skip years/ranges/numbers
+                if (countrySet.has(trimmed.toLowerCase())) return; // skip dynamically extracted countries
+                if (knownCountries.has(trimmed.toLowerCase())) return; // skip known countries
                 genreSet.add(trimmed);
             });
         }
@@ -1462,7 +1464,7 @@ app.get('/api/genres', authenticateToken, (req, res) => {
             if (row.genres) {
                 row.genres.split(',').forEach(g => {
                     const trimmed = g.trim();
-                    if (trimmed && !/^(\d{4}|\d{4}-\d{4})$/.test(trimmed) && !countrySet.has(trimmed.toLowerCase())) {
+                    if (trimmed && !/^\d{4}(\s*-\s*(\d{4}|\.\.\.)?)?$/.test(trimmed) && !countrySet.has(trimmed.toLowerCase()) && !knownCountries.has(trimmed.toLowerCase())) {
                         genreCounts[trimmed] = (genreCounts[trimmed] || 0) + 1;
                     }
                 });

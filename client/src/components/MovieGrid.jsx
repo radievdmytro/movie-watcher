@@ -1692,7 +1692,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
     useEffect(() => {
         const filterValidGenres = (genres) => {
-            return (genres || []).filter(g => !/^(\d{4}|\d{4}-\d{4})$/.test(g));
+            return (genres || []).filter(g => !/^\d{4}(\s*-\s*(\d{4}|\.\.\.)?)?$/.test(g));
         };
 
         fetch('/api/genres')
