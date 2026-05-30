@@ -744,8 +744,6 @@ body.hide-header-search .app-header {
   }
 }
 
-}
-
 /* ── Sticky search / controls bar — uses JS-measured --header-h ── */
 .sticky-search-bar {
   position: sticky;
