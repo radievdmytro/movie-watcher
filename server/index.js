@@ -3147,7 +3147,7 @@ async function runCrawlerStep() {
             const type = targetMovie.link?.includes('/series/') ? 'series' : 'movie';
             // Parse year if it's available in the DB, though targetMovie query didn't select year.
             // Let's get the year to improve TMDB match
-            const fullTarget = db.prepare('SELECT link, title, year FROM scraped_movies_cache WHERE link = ?').get(targetMovie.link);
+            const fullTarget = db.prepare('SELECT link, title, original_title, year FROM scraped_movies_cache WHERE link = ?').get(targetMovie.link);
             
             const details = await getTmdbDetails(fullTarget.title, fullTarget.original_title, fullTarget.year, type);
             if (details) {
@@ -3587,7 +3587,7 @@ app.post('/api/admin/scraped-movies/refresh', authenticateToken, requireAdmin, a
             try {
                 if (isHdrezkaUrl(link)) {
                     // Fetch existing title and year
-                    const existing = db.prepare('SELECT title, year, type FROM scraped_movies_cache WHERE link = ?').get(link);
+                    const existing = db.prepare('SELECT title, original_title, year, type FROM scraped_movies_cache WHERE link = ?').get(link);
                     if (existing) {
                         const details = await getTmdbDetails(existing.title, existing.original_title, existing.year, existing.type);
                         if (details) {
@@ -3606,6 +3606,10 @@ app.post('/api/admin/scraped-movies/refresh', authenticateToken, requireAdmin, a
                                 details.duration,
                                 link
                             );
+                            refreshedCount++;
+                        } else {
+                            // Mark as missing to avoid infinite repair loops
+                            db.prepare(`UPDATE scraped_movies_cache SET description = 'Описание отсутствует', updated_at = CURRENT_TIMESTAMP WHERE link = ?`).run(link);
                             refreshedCount++;
                         }
                     }
