@@ -240,6 +240,7 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                                 setSearchStreaming(false);
                                 setSearchStatus('');
                                 setLoading(false);
+                                window.dispatchEvent(new Event('globalCacheUpdated'));
                             } else if (eventName === 'error') {
                                 setSearchStatus('');
                                 setSearchStreaming(false);

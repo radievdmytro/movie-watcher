@@ -1020,6 +1020,16 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         }
     }, [allMovies, selectedMovie]);
 
+    const [cacheUpdateTrigger, setCacheUpdateTrigger] = useState(0);
+
+    useEffect(() => {
+        const handleCacheUpdate = () => {
+            setCacheUpdateTrigger(prev => prev + 1);
+        };
+        window.addEventListener('globalCacheUpdated', handleCacheUpdate);
+        return () => window.removeEventListener('globalCacheUpdated', handleCacheUpdate);
+    }, []);
+
     useEffect(() => {
         if (searchDb !== 'cache') {
             setCacheMoviesResults([]);
@@ -1060,7 +1070,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             clearTimeout(delayDebounceFn);
             controller.abort();
         };
-    }, [deferredFilterQuery, searchDb, searchFields]);
+    }, [deferredFilterQuery, searchDb, searchFields, cacheUpdateTrigger]);
 
     const filteredAndSortedMovies = useMemo(() => {
         if (searchDb === 'cache') {
@@ -1627,7 +1637,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             clearTimeout(delayDebounceFn);
             controller.abort();
         };
-    }, [deferredFilterQuery, searchDb, hasActiveFilter, performBgSearch]);
+    }, [deferredFilterQuery, searchDb, hasActiveFilter, performBgSearch, cacheUpdateTrigger]);
 
 
     const { minBoundYear, maxBoundYear } = useMemo(() => {
