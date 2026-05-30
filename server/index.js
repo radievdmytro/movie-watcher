@@ -3471,11 +3471,11 @@ function getCrawlerStats() {
     const currentTotalCached = db.prepare('SELECT COUNT(*) as count FROM scraped_movies_cache').get().count;
     
     // Only re-run the slow missingDescriptions query if totalCached changed, 
-    // OR if 10 seconds have passed (to catch background parser updates),
+    // OR if 400ms have passed (to catch background parser updates),
     // OR if it's the first time
     if (currentTotalCached !== globalCrawlerStatsCache.totalCached || 
         globalCrawlerStatsCache.missingDescriptions === -1 ||
-        now - globalCrawlerStatsCache.lastUpdate > 10000) {
+        now - globalCrawlerStatsCache.lastUpdate > 400) {
         
         globalCrawlerStatsCache.totalCached = currentTotalCached;
         globalCrawlerStatsCache.missingDescriptions = db.prepare("SELECT COUNT(*) as count FROM scraped_movies_cache WHERE description IS NULL OR description = ''").get().count;
