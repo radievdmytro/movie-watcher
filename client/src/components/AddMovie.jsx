@@ -862,14 +862,14 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
             {/* Search Bar Container - High Z-Index to stay on top */}
             <div 
                 ref={searchBarRef}
+                className="search-bar-wrapper"
                 style={{
                 display: 'flex',
                 background: 'var(--bg-card)',
                 borderRadius: '30px',
-                padding: isMobile ? '3px 6px' : 'calc(5px - (var(--sp, 0) * 3px)) 5px',
+                padding: isMobile ? '3px 6px' : '5px',
                 border: '1px solid rgba(255,255,255,0.1)',
                 boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-                transition: 'padding 0.25s ease',
                 alignItems: inputLines > 1 ? 'flex-start' : 'center',
                 flexWrap: 'nowrap',
                 position: 'relative',
@@ -931,18 +931,17 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder={isMobile ? "Search HDRezka / paste link..." : "Paste HDRezka link(s) or movie title..."}
-                        className="search-input"
+                        className="search-input search-bar-input"
                         style={{
                             flex: 1,
                             background: 'transparent',
                             border: 'none',
                             color: '#fff',
                             fontSize: isMobile ? '16px' : '1rem',
-                            height: 'calc(40px - (var(--sp, 0) * 12px))',
+                            height: '40px',
                             outline: 'none',
                             minWidth: '50px',
-                            paddingLeft: isMobile ? '5px' : '0',
-                            transition: 'height 0.25s ease'
+                            paddingLeft: isMobile ? '5px' : '0'
                         }}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch(false, true)}
                     />
@@ -1008,12 +1007,11 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                         border: 'none',
                         borderRadius: '25px',
                         padding: isMobile ? '0 12px' : '0 30px',
-                        height: 'calc(34px - (var(--sp, 0) * 6px))',
+                        height: '34px',
                         fontWeight: 'bold',
                         fontSize: isMobile ? '0.75rem' : '0.9rem',
                         cursor: loading ? 'wait' : 'pointer',
                         boxShadow: '0 2px 10px rgba(212, 175, 55, 0.3)',
-                        transition: 'transform 0.2s, height 0.25s ease',
                         marginLeft: '5px',
                         marginRight: '2px',
                         alignSelf: inputLines > 1 ? 'flex-start' : 'auto',

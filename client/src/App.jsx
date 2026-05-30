@@ -244,6 +244,15 @@ function App() {
             const progress = Math.min(1, Math.max(0, scrollY / 48));
             document.documentElement.style.setProperty('--sp', progress);
             
+            // Class-based compact for search bar — fires once at threshold,
+            // then CSS transition handles the smooth animation (no per-pixel jitter)
+            const isCompact = document.documentElement.classList.contains('search-compact');
+            if (!isCompact && scrollY > 80) {
+                document.documentElement.classList.add('search-compact');
+            } else if (isCompact && scrollY < 50) {
+                document.documentElement.classList.remove('search-compact');
+            }
+
             setHeaderScrolled(scrollY > 48);
             setIsMobile(window.innerWidth <= 768);
             

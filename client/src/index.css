@@ -933,6 +933,43 @@ body.hide-header-search .app-header {
   }
 }
 
+/* ── Search bar compact mode — triggered by .search-compact class on <html> ──
+   Transitions fire ONCE (on class toggle), no per-pixel jitter.              */
+
+.sticky-search-bar {
+  transition: gap 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.search-compact .sticky-search-bar {
+  gap: 5px !important;
+}
+
+/* The rounded pill wrapper */
+.search-bar-wrapper {
+  transition: padding-top 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              padding-bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.search-compact .search-bar-wrapper {
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+
+/* Input field height */
+.search-bar-input {
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.search-compact .search-bar-input {
+  height: 28px !important;
+}
+
+/* SEARCH button — height only, width stays fixed */
+.search-submit-btn {
+  transition: transform 0.2s ease,
+              height 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.search-compact .search-submit-btn {
+  height: 24px !important;
+}
+
 /* ── Expanded Filters Panel ── */
 .expanded-filters-panel {
   max-height: 0;
