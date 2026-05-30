@@ -2413,8 +2413,21 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     </div>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                         {(() => {
+                                            const topGenres = ['Боевики', 'Комедии', 'Драмы', 'Триллеры', 'Ужасы', 'Фантастика', 'Фэнтези', 'Приключения', 'Детективы', 'Криминал', 'Исторические', 'Военные', 'Мелодрамы', 'Семейные', 'Документальные', 'Мультфильмы', 'Биографические', 'Спортивные', 'Мистические', 'Романтические'];
                                             const activeGenres = (!deferredFilterQuery && globalCacheGenres.length > 0) ? globalCacheGenres : availableGenres;
-                                            return (showAllGenres ? activeGenres : activeGenres.slice(0, 15)).map(genre => {
+                                            const sortedActiveGenres = [...activeGenres].sort((a, b) => {
+                                                const idxA = topGenres.indexOf(a);
+                                                const idxB = topGenres.indexOf(b);
+                                                if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                                                if (idxA !== -1) return -1;
+                                                if (idxB !== -1) return 1;
+                                                return a.localeCompare(b, 'ru');
+                                            });
+                                            const priorityCount = sortedActiveGenres.filter(g => topGenres.includes(g)).length;
+                                            const initialCount = priorityCount > 0 ? priorityCount : 15;
+                                            const displayedGenres = showAllGenres ? sortedActiveGenres : sortedActiveGenres.slice(0, initialCount);
+
+                                            return displayedGenres.map(genre => {
                                                 const isSelected = filterGenres.includes(genre);
                                                 return (
                                                     <button
@@ -2433,20 +2446,26 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 );
                                             });
                                         })()}
-                                        {((!deferredFilterQuery && globalCacheGenres.length > 0) ? globalCacheGenres : availableGenres).length > 15 && (
-                                            <button
-                                                onClick={() => setShowAllGenres(!showAllGenres)}
-                                                style={{
-                                                    padding: '4px 12px', borderRadius: '15px', fontSize: '0.8rem', cursor: 'pointer',
-                                                    background: 'transparent',
-                                                    color: 'var(--accent-gold)',
-                                                    border: '1px dashed var(--accent-gold)',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                {showAllGenres ? 'Show Less' : `+${((!deferredFilterQuery && globalCacheGenres.length > 0) ? globalCacheGenres : availableGenres).length - 15} More`}
-                                            </button>
-                                        )}
+                                        {(() => {
+                                            const topGenres = ['Боевики', 'Комедии', 'Драмы', 'Триллеры', 'Ужасы', 'Фантастика', 'Фэнтези', 'Приключения', 'Детективы', 'Криминал', 'Исторические', 'Военные', 'Мелодрамы', 'Семейные', 'Документальные', 'Мультфильмы', 'Биографические', 'Спортивные', 'Мистические', 'Романтические'];
+                                            const activeGenres = (!deferredFilterQuery && globalCacheGenres.length > 0) ? globalCacheGenres : availableGenres;
+                                            const priorityCount = activeGenres.filter(g => topGenres.includes(g)).length;
+                                            const initialCount = priorityCount > 0 ? priorityCount : 15;
+                                            return activeGenres.length > initialCount && (
+                                                <button
+                                                    onClick={() => setShowAllGenres(!showAllGenres)}
+                                                    style={{
+                                                        padding: '4px 12px', borderRadius: '15px', fontSize: '0.8rem', cursor: 'pointer',
+                                                        background: 'transparent',
+                                                        color: 'var(--accent-gold)',
+                                                        border: '1px dashed var(--accent-gold)',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    {showAllGenres ? 'Show Less' : `+${activeGenres.length - initialCount} More`}
+                                                </button>
+                                            );
+                                        })()}
                                     </div>
 
                                 </div>
@@ -2507,18 +2526,30 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                             }}
                                         >
                                             <option value="" disabled style={{ background: '#151515', color: '#666' }}>Toggle Genres...</option>
-                                            {((!deferredFilterQuery && globalCacheGenres.length > 0) ? globalCacheGenres : availableGenres).map(genre => (
-                                                <option
-                                                    key={genre}
-                                                    value={genre}
-                                                    style={{
-                                                        background: '#151515',
-                                                        color: filterGenres.includes(genre) ? 'var(--accent-gold)' : '#fff'
-                                                    }}
-                                                >
-                                                    {filterGenres.includes(genre) ? `✓ ${genre}` : genre}
-                                                </option>
-                                            ))}
+                                            {(() => {
+                                                const topGenres = ['Боевики', 'Комедии', 'Драмы', 'Триллеры', 'Ужасы', 'Фантастика', 'Фэнтези', 'Приключения', 'Детективы', 'Криминал', 'Исторические', 'Военные', 'Мелодрамы', 'Семейные', 'Документальные', 'Мультфильмы', 'Биографические', 'Спортивные', 'Мистические', 'Романтические'];
+                                                const activeGenres = (!deferredFilterQuery && globalCacheGenres.length > 0) ? globalCacheGenres : availableGenres;
+                                                const sortedActiveGenres = [...activeGenres].sort((a, b) => {
+                                                    const idxA = topGenres.indexOf(a);
+                                                    const idxB = topGenres.indexOf(b);
+                                                    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                                                    if (idxA !== -1) return -1;
+                                                    if (idxB !== -1) return 1;
+                                                    return a.localeCompare(b, 'ru');
+                                                });
+                                                return sortedActiveGenres.map(genre => (
+                                                    <option
+                                                        key={genre}
+                                                        value={genre}
+                                                        style={{
+                                                            background: '#151515',
+                                                            color: filterGenres.includes(genre) ? 'var(--accent-gold)' : '#fff'
+                                                        }}
+                                                    >
+                                                        {filterGenres.includes(genre) ? `✓ ${genre}` : genre}
+                                                    </option>
+                                                ));
+                                            })()}
                                         </select>
                                         {filterGenres.length > 0 && (
                                             <button
