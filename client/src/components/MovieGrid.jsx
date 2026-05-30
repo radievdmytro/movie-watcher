@@ -4,6 +4,7 @@ import MovieDetailsModal from './MovieDetailsModal';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DigitalDisintegration from './DigitalDisintegration';
+import FilmStripLoader from './FilmStripLoader';
 
 const Checkbox = ({ checked, onChange, style }) => (
     <label className="custom-checkbox" style={style} onClick={(e) => e.stopPropagation()}>
@@ -3784,6 +3785,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 </tr>
                             </thead>
                             <tbody>
+                                {finalDisplayMovies.length === 0 && (isBgCacheSearching || isCacheLoading) && (
+                                    <tr>
+                                        <td colSpan="6" style={{ padding: '40px 0' }}>
+                                            <FilmStripLoader movies={movies} />
+                                        </td>
+                                    </tr>
+                                )}
                                 {finalDisplayMovies.slice(0, visibleCount).map(movie => (
                                 <tr key={movie.id || movie.link} style={{
                                     borderBottom: '1px solid rgba(255,255,255,0.05)',
