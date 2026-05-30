@@ -1,101 +1,103 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
-const STRIP_COUNT = 25; // карточек в ленте
+const STRIP_COUNT = 25;        // карточек в ленте
 const CENTER_INTERVAL_MS = 180; // смена центрального постера (0.18 сек)
+const ENOUGH_MATCHES = 8;      // порог: достаточно совпадений → заполняем ленту ими
+
+// Вспомогательная функция: строим уникальный список совпадающих постеров
+function buildMatchingMovies(pool, searchQuery, liveResults) {
+    if (!searchQuery || !searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    const localMatches = pool.filter(m =>
+        (m.title && m.title.toLowerCase().includes(q)) ||
+        (m.original_title && m.original_title.toLowerCase().includes(q))
+    );
+    const combined = [...localMatches, ...liveResults];
+    const uniqueMap = new Map();
+    combined.forEach(m => { if (m && m.poster_url) uniqueMap.set(m.poster_url, m); });
+    return Array.from(uniqueMap.values());
+}
 
 const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) => {
     const [centerIdx, setCenterIdx] = useState(0);
 
-    // Перемешанный большой массив постеров для ленты (25 штук)
+    // Лента (25 карточек)
     const stripPosters = useMemo(() => {
-        // If movies is empty but liveResults has data, use liveResults as the pool
         const pool = (movies && movies.length > 0) ? movies : liveResults;
         if (!pool || pool.length === 0) return [];
+
         const shuffledAll = [...pool].sort(() => 0.5 - Math.random());
-        
-        let matchingMovies = [];
-        if (searchQuery && searchQuery.trim().length > 0) {
-            const q = searchQuery.toLowerCase().trim();
-            const localMatches = pool.filter(m => 
-                (m.title && m.title.toLowerCase().includes(q)) || 
-                (m.original_title && m.original_title.toLowerCase().includes(q))
-            );
-            // Combine local matches and live search results, remove duplicates by poster_url
-            const combined = [...localMatches, ...liveResults];
-            const uniqueMap = new Map();
-            combined.forEach(m => {
-                if (m && m.poster_url) uniqueMap.set(m.poster_url, m);
-            });
-            matchingMovies = Array.from(uniqueMap.values());
-        }
+        const matchingMovies = buildMatchingMovies(pool, searchQuery, liveResults);
+        const shuffledMatching = [...matchingMovies].sort(() => 0.5 - Math.random());
 
         const selection = [];
-        // 1. Всего 1 случайная картинка в начале
-        selection.push(shuffledAll[0]?.poster_url);
-        
-        // 2. Если есть релевантные, заполняем ими ВСЮ ленту (повторяя их)
-        if (matchingMovies.length > 0) {
-            const shuffledMatching = [...matchingMovies].sort(() => 0.5 - Math.random());
-            let matchIdx = 0;
+
+        if (matchingMovies.length === 0) {
+            // Нет совпадений — всё случайное
             while (selection.length < STRIP_COUNT) {
-                selection.push(shuffledMatching[matchIdx % shuffledMatching.length]?.poster_url);
-                matchIdx++;
+                selection.push(shuffledAll[selection.length % shuffledAll.length]?.poster_url);
+            }
+        } else if (matchingMovies.length >= ENOUGH_MATCHES) {
+            // Много совпадений — 1 рандомный в начале, остальное совпадающие
+            selection.push(shuffledAll[0]?.poster_url);
+            let mi = 0;
+            while (selection.length < STRIP_COUNT) {
+                selection.push(shuffledMatching[mi % shuffledMatching.length]?.poster_url);
+                mi++;
             }
         } else {
-            // Если ничего не подошло, тогда случайные
-            let randomIdx = 1;
+            // Мало совпадений — чередуем: каждый 3-й слот совпадающий, остальные случайные
+            let mi = 0;
+            let ri = 0;
             while (selection.length < STRIP_COUNT) {
-                selection.push(shuffledAll[randomIdx % shuffledAll.length]?.poster_url);
-                randomIdx++;
+                if ((selection.length + 1) % 3 === 0) {
+                    // каждый 3-й — из совпадающих
+                    selection.push(shuffledMatching[mi % shuffledMatching.length]?.poster_url);
+                    mi++;
+                } else {
+                    // случайный из всего пула
+                    selection.push(shuffledAll[ri % shuffledAll.length]?.poster_url);
+                    ri++;
+                }
             }
         }
-        
-        return selection.filter(Boolean); // убираем возможные undefined
+
+        return selection.filter(Boolean);
     }, [movies, searchQuery, liveResults]);
 
-    // Отдельный перемешанный список для центра
+    // Центральный проектор (40 кадров)
     const centerPosters = useMemo(() => {
-        // If movies is empty but liveResults has data, use liveResults as the pool
         const pool = (movies && movies.length > 0) ? movies : liveResults;
         if (!pool || pool.length === 0) return [];
+
         const shuffledAll = [...pool].sort(() => 0.5 - Math.random());
-        
-        let matchingMovies = [];
-        if (searchQuery && searchQuery.trim().length > 0) {
-            const q = searchQuery.toLowerCase().trim();
-            const localMatches = pool.filter(m => 
-                (m.title && m.title.toLowerCase().includes(q)) || 
-                (m.original_title && m.original_title.toLowerCase().includes(q))
-            );
-            // Combine local matches and live search results, remove duplicates by poster_url
-            const combined = [...localMatches, ...liveResults];
-            const uniqueMap = new Map();
-            combined.forEach(m => {
-                if (m && m.poster_url) uniqueMap.set(m.poster_url, m);
-            });
-            matchingMovies = Array.from(uniqueMap.values());
-        }
+        const matchingMovies = buildMatchingMovies(pool, searchQuery, liveResults);
+        const shuffledMatching = [...matchingMovies].sort(() => 0.5 - Math.random());
 
         const selection = [];
-        // 1. Всего 2 случайные картинки в центре (~0.36 сек)
+        // 3 случайных кадра в начале для реалистичного «поиска»
         selection.push(shuffledAll[0]?.poster_url);
         selection.push(shuffledAll[1]?.poster_url);
+        selection.push(shuffledAll[2]?.poster_url);
 
-        // 2. Дальше крутим только релевантные
         if (matchingMovies.length > 0) {
-            const shuffledMatching = [...matchingMovies].sort(() => 0.5 - Math.random());
-            let matchIdx = 0;
+            // Чередуем: совпадающий → случайный → совпадающий → случайный...
+            let mi = 0;
+            let ri = 3;
             while (selection.length < 40) {
-                selection.push(shuffledMatching[matchIdx % shuffledMatching.length]?.poster_url);
-                matchIdx++;
+                selection.push(shuffledMatching[mi % shuffledMatching.length]?.poster_url);
+                mi++;
+                if (selection.length < 40) {
+                    selection.push(shuffledAll[ri % shuffledAll.length]?.poster_url);
+                    ri++;
+                }
             }
         } else {
-            // 3. Если ничего нет, то случайные
-            let randomIdx = 2;
+            let ri = 3;
             while (selection.length < 40) {
-                selection.push(shuffledAll[randomIdx % shuffledAll.length]?.poster_url);
-                randomIdx++;
+                selection.push(shuffledAll[ri % shuffledAll.length]?.poster_url);
+                ri++;
             }
         }
 
@@ -126,13 +128,10 @@ const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) =>
     }
 
     const currentCenterPoster = centerPosters[centerIdx];
-    // Каждая карточка 160px + 20px gap = 180px; 25 карточек = 4500px общая ширина
-    // Анимируем от 0 до -(25 * 180)px = -4500px за N секунд
     const CARD_W = 160;
     const GAP = 20;
     const totalWidth = STRIP_COUNT * (CARD_W + GAP);
-    // ~180px/сек скорость → duration = totalWidth / 180
-    const stripDuration = totalWidth / 180;
+    const stripDuration = totalWidth / 180; // ~180px/сек
 
     return (
         <div style={{
@@ -146,7 +145,7 @@ const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) =>
             marginTop: '20px',
             marginBottom: '20px',
         }}>
-            {/* Плёнка: 25 карточек, прокрутка без конца через CSS animation */}
+            {/* Плёнка */}
             <div style={{
                 position: 'absolute',
                 display: 'flex',
@@ -156,7 +155,6 @@ const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) =>
                 filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.8))',
                 willChange: 'transform',
             }}>
-                {/* Дублируем массив дважды для бесшовного лупа */}
                 {[...stripPosters, ...stripPosters].map((url, idx) => (
                     <div key={idx} style={{
                         position: 'relative',
@@ -184,7 +182,6 @@ const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) =>
                         }}>
                             {[1,2,3,4,5].map(i => <div key={i} style={{ width: '8px', height: '8px', background: '#333', borderRadius: '1px' }}></div>)}
                         </div>
-
                         <img src={url} alt="" style={{
                             width: '100%', height: '100%', objectFit: 'cover',
                             opacity: 0.45,
@@ -194,7 +191,7 @@ const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) =>
                 ))}
             </div>
 
-            {/* Центральный кадр — быстро меняет постер */}
+            {/* Центральный кадр — проектор */}
             <div style={{
                 position: 'relative',
                 width: '180px',
@@ -209,13 +206,14 @@ const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) =>
                 overflow: 'hidden',
                 flexShrink: 0,
             }}>
-                {/* Перфорация центра */}
+                {/* Перфорация центра сверху */}
                 <div style={{
                     position: 'absolute', top: '-14px', left: 0, right: 0, zIndex: 2,
                     display: 'flex', justifyContent: 'space-around',
                 }}>
                     {[1,2,3,4,5].map(i => <div key={i} style={{ width: '10px', height: '10px', background: '#444', borderRadius: '2px', boxShadow: '0 0 5px rgba(212, 175, 55, 0.6)' }}></div>)}
                 </div>
+                {/* Перфорация центра снизу */}
                 <div style={{
                     position: 'absolute', bottom: '-14px', left: 0, right: 0, zIndex: 2,
                     display: 'flex', justifyContent: 'space-around',
@@ -223,7 +221,7 @@ const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) =>
                     {[1,2,3,4,5].map(i => <div key={i} style={{ width: '10px', height: '10px', background: '#444', borderRadius: '2px', boxShadow: '0 0 5px rgba(212, 175, 55, 0.6)' }}></div>)}
                 </div>
 
-                {/* Постер — мгновенная смена без анимации (эффект кинопроектора) */}
+                {/* Постер */}
                 <img
                     key={centerIdx}
                     src={currentCenterPoster}
