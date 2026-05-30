@@ -1238,6 +1238,23 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                 let valA = a.movie[sortField];
                 let valB = b.movie[sortField];
 
+                if (sortField === 'rating') {
+                    let numA = parseFloat(a.movie.rating);
+                    if (isNaN(numA) || a.movie.rating === '—' || a.movie.rating === 'N/A') {
+                        numA = a.movie.tmdb_rating ? parseFloat(a.movie.tmdb_rating) : 0;
+                    }
+                    if (isNaN(numA)) numA = 0;
+
+                    let numB = parseFloat(b.movie.rating);
+                    if (isNaN(numB) || b.movie.rating === '—' || b.movie.rating === 'N/A') {
+                        numB = b.movie.tmdb_rating ? parseFloat(b.movie.tmdb_rating) : 0;
+                    }
+                    if (isNaN(numB)) numB = 0;
+
+                    valA = numA;
+                    valB = numB;
+                }
+
                 if (valA === null || valA === undefined) valA = '';
                 if (valB === null || valB === undefined) valB = '';
 

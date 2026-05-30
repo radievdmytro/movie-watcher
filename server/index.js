@@ -703,7 +703,7 @@ app.get('/api/cache/directory', authenticateToken, (req, res) => {
         const sortMap = { rating: 'rating', year: 'year', title: 'title' };
         const sortCol = sortMap[sort];
         if (sortCol === 'rating') {
-            sql += ` ORDER BY COALESCE(rating, tmdb_rating, 0) ${order}`;
+            sql += ` ORDER BY CASE WHEN rating IS NOT NULL AND rating != '—' AND rating != 'N/A' AND rating != '' THEN CAST(rating AS REAL) WHEN tmdb_rating IS NOT NULL THEN tmdb_rating ELSE 0 END ${order}`;
         } else if (sortCol) {
             // NULL last for DESC, NULL first for ASC
             sql += ` ORDER BY CASE WHEN ${sortCol} IS NULL THEN 1 ELSE 0 END, ${sortCol} ${order}`;
@@ -927,7 +927,7 @@ app.get('/api/cache/search', authenticateToken, async (req, res) => {
         const sortField = allowedSorts[req.query.sort] || 'updated_at';
         const sortOrder = req.query.order === 'asc' ? 'ASC' : 'DESC';
         if (sortField === 'rating') {
-            sql += ` ORDER BY COALESCE(rating, tmdb_rating, 0) ${sortOrder}`;
+            sql += ` ORDER BY CASE WHEN rating IS NOT NULL AND rating != '—' AND rating != 'N/A' AND rating != '' THEN CAST(rating AS REAL) WHEN tmdb_rating IS NOT NULL THEN tmdb_rating ELSE 0 END ${sortOrder}`;
         } else if (sortField === 'year') {
             sql += ` ORDER BY CASE WHEN ${sortField} IS NULL THEN 1 ELSE 0 END, ${sortField} ${sortOrder}`;
         } else {
