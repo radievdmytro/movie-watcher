@@ -4034,6 +4034,31 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         }}
                                         loading="lazy"
                                     />
+                                    {/* Top Overlay Controls */}
+                                    <div style={{
+                                        position: 'absolute', top: '0', left: '0', width: '100%',
+                                        padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                                        zIndex: 10,
+                                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)',
+                                        pointerEvents: 'none' // Allow click through to main card
+                                    }}>
+                                        {(() => {
+                                            const selectId = libMovie ? libMovie.id : movie.link;
+                                            return (
+                                                <div
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    onMouseDown={(e) => setSelectionAnchor({ x: e.clientX, y: e.clientY })}
+                                                    style={{ pointerEvents: 'auto' }}
+                                                >
+                                                    <Checkbox
+                                                        checked={selectedIds.includes(selectId)}
+                                                        onChange={() => toggleSelect(selectId)}
+                                                    />
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                    
                                     {justAddedLink === movie.link && (
                                         <div style={{
                                             position: 'absolute',
@@ -4081,18 +4106,22 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                         background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)',
                                         pointerEvents: 'none' // Allow click through to main card
                                     }}>
-                                        {movie.id && (
-                                            <div
-                                                onClick={(e) => e.stopPropagation()}
-                                                onMouseDown={(e) => setSelectionAnchor({ x: e.clientX, y: e.clientY })}
-                                                style={{ pointerEvents: 'auto' }}
-                                            >
-                                                <Checkbox
-                                                    checked={selectedIds.includes(movie.id)}
-                                                    onChange={() => onSelect(movie.id)}
-                                                />
-                                            </div>
-                                        )}
+                                        {(() => {
+                                            const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
+                                            const selectId = libMovie ? libMovie.id : movie.link;
+                                            return (
+                                                <div
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    onMouseDown={(e) => setSelectionAnchor({ x: e.clientX, y: e.clientY })}
+                                                    style={{ pointerEvents: 'auto' }}
+                                                >
+                                                    <Checkbox
+                                                        checked={selectedIds.includes(selectId)}
+                                                        onChange={() => toggleSelect(selectId)}
+                                                    />
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                     
                                     {/* Hide blur overlay */}

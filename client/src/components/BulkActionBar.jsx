@@ -71,7 +71,7 @@ function CollapsingCompareSlot({ visible, isMobile, onCompare }) {
     );
 }
 
-function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWatched, onAddToCollection, onCompare, onCancelSelection, isTrashMode, anchor }) {
+function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWatched, onAddToCollection, onAddToLibrary, onCompare, onCancelSelection, isTrashMode, anchor, selectedIds = [] }) {
     const [isVisible, setIsVisible] = useState(false);
     const [lastAnchor, setLastAnchor] = useState(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -261,6 +261,8 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWa
         cursor: 'default'
     };
 
+    const hasNonLibraryItems = selectedIds.some(id => typeof id === 'string' && id.startsWith('/'));
+
     if (isMobile) {
         return (
             <div ref={nodeRef} style={styleMobile}>
@@ -290,50 +292,65 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWa
                             transition: `gap ${COLLAPSE_MS}ms cubic-bezier(0.165, 0.84, 0.44, 1)`,
                         }}
                     >
-                        <button
-                            onClick={onRefresh}
-                            style={{
-                                background: 'none', border: 'none', color: '#fff',
-                                padding: '4px', fontSize: '1.1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
-                            }}
-                            title="Refresh Selected"
-                        >
-                            ⟳
-                        </button>
-                        {onMarkWatched && (
+                        {hasNonLibraryItems ? (
                             <button
-                                onClick={onMarkWatched}
+                                onClick={onAddToLibrary}
                                 style={{
                                     background: 'none', border: 'none', color: '#03dac6',
-                                    padding: '4px', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
+                                    padding: '4px', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px'
                                 }}
-                                title="Mark Watched"
+                                title="Add to Library"
                             >
-                                👁️
+                                <span style={{fontSize: '1.2rem', marginTop: '-2px'}}>+</span> Add to Library
                             </button>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={onRefresh}
+                                    style={{
+                                        background: 'none', border: 'none', color: '#fff',
+                                        padding: '4px', fontSize: '1.1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
+                                    }}
+                                    title="Refresh Selected"
+                                >
+                                    ⟳
+                                </button>
+                                {onMarkWatched && (
+                                    <button
+                                        onClick={onMarkWatched}
+                                        style={{
+                                            background: 'none', border: 'none', color: '#03dac6',
+                                            padding: '4px', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
+                                        }}
+                                        title="Mark Watched"
+                                    >
+                                        👁️
+                                    </button>
+                                )}
+                                <button
+                                    onClick={onAddToCollection}
+                                    style={{
+                                        background: 'none', border: 'none', color: 'var(--accent-gold)',
+                                        padding: '4px', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
+                                    }}
+                                    title="Add to Collection"
+                                >
+                                    📁
+                                </button>
+                                <CollapsingDivider visible={showCompare} vertical={false} />
+                                <CollapsingCompareSlot visible={showCompare} isMobile onCompare={onCompare} />
+                                <button
+                                    onClick={onDelete}
+                                    style={{
+                                        background: 'none', border: 'none', color: 'var(--danger)',
+                                        padding: '4px', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
+                                    }}
+                                    title="Delete Selected"
+                                >
+                                    🗑️
+                                </button>
+                            </>
                         )}
-                        <button
-                            onClick={onAddToCollection}
-                            style={{
-                                background: 'none', border: 'none', color: 'var(--accent-gold)',
-                                padding: '4px', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
-                            }}
-                            title="Add to Collection"
-                        >
-                            📁
-                        </button>
-                        <CollapsingDivider visible={showCompare} vertical={false} />
-                        <CollapsingCompareSlot visible={showCompare} isMobile onCompare={onCompare} />
-                        <button
-                            onClick={onDelete}
-                            style={{
-                                background: 'none', border: 'none', color: 'var(--danger)',
-                                padding: '4px', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center'
-                            }}
-                            title="Delete Selected"
-                        >
-                            🗑️
-                        </button>
                     </div>
                 ) : (
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -396,43 +413,55 @@ function BulkActionBar({ selectedCount, onDelete, onRefresh, onRestore, onMarkWa
 
                 {!isTrashMode ? (
                     <>
-                        <button
-                            onClick={onRefresh}
-                            className="btn-ghost"
-                            style={{ color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '4px 8px' }}
-                        >
-                            ⟳ Refresh
-                        </button>
-                        {onMarkWatched && (
+                        {hasNonLibraryItems ? (
+                            <button
+                                onClick={onAddToLibrary}
+                                className="btn-ghost"
+                                style={{ color: '#03dac6', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '4px 8px' }}
+                            >
+                                <span style={{fontSize: '1.2rem', marginTop: '-2px'}}>+</span> Add to Library
+                            </button>
+                        ) : (
                             <>
+                                <button
+                                    onClick={onRefresh}
+                                    className="btn-ghost"
+                                    style={{ color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '4px 8px' }}
+                                >
+                                    ⟳ Refresh
+                                </button>
+                                {onMarkWatched && (
+                                    <>
+                                        <div style={{ height: '16px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+                                        <button
+                                            onClick={onMarkWatched}
+                                            className="btn-ghost"
+                                            style={{ color: '#03dac6', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '4px 8px' }}
+                                        >
+                                            👁️ Watched
+                                        </button>
+                                    </>
+                                )}
                                 <div style={{ height: '16px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
                                 <button
-                                    onClick={onMarkWatched}
+                                    onClick={onAddToCollection}
                                     className="btn-ghost"
-                                    style={{ color: '#03dac6', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '4px 8px' }}
+                                    style={{ color: 'var(--accent-gold)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '4px 8px' }}
                                 >
-                                    👁️ Watched
+                                    📁 Add to Collection
+                                </button>
+                                <CollapsingDivider visible={showCompare} />
+                                <CollapsingCompareSlot visible={showCompare} isMobile={false} onCompare={onCompare} />
+                                <div style={{ height: '16px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+                                <button
+                                    onClick={onDelete}
+                                    className="btn-ghost"
+                                    style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '4px 8px' }}
+                                >
+                                    🗑 Delete
                                 </button>
                             </>
                         )}
-                        <div style={{ height: '16px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
-                        <button
-                            onClick={onAddToCollection}
-                            className="btn-ghost"
-                            style={{ color: 'var(--accent-gold)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '4px 8px' }}
-                        >
-                            📁 Add to Collection
-                        </button>
-                        <CollapsingDivider visible={showCompare} />
-                        <CollapsingCompareSlot visible={showCompare} isMobile={false} onCompare={onCompare} />
-                        <div style={{ height: '16px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
-                        <button
-                            onClick={onDelete}
-                            className="btn-ghost"
-                            style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '4px 8px' }}
-                        >
-                            🗑 Delete
-                        </button>
                     </>
                 ) : (
                     <>

@@ -806,6 +806,29 @@ function App() {
         }
     };
 
+    // Bulk Add to Library (for global movies)
+    const handleBulkAddToLibrary = async () => {
+        if (!selectedIds.length) return;
+        const nonLibraryLinks = selectedIds.filter(id => typeof id === 'string' && id.startsWith('/'));
+        if (nonLibraryLinks.length === 0) return;
+
+        for (const link of nonLibraryLinks) {
+            try {
+                await fetch('/api/movies/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: link })
+                });
+            } catch (e) {
+                console.error('Failed to import', link, e);
+            }
+        }
+        
+        fetchMovies(true);
+        setSelectedIds([]);
+        setSelectionAnchor(null);
+    };
+
     // Bulk Restore (from Trash)
     const handleBulkRestore = async () => {
         if (!selectedIds.length) return;
