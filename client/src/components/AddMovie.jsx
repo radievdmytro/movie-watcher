@@ -845,12 +845,12 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
 
                 {/* Show Dropdown Panel Checkbox */}
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#ccc', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#777', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         <input 
                             type="checkbox" 
                             checked={enableDropdown}
                             onChange={(e) => setEnableDropdown(e.target.checked)}
-                            style={{ accentColor: 'var(--accent-gold)' }}
+                            style={{ accentColor: '#555' }}
                         />
                         Show Top Results Panel
                     </label>

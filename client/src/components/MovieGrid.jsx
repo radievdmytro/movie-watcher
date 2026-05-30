@@ -2092,11 +2092,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         flexWrap: 'wrap',
                         justifyContent: 'space-between'
                     }}>
-                        {/* Empty spacer for balancing flex if not mobile */}
-                        {!isMobile && <div style={{ flex: 1 }}></div>}
-                        
-                        {/* Main Controls (Center) */}
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                        {/* Left Controls */}
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                         {/* Type Switcher */}
                         <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)', order: isMobile ? 1 : 'unset' }}>
                             {[
@@ -2156,7 +2153,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
 
                         {isMobile && <div style={{ flexBasis: '100%', height: 0, order: 3 }}></div>}
+                        </div>
 
+                        {/* Right Controls */}
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', flex: isMobile ? 1 : 'unset' }}>
                         {/* View settings (Size & Grid/List Toggle) */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', order: isMobile ? 2 : 'unset' }}>
                             {/* Poster Size (Desktop only) */}
@@ -2287,8 +2287,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         </div>
                         </div>
 
-                        {/* Filters Button (Right aligned) */}
-                        <div style={{ display: 'flex', flex: 1, justifyContent: 'flex-end', order: isMobile ? 10 : 'unset' }}>
+                        {/* Filters Button (Right aligned inside Right Controls) */}
+                        <div style={{ display: 'flex', order: isMobile ? 10 : 'unset' }}>
                             <button
                                 className="btn btn-ghost"
                                 onClick={(e) => {
