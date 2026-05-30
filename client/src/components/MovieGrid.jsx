@@ -2180,7 +2180,7 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
             <div className="sticky-search-bar" style={{
                 display: 'flex', 
                 flexDirection: 'column', 
-                gap: '15px',
+                gap: '5px',
                 marginBottom: '15px',
             }}>
                 {headerComponent && (
