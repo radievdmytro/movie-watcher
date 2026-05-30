@@ -3225,7 +3225,7 @@ function scheduleNextCrawlerStep() {
     const baseIntervalMs = (3600 / crawlerSettings.ratePerHour) * 1000;
     // Jitter: +/- 25% random variation to mimic human browsing and prevent scraping patterns
     const jitterFactor = Math.random() * 0.5 - 0.25;
-    const delayMs = Math.max(5000, Math.floor(baseIntervalMs + baseIntervalMs * jitterFactor));
+    const delayMs = Math.max(25, Math.floor(baseIntervalMs + baseIntervalMs * jitterFactor));
 
     console.log(`[Crawler] Next request scheduled in ${(delayMs / 1000).toFixed(1)} seconds.`);
     

@@ -953,7 +953,11 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                         <option value="240">240 movies / hour (~15 sec delay - Fast)</option>
                                         <option value="600">600 movies / hour (~6 sec delay - TMDB Turbo)</option>
                                         <option value="1200">1200 movies / hour (~3 sec delay - TMDB Ultra)</option>
-                                        <option value="3600">3600 movies / hour (1 sec delay - TMDB Max Speed)</option>
+                                        <option value="3600">3,600 movies / hour (1 / sec)</option>
+                                        <option value="18000">18,000 movies / hour (~5 / sec)</option>
+                                        <option value="36000">36,000 movies / hour (~10 / sec)</option>
+                                        <option value="72000">72,000 movies / hour (~20 / sec - TMDB Sonic)</option>
+                                        <option value="108000">108,000 movies / hour (~30 / sec - TMDB God Mode)</option>
                                     </select>
                                 </div>
 
