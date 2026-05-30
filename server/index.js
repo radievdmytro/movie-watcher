@@ -625,7 +625,7 @@ app.get('/api/cache/directory', authenticateToken, (req, res) => {
 
         if (!hasFilter) {
             // Legacy path: seeded-random weighted by rating (original behaviour, no extra SQL overhead)
-            let sql = `SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+            let sql = `SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, tmdb_rating, type, description
                 FROM scraped_movies_cache WHERE poster_url IS NOT NULL AND title IS NOT NULL`;
             const rows = db.prepare(sql).all();
             const visibleRows = filterHiddenGlobalMovies(rows, req.user.id);
@@ -639,7 +639,7 @@ app.get('/api/cache/directory', authenticateToken, (req, res) => {
         }
 
         // Filtered + sorted SQL path
-        let sql = `SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type, description
+        let sql = `SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, tmdb_rating, type, description
             FROM scraped_movies_cache WHERE poster_url IS NOT NULL AND title IS NOT NULL`;
         const params = [];
 
@@ -1163,7 +1163,7 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
             
             // Check cache first
             const localResults = filterHiddenGlobalMovies(db.prepare(`
-                SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type
+                SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, tmdb_rating, type
                 FROM scraped_movies_cache
                 WHERE cyrillic_like(title, ?) OR cyrillic_like(original_title, ?)
                    OR actors LIKE ? OR director LIKE ? OR year LIKE ?
@@ -1335,7 +1335,7 @@ app.get('/api/movies/search/stream', authenticateToken, async (req, res) => {
 
             // 1. Instant local DB results
             const localResults = filterHiddenGlobalMovies(db.prepare(`
-                SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, type
+                SELECT title, original_title, year, link, poster_url as img, genres as misc, rating, tmdb_rating, type
                 FROM scraped_movies_cache
                 WHERE cyrillic_like(title, ?) OR cyrillic_like(original_title, ?)
                    OR actors LIKE ? OR director LIKE ? OR year LIKE ?
@@ -3612,7 +3612,7 @@ app.get('/api/admin/recent-scraped', authenticateToken, requireAdmin, (req, res)
             condition = condition ? `${condition} AND ${brokenSql}` : `WHERE ${brokenSql}`;
         }
 
-        const rows = db.prepare(`SELECT title, original_title, year, link, poster_url, rating, type, updated_at, description FROM scraped_movies_cache ${condition} ORDER BY updated_at DESC LIMIT ?`).all(limit);
+        const rows = db.prepare(`SELECT title, original_title, year, link, poster_url, rating, tmdb_rating, type, updated_at, description FROM scraped_movies_cache ${condition} ORDER BY updated_at DESC LIMIT ?`).all(limit);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
