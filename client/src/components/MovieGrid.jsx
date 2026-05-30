@@ -1902,10 +1902,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
     // Auto-enrichment: when a page of global movies loads, enrich the ones missing details
     useEffect(() => {
-        if (!onboardingCacheMovies.length || isTrashMode) return;
+        if (isTrashMode) return;
+
+        const allMovies = [...onboardingCacheMovies, ...backgroundCacheResults];
+        if (!allMovies.length) return;
 
         // Find movies that lack enriched data (description or genres+actors missing)
-        const needsEnrich = onboardingCacheMovies
+        const needsEnrich = allMovies
             .filter(m => !enrichingLinks.has(m.link) && (!m.genres || !m.description))
             .slice(-50) // Only check the last batch loaded
             .map(m => m.link);
@@ -1924,14 +1927,14 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             .then(res => res.ok ? res.json() : null)
             .then(data => {
                 if (!data || !data.results) return;
-                // Merge enriched data into existing onboarding movies
+                // Merge enriched data into existing movies
                 const enrichedMap = new Map();
                 data.results.forEach(r => {
                     if (r.ok && r.data) enrichedMap.set(r.link, r.data);
                 });
                 if (enrichedMap.size === 0) return;
 
-                setOnboardingCacheMovies(prev => prev.map(m => {
+                const updateMovie = m => {
                     const enriched = enrichedMap.get(m.link);
                     if (!enriched) return m;
                     return {
@@ -1940,7 +1943,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         misc: enriched.genres || m.misc,
                         description: enriched.description || m.description,
                     };
-                }));
+                };
+
+                setOnboardingCacheMovies(prev => prev.map(updateMovie));
+                setBackgroundCacheResults(prev => prev.map(updateMovie));
             })
             .catch(() => {})
             .finally(() => {
@@ -1951,7 +1957,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 });
             });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [onboardingCacheMovies.length, isTrashMode]);
+    }, [onboardingCacheMovies.length, backgroundCacheResults.length, isTrashMode]);
 
 
     const handleSort = (field, forceDir) => {
