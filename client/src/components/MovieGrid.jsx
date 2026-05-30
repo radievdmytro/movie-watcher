@@ -1863,7 +1863,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             .catch(err => console.error('Error fetching onboarding cache:', err))
             .finally(() => setIsOnboardingLoading(false));
 
-    }, [movies.length, isTrashMode, buildDirectoryParams]);
+    }, [isTrashMode, buildDirectoryParams]);
 
 
     // Onboarding Infinite Scroll Observer
@@ -1897,7 +1897,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
         if (onboardingSentinelRef.current) observer.observe(onboardingSentinelRef.current);
         return () => observer.disconnect();
-    }, [movies.length, isTrashMode, onboardingOffset, hasMoreOnboarding, isOnboardingLoading, buildDirectoryParams]);
+    }, [isTrashMode, onboardingOffset, hasMoreOnboarding, isOnboardingLoading, buildDirectoryParams]);
 
     // Auto-enrichment: when a page of global movies loads, enrich the ones missing details
     useEffect(() => {
