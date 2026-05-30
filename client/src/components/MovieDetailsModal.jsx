@@ -18,10 +18,11 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         // If we already tried fetching details for this movie during this app session, don't try again
         if (globalAttemptedUpdates.has(propMovie.link)) return;
 
-        // If it's missing description entirely (null/undefined), it hasn't been scraped yet.
-        // We do NOT check for empty strings or missing ratings, because HDRezka might genuinely not have them,
-        // and if we re-fetch them constantly, it causes infinite loading loops.
-        const needsUpdate = propMovie.description === undefined || propMovie.description === null;
+        // If it's missing description entirely, it hasn't been scraped yet.
+        // Also trigger if rating is missing ('0', '—', 'N/A', null, etc).
+        // globalAttemptedUpdates prevents infinite loops if HDRezka genuinely has no rating.
+        const isRatingMissing = !propMovie.rating || propMovie.rating === '0' || propMovie.rating === '—' || propMovie.rating === 'N/A';
+        const needsUpdate = propMovie.description === undefined || propMovie.description === null || isRatingMissing;
 
         if (needsUpdate) {
             globalAttemptedUpdates.add(propMovie.link);
