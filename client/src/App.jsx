@@ -1213,27 +1213,27 @@ function App() {
                         onBack={() => setCurrentView('library')}
                     />
                 ) : (
-                    <>
-                        {currentView === 'library' && (
-                                <AddMovie 
-                                    onMovieAdded={() => fetchMovies(true)} 
-                                    onScrollToMovie={handleScrollToMovie} 
-                                    movies={movies} 
-                                    selectedLibraryIds={selectedIds}
-                                    onGuestActivity={triggerGuestActivity}
-                                    onAddToCollectionClick={setCollectionMovie}
-                                    globalSearchQuery={globalSearchQuery}
-                                    setGlobalSearchQuery={setGlobalSearchQuery}
-                                    globalSearchFields={globalSearchFields}
-                                    setGlobalSearchFields={setGlobalSearchFields}
-                                />
-                        )}
-
                         <div className="movie-list-section">
                             {loading ? (
                                 <div style={{ textAlign: 'center', padding: '50px' }}>Loading...</div>
                             ) : (
                                 <MovieGrid
+                                    headerComponent={
+                                        currentView === 'library' && (
+                                            <AddMovie 
+                                                onMovieAdded={() => fetchMovies(true)} 
+                                                onScrollToMovie={handleScrollToMovie} 
+                                                movies={movies} 
+                                                selectedLibraryIds={selectedIds}
+                                                onGuestActivity={triggerGuestActivity}
+                                                onAddToCollectionClick={setCollectionMovie}
+                                                globalSearchQuery={globalSearchQuery}
+                                                setGlobalSearchQuery={setGlobalSearchQuery}
+                                                globalSearchFields={globalSearchFields}
+                                                setGlobalSearchFields={setGlobalSearchFields}
+                                            />
+                                        )
+                                    }
                                     movies={displayedMovies}
                                     allMovies={movies}
                                     historyList={historyList}
@@ -1269,7 +1269,6 @@ function App() {
                                 </div>
                             )}
                         </div>
-                    </>
                 )}
             </main>
 

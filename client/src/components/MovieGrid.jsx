@@ -581,7 +581,7 @@ const FolderCard = ({ groupName, movies, onClick }) => {
 };
 
 
-function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, guestLimitReached, isGuest, onRegisterClick, highlightedLink, onGuestActivity, onAddToCollectionClick, onNavigate, globalSearchQuery = '', setGlobalSearchQuery, globalSearchFields = {}, includeGlobalDb = false }) {
+function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = [], onFetchHistory, onUpdate, onDelete, selectedIds, onSelect, onSelectAll, setSelectionAnchor, deletingIds = [], trashButtonRef, isTrashMode, isWatchedView, guestLimitReached, isGuest, onRegisterClick, highlightedLink, onGuestActivity, onAddToCollectionClick, onNavigate, globalSearchQuery = '', setGlobalSearchQuery, globalSearchFields = {}, includeGlobalDb = false }) {
     const [gridRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
     const [listRef] = useAutoAnimate({ duration: 350, easing: 'ease-out' });
     const [sortField, setSortField] = useState(() => localStorage.getItem('movieGrid_sortField') || 'created_at');
@@ -2165,8 +2165,25 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 />
             )}
 
-            <>
-                <div className="controls-top-bar sticky-search-bar" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
+            <div className="sticky-search-bar" style={{
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: 'calc(15px - (var(--sp, 0) * 10px))',
+                marginBottom: '15px',
+                transition: 'gap 0.3s'
+            }}>
+                {headerComponent && (
+                    <div className="sticky-header-container" style={{
+                        marginTop: 'calc(0px - (var(--sp, 0) * 5px))',
+                        transform: 'scale(calc(1 - (var(--sp, 0) * 0.05)))',
+                        transformOrigin: 'top center',
+                        opacity: 'calc(1 - (var(--sp, 0) * 0.1))',
+                        transition: 'all 0.3s'
+                    }}>
+                        {headerComponent}
+                    </div>
+                )}
+                <div className="controls-top-bar" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {/* Row 1: Super Compact Controls AND Filters */}
                     <div className="compact-controls-row" style={{
                         display: 'flex',
@@ -2950,7 +2967,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         </div>
                     </div>
                 </div>
-            </>
+            </div>
 
             {viewMode === 'grid' ? (
                 <AnimatePresence mode="wait">
