@@ -2182,15 +2182,10 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                 flexDirection: 'column', 
                 gap: 'calc(15px - (var(--sp, 0) * 10px))',
                 marginBottom: '15px',
-                transition: 'gap 0.3s'
             }}>
                 {headerComponent && (
                     <div className="sticky-header-container" style={{
-                        marginTop: 'calc(0px - (var(--sp, 0) * 5px))',
-                        transform: 'scale(calc(1 - (var(--sp, 0) * 0.05)))',
-                        transformOrigin: 'top center',
-                        opacity: 'calc(1 - (var(--sp, 0) * 0.1))',
-                        transition: 'all 0.3s'
+                        marginTop: 'calc(0px - (var(--sp, 0) * 6px))',
                     }}>
                         {headerComponent}
                     </div>
