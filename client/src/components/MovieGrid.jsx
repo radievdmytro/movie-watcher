@@ -2013,7 +2013,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         setFilterCountries([]);
         setFilterRating([0, 10]);
         setFilterYear([minBoundYear, maxBoundYear]);
-        setFilterQuery('');
         setFilterType('all');
         setFilterGenreMode('include');
         setFilterDirectors([]);
@@ -2030,8 +2029,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                              filterActors.length > 0 ||
                              filterYear[0] > minBoundYear ||
                              filterYear[1] < maxBoundYear ||
-                             filterType !== 'all' ||
-                             filterQuery !== '';
+                             filterType !== 'all';
 
     return (
         <div>
