@@ -1670,9 +1670,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     }, [minBoundYear, maxBoundYear]);
 
     useEffect(() => {
+        const filterValidGenres = (genres) => {
+            return (genres || []).filter(g => !/^(\d{4}|\d{4}-\d{4})$/.test(g));
+        };
+
         fetch('/api/genres')
             .then(res => res.json())
-            .then(data => setAvailableGenres(data))
+            .then(data => setAvailableGenres(filterValidGenres(data)))
             .catch(err => console.error('Failed to fetch genres:', err));
 
         fetch('/api/directors')
@@ -1688,7 +1692,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         // Fetch global cache genres for filter panel when browsing global DB
         fetch('/api/cache/genres')
             .then(res => res.json())
-            .then(data => setGlobalCacheGenres(data))
+            .then(data => setGlobalCacheGenres(filterValidGenres(data)))
             .catch(() => {}); // Silently fail — not critical
     }, []);
 

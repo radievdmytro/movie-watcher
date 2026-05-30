@@ -954,7 +954,7 @@ app.get('/api/cache/genres', authenticateToken, (req, res) => {
                 const trimmed = g.trim();
                 // Skip empty, single chars, purely numeric values (years like 1896, 1902...)
                 if (!trimmed || trimmed.length < 2) return;
-                if (/^\d+$/.test(trimmed)) return; // skip years/numbers
+                if (/^(\d+|\d{4}-\d{4})$/.test(trimmed)) return; // skip years/ranges/numbers
                 genreSet.add(trimmed);
             });
         }
@@ -1410,7 +1410,7 @@ app.get('/api/genres', authenticateToken, (req, res) => {
             if (row.genres) {
                 row.genres.split(',').forEach(g => {
                     const trimmed = g.trim();
-                    if (trimmed) {
+                    if (trimmed && !/^(\d{4}|\d{4}-\d{4})$/.test(trimmed)) {
                         genreCounts[trimmed] = (genreCounts[trimmed] || 0) + 1;
                     }
                 });
