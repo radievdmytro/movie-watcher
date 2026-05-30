@@ -1390,12 +1390,32 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         <div style={{ fontSize: '0.8rem', color: '#888', fontStyle: 'italic', margin: 0 }}>{movie.original_title}</div>
                                     )}
                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginTop: '2px' }}>
-                                        <span style={{
-                                            background: 'var(--accent-gold)', color: '#000',
-                                            padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem'
-                                        }}>
-                                            ★ {movie.rating && movie.rating !== '—' ? movie.rating : (movie.tmdb_rating ? `${movie.tmdb_rating} (TMDB)` : 'N/A')}
-                                        </span>
+                                        {movie.rating && movie.rating !== '—' && (
+                                            <span style={{
+                                                background: 'var(--accent-gold)', color: '#000',
+                                                padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem',
+                                                display: 'flex', alignItems: 'center', gap: '3px'
+                                            }}>
+                                                ★ {movie.rating} <span style={{ fontSize: '0.55rem', opacity: 0.8, marginTop: '1px' }}>HD</span>
+                                            </span>
+                                        )}
+                                        {movie.tmdb_rating && (
+                                            <span style={{
+                                                background: 'var(--accent-gold)', color: '#000',
+                                                padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem',
+                                                display: 'flex', alignItems: 'center', gap: '3px'
+                                            }}>
+                                                ★ {movie.tmdb_rating} <span style={{ fontSize: '0.55rem', opacity: 0.8, marginTop: '1px' }}>TMDB</span>
+                                            </span>
+                                        )}
+                                        {(!movie.rating || movie.rating === '—') && !movie.tmdb_rating && (
+                                            <span style={{
+                                                background: 'var(--accent-gold)', color: '#000',
+                                                padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem'
+                                            }}>
+                                                ★ N/A
+                                            </span>
+                                        )}
                                         {movie.user_rating && (
                                             <span style={{
                                                 background: 'rgba(3, 218, 198, 0.2)', color: '#03dac6',
@@ -1518,12 +1538,32 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                 )}
 
                                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '25px', alignItems: 'center' }}>
-                                    <span style={{
-                                        background: 'var(--accent-gold)', color: '#000',
-                                        padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold'
-                                    }}>
-                                        ★ {movie.rating && movie.rating !== '—' ? movie.rating : (movie.tmdb_rating ? `${movie.tmdb_rating} (TMDB)` : 'N/A')}
-                                    </span>
+                                    {movie.rating && movie.rating !== '—' && (
+                                        <span style={{
+                                            background: 'var(--accent-gold)', color: '#000',
+                                            padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold',
+                                            display: 'flex', alignItems: 'center', gap: '4px'
+                                        }}>
+                                            ★ {movie.rating} <span style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '1px' }}>HD</span>
+                                        </span>
+                                    )}
+                                    {movie.tmdb_rating && (
+                                        <span style={{
+                                            background: 'var(--accent-gold)', color: '#000',
+                                            padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold',
+                                            display: 'flex', alignItems: 'center', gap: '4px'
+                                        }}>
+                                            ★ {movie.tmdb_rating} <span style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '1px' }}>TMDB</span>
+                                        </span>
+                                    )}
+                                    {(!movie.rating || movie.rating === '—') && !movie.tmdb_rating && (
+                                        <span style={{
+                                            background: 'var(--accent-gold)', color: '#000',
+                                            padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold'
+                                        }}>
+                                            ★ N/A
+                                        </span>
+                                    )}
                                     {movie.user_rating && (
                                         <span style={{
                                             background: 'rgba(3, 218, 198, 0.2)', color: '#03dac6',
