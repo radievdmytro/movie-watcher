@@ -827,6 +827,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         try { const s = localStorage.getItem('mg_filterActors'); if(s) return JSON.parse(s); } catch(e){}
         return [];
     });
+    const [filterCountries, setFilterCountries] = useState(() => {
+        try { const s = localStorage.getItem('mg_filterCountries'); if(s) return JSON.parse(s); } catch(e){}
+        return [];
+    });
     
     useEffect(() => {
         localStorage.setItem('mg_filterGenres', JSON.stringify(filterGenres));
@@ -836,11 +840,13 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         localStorage.setItem('mg_filterGenreMode', filterGenreMode);
         localStorage.setItem('mg_filterDirectors', JSON.stringify(filterDirectors));
         localStorage.setItem('mg_filterActors', JSON.stringify(filterActors));
+        localStorage.setItem('mg_filterCountries', JSON.stringify(filterCountries));
         localStorage.setItem('mg_filterUserRatingStatus', filterUserRatingStatus);
-    }, [filterGenres, filterRating, filterYear, filterType, filterGenreMode, filterDirectors, filterActors, filterUserRatingStatus]);
+    }, [filterGenres, filterRating, filterYear, filterType, filterGenreMode, filterDirectors, filterActors, filterCountries, filterUserRatingStatus]);
 
     const [availableDirectors, setAvailableDirectors] = useState([]);
     const [availableActors, setAvailableActors] = useState([]);
+    const [availableCountries, setAvailableCountries] = useState([]);
 
     // Sort state specifically for global DB browsing (separate from library sort)
     const [globalSortField, setGlobalSortField] = useState(() => localStorage.getItem('mg_globalSortField') || 'random');
@@ -851,6 +857,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
     // Genres list from global cache (for filter UI when browsing global DB)
     const [globalCacheGenres, setGlobalCacheGenres] = useState([]);
+    const [globalCacheCountries, setGlobalCacheCountries] = useState([]);
 
     const searchDb = includeGlobalDb ? 'cache' : 'library'; // 'library' or 'cache'
     const autoSwitchToCache = includeGlobalDb;
@@ -1164,6 +1171,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                     if (!filterActors.some(fa => movieActors.includes(fa.toLowerCase()))) return false;
                 }
 
+                // Country Filter
+                if (filterCountries.length > 0) {
+                    const movieCountries = (movie.country || '').split(',').map(c => c.trim().toLowerCase());
+                    if (!filterCountries.some(fc => movieCountries.includes(fc.toLowerCase()))) return false;
+                }
+
                 // Rating Filter
                 const rating = parseFloat(movie.rating) || 0;
                 if (rating !== 0 && (rating < filterRating[0] || rating > filterRating[1])) return false;
@@ -1226,7 +1239,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                 return 0;
             })
             .map(item => item.movie);
-    }, [movies, sortField, sortDir, deferredFilterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterUserRatingStatus, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields, localHiddenGlobalLinks, localUnwatchedLinks]);
+    }, [movies, sortField, sortDir, deferredFilterQuery, filterGenres, filterDirectors, filterActors, filterCountries, filterRating, filterYear, filterType, filterUserRatingStatus, filterGenreMode, hideWatched, searchDb, cacheMoviesResults, searchFields, localHiddenGlobalLinks, localUnwatchedLinks]);
 
     const filteredOnboardingCacheMovies = useMemo(() => {
         if (guestLimitReached) return [];
@@ -1277,6 +1290,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             if (filterActors.length > 0) {
                 const movieActors = (movie.actors || '').split(',').map(a => a.trim().toLowerCase());
                 if (!filterActors.some(fa => movieActors.includes(fa.toLowerCase()))) return false;
+            }
+
+            // Country Filter
+            if (filterCountries.length > 0) {
+                const movieCountries = (movie.country || '').split(',').map(c => c.trim().toLowerCase());
+                if (!filterCountries.some(fc => movieCountries.includes(fc.toLowerCase()))) return false;
             }
 
             // Rating Filter
@@ -1360,7 +1379,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         }
 
         return filtered;
-    }, [onboardingCacheMovies, deferredFilterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterRating, filterYear, filterType, searchFields, uniqueBackgroundCacheResults, localHiddenGlobalLinks, hideWatchedInGlobal]);
+    }, [onboardingCacheMovies, deferredFilterQuery, filterGenres, filterGenreMode, filterDirectors, filterActors, filterCountries, filterRating, filterYear, filterType, searchFields, uniqueBackgroundCacheResults, localHiddenGlobalLinks, hideWatchedInGlobal]);
 
     const folderGroups = useMemo(() => {
         if (!isWatchedView || watchedViewMode !== 'folders') return null;
@@ -1418,21 +1437,22 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             filterType !== 'all' ||
             filterDirectors.length > 0 ||
             filterActors.length > 0 ||
+            filterCountries.length > 0 ||
             filterRating[0] > 0 ||
             filterRating[1] < 10 ||
             filterYear[0] > 1900 ||
             filterYear[1] < new Date().getFullYear() + 2
         );
-    }, [deferredFilterQuery, filterGenres, filterType, filterDirectors, filterActors, filterRating, filterYear]);
+    }, [deferredFilterQuery, filterGenres, filterType, filterDirectors, filterActors, filterCountries, filterRating, filterYear]);
 
     const filtersRef = useRef({
-        filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, searchFields
+        filterGenres, filterDirectors, filterActors, filterCountries, filterRating, filterYear, filterType, filterGenreMode, searchFields
     });
     useEffect(() => {
         filtersRef.current = {
-            filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, searchFields
+            filterGenres, filterDirectors, filterActors, filterCountries, filterRating, filterYear, filterType, filterGenreMode, searchFields
         };
-    });
+    }, [filterGenres, filterDirectors, filterActors, filterCountries, filterRating, filterYear, filterType, filterGenreMode, searchFields]);
 
     const performBgSearch = useCallback((manualLimit = null) => {
         if (searchDb !== 'library') return;
@@ -1444,11 +1464,12 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             queryParams.append('query', query);
         }
         
-        const { filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, searchFields } = filtersRef.current;
+        const { filterGenres, filterDirectors, filterActors, filterCountries, filterRating, filterYear, filterType, filterGenreMode, searchFields } = filtersRef.current;
         queryParams.append('fields', JSON.stringify(searchFields));
         if (filterGenres.length > 0) queryParams.append('genres', filterGenres.join(','));
         if (filterDirectors.length > 0) queryParams.append('directors', filterDirectors.join(','));
         if (filterActors.length > 0) queryParams.append('actors', filterActors.join(','));
+        if (filterCountries.length > 0) queryParams.append('countries', filterCountries.join(','));
         queryParams.append('ratingMin', filterRating[0]);
         queryParams.append('ratingMax', filterRating[1]);
         queryParams.append('yearMin', filterYear[0]);
@@ -1689,11 +1710,21 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
             .then(data => setAvailableActors(data))
             .catch(err => console.error('Failed to fetch actors:', err));
 
+        fetch('/api/countries')
+            .then(res => res.json())
+            .then(data => setAvailableCountries(data))
+            .catch(err => console.error('Failed to fetch countries:', err));
+
         // Fetch global cache genres for filter panel when browsing global DB
         fetch('/api/cache/genres')
             .then(res => res.json())
             .then(data => setGlobalCacheGenres(filterValidGenres(data)))
             .catch(() => {}); // Silently fail — not critical
+
+        fetch('/api/cache/countries')
+            .then(res => res.json())
+            .then(data => setGlobalCacheCountries(data))
+            .catch(() => {});
     }, []);
 
 
@@ -1740,7 +1771,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     // Reset visible count when filters change
     useEffect(() => {
         setVisibleCount(30);
-    }, [filterQuery, filterGenres, filterDirectors, filterActors, filterRating, filterYear, filterType, filterGenreMode, sortField, sortDir, hideWatched, searchDb]);
+    }, [filterQuery, filterGenres, filterDirectors, filterActors, filterCountries, filterRating, filterYear, filterType, filterGenreMode, sortField, sortDir, hideWatched, searchDb]);
 
     // Infinite Scroll Observer for visibleCount
     useEffect(() => {
@@ -1784,9 +1815,10 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         if (filterGenreMode !== 'include') params.set('genreMode', filterGenreMode);
         if (filterDirectors.length > 0) params.set('directors', filterDirectors.join(','));
         if (filterActors.length > 0) params.set('actors', filterActors.join(','));
+        if (filterCountries.length > 0) params.set('country', filterCountries.join(','));
         if (filterType !== 'all') params.set('type', filterType);
         return params.toString();
-    }, [onboardingSeed, globalSortField, globalSortDir, filterRating, filterYear, filterGenres, filterGenreMode, filterDirectors, filterActors, filterType, minBoundYear, maxBoundYear]);
+    }, [onboardingSeed, globalSortField, globalSortDir, filterRating, filterYear, filterGenres, filterGenreMode, filterDirectors, filterActors, filterCountries, filterType, minBoundYear, maxBoundYear]);
 
 
     // Fetch Stats and Onboarding Cache Movies (re-fetches when filters or sort change)
@@ -2528,6 +2560,105 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     )}
                                 </div>
                                     </>
+                                )}
+                            </div>
+
+                            {/* Country Selection */}
+                            <div style={{ gridColumn: '1 / -1', marginBottom: '20px' }}>
+                                {((!deferredFilterQuery && globalCacheCountries.length > 0) ? globalCacheCountries : availableCountries).length > 0 && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '0.85rem', color: '#888' }}>Countries</span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <select
+                                                value=""
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val) {
+                                                        if (filterCountries.includes(val)) {
+                                                            setFilterCountries(filterCountries.filter(c => c !== val));
+                                                        } else {
+                                                            setFilterCountries([...filterCountries, val]);
+                                                        }
+                                                    }
+                                                }}
+                                                style={{
+                                                    flex: 1,
+                                                    background: 'rgba(255,255,255,0.05)',
+                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    borderRadius: '12px',
+                                                    color: '#fff',
+                                                    padding: '6px 12px',
+                                                    fontSize: '0.85rem',
+                                                    outline: 'none',
+                                                    cursor: 'pointer',
+                                                    WebkitAppearance: 'none',
+                                                    MozAppearance: 'none',
+                                                    appearance: 'none',
+                                                    paddingRight: '30px',
+                                                    backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d4af37' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                                                    backgroundRepeat: 'no-repeat',
+                                                    backgroundPosition: 'calc(100% - 10px) 50%'
+                                                }}
+                                            >
+                                                <option value="" disabled style={{ background: '#151515', color: '#666' }}>Toggle Countries...</option>
+                                                {((!deferredFilterQuery && globalCacheCountries.length > 0) ? globalCacheCountries : availableCountries).map(country => (
+                                                    <option
+                                                        key={country}
+                                                        value={country}
+                                                        style={{
+                                                            background: '#151515',
+                                                            color: filterCountries.includes(country) ? 'var(--accent-gold)' : '#fff'
+                                                        }}
+                                                    >
+                                                        {filterCountries.includes(country) ? `✓ ${country}` : country}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {filterCountries.length > 0 && (
+                                                <button
+                                                    onClick={() => setFilterCountries([])}
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.05)',
+                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                        borderRadius: '12px',
+                                                        color: 'var(--accent-gold)',
+                                                        padding: '6px 12px',
+                                                        fontSize: '0.85rem',
+                                                        cursor: 'pointer',
+                                                        flexShrink: 0
+                                                    }}
+                                                >
+                                                    Clear ({filterCountries.length})
+                                                </button>
+                                            )}
+                                        </div>
+                                        {filterCountries.length > 0 && (
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                                                {filterCountries.map(country => (
+                                                    <span
+                                                        key={country}
+                                                        onClick={() => setFilterCountries(filterCountries.filter(c => c !== country))}
+                                                        style={{
+                                                            padding: '2px 8px',
+                                                            background: 'rgba(212, 175, 55, 0.15)',
+                                                            border: '1px solid rgba(212, 175, 55, 0.3)',
+                                                            borderRadius: '10px',
+                                                            fontSize: '0.75rem',
+                                                            color: '#fff',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px'
+                                                        }}
+                                                    >
+                                                        {country} &times;
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </div>
 

@@ -966,6 +966,31 @@ app.get('/api/cache/genres', authenticateToken, (req, res) => {
     }
 });
 
+// Get all distinct countries from global cache (for filter UI)
+app.get('/api/cache/countries', authenticateToken, (req, res) => {
+    try {
+        const rows = db.prepare(`
+            SELECT DISTINCT country FROM scraped_movies_cache
+            WHERE country IS NOT NULL AND country != ''
+        `).all();
+
+        const countrySet = new Set();
+        for (const row of rows) {
+            if (!row.country) continue;
+            row.country.split(',').forEach(c => {
+                const trimmed = c.trim();
+                if (!trimmed || trimmed.length < 2) return;
+                countrySet.add(trimmed);
+            });
+        }
+
+        const sorted = [...countrySet].sort((a, b) => a.localeCompare(b, 'ru'));
+        res.json(sorted);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Enrich a batch of global cache movies with full details from HDRezka
 // Fetches description, actors, director, genres etc. for shallow entries
 app.post('/api/cache/enrich-batch', authenticateToken, async (req, res) => {
@@ -1145,7 +1170,7 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
 // GLOBAL CACHE SEARCH ENDPOINT (EXACT/CYRILLIC)
 // ==========================================
 app.get('/api/cache/search-exact', authenticateToken, (req, res) => {
-    const { actor, director, genre, year } = req.query;
+    const { actor, director, genre, year, country } = req.query;
 
     let queryStr = 'SELECT * FROM scraped_movies_cache WHERE 1=1';
     const params = [];
@@ -1161,6 +1186,10 @@ app.get('/api/cache/search-exact', authenticateToken, (req, res) => {
     if (genre) {
         queryStr += ' AND cyrillic_like(genres, ?)';
         params.push(`%${genre}%`);
+    }
+    if (country) {
+        queryStr += ' AND cyrillic_like(country, ?)';
+        params.push(`%${country}%`);
     }
     if (year) {
         queryStr += ' AND year = ?';
@@ -1421,6 +1450,32 @@ app.get('/api/genres', authenticateToken, (req, res) => {
             .map(([genre]) => genre);
 
         res.json(sortedGenres);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET All Unique Countries
+app.get('/api/countries', authenticateToken, (req, res) => {
+    try {
+        const stmt = db.prepare('SELECT country FROM movies WHERE user_id = ? AND deleted_at IS NULL');
+        const rows = stmt.all(req.user.id);
+        const countryCounts = {};
+        rows.forEach(row => {
+            if (row.country) {
+                row.country.split(',').forEach(c => {
+                    const trimmed = c.trim();
+                    if (trimmed) {
+                        countryCounts[trimmed] = (countryCounts[trimmed] || 0) + 1;
+                    }
+                });
+            }
+        });
+        const sortedCountries = Object.entries(countryCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([name]) => name);
+
+        res.json(sortedCountries);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
