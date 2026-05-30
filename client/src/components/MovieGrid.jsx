@@ -848,12 +848,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
     const [availableActors, setAvailableActors] = useState([]);
     const [availableCountries, setAvailableCountries] = useState([]);
 
-    // Sort state specifically for global DB browsing (separate from library sort)
-    const [globalSortField, setGlobalSortField] = useState(() => localStorage.getItem('mg_globalSortField') || 'random');
-    const [globalSortDir, setGlobalSortDir] = useState(() => localStorage.getItem('mg_globalSortDir') || 'desc');
-
-    useEffect(() => { localStorage.setItem('mg_globalSortField', globalSortField); }, [globalSortField]);
-    useEffect(() => { localStorage.setItem('mg_globalSortDir', globalSortDir); }, [globalSortDir]);
+    // Genres list from global cache (for filter UI when browsing global DB)
 
     // Genres list from global cache (for filter UI when browsing global DB)
     const [globalCacheGenres, setGlobalCacheGenres] = useState([]);
@@ -1805,9 +1800,15 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         params.set('limit', '50');
         params.set('offset', extraOffset);
         params.set('seed', onboardingSeed);
-        if (globalSortField !== 'random') {
-            params.set('sort', globalSortField);
-            params.set('order', globalSortDir);
+        let mappedSort = 'random';
+        if (sortField === 'rating') mappedSort = 'rating';
+        else if (sortField === 'year') mappedSort = 'year';
+        else if (sortField === 'title') mappedSort = 'title';
+        else if (sortField === 'created_at') mappedSort = 'created_at'; // Let backend fallback to updated_at
+
+        if (mappedSort !== 'random') {
+            params.set('sort', mappedSort);
+            params.set('order', sortDir);
         }
         if (filterRating[0] > 0) params.set('ratingMin', filterRating[0]);
         if (filterRating[1] < 10) params.set('ratingMax', filterRating[1]);
@@ -1822,7 +1823,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         if (filterCountries.length > 0) params.set('country', filterCountries.join(','));
         if (filterType !== 'all') params.set('type', filterType);
         return params.toString();
-    }, [onboardingSeed, globalSortField, globalSortDir, filterRating, filterYear, filterGenres, filterGenreMode, filterDirectors, filterActors, filterCountries, filterType, minBoundYear, maxBoundYear]);
+    }, [onboardingSeed, sortField, sortDir, filterRating, filterYear, filterGenres, filterGenreMode, filterDirectors, filterActors, filterCountries, filterType, minBoundYear, maxBoundYear]);
 
 
     // Fetch Stats and Onboarding Cache Movies (re-fetches when filters or sort change)
@@ -2828,57 +2829,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     </div>
                                 </div>
                             </div>
-                            {/* Global DB Sort Controls - shown only when browsing global database without search query */}
-                            {!deferredFilterQuery && (
-                                <div style={{ gridColumn: '1 / -1', marginTop: '4px' }}>
-                                    <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span>Сортировка глобальной базы</span>
-                                        {globalSortField !== 'random' && (
-                                            <button onClick={() => { setGlobalSortField('random'); setGlobalSortDir('desc'); }}
-                                                style={{ fontSize: '0.7rem', color: '#888', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
-                                                Сбросить
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                        {[
-                                            { key: 'random', label: '🎲 Случайный' },
-                                            { key: 'rating', label: '⭐ Рейтинг' },
-                                            { key: 'year', label: '📅 Год' },
-                                            { key: 'title', label: '🔤 Название' },
-                                        ].map(({ key, label }) => (
-                                            <button
-                                                key={key}
-                                                onClick={() => {
-                                                    if (globalSortField === key && key !== 'random') {
-                                                        setGlobalSortDir(d => d === 'asc' ? 'desc' : 'asc');
-                                                    } else {
-                                                        setGlobalSortField(key);
-                                                        setGlobalSortDir(key === 'title' ? 'asc' : 'desc');
-                                                    }
-                                                }}
-                                                style={{
-                                                    padding: '5px 14px',
-                                                    fontSize: '0.8rem',
-                                                    borderRadius: '20px',
-                                                    border: '1px solid',
-                                                    borderColor: globalSortField === key ? 'var(--accent-gold)' : 'rgba(255,255,255,0.1)',
-                                                    background: globalSortField === key ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.03)',
-                                                    color: globalSortField === key ? 'var(--accent-gold)' : '#aaa',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s',
-                                                    fontWeight: globalSortField === key ? '600' : '400',
-                                                }}
-                                            >
-                                                {label}
-                                                {globalSortField === key && key !== 'random' && (
-                                                    <span style={{ marginLeft: '4px' }}>{globalSortDir === 'asc' ? '↑' : '↓'}</span>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Reset Actions */}
                             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', gap: '15px' }}>
