@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const sharp = require('sharp');
 const { searchMovies, getMovieDetails, getCategoryMovies, getHdrezkaComments, scrapeCatalogPage } = require('./scraper');
+const { getTmdbDetails } = require('./tmdb');
 const knownCountries = require('./countries');
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -3101,24 +3102,49 @@ async function runCrawlerStep() {
             `).get();
         }
 
-        // 3. Scrape the full details for the target movie
+        // 3. Scrape the full details for the target movie using TMDB!
         if (targetMovie) {
-            crawlerSettings.currentStatus = `Scraping "${targetMovie.title}"...`;
-            console.log(`[Crawler] Scraping details for: ${targetMovie.title} (${targetMovie.link})`);
+            crawlerSettings.currentStatus = `Fetching TMDB details for: "${targetMovie.title}"...`;
+            console.log(`[Crawler] Fetching TMDB details for: ${targetMovie.title} (${targetMovie.link})`);
             
-            const details = await getMovieDetails(targetMovie.link);
+            // Extract type from link to pass to TMDB
+            const type = targetMovie.link?.includes('/series/') ? 'series' : 'movie';
+            // Parse year if it's available in the DB, though targetMovie query didn't select year.
+            // Let's get the year to improve TMDB match
+            const fullTarget = db.prepare('SELECT link, title, year FROM scraped_movies_cache WHERE link = ?').get(targetMovie.link);
+            
+            const details = await getTmdbDetails(fullTarget.title, fullTarget.year, type);
             if (details) {
-                saveToCache(details);
+                // Merge TMDB details into our existing cache record
+                const info = db.prepare(`
+                    UPDATE scraped_movies_cache
+                    SET description = ?, poster_url = ?, genres = ?, actors = ?, director = ?, writers = ?, country = ?, duration = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE link = ?
+                `).run(
+                    details.description,
+                    details.poster_url,
+                    details.genres,
+                    details.actors,
+                    details.director,
+                    details.writers,
+                    details.country,
+                    details.duration,
+                    fullTarget.link
+                );
+                
                 // ✅ Success — reset the consecutive error counter
                 crawlerSettings.consecutiveErrors = 0;
                 crawlerSettings.blockedUntil = null;
-                console.log(`[Crawler] Successfully crawled details for: ${details.title}`);
-                crawlerSettings.currentStatus = `Idle. Crawled: "${details.title}"`;
+                console.log(`[Crawler] Successfully enriched TMDB details for: ${fullTarget.title}`);
+                crawlerSettings.currentStatus = `Idle. Crawled: "${fullTarget.title}"`;
                 
                 // Trigger Supabase cloud backup sync!
                 uploadBackup();
             } else {
-                crawlerSettings.currentStatus = 'Details page scrape returned empty.';
+                // TMDB couldn't find it or failed. To prevent infinite loops on the same movie,
+                // we set description to a placeholder or mark it as 'not found'.
+                db.prepare(`UPDATE scraped_movies_cache SET description = 'Описание отсутствует', updated_at = CURRENT_TIMESTAMP WHERE link = ?`).run(targetMovie.link);
+                crawlerSettings.currentStatus = 'TMDB search returned no results, marked as missing.';
             }
         } else {
             crawlerSettings.currentStatus = 'Idle. No new movies discovered.';
@@ -3170,6 +3196,39 @@ function scheduleNextCrawlerStep() {
     crawlerTimeoutId = setTimeout(() => {
         runCrawlerStep();
     }, delayMs);
+}
+
+// ==========================================
+// SLOW RATING FETCHER (Missing HDRezka Ratings)
+// ==========================================
+let ratingFetcherTimeoutId = null;
+
+async function runSlowRatingFetcher() {
+    try {
+        // Find one movie with a missing or empty rating
+        const target = db.prepare(`
+            SELECT link, title FROM scraped_movies_cache 
+            WHERE rating IS NULL OR rating = '' OR rating = '0' OR rating = '—'
+            ORDER BY RANDOM() LIMIT 1
+        `).get();
+
+        if (target) {
+            console.log(`[RatingFetcher] Fetching missing HDRezka rating for: ${target.title}`);
+            const details = await getMovieDetails(target.link);
+            if (details && details.rating) {
+                db.prepare(`UPDATE scraped_movies_cache SET rating = ?, updated_at = CURRENT_TIMESTAMP WHERE link = ?`).run(details.rating, target.link);
+                console.log(`[RatingFetcher] Updated rating for ${target.title}: ${details.rating}`);
+            } else {
+                // If rating is still not found on the page, set it to '—' so we don't retry forever
+                db.prepare(`UPDATE scraped_movies_cache SET rating = '—' WHERE link = ?`).run(target.link);
+            }
+        }
+    } catch (err) {
+        console.error('[RatingFetcher] Error:', err.message);
+    }
+
+    // Schedule next run in 60 seconds
+    ratingFetcherTimeoutId = setTimeout(runSlowRatingFetcher, 60000);
 }
 
 // Global Fast Crawler State
@@ -3477,11 +3536,28 @@ app.post('/api/admin/scraped-movies/refresh', authenticateToken, requireAdmin, a
         for (const link of links) {
             try {
                 if (isHdrezkaUrl(link)) {
-                    const details = await getMovieDetails(link, getUserHeaders(req));
-                    if (details) {
-                        details.link = link; // Ensure the link matches the database exactly
-                        saveToCache(details);
-                        refreshedCount++;
+                    // Fetch existing title and year
+                    const existing = db.prepare('SELECT title, year, type FROM scraped_movies_cache WHERE link = ?').get(link);
+                    if (existing) {
+                        const details = await getTmdbDetails(existing.title, existing.year, existing.type);
+                        if (details) {
+                            db.prepare(`
+                                UPDATE scraped_movies_cache
+                                SET description = ?, poster_url = ?, genres = ?, actors = ?, director = ?, writers = ?, country = ?, duration = ?, updated_at = CURRENT_TIMESTAMP
+                                WHERE link = ?
+                            `).run(
+                                details.description,
+                                details.poster_url,
+                                details.genres,
+                                details.actors,
+                                details.director,
+                                details.writers,
+                                details.country,
+                                details.duration,
+                                link
+                            );
+                            refreshedCount++;
+                        }
                     }
                 }
             } catch (err) {
@@ -3638,6 +3714,10 @@ async function startApp() {
             console.log('[Crawler] Background crawler is ENABLED on server start.');
             runCrawlerStep();
         }
+        
+        // Start slow rating fetcher
+        console.log('[RatingFetcher] Started slow rating fetcher loop.');
+        runSlowRatingFetcher();
     });
 }
 
