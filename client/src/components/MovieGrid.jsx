@@ -1712,7 +1712,11 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
         fetch('/api/countries')
             .then(res => res.json())
-            .then(data => setAvailableCountries(data))
+            .then(data => {
+                // Ensure data is array of strings
+                const parsed = (data || []).map(item => typeof item === 'string' ? item : item.name).filter(Boolean);
+                setAvailableCountries(parsed);
+            })
             .catch(err => console.error('Failed to fetch countries:', err));
 
         // Fetch global cache genres for filter panel when browsing global DB
@@ -2603,18 +2607,22 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                                 }}
                                             >
                                                 <option value="" disabled style={{ background: '#151515', color: '#666' }}>Toggle Countries...</option>
-                                                {((!deferredFilterQuery && globalCacheCountries.length > 0) ? globalCacheCountries : availableCountries).map(country => (
-                                                    <option
-                                                        key={country}
-                                                        value={country}
-                                                        style={{
-                                                            background: '#151515',
-                                                            color: filterCountries.includes(country) ? 'var(--accent-gold)' : '#fff'
-                                                        }}
-                                                    >
-                                                        {filterCountries.includes(country) ? `✓ ${country}` : country}
-                                                    </option>
-                                                ))}
+                                                {((!deferredFilterQuery && globalCacheCountries.length > 0) ? globalCacheCountries : availableCountries).map(countryItem => {
+                                                    const countryName = typeof countryItem === 'string' ? countryItem : countryItem.name;
+                                                    if (!countryName) return null;
+                                                    return (
+                                                        <option
+                                                            key={countryName}
+                                                            value={countryName}
+                                                            style={{
+                                                                background: '#151515',
+                                                                color: filterCountries.includes(countryName) ? 'var(--accent-gold)' : '#fff'
+                                                            }}
+                                                        >
+                                                            {filterCountries.includes(countryName) ? `✓ ${countryName}` : countryName}
+                                                        </option>
+                                                    );
+                                                })}
                                             </select>
                                             {filterCountries.length > 0 && (
                                                 <button
