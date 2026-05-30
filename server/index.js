@@ -482,15 +482,17 @@ const saveToCache = (details) => {
     }
 };
 
-// Helper: Trigger background update to keep cache fresh
+// Helper: Trigger background update to keep cache fresh (specifically for rating updates from HDRezka)
 const triggerBackgroundUpdate = (url) => {
     (async () => {
         try {
             console.log(`[Cache Background Update] Triggered for: ${url}`);
-            const latestDetails = await getMovieDetails(url);
-            if (latestDetails) {
-                saveToCache(latestDetails);
-                console.log(`[Cache Background Update] Successfully updated cache for: ${latestDetails.title}`);
+            
+            // Fetch rating from HDRezka
+            const hdrezkaData = await getMovieDetails(url);
+            if (hdrezkaData && hdrezkaData.rating) {
+                db.prepare(`UPDATE scraped_movies_cache SET rating = ?, updated_at = CURRENT_TIMESTAMP WHERE link = ?`).run(hdrezkaData.rating, url);
+                console.log(`[Cache Background Update] Successfully updated rating for: ${hdrezkaData.title} to ${hdrezkaData.rating}`);
             }
         } catch (e) {
             console.error('[Cache Background Update Error]', e.message);
@@ -1098,24 +1100,58 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
             
             // Check cache
             const cached = db.prepare('SELECT * FROM scraped_movies_cache WHERE link LIKE ?').get(`%${cleanQuery}%`);
-            // Only use cache instantly if it was fully scraped (description is not null)
-            if (cached && cached.description !== null) {
+            
+            if (cached) {
                 if (isGlobalMovieHidden(req.user.id, cached.link)) {
                     return res.status(404).json({ error: 'Movie hidden from global results' });
                 }
-                console.log(`[Search Cache Hit] Instantly returning full details for: ${query}`);
-                // Trigger background update to keep it fresh
-                triggerBackgroundUpdate(query);
-                return res.json({ type: 'detail', data: cached, fromCache: true });
+                
+                // If incomplete data, enrich with TMDB on the fly
+                if (cached.description === null || cached.description === '') {
+                    console.log(`[Search Cache] Incomplete data for ${query}. Enriching via TMDB on the fly...`);
+                    const type = cached.link?.includes('/series/') ? 'series' : 'movie';
+                    const tmdbDetails = await getTmdbDetails(cached.title, cached.year, type);
+                    
+                    if (tmdbDetails) {
+                        db.prepare(`
+                            UPDATE scraped_movies_cache
+                            SET description = ?, poster_url = ?, genres = ?, actors = ?, director = ?, writers = ?, country = ?, duration = ?, updated_at = CURRENT_TIMESTAMP
+                            WHERE link = ?
+                        `).run(tmdbDetails.description, tmdbDetails.poster_url, tmdbDetails.genres, tmdbDetails.actors, tmdbDetails.director, tmdbDetails.writers, tmdbDetails.country, tmdbDetails.duration, cached.link);
+                        
+                        Object.assign(cached, tmdbDetails);
+                    } else {
+                        // Mark as missing to avoid infinite loops
+                        db.prepare(`UPDATE scraped_movies_cache SET description = 'Описание отсутствует', updated_at = CURRENT_TIMESTAMP WHERE link = ?`).run(cached.link);
+                        cached.description = 'Описание отсутствует';
+                    }
+                    
+                    // Trigger background update to fetch just the rating from HDRezka
+                    triggerBackgroundUpdate(cached.link);
+                    return res.json({ type: 'detail', data: cached, fromCache: false });
+                } else {
+                    console.log(`[Search Cache Hit] Instantly returning full details for: ${query}`);
+                    // Trigger background update to keep rating fresh
+                    triggerBackgroundUpdate(query);
+                    return res.json({ type: 'detail', data: cached, fromCache: true });
+                }
             }
 
-            // Fallback to real-time scrape
-            console.log(`[Search Cache Miss] Scraping HDRezka for: ${query}`);
-            const details = await getMovieDetails(query, getUserHeaders(req));
-            if (details) {
-                saveToCache(details);
+            // Fallback to real-time scrape if not in cache at all
+            console.log(`[Search Cache Miss] Scraping HDRezka for title/rating: ${query}`);
+            const hdrezkaDetails = await getMovieDetails(query, getUserHeaders(req));
+            if (hdrezkaDetails) {
+                // Instantly enrich with TMDB
+                const type = query.includes('/series/') ? 'series' : 'movie';
+                const tmdbDetails = await getTmdbDetails(hdrezkaDetails.title, hdrezkaDetails.year, type);
+                if (tmdbDetails) {
+                    Object.assign(hdrezkaDetails, tmdbDetails);
+                } else {
+                    hdrezkaDetails.description = hdrezkaDetails.description || 'Описание отсутствует';
+                }
+                saveToCache(hdrezkaDetails);
             }
-            return res.json({ type: 'detail', data: details });
+            return res.json({ type: 'detail', data: hdrezkaDetails });
         } else {
             // 2. Search by Text
             const searchLike = `%${query.trim()}%`;
