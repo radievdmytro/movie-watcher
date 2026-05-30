@@ -1606,8 +1606,17 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                                     {m.type === 'movie' ? '🎥 Movie' : '📺 Series'}
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '10px', fontSize: '0.85rem', color: '#e5c158', fontWeight: 'bold' }}>
-                                                ⭐ {m.rating ? m.rating.toFixed(1) : '—'}
+                                            <td style={{ padding: '10px', fontSize: '0.85rem' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ color: '#e5c158', fontWeight: 'bold' }}>
+                                                        ⭐ {m.rating ? m.rating.toFixed(1) : '—'} <span style={{ fontSize: '0.65rem', color: '#888', marginLeft: '2px' }}>HD</span>
+                                                    </span>
+                                                    {m.tmdb_rating && (
+                                                        <span style={{ fontSize: '0.75rem', color: '#888' }}>
+                                                            ⭐ {m.tmdb_rating.toFixed(1)} <span style={{ fontSize: '0.65rem', marginLeft: '2px' }}>TMDB</span>
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td style={{ padding: '10px', textAlign: 'right', fontSize: '0.8rem', color: '#888' }}>
                                                 {new Date(m.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -1760,8 +1769,17 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                                     {m.type === 'movie' ? '🎥 Movie' : '📺 Series'}
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '10px', fontSize: '0.85rem', color: '#e5c158', fontWeight: 'bold' }}>
-                                                ⭐ {m.rating ? m.rating.toFixed(1) : '—'}
+                                            <td style={{ padding: '10px', fontSize: '0.85rem' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ color: '#e5c158', fontWeight: 'bold' }}>
+                                                        ⭐ {m.rating ? m.rating.toFixed(1) : '—'} <span style={{ fontSize: '0.65rem', color: '#888', marginLeft: '2px' }}>HD</span>
+                                                    </span>
+                                                    {m.tmdb_rating && (
+                                                        <span style={{ fontSize: '0.75rem', color: '#888' }}>
+                                                            ⭐ {m.tmdb_rating.toFixed(1)} <span style={{ fontSize: '0.65rem', marginLeft: '2px' }}>TMDB</span>
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td style={{ padding: '10px', textAlign: 'right', fontSize: '0.8rem', color: '#888' }}>
                                                 {new Date(m.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
