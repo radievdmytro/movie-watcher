@@ -3205,6 +3205,13 @@ let ratingFetcherTimeoutId = null;
 
 async function runSlowRatingFetcher() {
     try {
+        // Respect the global crawler settings
+        if (!crawlerSettings.enabled || crawlerSettings.blockedUntil) {
+            // Check again in 60 seconds
+            ratingFetcherTimeoutId = setTimeout(runSlowRatingFetcher, 60000);
+            return;
+        }
+
         // Find one movie with a missing or empty rating
         const target = db.prepare(`
             SELECT link, title FROM scraped_movies_cache 
@@ -3225,6 +3232,13 @@ async function runSlowRatingFetcher() {
         }
     } catch (err) {
         console.error('[RatingFetcher] Error:', err.message);
+        // If HDRezka blocks us, we should trigger the global auto-pause
+        crawlerSettings.consecutiveErrors = (crawlerSettings.consecutiveErrors || 0) + 1;
+        if (crawlerSettings.consecutiveErrors >= 5) {
+            const resumeAt = new Date(Date.now() + 15 * 60 * 1000);
+            crawlerSettings.blockedUntil = resumeAt.toISOString();
+            console.error(`[RatingFetcher] 🚨 Auto-paused global crawler due to consecutive errors.`);
+        }
     }
 
     // Schedule next run in 60 seconds
