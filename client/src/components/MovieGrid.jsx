@@ -2083,52 +2083,20 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
             <>
                 <div className="controls-top-bar sticky-search-bar" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
-                    {/* Row 1: Search input and Filters toggle button */}
-                    <div className="search-bar-row" style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
-                        <button
-                            className="btn btn-ghost"
-                            onClick={(e) => {
-                                if (!showFilters && filterPanelRef.current) {
-                                    const rect = filterPanelRef.current.getBoundingClientRect();
-                                    setFilterRipple({
-                                        x: e.clientX - rect.left,
-                                        y: e.clientY - rect.top,
-                                        id: Date.now()
-                                    });
-                                }
-                                setShowFilters(!showFilters);
-                            }}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '8px',
-                                color: showFilters || filterGenres.length > 0 || filterRating[0] > 0 || filterRating[1] < 10 || filterDirectors.length > 0 || filterActors.length > 0 ? 'var(--accent-gold)' : 'inherit',
-                                background: showFilters ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: '20px',
-                                padding: '8px 15px',
-                                flexShrink: 0
-                            }}
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                            <span>Filters</span>
-                            {(filterGenres.length > 0 || filterDirectors.length > 0 || filterActors.length > 0) && (
-                                <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>
-                                    ({filterGenres.length + filterDirectors.length + filterActors.length})
-                                </span>
-                            )}
-                        </button>
-                    </div>
-
-
-
-                    {/* Row 2: Super Compact Controls (Type switch, View Mode, Hide Watched) */}
+                    {/* Row 1: Super Compact Controls AND Filters */}
                     <div className="compact-controls-row" style={{
                         display: 'flex',
-                        justifyContent: 'center',
                         alignItems: 'center',
                         gap: '10px',
                         width: '100%',
-                        flexWrap: 'wrap'
+                        flexWrap: 'wrap',
+                        justifyContent: 'space-between'
                     }}>
+                        {/* Empty spacer for balancing flex if not mobile */}
+                        {!isMobile && <div style={{ flex: 1 }}></div>}
+                        
+                        {/* Main Controls (Center) */}
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
                         {/* Type Switcher */}
                         <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)', order: isMobile ? 1 : 'unset' }}>
                             {[
@@ -2317,8 +2285,43 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 {isMobile ? 'Global' : 'in Global DB'}
                             </label>
                         </div>
-                    </div>
+                        </div>
 
+                        {/* Filters Button (Right aligned) */}
+                        <div style={{ display: 'flex', flex: 1, justifyContent: 'flex-end', order: isMobile ? 10 : 'unset' }}>
+                            <button
+                                className="btn btn-ghost"
+                                onClick={(e) => {
+                                    if (!showFilters && filterPanelRef.current) {
+                                        const rect = filterPanelRef.current.getBoundingClientRect();
+                                        setFilterRipple({
+                                            x: e.clientX - rect.left,
+                                            y: e.clientY - rect.top,
+                                            id: Date.now()
+                                        });
+                                    }
+                                    setShowFilters(!showFilters);
+                                }}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                    color: showFilters || filterGenres.length > 0 || filterRating[0] > 0 || filterRating[1] < 10 || filterDirectors.length > 0 || filterActors.length > 0 ? 'var(--accent-gold)' : 'inherit',
+                                    background: showFilters ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '20px',
+                                    padding: '8px 15px',
+                                    flexShrink: 0
+                                }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                <span>Filters</span>
+                                {(filterGenres.length > 0 || filterDirectors.length > 0 || filterActors.length > 0) && (
+                                    <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>
+                                        ({filterGenres.length + filterDirectors.length + filterActors.length})
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    </div>
                     {/* Expanded Filters Panel */}
                     <div ref={filterPanelRef} className={`expanded-filters-panel ${showFilters ? 'is-open' : ''}`} style={{ position: 'relative' }}>
                         {filterRipple && showFilters && (
