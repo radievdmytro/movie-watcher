@@ -54,7 +54,8 @@ function formatTmdbData(tmdbData, isTv = false) {
         director: director,
         writers: writers,
         country: country,
-        duration: duration
+        duration: duration,
+        tmdb_rating: tmdbData.vote_average ? parseFloat(tmdbData.vote_average.toFixed(1)) : null
     };
 }
 

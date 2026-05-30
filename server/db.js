@@ -248,6 +248,10 @@ const initDb = () => {
   } catch (e) { }
 
   try {
+    db.exec("ALTER TABLE movies ADD COLUMN tmdb_rating REAL DEFAULT NULL");
+  } catch (e) { }
+
+  try {
     db.exec("ALTER TABLE movies ADD COLUMN hidden_from_library INTEGER DEFAULT 0");
   } catch (e) { }
 
@@ -296,6 +300,7 @@ const initDb = () => {
   try { db.exec("ALTER TABLE scraped_movies_cache ADD COLUMN country TEXT"); } catch (e) { }
   try { db.exec("ALTER TABLE scraped_movies_cache ADD COLUMN duration TEXT"); } catch (e) { }
   try { db.exec("ALTER TABLE scraped_movies_cache ADD COLUMN voice_acting TEXT"); } catch (e) { }
+  try { db.exec("ALTER TABLE scraped_movies_cache ADD COLUMN tmdb_rating REAL DEFAULT NULL"); } catch (e) { }
 
   // Migrations for source tracking in movies
   try { db.exec("ALTER TABLE movies ADD COLUMN source_collection_name TEXT"); } catch (e) { }

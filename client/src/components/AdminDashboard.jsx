@@ -145,6 +145,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
     const [showBrokenFast, setShowBrokenFast] = useState(false);
     const [showBrokenDetailed, setShowBrokenDetailed] = useState(false);
     const [bulkRefreshDelay, setBulkRefreshDelay] = useState(() => parseInt(localStorage.getItem('admin_bulkRefreshDelay')) || 2);
+    const [ratingCrawler, setRatingCrawler] = useState({ enabled: false, intervalMs: 2000, currentStatus: 'Idle', missingRatings: 0 });
 
     // Save local settings to localStorage
     useEffect(() => {
@@ -409,12 +410,13 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
         setLoading(true);
         setError(null);
         try {
-            const [statsRes, usersRes, syncRes, crawlerRes, settingsRes] = await Promise.all([
+            const [statsRes, usersRes, syncRes, crawlerRes, settingsRes, ratingRes] = await Promise.all([
                 fetch('/api/admin/stats'),
                 fetch('/api/admin/users'),
                 fetch('/api/admin/sync-status'),
                 fetch('/api/admin/crawler-settings'),
                 fetch(`/api/settings/public?t=${Date.now()}`),
+                fetch('/api/admin/rating-crawler-settings'),
                 fetchRecentScraped()
             ]);
             
@@ -435,6 +437,9 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
             }
             if (crawlerRes.ok) {
                 setCrawlerSettings(await crawlerRes.json());
+            }
+            if (ratingRes && ratingRes.ok) {
+                setRatingCrawler(await ratingRes.json());
             }
             if (settingsRes && settingsRes.ok) {
                 const settingsData = await settingsRes.json();
@@ -493,6 +498,26 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
         };
     }, [crawlerSettings.enabled, selectedUser]);
 
+    // Live update loop for rating crawler status when enabled
+    useEffect(() => {
+        let intervalId = null;
+        if (ratingCrawler.enabled && !selectedUser) {
+            intervalId = setInterval(async () => {
+                try {
+                    const res = await fetch('/api/admin/rating-crawler-settings');
+                    if (res.ok) {
+                        setRatingCrawler(await res.json());
+                    }
+                } catch (e) {
+                    console.error('Failed to poll rating crawler settings:', e);
+                }
+            }, 1000);
+        }
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [ratingCrawler.enabled, selectedUser]);
+
     const handleUpdateCrawler = async (updatedFields) => {
         setUpdatingCrawler(true);
         try {
@@ -516,6 +541,27 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
             console.error('Failed to update background crawler settings:', err);
         } finally {
             setUpdatingCrawler(false);
+        }
+    };
+
+    const handleUpdateRatingCrawler = async (updatedFields) => {
+        try {
+            const res = await fetch('/api/admin/rating-crawler-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedFields)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setRatingCrawler(prev => ({ ...prev, ...data.settings }));
+                if (data.settings.enabled) fetchAdminData();
+            } else {
+                const errData = await res.json();
+                alert(errData.error || 'Failed to update rating crawler settings');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Failed to update rating crawler settings');
         }
     };
 
@@ -1061,6 +1107,118 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                         {crawlerSettings.currentStatus}
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* HDRezka Rating Crawler Card */}
+                    <div className="glass-panel animate-fade-in" style={{
+                        borderRadius: '15px',
+                        padding: '25px',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        background: 'rgba(255, 255, 255, 0.01)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '20px',
+                        marginTop: '20px',
+                        marginBottom: '20px'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontSize: '1.8rem' }}>⭐</span>
+                                <div>
+                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        HDRezka Rating Crawler
+                                        <span className="crawler-status-indicator" style={{
+                                            display: 'inline-block',
+                                            width: '8px',
+                                            height: '8px',
+                                            borderRadius: '50%',
+                                            background: ratingCrawler.enabled ? '#3b82f6' : 'rgba(255,255,255,0.2)',
+                                            boxShadow: ratingCrawler.enabled ? '0 0 10px #3b82f6' : 'none'
+                                        }}></span>
+                                    </h3>
+                                    <p style={{ margin: '3px 0 0 0', color: '#888', fontSize: '0.85rem' }}>
+                                        Fetches original HDRezka ratings for movies that currently only have TMDB ratings
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <span style={{ color: '#888', fontSize: '0.85rem', marginRight: '8px' }}>Missing:</span>
+                                    <span style={{ color: ratingCrawler.missingRatings > 0 ? '#ff6b6b' : '#03dac6', fontWeight: 'bold' }}>
+                                        {ratingCrawler.missingRatings || 0}
+                                    </span>
+                                </div>
+                                <select 
+                                    className="dark-input"
+                                    value={ratingCrawler.intervalMs}
+                                    onChange={(e) => handleUpdateRatingCrawler({ intervalMs: e.target.value })}
+                                    style={{ padding: '8px 12px', minWidth: '130px', fontSize: '0.85rem' }}
+                                    disabled={updatingCrawler}
+                                >
+                                    <option value="60000">Slow (1 / min)</option>
+                                    <option value="15000">Normal (4 / min)</option>
+                                    <option value="5000">Fast (12 / min)</option>
+                                    <option value="1500">Very Fast (40 / min)</option>
+                                </select>
+                                <button
+                                    onClick={() => handleUpdateRatingCrawler({ enabled: !ratingCrawler.enabled })}
+                                    className="btn"
+                                    style={{
+                                        background: ratingCrawler.enabled ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                                        color: ratingCrawler.enabled ? '#ef4444' : '#3b82f6',
+                                        border: `1px solid ${ratingCrawler.enabled ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
+                                        padding: '8px 24px',
+                                        minWidth: '120px',
+                                        fontWeight: 'bold',
+                                        opacity: updatingCrawler ? 0.7 : 1,
+                                        cursor: updatingCrawler ? 'not-allowed' : 'pointer',
+                                    }}
+                                    disabled={updatingCrawler}
+                                >
+                                    {updatingCrawler ? 'Updating...' : (ratingCrawler.enabled ? 'Stop Crawler' : 'Start Crawler')}
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {ratingCrawler.blockedUntil && (
+                            <div style={{
+                                background: 'rgba(251, 146, 60, 0.1)',
+                                border: '1px solid rgba(251, 146, 60, 0.3)',
+                                padding: '12px 16px',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <span style={{ fontSize: '1rem' }}>⏸</span>
+                                <div>
+                                    <div style={{ fontWeight: 700 }}>Auto-paused (IP block detected)</div>
+                                    <div style={{ color: '#aaa', marginTop: '2px' }}>
+                                        Resuming at {new Date(ratingCrawler.blockedUntil).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <span style={{ color: '#888', fontSize: '0.8rem', fontWeight: 600 }}>Live Crawler Status:</span>
+                            <div style={{
+                                background: 'rgba(0,0,0,0.3)',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                fontFamily: 'monospace',
+                                fontSize: '0.82rem',
+                                color: ratingCrawler.blockedUntil ? '#fb923c' : (ratingCrawler.enabled ? '#3b82f6' : '#888'),
+                                borderLeft: ratingCrawler.blockedUntil ? '3px solid #fb923c' : (ratingCrawler.enabled ? '3px solid #3b82f6' : '3px solid #555'),
+                                wordBreak: 'break-all',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                            }} title={ratingCrawler.currentStatus}>
+                                {ratingCrawler.currentStatus}
                             </div>
                         </div>
                     </div>

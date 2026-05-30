@@ -1394,7 +1394,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                             background: 'var(--accent-gold)', color: '#000',
                                             padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem'
                                         }}>
-                                            ★ {movie.rating || 'N/A'}
+                                            ★ {movie.rating && movie.rating !== '—' ? movie.rating : (movie.tmdb_rating ? `${movie.tmdb_rating} (TMDB)` : 'N/A')}
                                         </span>
                                         {movie.user_rating && (
                                             <span style={{
@@ -1522,7 +1522,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                                         background: 'var(--accent-gold)', color: '#000',
                                         padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold'
                                     }}>
-                                        ★ {movie.rating || 'N/A'}
+                                        ★ {movie.rating && movie.rating !== '—' ? movie.rating : (movie.tmdb_rating ? `${movie.tmdb_rating} (TMDB)` : 'N/A')}
                                     </span>
                                     {movie.user_rating && (
                                         <span style={{

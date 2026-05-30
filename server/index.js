@@ -453,8 +453,8 @@ const saveToCache = (details) => {
     if (!details || !details.link) return;
     try {
         db.prepare(`
-            INSERT INTO scraped_movies_cache (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, type, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            INSERT INTO scraped_movies_cache (title, original_title, year, link, rating, description, poster_url, genres, actors, director, writers, country, duration, voice_acting, type, tmdb_rating, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(link) DO UPDATE SET
                 title = excluded.title,
                 original_title = excluded.original_title,
@@ -470,12 +470,13 @@ const saveToCache = (details) => {
                 duration = excluded.duration,
                 voice_acting = excluded.voice_acting,
                 type = excluded.type,
+                tmdb_rating = excluded.tmdb_rating,
                 updated_at = CURRENT_TIMESTAMP
         `).run(
             details.title, details.original_title, details.year, details.link, details.rating,
             details.description, details.poster_url, details.genres, details.actors, details.director, details.writers,
             details.country, details.duration, details.voice_acting,
-            details.type
+            details.type, details.tmdb_rating
         );
     } catch (e) {
         console.error('[Cache Save Error]', e.message);
@@ -701,7 +702,9 @@ app.get('/api/cache/directory', authenticateToken, (req, res) => {
         // Sorting
         const sortMap = { rating: 'rating', year: 'year', title: 'title' };
         const sortCol = sortMap[sort];
-        if (sortCol) {
+        if (sortCol === 'rating') {
+            sql += ` ORDER BY COALESCE(rating, tmdb_rating, 0) ${order}`;
+        } else if (sortCol) {
             // NULL last for DESC, NULL first for ASC
             sql += ` ORDER BY CASE WHEN ${sortCol} IS NULL THEN 1 ELSE 0 END, ${sortCol} ${order}`;
         } else {
@@ -923,7 +926,9 @@ app.get('/api/cache/search', authenticateToken, async (req, res) => {
         const allowedSorts = { rating: 'rating', year: 'year', title: 'title', updated_at: 'updated_at' };
         const sortField = allowedSorts[req.query.sort] || 'updated_at';
         const sortOrder = req.query.order === 'asc' ? 'ASC' : 'DESC';
-        if (sortField === 'rating' || sortField === 'year') {
+        if (sortField === 'rating') {
+            sql += ` ORDER BY COALESCE(rating, tmdb_rating, 0) ${sortOrder}`;
+        } else if (sortField === 'year') {
             sql += ` ORDER BY CASE WHEN ${sortField} IS NULL THEN 1 ELSE 0 END, ${sortField} ${sortOrder}`;
         } else {
             sql += ` ORDER BY ${sortField} ${sortOrder}`;
@@ -1115,9 +1120,9 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
                     if (tmdbDetails) {
                         db.prepare(`
                             UPDATE scraped_movies_cache
-                            SET description = ?, poster_url = ?, genres = ?, actors = ?, director = ?, writers = ?, country = ?, duration = ?, updated_at = CURRENT_TIMESTAMP
+                            SET description = ?, poster_url = ?, genres = ?, actors = ?, director = ?, writers = ?, country = ?, duration = ?, tmdb_rating = ?, updated_at = CURRENT_TIMESTAMP
                             WHERE link = ?
-                        `).run(tmdbDetails.description, tmdbDetails.poster_url, tmdbDetails.genres, tmdbDetails.actors, tmdbDetails.director, tmdbDetails.writers, tmdbDetails.country, tmdbDetails.duration, cached.link);
+                        `).run(tmdbDetails.description, tmdbDetails.poster_url, tmdbDetails.genres, tmdbDetails.actors, tmdbDetails.director, tmdbDetails.writers, tmdbDetails.country, tmdbDetails.duration, tmdbDetails.tmdb_rating, cached.link);
                         
                         Object.assign(cached, tmdbDetails);
                     } else {
@@ -1259,7 +1264,7 @@ app.get('/api/cache/search-exact', authenticateToken, (req, res) => {
     }
 
     // Limit to 50 results to keep it super performant
-    queryStr += ' ORDER BY year DESC, rating DESC LIMIT 50';
+    queryStr += ' ORDER BY year DESC, COALESCE(rating, tmdb_rating, 0) DESC LIMIT 50';
 
     try {
         const movies = filterHiddenGlobalMovies(db.prepare(queryStr).all(...params), req.user.id);
@@ -2307,7 +2312,7 @@ app.get('/share/collection/:id', (req, res) => {
             FROM movies m
             JOIN collection_movies cm ON m.id = cm.movie_id
             WHERE cm.collection_id = ? AND m.deleted_at IS NULL
-            ORDER BY m.rating DESC NULLS LAST
+            ORDER BY COALESCE(m.rating, m.tmdb_rating, 0) DESC NULLS LAST
             LIMIT 5
         `).all(collection.id);
 
@@ -2354,7 +2359,7 @@ app.get('/api/public/collection/:id/og-image.jpg', async (req, res) => {
             FROM movies m
             JOIN collection_movies cm ON m.id = cm.movie_id
             WHERE cm.collection_id = ? AND m.deleted_at IS NULL AND m.poster_url IS NOT NULL
-            ORDER BY m.rating DESC NULLS LAST
+            ORDER BY COALESCE(m.rating, m.tmdb_rating, 0) DESC NULLS LAST
             LIMIT 5
         `).all(collection.id);
 
@@ -3154,7 +3159,7 @@ async function runCrawlerStep() {
                 // Merge TMDB details into our existing cache record
                 const info = db.prepare(`
                     UPDATE scraped_movies_cache
-                    SET description = ?, poster_url = ?, genres = ?, actors = ?, director = ?, writers = ?, country = ?, duration = ?, updated_at = CURRENT_TIMESTAMP
+                    SET description = ?, poster_url = ?, genres = ?, actors = ?, director = ?, writers = ?, country = ?, duration = ?, tmdb_rating = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE link = ?
                 `).run(
                     details.description,
@@ -3165,6 +3170,7 @@ async function runCrawlerStep() {
                     details.writers,
                     details.country,
                     details.duration,
+                    details.tmdb_rating,
                     fullTarget.link
                 );
                 
@@ -3237,15 +3243,33 @@ function scheduleNextCrawlerStep() {
 // ==========================================
 // SLOW RATING FETCHER (Missing HDRezka Ratings)
 // ==========================================
+// BACKGROUND SLOW RATING FETCHER (HDREZKA)
+// ==========================================
 let ratingFetcherTimeoutId = null;
+let ratingCrawlerSettings = {
+    enabled: false,
+    intervalMs: 2000,
+    currentStatus: 'Idle',
+    consecutiveErrors: 0,
+    blockedUntil: null
+};
 
 async function runSlowRatingFetcher() {
     try {
-        // Respect the global crawler settings
-        if (!crawlerSettings.enabled || crawlerSettings.blockedUntil) {
-            // Check again in 60 seconds
+        if (!ratingCrawlerSettings.enabled) {
+            ratingCrawlerSettings.currentStatus = 'Idle (Disabled)';
+            return; // Will be restarted manually by admin
+        }
+        
+        if (ratingCrawlerSettings.blockedUntil && Date.now() < new Date(ratingCrawlerSettings.blockedUntil).getTime()) {
+            const mins = Math.ceil((new Date(ratingCrawlerSettings.blockedUntil).getTime() - Date.now()) / 60000);
+            ratingCrawlerSettings.currentStatus = `Auto-paused due to blocks. Resuming in ${mins}m`;
             ratingFetcherTimeoutId = setTimeout(runSlowRatingFetcher, 60000);
             return;
+        } else if (ratingCrawlerSettings.blockedUntil) {
+            ratingCrawlerSettings.blockedUntil = null;
+            ratingCrawlerSettings.consecutiveErrors = 0;
+            ratingCrawlerSettings.currentStatus = 'Resuming...';
         }
 
         // Find one movie with a missing or empty rating
@@ -3256,30 +3280,67 @@ async function runSlowRatingFetcher() {
         `).get();
 
         if (target) {
+            ratingCrawlerSettings.currentStatus = `Fetching: ${target.title}`;
             console.log(`[RatingFetcher] Fetching missing HDRezka rating for: ${target.title}`);
             const details = await getMovieDetails(target.link);
             if (details && details.rating) {
                 db.prepare(`UPDATE scraped_movies_cache SET rating = ?, updated_at = CURRENT_TIMESTAMP WHERE link = ?`).run(details.rating, target.link);
                 console.log(`[RatingFetcher] Updated rating for ${target.title}: ${details.rating}`);
+                ratingCrawlerSettings.consecutiveErrors = 0;
             } else {
                 // If rating is still not found on the page, set it to '—' so we don't retry forever
                 db.prepare(`UPDATE scraped_movies_cache SET rating = '—' WHERE link = ?`).run(target.link);
+                ratingCrawlerSettings.consecutiveErrors = 0;
             }
+        } else {
+            ratingCrawlerSettings.currentStatus = 'No missing ratings found. Idle.';
         }
     } catch (err) {
         console.error('[RatingFetcher] Error:', err.message);
-        // If HDRezka blocks us, we should trigger the global auto-pause
-        crawlerSettings.consecutiveErrors = (crawlerSettings.consecutiveErrors || 0) + 1;
-        if (crawlerSettings.consecutiveErrors >= 5) {
+        ratingCrawlerSettings.currentStatus = `Error: ${err.message}`;
+        ratingCrawlerSettings.consecutiveErrors += 1;
+        if (ratingCrawlerSettings.consecutiveErrors >= 5) {
             const resumeAt = new Date(Date.now() + 15 * 60 * 1000);
-            crawlerSettings.blockedUntil = resumeAt.toISOString();
-            console.error(`[RatingFetcher] 🚨 Auto-paused global crawler due to consecutive errors.`);
+        ratingCrawlerSettings.blockedUntil = resumeAt.toISOString();
+            console.error(`[RatingFetcher] 🚨 Auto-paused rating crawler due to consecutive errors.`);
+            ratingFetcherTimeoutId = setTimeout(runSlowRatingFetcher, 60000);
+            return;
         }
     }
-
-    // Schedule next run in 60 seconds
-    ratingFetcherTimeoutId = setTimeout(runSlowRatingFetcher, 60000);
+    
+    if (ratingCrawlerSettings.enabled) {
+        ratingFetcherTimeoutId = setTimeout(runSlowRatingFetcher, ratingCrawlerSettings.intervalMs);
+    }
 }
+
+// API for Rating Crawler
+app.get('/api/admin/rating-crawler-settings', authenticateToken, requireAdmin, (req, res) => {
+    const missingRatings = db.prepare("SELECT COUNT(*) as count FROM scraped_movies_cache WHERE rating IS NULL OR rating = '' OR rating = '0' OR rating = '—'").get().count;
+    res.json({
+        ...ratingCrawlerSettings,
+        missingRatings
+    });
+});
+
+app.post('/api/admin/rating-crawler-settings', authenticateToken, requireAdmin, (req, res) => {
+    const { enabled, intervalMs } = req.body;
+    if (enabled !== undefined) {
+        ratingCrawlerSettings.enabled = !!enabled;
+        if (enabled && !ratingFetcherTimeoutId) {
+            ratingCrawlerSettings.blockedUntil = null;
+            ratingCrawlerSettings.consecutiveErrors = 0;
+            runSlowRatingFetcher();
+        } else if (!enabled && ratingFetcherTimeoutId) {
+            clearTimeout(ratingFetcherTimeoutId);
+            ratingFetcherTimeoutId = null;
+            ratingCrawlerSettings.currentStatus = 'Idle (Disabled)';
+        }
+    }
+    if (intervalMs !== undefined) {
+        ratingCrawlerSettings.intervalMs = Math.max(1000, parseInt(intervalMs) || 2000);
+    }
+    res.json({ success: true, settings: ratingCrawlerSettings });
+});
 
 // Global Fast Crawler State
 let fastCrawlerState = {
@@ -3593,7 +3654,7 @@ app.post('/api/admin/scraped-movies/refresh', authenticateToken, requireAdmin, a
                         if (details) {
                             db.prepare(`
                                 UPDATE scraped_movies_cache
-                                SET description = ?, poster_url = ?, genres = ?, actors = ?, director = ?, writers = ?, country = ?, duration = ?, updated_at = CURRENT_TIMESTAMP
+                                SET description = ?, poster_url = ?, genres = ?, actors = ?, director = ?, writers = ?, country = ?, duration = ?, tmdb_rating = ?, updated_at = CURRENT_TIMESTAMP
                                 WHERE link = ?
                             `).run(
                                 details.description,
@@ -3604,6 +3665,7 @@ app.post('/api/admin/scraped-movies/refresh', authenticateToken, requireAdmin, a
                                 details.writers,
                                 details.country,
                                 details.duration,
+                                details.tmdb_rating,
                                 link
                             );
                             refreshedCount++;
