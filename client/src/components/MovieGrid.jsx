@@ -3928,6 +3928,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                             const isCheckmarkHovered = hoveredCheckmarkLink === movie.link && clickedCheckmarkLink !== movie.link;
                             const userRating = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link))?.user_rating ||
                                                historyList.find(h => cleanLinkPath(h.movie_link) === cleanLinkPath(movie.link))?.user_rating;
+                            
+                            const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
 
                             const cardNode = (
                                 <motion.div
@@ -3936,7 +3938,6 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                     transition={{ layout: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } }}
                                     className="movie-card"
                                     onClick={() => {
-                                        const libMovie = allMovies.find(m => cleanLinkPath(m.link) === cleanLinkPath(movie.link));
                                         if (libMovie) {
                                             setSelectedMovie(libMovie);
                                         } else {
