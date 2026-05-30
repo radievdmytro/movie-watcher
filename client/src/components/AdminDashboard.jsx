@@ -947,6 +947,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                                             outline: 'none',
                                             cursor: 'pointer'
                                         }}
+                                        >
                                         <option value="60">60 movies / hour (~60 sec delay - Safe)</option>
                                         <option value="120">120 movies / hour (~30 sec delay - Normal)</option>
                                         <option value="240">240 movies / hour (~15 sec delay - Fast)</option>
