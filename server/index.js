@@ -3681,7 +3681,7 @@ app.post('/api/admin/crawler-settings', authenticateToken, requireAdmin, (req, r
         const { enabled, ratePerHour } = req.body;
         if (enabled !== undefined) crawlerSettings.enabled = !!enabled;
         if (ratePerHour !== undefined) {
-            crawlerSettings.ratePerHour = Math.max(1, Math.min(3600, parseInt(ratePerHour) || 60));
+            crawlerSettings.ratePerHour = Math.max(1, Math.min(108000, parseInt(ratePerHour) || 60));
         }
 
         // If admin manually re-enables the crawler, clear any existing auto-pause block
