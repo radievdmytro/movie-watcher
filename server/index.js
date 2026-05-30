@@ -947,6 +947,18 @@ app.get('/api/cache/genres', authenticateToken, (req, res) => {
             WHERE genres IS NOT NULL AND genres != ''
         `).all();
 
+        const countryRows = db.prepare(`
+            SELECT DISTINCT country FROM scraped_movies_cache
+            WHERE country IS NOT NULL AND country != ''
+        `).all();
+        const countrySet = new Set();
+        for (const row of countryRows) {
+            if (!row.country) continue;
+            row.country.split(',').forEach(c => {
+                if (c.trim()) countrySet.add(c.trim().toLowerCase());
+            });
+        }
+
         const genreSet = new Set();
         for (const row of rows) {
             if (!row.genres) continue;
@@ -955,6 +967,7 @@ app.get('/api/cache/genres', authenticateToken, (req, res) => {
                 // Skip empty, single chars, purely numeric values (years like 1896, 1902...)
                 if (!trimmed || trimmed.length < 2) return;
                 if (/^(\d+|\d{4}-\d{4})$/.test(trimmed)) return; // skip years/ranges/numbers
+                if (countrySet.has(trimmed.toLowerCase())) return; // skip countries
                 genreSet.add(trimmed);
             });
         }
@@ -1434,12 +1447,22 @@ app.get('/api/genres', authenticateToken, (req, res) => {
     try {
         const stmt = db.prepare('SELECT genres FROM movies WHERE user_id = ? AND deleted_at IS NULL');
         const rows = stmt.all(req.user.id);
+        const countryRows = db.prepare('SELECT country FROM movies WHERE user_id = ? AND deleted_at IS NULL').all(req.user.id);
+        const countrySet = new Set();
+        countryRows.forEach(row => {
+            if (row.country) {
+                row.country.split(',').forEach(c => {
+                    if (c.trim()) countrySet.add(c.trim().toLowerCase());
+                });
+            }
+        });
+
         const genreCounts = {};
         rows.forEach(row => {
             if (row.genres) {
                 row.genres.split(',').forEach(g => {
                     const trimmed = g.trim();
-                    if (trimmed && !/^(\d{4}|\d{4}-\d{4})$/.test(trimmed)) {
+                    if (trimmed && !/^(\d{4}|\d{4}-\d{4})$/.test(trimmed) && !countrySet.has(trimmed.toLowerCase())) {
                         genreCounts[trimmed] = (genreCounts[trimmed] || 0) + 1;
                     }
                 });
