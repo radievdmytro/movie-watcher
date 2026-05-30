@@ -842,7 +842,21 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     <span>📝</span>
                     <span>{isMobile ? 'Import' : 'Bulk Import'}</span>
                 </button>
+
+                {/* Show Dropdown Panel Checkbox */}
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#ccc', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        <input 
+                            type="checkbox" 
+                            checked={enableDropdown}
+                            onChange={(e) => setEnableDropdown(e.target.checked)}
+                            style={{ accentColor: 'var(--accent-gold)' }}
+                        />
+                        Show Top Results Panel
+                    </label>
+                </div>
             </div>
+
 
             {/* Search Bar Container - High Z-Index to stay on top */}
             <div 
@@ -958,30 +972,44 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                     </div>
                 </div>
 
-                <button
-                    onClick={() => setShowSearchFilters(!showSearchFilters)}
-                    style={{
-                        background: showSearchFilters ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
-                        color: showSearchFilters ? 'var(--accent-gold)' : '#888',
-                        border: '1px solid ' + (showSearchFilters ? 'var(--accent-gold)' : 'rgba(255,255,255,0.1)'),
-                        borderRadius: '20px',
-                        padding: isMobile ? '0 10px' : '0 15px',
-                        height: '34px',
-                        fontSize: isMobile ? '0.75rem' : '0.85rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        marginLeft: '5px',
-                        transition: 'all 0.2s',
-                        alignSelf: inputLines > 1 ? 'flex-start' : 'auto',
-                        marginTop: inputLines > 1 ? '10px' : '0',
-                        flexShrink: 0
-                    }}
-                >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                    {!isMobile && "Filters"}
-                </button>
+                {/* Search Field Pills (Desktop) */}
+                {!isMobile && (
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', margin: '0 10px', flexShrink: 0 }}>
+                        {['title', 'actor', 'director', 'year', 'description'].map(field => (
+                            <button
+                                key={field}
+                                onClick={() => {
+                                    if (setGlobalSearchFields) {
+                                        setGlobalSearchFields(prev => {
+                                            const next = { ...prev, [field]: !prev[field] };
+                                            if (!Object.values(next).some(Boolean)) next.title = true;
+                                            localStorage.setItem('searchFields', JSON.stringify(next));
+                                            return next;
+                                        });
+                                    }
+                                }}
+                                style={{
+                                    background: globalSearchFields?.[field] ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                    color: globalSearchFields?.[field] ? 'var(--accent-gold)' : '#aaa',
+                                    border: `1px solid ${globalSearchFields?.[field] ? 'var(--accent-gold)' : 'rgba(255, 255, 255, 0.1)'}`,
+                                    borderRadius: '12px',
+                                    padding: '4px 10px',
+                                    fontSize: '0.75rem',
+                                    cursor: 'pointer',
+                                    textTransform: 'capitalize',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    height: '28px'
+                                }}
+                            >
+                                {globalSearchFields?.[field] && <span style={{ fontSize: '0.65rem' }}>✓</span>}
+                                {field}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 <button
                     className="search-submit-btn"
@@ -1035,60 +1063,51 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
             </div>
 
 
-            {/* Search Field Pills */}
-            <div style={{
-                display: 'flex',
-                gap: '8px',
-                marginTop: '10px',
-                flexWrap: 'wrap',
-                padding: '0 10px',
-                alignItems: 'center'
-            }}>
-                <span style={{ fontSize: '0.8rem', color: '#888', marginRight: '5px' }}>Искать в:</span>
-                {['title', 'actor', 'director', 'year', 'description'].map(field => (
-                    <button
-                        key={field}
-                        onClick={() => {
-                            if (setGlobalSearchFields) {
-                                setGlobalSearchFields(prev => {
-                                    const next = { ...prev, [field]: !prev[field] };
-                                    if (!Object.values(next).some(Boolean)) next.title = true;
-                                    localStorage.setItem('searchFields', JSON.stringify(next));
-                                    return next;
-                                });
-                            }
-                        }}
-                        style={{
-                            background: globalSearchFields?.[field] ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                            color: globalSearchFields?.[field] ? 'var(--accent-gold)' : '#aaa',
-                            border: `1px solid ${globalSearchFields?.[field] ? 'var(--accent-gold)' : 'rgba(255, 255, 255, 0.1)'}`,
-                            borderRadius: '12px',
-                            padding: '4px 12px',
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                            textTransform: 'capitalize',
-                            transition: 'all 0.2s ease',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                        }}
-                    >
-                        {globalSearchFields?.[field] && <span style={{ fontSize: '0.65rem' }}>✓</span>}
-                        {field}
-                    </button>
-                ))}
-                
-                {/* Show Dropdown Panel Checkbox */}
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '10px', fontSize: '0.8rem', color: '#ccc', cursor: 'pointer' }}>
-                    <input 
-                        type="checkbox" 
-                        checked={enableDropdown}
-                        onChange={(e) => setEnableDropdown(e.target.checked)}
-                        style={{ accentColor: 'var(--accent-gold)' }}
-                    />
-                    Show Top Results Panel
-                </label>
-            </div>
+            {/* Search Field Pills (Mobile Only) */}
+            {isMobile && (
+                <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    marginTop: '10px',
+                    flexWrap: 'wrap',
+                    padding: '0 10px',
+                    alignItems: 'center'
+                }}>
+                    <span style={{ fontSize: '0.8rem', color: '#888', marginRight: '5px' }}>Искать в:</span>
+                    {['title', 'actor', 'director', 'year', 'description'].map(field => (
+                        <button
+                            key={field}
+                            onClick={() => {
+                                if (setGlobalSearchFields) {
+                                    setGlobalSearchFields(prev => {
+                                        const next = { ...prev, [field]: !prev[field] };
+                                        if (!Object.values(next).some(Boolean)) next.title = true;
+                                        localStorage.setItem('searchFields', JSON.stringify(next));
+                                        return next;
+                                    });
+                                }
+                            }}
+                            style={{
+                                background: globalSearchFields?.[field] ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                color: globalSearchFields?.[field] ? 'var(--accent-gold)' : '#aaa',
+                                border: `1px solid ${globalSearchFields?.[field] ? 'var(--accent-gold)' : 'rgba(255, 255, 255, 0.1)'}`,
+                                borderRadius: '12px',
+                                padding: '4px 12px',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                textTransform: 'capitalize',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                            }}
+                        >
+                            {globalSearchFields?.[field] && <span style={{ fontSize: '0.65rem' }}>✓</span>}
+                            {field}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* Elegant glowing streaming progress bar */}
             <div style={{
