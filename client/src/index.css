@@ -747,7 +747,7 @@ body.hide-header-search .app-header {
 /* ── Sticky search / controls bar — uses JS-measured --header-h ── */
 .sticky-search-bar {
   position: sticky;
-  top: calc(var(--header-h, 90px) + 19px);
+  top: calc(var(--header-h, 90px) - 1px);
   z-index: 100;
   background: rgba(15, 15, 15, 0.95);
   backdrop-filter: blur(12px);
@@ -761,7 +761,7 @@ body.hide-header-search .app-header {
 
 @media (max-width: 768px) {
   .sticky-search-bar {
-    top: calc(var(--header-h, 90px) - 8px);
+    top: calc(var(--header-h, 90px) - 1px);
     margin-left: -12px;
     margin-right: -12px;
     padding-left: 12px;
