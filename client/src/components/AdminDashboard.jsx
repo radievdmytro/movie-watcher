@@ -486,7 +486,7 @@ function AdminDashboard({ onBack, movies = [], onMovieAdded }) {
                 } catch (e) {
                     console.error('Failed to poll crawler settings:', e);
                 }
-            }, 3000);
+            }, 400);
         }
         return () => {
             if (intervalId) clearInterval(intervalId);
