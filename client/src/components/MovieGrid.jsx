@@ -2190,7 +2190,8 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         </div>
                         
                         {/* User Rating Status Switcher */}
-                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)', order: isMobile ? 4 : 'unset' }}>
+                        {isWatchedView && (
+                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)', order: isMobile ? 4 : 'unset' }}>
                             {[
                                 { id: 'rated', label: 'Rated' },
                                 { id: 'unrated', label: 'Unrated' }
@@ -2215,8 +2216,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 </button>
                             ))}
                         </div>
-
-
+                        )}
                         {isMobile && <div style={{ flexBasis: '100%', height: 0, order: 3 }}></div>}
                         </div>
 
