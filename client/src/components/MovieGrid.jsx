@@ -3103,7 +3103,7 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                             </button>
                         </div>
                     )}
-                    {finalDisplayMovies.length === 0 && (isBgCacheSearching || isCacheLoading || isLiveSearching || isQueryChanging) && (
+                    {(isBgCacheSearching || isCacheLoading || isLiveSearching || isQueryChanging) && (
                         <FilmStripLoader 
                             movies={cacheMoviesResults && cacheMoviesResults.length > 0 ? cacheMoviesResults : (onboardingCacheMovies && onboardingCacheMovies.length > 0 ? onboardingCacheMovies : movies)} 
                             searchQuery={globalSearchQuery} 
@@ -3801,6 +3801,13 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                                 </button>
                             </div>
                         )}
+                        {(isBgCacheSearching || isCacheLoading || isLiveSearching || isQueryChanging) && (
+                            <FilmStripLoader 
+                                movies={cacheMoviesResults && cacheMoviesResults.length > 0 ? cacheMoviesResults : (onboardingCacheMovies && onboardingCacheMovies.length > 0 ? onboardingCacheMovies : movies)} 
+                                searchQuery={globalSearchQuery} 
+                                liveResults={backgroundCacheResults} 
+                            />
+                        )}
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                             <thead>
                                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
@@ -3814,17 +3821,6 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                                 </tr>
                             </thead>
                             <tbody>
-                                {finalDisplayMovies.length === 0 && (isBgCacheSearching || isCacheLoading || isLiveSearching || isQueryChanging) && (
-                                    <tr>
-                                        <td colSpan="6" style={{ padding: '40px 0' }}>
-                                            <FilmStripLoader 
-                                                movies={cacheMoviesResults && cacheMoviesResults.length > 0 ? cacheMoviesResults : (onboardingCacheMovies && onboardingCacheMovies.length > 0 ? onboardingCacheMovies : movies)} 
-                                                searchQuery={globalSearchQuery} 
-                                                liveResults={backgroundCacheResults} 
-                                            />
-                                        </td>
-                                    </tr>
-                                )}
                                 {finalDisplayMovies.slice(0, visibleCount).map(movie => (
                                 <tr key={movie.id || movie.link} style={{
                                     borderBottom: '1px solid rgba(255,255,255,0.05)',
