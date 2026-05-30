@@ -3,29 +3,28 @@ import ReactDOM from 'react-dom';
 import TrailerModal from './TrailerModal';
 import MatrixText from './MatrixText';
 
+const globalAttemptedUpdates = new Set();
+
+
 function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTrashMode, readOnly, openWithWatchedPrompt, isSelected, onSelectToggle, isAdded, libMovieId, onAddMovie, isWatched, onToggleWatched, onRemoveMovie, onHideMovie, onAddToCollection }) {
     const [liveDetails, setLiveDetails] = useState(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
     const movie = useMemo(() => propMovie ? { ...propMovie, ...liveDetails } : null, [propMovie, liveDetails]);
 
-    const attemptedUpdates = useRef(new Set());
-
     useEffect(() => {
         if (!propMovie || !propMovie.link) return;
         
-        // If we already tried fetching details for this movie during this modal session, don't try again (prevents infinite loops if backend also has no description)
-        if (attemptedUpdates.current.has(propMovie.link)) return;
+        // If we already tried fetching details for this movie during this app session, don't try again
+        if (globalAttemptedUpdates.has(propMovie.link)) return;
 
-        // If it's missing description or other important fields, fetch on the fly!
-        const needsUpdate = !propMovie.description || propMovie.description.trim() === '' ||
-            !propMovie.actors || (Array.isArray(propMovie.actors) ? propMovie.actors.length === 0 : propMovie.actors.trim() === '') ||
-            !propMovie.director || propMovie.director.trim() === '' ||
-            !propMovie.year ||
-            !propMovie.rating;
+        // If it's missing description entirely (null/undefined), it hasn't been scraped yet.
+        // We do NOT check for empty strings or missing ratings, because HDRezka might genuinely not have them,
+        // and if we re-fetch them constantly, it causes infinite loading loops.
+        const needsUpdate = propMovie.description === undefined || propMovie.description === null;
 
         if (needsUpdate) {
-            attemptedUpdates.current.add(propMovie.link);
+            globalAttemptedUpdates.add(propMovie.link);
             setIsLoadingDetails(true);
             const token = localStorage.getItem('token');
             fetch('/api/movies/search', {

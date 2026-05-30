@@ -1030,7 +1030,7 @@ app.post('/api/cache/enrich-batch', authenticateToken, async (req, res) => {
                     'SELECT description, genres, actors, director, rating FROM scraped_movies_cache WHERE link = ?'
                 ).get(link);
 
-                if (existing && existing.description && existing.genres && existing.actors) {
+                if (existing && existing.description !== null && existing.genres !== null && existing.actors !== null) {
                     return { link, ...existing, cached: true };
                 }
 
@@ -1087,8 +1087,8 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
             
             // Check cache
             const cached = db.prepare('SELECT * FROM scraped_movies_cache WHERE link LIKE ?').get(`%${cleanQuery}%`);
-            // Only use cache instantly if it has description (meaning it was fully scraped, not just a partial search result)
-            if (cached && cached.description) {
+            // Only use cache instantly if it was fully scraped (description is not null)
+            if (cached && cached.description !== null) {
                 if (isGlobalMovieHidden(req.user.id, cached.link)) {
                     return res.status(404).json({ error: 'Movie hidden from global results' });
                 }
