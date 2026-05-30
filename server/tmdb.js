@@ -61,11 +61,12 @@ function formatTmdbData(tmdbData, isTv = false) {
 /**
  * Searches TMDB for a movie/series and fetches its full details.
  * @param {string} title The title (Russian or Original)
+ * @param {string} original_title The original title (optional)
  * @param {number} year The release year
  * @param {string} type 'movie' or 'series'
  * @returns {Promise<Object>} Formatted details
  */
-async function getTmdbDetails(title, year, type) {
+async function getTmdbDetails(title, original_title, year, type) {
     if (!title) return null;
 
     const isTv = type === 'series';
@@ -74,33 +75,47 @@ async function getTmdbDetails(title, year, type) {
 
     try {
         // 1. Search for the item
-        // We search in Russian first to get the best match if the title is in Russian
-        const searchRes = await axios.get(`${BASE_URL}${searchEndpoint}`, {
-            params: {
-                api_key: TMDB_API_KEY,
-                query: title,
-                primary_release_year: !isTv ? year : undefined,
-                first_air_date_year: isTv ? year : undefined,
-                language: 'ru-RU'
-            }
-        });
-
-        let results = searchRes.data.results;
+        let results = [];
         
-        // If not found, try searching without the year (sometimes HDRezka year is off by 1)
+        // Helper function to execute search
+        const doSearch = async (queryStr, useYear) => {
+            if (!queryStr) return [];
+            try {
+                // If title has Russian and English like "Интерстеллар / Interstellar", split and take first
+                const cleanQuery = queryStr.split('/')[0].trim();
+                const res = await axios.get(`${BASE_URL}${searchEndpoint}`, {
+                    params: {
+                        api_key: TMDB_API_KEY,
+                        query: cleanQuery,
+                        primary_release_year: (!isTv && useYear) ? year : undefined,
+                        first_air_date_year: (isTv && useYear) ? year : undefined,
+                        language: 'ru-RU'
+                    }
+                });
+                return res.data.results;
+            } catch (e) {
+                return [];
+            }
+        };
+
+        // Try title with year
+        results = await doSearch(title, true);
+        
+        // Try original_title with year
+        if (results.length === 0 && original_title) {
+            results = await doSearch(original_title, true);
+        }
+        
+        // Try without year
         if (results.length === 0 && year) {
-            const searchFallback = await axios.get(`${BASE_URL}${searchEndpoint}`, {
-                params: {
-                    api_key: TMDB_API_KEY,
-                    query: title,
-                    language: 'ru-RU'
-                }
-            });
-            results = searchFallback.data.results;
+            results = await doSearch(title, false);
+            if (results.length === 0 && original_title) {
+                results = await doSearch(original_title, false);
+            }
         }
 
         if (results.length === 0) {
-            console.log(`[TMDB] No results found for: ${title} (${year})`);
+            console.log(`[TMDB] No results found for: ${title} / ${original_title} (${year})`);
             return null; // Not found on TMDB
         }
 

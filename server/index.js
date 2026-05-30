@@ -1110,7 +1110,7 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
                 if (cached.description === null || cached.description === '') {
                     console.log(`[Search Cache] Incomplete data for ${query}. Enriching via TMDB on the fly...`);
                     const type = cached.link?.includes('/series/') ? 'series' : 'movie';
-                    const tmdbDetails = await getTmdbDetails(cached.title, cached.year, type);
+                    const tmdbDetails = await getTmdbDetails(cached.title, cached.original_title, cached.year, type);
                     
                     if (tmdbDetails) {
                         db.prepare(`
@@ -1143,7 +1143,7 @@ app.post('/api/movies/search', authenticateToken, async (req, res) => {
             if (hdrezkaDetails) {
                 // Instantly enrich with TMDB
                 const type = query.includes('/series/') ? 'series' : 'movie';
-                const tmdbDetails = await getTmdbDetails(hdrezkaDetails.title, hdrezkaDetails.year, type);
+                const tmdbDetails = await getTmdbDetails(hdrezkaDetails.title, hdrezkaDetails.original_title, hdrezkaDetails.year, type);
                 if (tmdbDetails) {
                     Object.assign(hdrezkaDetails, tmdbDetails);
                 } else {
@@ -3149,7 +3149,7 @@ async function runCrawlerStep() {
             // Let's get the year to improve TMDB match
             const fullTarget = db.prepare('SELECT link, title, year FROM scraped_movies_cache WHERE link = ?').get(targetMovie.link);
             
-            const details = await getTmdbDetails(fullTarget.title, fullTarget.year, type);
+            const details = await getTmdbDetails(fullTarget.title, fullTarget.original_title, fullTarget.year, type);
             if (details) {
                 // Merge TMDB details into our existing cache record
                 const info = db.prepare(`
@@ -3589,7 +3589,7 @@ app.post('/api/admin/scraped-movies/refresh', authenticateToken, requireAdmin, a
                     // Fetch existing title and year
                     const existing = db.prepare('SELECT title, year, type FROM scraped_movies_cache WHERE link = ?').get(link);
                     if (existing) {
-                        const details = await getTmdbDetails(existing.title, existing.year, existing.type);
+                        const details = await getTmdbDetails(existing.title, existing.original_title, existing.year, existing.type);
                         if (details) {
                             db.prepare(`
                                 UPDATE scraped_movies_cache
