@@ -1032,7 +1032,7 @@ app.post('/api/cache/enrich-batch', authenticateToken, async (req, res) => {
 
                 if (existing && existing.description !== null && existing.genres !== null && existing.actors !== null) {
                     let isCacheValid = true;
-                    if (existing.rating === null || existing.rating === 0) {
+                    if (!existing.rating) {
                         const updatedAt = existing.updated_at ? new Date(existing.updated_at + 'Z') : new Date(0);
                         const daysSinceUpdate = (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60 * 24);
                         if (daysSinceUpdate > 3) {

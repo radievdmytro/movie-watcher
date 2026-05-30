@@ -1911,7 +1911,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
 
         // Find movies that lack enriched data (description or genres+actors missing, OR rating missing)
         const needsEnrich = allMovies
-            .filter(m => !enrichingLinks.has(m.link) && !attemptedEnrichLinks.current.has(m.link) && (!m.genres || !m.description || m.rating === null || m.rating === undefined || m.rating === ''))
+            .filter(m => !enrichingLinks.has(m.link) && !attemptedEnrichLinks.current.has(m.link) && (!m.genres || !m.description || !m.rating))
             .slice(0, 50) // Use first 50 that need enrichment
             .map(m => m.link);
 
