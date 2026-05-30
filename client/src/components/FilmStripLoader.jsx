@@ -4,27 +4,82 @@ import { motion, AnimatePresence } from 'framer-motion';
 const STRIP_COUNT = 25; // карточек в ленте
 const CENTER_INTERVAL_MS = 180; // смена центрального постера (0.18 сек)
 
-const FilmStripLoader = ({ movies = [] }) => {
+const FilmStripLoader = ({ movies = [], searchQuery = '' }) => {
     const [centerIdx, setCenterIdx] = useState(0);
 
     // Перемешанный большой массив постеров для ленты (25 штук)
     const stripPosters = useMemo(() => {
         if (!movies || movies.length === 0) return [];
-        const shuffled = [...movies].sort(() => 0.5 - Math.random());
-        const selection = [];
-        for (let i = 0; i < STRIP_COUNT; i++) {
-            selection.push(shuffled[i % shuffled.length].poster_url);
+        const shuffledAll = [...movies].sort(() => 0.5 - Math.random());
+        
+        let matchingMovies = [];
+        if (searchQuery && searchQuery.trim().length > 0) {
+            const q = searchQuery.toLowerCase().trim();
+            matchingMovies = movies.filter(m => 
+                (m.title && m.title.toLowerCase().includes(q)) || 
+                (m.original_title && m.original_title.toLowerCase().includes(q))
+            );
         }
-        return selection;
-    }, [movies]);
+
+        const selection = [];
+        // 1. Первые 3 картинки случайные
+        for (let i = 0; i < 3; i++) {
+            selection.push(shuffledAll[i % shuffledAll.length]?.poster_url);
+        }
+        
+        // 2. Дальше идут релевантные (найденные)
+        const shuffledMatching = [...matchingMovies].sort(() => 0.5 - Math.random());
+        const maxMatching = Math.min(10, shuffledMatching.length);
+        for (let i = 0; i < maxMatching; i++) {
+            selection.push(shuffledMatching[i]?.poster_url);
+        }
+        
+        // 3. Если не хватает до STRIP_COUNT (25), добиваем случайными
+        let randomIdx = 3;
+        while (selection.length < STRIP_COUNT) {
+            selection.push(shuffledAll[randomIdx % shuffledAll.length]?.poster_url);
+            randomIdx++;
+        }
+        
+        return selection.filter(Boolean); // убираем возможные undefined
+    }, [movies, searchQuery]);
 
     // Отдельный перемешанный список для центра
     const centerPosters = useMemo(() => {
         if (!movies || movies.length === 0) return [];
-        return [...movies]
-            .sort(() => 0.5 - Math.random())
-            .map(m => m.poster_url);
-    }, [movies]);
+        const shuffledAll = [...movies].sort(() => 0.5 - Math.random());
+        
+        let matchingMovies = [];
+        if (searchQuery && searchQuery.trim().length > 0) {
+            const q = searchQuery.toLowerCase().trim();
+            matchingMovies = movies.filter(m => 
+                (m.title && m.title.toLowerCase().includes(q)) || 
+                (m.original_title && m.original_title.toLowerCase().includes(q))
+            );
+        }
+
+        const selection = [];
+        // 1. Первые 5 картинок (~0.9 сек) случайные, чтобы имитировать "поиск"
+        for (let i = 0; i < 5; i++) {
+            selection.push(shuffledAll[i % shuffledAll.length]?.poster_url);
+        }
+
+        // 2. Дальше идут релевантные
+        const shuffledMatching = [...matchingMovies].sort(() => 0.5 - Math.random());
+        const maxMatching = Math.min(15, shuffledMatching.length);
+        for (let i = 0; i < maxMatching; i++) {
+            selection.push(shuffledMatching[i]?.poster_url);
+        }
+
+        // 3. Остаток заполняем случайными, чтобы проектор продолжал крутиться
+        let randomIdx = 5;
+        while (selection.length < 40) { // Пусть будет 40 кадров в цикле
+            selection.push(shuffledAll[randomIdx % shuffledAll.length]?.poster_url);
+            randomIdx++;
+        }
+
+        return selection.filter(Boolean);
+    }, [movies, searchQuery]);
 
     // Быстрая смена центрального постера
     useEffect(() => {
