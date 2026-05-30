@@ -3104,7 +3104,11 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                         </div>
                     )}
                     {finalDisplayMovies.length === 0 && (isBgCacheSearching || isCacheLoading || isLiveSearching || isQueryChanging) && (
-                        <FilmStripLoader movies={movies} searchQuery={globalSearchQuery} />
+                        <FilmStripLoader 
+                            movies={movies && movies.length > 0 ? movies : cacheMoviesResults} 
+                            searchQuery={globalSearchQuery} 
+                            liveResults={backgroundCacheResults} 
+                        />
                     )}
                     <motion.div
                         className="movie-grid-container"
@@ -3813,7 +3817,11 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                                 {finalDisplayMovies.length === 0 && (isBgCacheSearching || isCacheLoading || isLiveSearching || isQueryChanging) && (
                                     <tr>
                                         <td colSpan="6" style={{ padding: '40px 0' }}>
-                                            <FilmStripLoader movies={movies} searchQuery={globalSearchQuery} />
+                                            <FilmStripLoader 
+                                                movies={movies && movies.length > 0 ? movies : cacheMoviesResults} 
+                                                searchQuery={globalSearchQuery} 
+                                                liveResults={backgroundCacheResults} 
+                                            />
                                         </td>
                                     </tr>
                                 )}

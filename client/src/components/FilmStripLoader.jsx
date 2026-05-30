@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const STRIP_COUNT = 25; // карточек в ленте
 const CENTER_INTERVAL_MS = 180; // смена центрального постера (0.18 сек)
 
-const FilmStripLoader = ({ movies = [], searchQuery = '' }) => {
+const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) => {
     const [centerIdx, setCenterIdx] = useState(0);
 
     // Перемешанный большой массив постеров для ленты (25 штук)
@@ -15,10 +15,17 @@ const FilmStripLoader = ({ movies = [], searchQuery = '' }) => {
         let matchingMovies = [];
         if (searchQuery && searchQuery.trim().length > 0) {
             const q = searchQuery.toLowerCase().trim();
-            matchingMovies = movies.filter(m => 
+            const localMatches = movies.filter(m => 
                 (m.title && m.title.toLowerCase().includes(q)) || 
                 (m.original_title && m.original_title.toLowerCase().includes(q))
             );
+            // Combine local matches and live search results, remove duplicates by poster_url
+            const combined = [...localMatches, ...liveResults];
+            const uniqueMap = new Map();
+            combined.forEach(m => {
+                if (m && m.poster_url) uniqueMap.set(m.poster_url, m);
+            });
+            matchingMovies = Array.from(uniqueMap.values());
         }
 
         const selection = [];
@@ -53,10 +60,17 @@ const FilmStripLoader = ({ movies = [], searchQuery = '' }) => {
         let matchingMovies = [];
         if (searchQuery && searchQuery.trim().length > 0) {
             const q = searchQuery.toLowerCase().trim();
-            matchingMovies = movies.filter(m => 
+            const localMatches = movies.filter(m => 
                 (m.title && m.title.toLowerCase().includes(q)) || 
                 (m.original_title && m.original_title.toLowerCase().includes(q))
             );
+            // Combine local matches and live search results, remove duplicates by poster_url
+            const combined = [...localMatches, ...liveResults];
+            const uniqueMap = new Map();
+            combined.forEach(m => {
+                if (m && m.poster_url) uniqueMap.set(m.poster_url, m);
+            });
+            matchingMovies = Array.from(uniqueMap.values());
         }
 
         const selection = [];
