@@ -9,13 +9,15 @@ const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) =>
 
     // Перемешанный большой массив постеров для ленты (25 штук)
     const stripPosters = useMemo(() => {
-        if (!movies || movies.length === 0) return [];
-        const shuffledAll = [...movies].sort(() => 0.5 - Math.random());
+        // If movies is empty but liveResults has data, use liveResults as the pool
+        const pool = (movies && movies.length > 0) ? movies : liveResults;
+        if (!pool || pool.length === 0) return [];
+        const shuffledAll = [...pool].sort(() => 0.5 - Math.random());
         
         let matchingMovies = [];
         if (searchQuery && searchQuery.trim().length > 0) {
             const q = searchQuery.toLowerCase().trim();
-            const localMatches = movies.filter(m => 
+            const localMatches = pool.filter(m => 
                 (m.title && m.title.toLowerCase().includes(q)) || 
                 (m.original_title && m.original_title.toLowerCase().includes(q))
             );
@@ -50,17 +52,19 @@ const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) =>
         }
         
         return selection.filter(Boolean); // убираем возможные undefined
-    }, [movies, searchQuery]);
+    }, [movies, searchQuery, liveResults]);
 
     // Отдельный перемешанный список для центра
     const centerPosters = useMemo(() => {
-        if (!movies || movies.length === 0) return [];
-        const shuffledAll = [...movies].sort(() => 0.5 - Math.random());
+        // If movies is empty but liveResults has data, use liveResults as the pool
+        const pool = (movies && movies.length > 0) ? movies : liveResults;
+        if (!pool || pool.length === 0) return [];
+        const shuffledAll = [...pool].sort(() => 0.5 - Math.random());
         
         let matchingMovies = [];
         if (searchQuery && searchQuery.trim().length > 0) {
             const q = searchQuery.toLowerCase().trim();
-            const localMatches = movies.filter(m => 
+            const localMatches = pool.filter(m => 
                 (m.title && m.title.toLowerCase().includes(q)) || 
                 (m.original_title && m.original_title.toLowerCase().includes(q))
             );
@@ -96,7 +100,7 @@ const FilmStripLoader = ({ movies = [], searchQuery = '', liveResults = [] }) =>
         }
 
         return selection.filter(Boolean);
-    }, [movies, searchQuery]);
+    }, [movies, searchQuery, liveResults]);
 
     // Быстрая смена центрального постера
     useEffect(() => {
