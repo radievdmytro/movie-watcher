@@ -1998,6 +1998,31 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
         }
     };
 
+    const resetAllFilters = () => {
+        setFilterGenres([]);
+        setFilterCountries([]);
+        setFilterRating([0, 10]);
+        setFilterYear([minBoundYear, maxBoundYear]);
+        setFilterQuery('');
+        setFilterType('all');
+        setFilterGenreMode('include');
+        setFilterDirectors([]);
+        setFilterActors([]);
+        setBackgroundCacheResults([]);
+        setBackgroundSearchStats(null);
+    };
+
+    const hasActiveFilters = filterGenres.length > 0 || 
+                             filterCountries.length > 0 ||
+                             filterRating[0] > 0 || 
+                             filterRating[1] < 10 || 
+                             filterDirectors.length > 0 || 
+                             filterActors.length > 0 ||
+                             filterYear[0] > minBoundYear ||
+                             filterYear[1] < maxBoundYear ||
+                             filterType !== 'all' ||
+                             filterQuery !== '';
+
     return (
         <div>
             {/* Auto Switch Toast */}
@@ -2327,37 +2352,67 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                         </div>
                         {/* Filters Button (Right aligned inside Right Controls) */}
                         <div style={{ display: 'flex', order: isMobile ? 10 : 'unset' }}>
-                            <button
-                                className="btn btn-ghost"
-                                onClick={(e) => {
-                                    if (!showFilters && filterPanelRef.current) {
-                                        const rect = filterPanelRef.current.getBoundingClientRect();
-                                        setFilterRipple({
-                                            x: e.clientX - rect.left,
-                                            y: e.clientY - rect.top,
-                                            id: Date.now()
-                                        });
-                                    }
-                                    setShowFilters(!showFilters);
-                                }}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '8px',
-                                    color: showFilters || filterGenres.length > 0 || filterRating[0] > 0 || filterRating[1] < 10 || filterDirectors.length > 0 || filterActors.length > 0 ? 'var(--accent-gold)' : 'inherit',
-                                    background: showFilters ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '20px',
-                                    padding: '8px 15px',
-                                    flexShrink: 0
-                                }}
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                                <span>Filters</span>
-                                {(filterGenres.length > 0 || filterDirectors.length > 0 || filterActors.length > 0) && (
-                                    <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>
-                                        ({filterGenres.length + filterDirectors.length + filterActors.length})
-                                    </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <button
+                                    className="btn btn-ghost"
+                                    onClick={(e) => {
+                                        if (!showFilters && filterPanelRef.current) {
+                                            const rect = filterPanelRef.current.getBoundingClientRect();
+                                            setFilterRipple({
+                                                x: e.clientX - rect.left,
+                                                y: e.clientY - rect.top,
+                                                id: Date.now()
+                                            });
+                                        }
+                                        setShowFilters(!showFilters);
+                                    }}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                        color: showFilters || hasActiveFilters ? 'var(--accent-gold)' : 'inherit',
+                                        background: showFilters ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '20px',
+                                        padding: '8px 15px',
+                                        flexShrink: 0
+                                    }}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                    <span>Filters</span>
+                                    {(filterGenres.length > 0 || filterCountries.length > 0 || filterDirectors.length > 0 || filterActors.length > 0) && (
+                                        <span style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>
+                                            ({filterGenres.length + filterCountries.length + filterDirectors.length + filterActors.length})
+                                        </span>
+                                    )}
+                                </button>
+                                {hasActiveFilters && (
+                                    <button
+                                        onClick={() => resetAllFilters()}
+                                        style={{
+                                            background: 'rgba(239, 68, 68, 0.15)',
+                                            color: '#ef4444',
+                                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                                            borderRadius: '50%',
+                                            width: '28px',
+                                            height: '28px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            padding: 0,
+                                            flexShrink: 0,
+                                            transition: 'all 0.2s',
+                                        }}
+                                        title="Clear all filters"
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)' }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)' }}
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
                                 )}
-                            </button>
+                            </div>
                         </div>
                         </div>
                     </div>
@@ -2842,18 +2897,7 @@ function MovieGrid({ movies, allMovies = movies, historyList = [], onFetchHistor
                                 >Collapse Filters</button>
                                 <button
                                     className="btn-ghost"
-                                    onClick={() => {
-                                        setFilterGenres([]);
-                                        setFilterRating([0, 10]);
-                                        setFilterYear([minBoundYear, maxBoundYear]);
-                                        setFilterQuery('');
-                                        setFilterType('all');
-                                        setFilterGenreMode('include');
-                                        setFilterDirectors([]);
-                                        setFilterActors([]);
-                                        setBackgroundCacheResults([]);
-                                        setBackgroundSearchStats(null);
-                                    }}
+                                    onClick={() => resetAllFilters()}
                                     style={{ fontSize: '0.85rem', textDecoration: 'underline', cursor: 'pointer' }}
                                 >Reset All Filters</button>
                             </div>
