@@ -924,9 +924,16 @@ function MovieGrid({ headerComponent, movies, allMovies = movies, historyList = 
                 if (onUpdate) {
                     onUpdate(null);
                 }
+                return true;
+            } else {
+                const data = await res.json();
+                alert(`Failed to add movie: ${data.error || 'Unknown error'}`);
+                return false;
             }
         } catch (e) {
             console.error(e);
+            alert('Failed to add movie: Network error');
+            return false;
         } finally {
             setAddingLinks(prev => {
                 const next = new Set(prev);

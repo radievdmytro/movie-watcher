@@ -233,20 +233,32 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
         if (addingLinks.has(link) || addedLinks.has(link)) return;
         setAddingLinks(prev => new Set([...prev, link]));
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch('/api/movies', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
-                },
-                body: JSON.stringify({ link })
-            });
-            if (res.ok) {
-                setAddedLinks(prev => new Set([...prev, link]));
+            if (onAddMovie) {
+                const success = await onAddMovie(link);
+                if (success !== false) {
+                    setAddedLinks(prev => new Set([...prev, link]));
+                }
+            } else {
+                const token = localStorage.getItem('token');
+                const res = await fetch('/api/movies/import', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ url: link })
+                });
+                if (res.ok || res.status === 409) {
+                    setAddedLinks(prev => new Set([...prev, link]));
+                    if (onUpdate) onUpdate(null);
+                } else {
+                    const data = await res.json();
+                    alert(`Failed to add movie: ${data.error || 'Unknown error'}`);
+                }
             }
         } catch (err) {
             console.error('Failed to add movie from cache', err);
+            alert('Failed to add movie: Network error');
         } finally {
             setAddingLinks(prev => {
                 const next = new Set(prev);
