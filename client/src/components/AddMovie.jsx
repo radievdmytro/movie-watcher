@@ -97,13 +97,15 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
 
     const isHdrezkaUrl = (str) => {
         if (!str) return false;
-        const lower = str.toLowerCase().trim();
-        return lower.includes('rezka') && (lower.startsWith('http://') || lower.startsWith('https://'));
+        return /(?:https?:\/\/)?(?:[a-z0-9-]+\.)*(?:hd)?rezka[a-z0-9.-]*\/\S+/i.test(str.trim());
     };
 
     const extractUrls = (text) => {
-        const match = text.match(/\bhttps?:\/\/\S+/gi);
-        return match ? match.filter(url => url.toLowerCase().includes('rezka')) : [];
+        const match = text.match(/(?:https?:\/\/)?(?:[a-z0-9-]+\.)*(?:hd)?rezka[a-z0-9.-]*\/\S+/gi);
+        return match ? match.map(url => {
+            if (!url.startsWith('http')) return 'https://' + url;
+            return url;
+        }) : [];
     };
 
     // Domain-agnostic path extractor for library ownership check
