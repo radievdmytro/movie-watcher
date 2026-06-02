@@ -783,7 +783,17 @@ app.get('/api/cache/search', authenticateToken, async (req, res) => {
 
         if (live === 'true' && query) {
             console.log(`[Search Live API] Searching HDRezka for: "${query}"`);
-            const freshResults = filterHiddenGlobalMovies(await searchMovies(query, getUserHeaders(req)), req.user.id);
+            const isUrl = /(?:https?:\/\/)?(?:[a-z0-9-]+\.)*(?:hd)?rezka[a-z0-9.-]*\/\S+/i.test(query);
+            let rawResults = [];
+            
+            if (isUrl) {
+                const details = await getMovieDetails(query, getUserHeaders(req));
+                if (details) rawResults = [details];
+            } else {
+                rawResults = await searchMovies(query, getUserHeaders(req));
+            }
+
+            const freshResults = filterHiddenGlobalMovies(rawResults, req.user.id);
             const resultsWithFlag = (freshResults || []).map(m => ({ ...m, isLiveResult: true }));
             
             if (freshResults && freshResults.length > 0) {
