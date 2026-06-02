@@ -923,9 +923,7 @@ function MovieDetailsModal({ movie: propMovie, onClose, onUpdate, onDelete, isTr
                         addModalRipple(x, y, '168, 85, 247'); // Purple
                     }
 
-                    if (onAddMovie) {
-                        onAddMovie(movie.link || movie.movie_link);
-                    }
+                    handleAddMovieFromCache(movie.link || movie.movie_link);
                 }}
                 onMouseEnter={(e) => { if (!isMobile) { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.02)'; } }}
                 onMouseLeave={(e) => { if (!isMobile) { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'scale(1)'; } }}

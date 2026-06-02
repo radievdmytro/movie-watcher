@@ -460,7 +460,8 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
     };
 
     const handleAdd = async () => {
-        if (!preview) return;
+        if (!preview) return false;
+        setLoading(true);
         try {
             const payload = { ...preview };
             if (!payload.link && isHdrezkaUrl(query)) payload.link = query;
@@ -476,23 +477,39 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
             });
 
             if (res.ok) {
+                const data = await res.json();
                 setQuery('');
                 setPreview(null);
-                onMovieAdded();
+                setSearchStatus('');
+                setLogs([{ msg: `✓ Added: ${payload.title}`, type: 'success' }]);
+                if (onMovieAdded) onMovieAdded(data);
+                return true;
             } else {
                 const d = await res.json();
-                if (res.status === 409 && onScrollToMovie && payload.link) {
+                if (res.status === 409 && d.restored) {
+                    setLogs([{ msg: `✓ Restored from trash: ${payload.title}`, type: 'success' }]);
+                    if (onMovieAdded) onMovieAdded(d);
+                    setQuery('');
+                    setPreview(null);
+                    return true;
+                } else if (res.status === 409 && onScrollToMovie && payload.link) {
                     setPreview(null);
                     setQuery('');
                     onScrollToMovie(payload.link);
+                    return true;
                 } else {
                     setLogs([{ msg: `✗ ${d.error || 'Failed to add movie'}`, type: 'error' }]);
                     setIsFadingLogs(false);
                     setTimeout(() => setIsFadingLogs(true), 4000);
+                    return false;
                 }
             }
         } catch (error) {
             console.error(error);
+            setLogs([{ msg: '✗ Network error adding movie', type: 'error' }]);
+            return false;
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -2069,6 +2086,8 @@ function AddMovie({ onMovieAdded, onScrollToMovie, movies = [], selectedLibraryI
                 <MovieDetailsModal
                     movie={compareDetailsMovie}
                     onClose={() => setCompareDetailsMovie(null)}
+                    onAddMovie={handleAdd}
+                    isAdded={compareDetailsMovie ? ownedPaths.has(cleanLinkPath(compareDetailsMovie.link)) : false}
                     onUpdate={async (id, updates) => {
                         await fetch(`/api/movies/${id}`, {
                             method: 'PATCH',
